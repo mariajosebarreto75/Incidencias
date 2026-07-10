@@ -1,0 +1,459 @@
+{% extends 'coordinador/navbarcoor.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/coordinador/PanelCoor.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/coordinador/detalle_reporte.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- ENCABEZADO -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('coordinador.panel_reportes') }}"
+           class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Volver
+        </a>
+        <div>
+            <h2 class="mb-0 fw-bold" style="color:#1a2e35; font-size:1.25rem;">
+                Reporte #{{ reporte.id }} — {{ reporte.tipo_incidencia }}
+            </h2>
+            <small class="text-muted">
+                Creado {{ reporte.fecha_creado.strftime('%d/%m/%Y a las %H:%M') if reporte.fecha_creado else '' }}
+            </small>
+        </div>
+        <div class="ms-auto">
+            {% if reporte.estado == 'Respondido' %}
+            <span class="badge-estado respondido fs-6">
+                <i class="bi bi-check-circle-fill me-1"></i>Respondido
+            </span>
+            {% else %}
+            <span class="badge-estado abierto fs-6">
+                <i class="bi bi-circle me-1"></i>Abierto
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="rptAlerta" class="mb-3"></div>
+
+    <div class="row g-4">
+
+        <!-- ===== COLUMNA IZQUIERDA: datos NEO ===== -->
+        <div class="col-lg-6">
+            <div class="det-card">
+
+                <div class="det-card-header neo-color">
+                    <i class="bi bi-clipboard2-pulse-fill me-2"></i>
+                    Información reportada por NEO
+                </div>
+
+                <div class="det-card-body">
+                    <div class="row g-2">
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Fecha reporte</span>
+                                <span class="det-value">
+                                    {{ reporte.fecha_reporte.strftime('%d/%m/%Y') if reporte.fecha_reporte else '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Contrato</span>
+                                <span class="det-value">{{ reporte.contrato or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Recurso</span>
+                                <span class="det-value">{{ reporte.recurso or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Placa</span>
+                                <span class="det-value">{{ reporte.placa or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Tipo actividad</span>
+                                <span class="det-value">{{ reporte.tipo_actividad or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Tipo cuadrilla</span>
+                                <span class="det-value">{{ reporte.tipo_cuadrilla or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-4">
+                            <div class="det-field">
+                                <span class="det-label">Hora inicio</span>
+                                <span class="det-value">
+                                    {{ reporte.hora_inicio.strftime('%H:%M') if reporte.hora_inicio else '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-4">
+                            <div class="det-field">
+                                <span class="det-label">Hora fin</span>
+                                <span class="det-value">
+                                    {{ reporte.hora_fin.strftime('%H:%M') if reporte.hora_fin else '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-4">
+                            <div class="det-field">
+                                <span class="det-label">Duración</span>
+                                <span class="det-value fw-bold" style="color:#005f6b;">
+                                    {{ reporte.duracion or '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Tipo incidencia</span>
+                                <span class="det-value">{{ reporte.tipo_incidencia or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Parámetro NEO</span>
+                                <span class="det-value">{{ reporte.parametro_neo or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Horas afectadas</span>
+                                <span class="det-value">
+                                    {{ "%.2f"|format(reporte.horas_afectadas) if reporte.horas_afectadas else '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Afectación económica</span>
+                                <span class="det-value">
+                                    {% if reporte.afectacion_economica %}
+                                    ${{ "{:,.0f}".format(reporte.afectacion_economica) }}
+                                    {% else %}—{% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="det-field">
+                                <span class="det-label">Observación</span>
+                                <span class="det-value det-obs">{{ reporte.observacion or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- EVIDENCIAS NEO -->
+                        <div class="col-12">
+                            <span class="det-label">Evidencias NEO</span>
+                            <div class="d-flex gap-3 mt-2 flex-wrap">
+                                {% if reporte.evidencia_1 %}
+                                <div class="det-thumb-wrap">
+                                    <a href="/neo/evidencia/{{ reporte.evidencia_1 }}" target="_blank">
+                                        <img src="/neo/evidencia/{{ reporte.evidencia_1 }}"
+                                             class="det-thumb" alt="Evidencia 1">
+                                    </a>
+                                    <span class="det-thumb-label">Foto 1</span>
+                                </div>
+                                {% endif %}
+                                {% if reporte.evidencia_2 %}
+                                <div class="det-thumb-wrap">
+                                    <a href="/neo/evidencia/{{ reporte.evidencia_2 }}" target="_blank">
+                                        <img src="/neo/evidencia/{{ reporte.evidencia_2 }}"
+                                             class="det-thumb" alt="Evidencia 2">
+                                    </a>
+                                    <span class="det-thumb-label">Foto 2</span>
+                                </div>
+                                {% endif %}
+                                {% if not reporte.evidencia_1 and not reporte.evidencia_2 %}
+                                <span class="text-muted small">Sin evidencias</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="det-field">
+                                <span class="det-label">Reportado por</span>
+                                <span class="det-value">{{ nombre_reportado or '—' }}</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===== COLUMNA DERECHA: respuesta coordinador ===== -->
+        <div class="col-lg-6">
+            <div class="det-card">
+
+                <div class="det-card-header coor-color">
+                    <i class="bi bi-patch-check-fill me-2"></i>
+                    Respuesta del Coordinador
+                    {% if reporte.respondido_por %}
+                    <span class="ms-auto det-respondido-by">
+                        <i class="bi bi-person-check me-1"></i>{{ reporte.respondido_por }}
+                        {% if reporte.fecha_respuesta %}
+                        · {{ reporte.fecha_respuesta.strftime('%d/%m/%Y %H:%M') }}
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="det-card-body">
+
+                    {% if reporte.estado == 'Respondido' %}
+                    <!-- SOLO LECTURA -->
+                    <div class="row g-2">
+
+                        <div class="col-12">
+                            <div class="det-field">
+                                <span class="det-label">Respuesta</span>
+                                <span class="det-value det-obs">{{ reporte.respuesta or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Parámetro</span>
+                                <span class="det-value">{{ reporte.parametro_coordinador or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Estado de conformidad</span>
+                                <span class="det-value">{{ reporte.estado_conformidad or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="det-field">
+                                <span class="det-label">Acción a tomar</span>
+                                <span class="det-value">{{ reporte.accion_a_tomar or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <span class="det-label">Evidencias del coordinador</span>
+                            <div class="d-flex gap-3 mt-2 flex-wrap">
+                                {% if reporte.evidencia_coor_1 %}
+                                <div class="det-thumb-wrap">
+                                    <a href="/coordinador/evidencia-coor/{{ reporte.evidencia_coor_1 }}" target="_blank">
+                                        <img src="/coordinador/evidencia-coor/{{ reporte.evidencia_coor_1 }}"
+                                             class="det-thumb" alt="Evidencia coordinador 1">
+                                    </a>
+                                    <span class="det-thumb-label">Foto 1</span>
+                                </div>
+                                {% endif %}
+                                {% if reporte.evidencia_coor_2 %}
+                                <div class="det-thumb-wrap">
+                                    <a href="/coordinador/evidencia-coor/{{ reporte.evidencia_coor_2 }}" target="_blank">
+                                        <img src="/coordinador/evidencia-coor/{{ reporte.evidencia_coor_2 }}"
+                                             class="det-thumb" alt="Evidencia coordinador 2">
+                                    </a>
+                                    <span class="det-thumb-label">Foto 2</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {% else %}
+                    <!-- FORMULARIO -->
+                    <div class="row g-3">
+
+                        <div class="col-12 rpt-field">
+                            <label class="det-form-label">
+                                <i class="bi bi-chat-left-text text-info me-1"></i>
+                                Respuesta <span class="badge-req ms-1">Requerido</span>
+                            </label>
+                            <textarea id="respuesta" rows="4" class="form-control"
+                                placeholder="Describa la respuesta a esta incidencia…"></textarea>
+                        </div>
+
+                        <div class="col-12 rpt-field">
+                            <label class="det-form-label">
+                                <i class="bi bi-sliders text-info me-1"></i>
+                                Parámetro
+                            </label>
+                            <select id="parametro_coor" class="form-select">
+                                <option value="">— Seleccione —</option>
+                                {% for p in parametros_coor %}
+                                <option value="{{ p }}">{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-6 rpt-field">
+                            <label class="det-form-label">
+                                <i class="bi bi-ui-checks text-info me-1"></i>
+                                Estado de conformidad <span class="badge-req ms-1">Requerido</span>
+                            </label>
+                            <select id="estado_conformidad" class="form-select">
+                                <option value="">— Seleccione —</option>
+                                {% for e in estados_conformidad %}
+                                <option value="{{ e }}">{{ e }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-6 rpt-field">
+                            <label class="det-form-label">
+                                <i class="bi bi-arrow-right-circle text-info me-1"></i>
+                                Acción a tomar <span class="badge-req ms-1">Requerido</span>
+                            </label>
+                            <select id="accion_a_tomar" class="form-select">
+                                <option value="">— Seleccione —</option>
+                                {% for a in acciones_tomar %}
+                                <option value="{{ a }}">{{ a }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="det-form-label">
+                                <i class="bi bi-camera text-info me-1"></i>
+                                Evidencia 1 <span class="badge-req ms-1">Requerido</span>
+                            </label>
+                            <div class="upload-area-coor" id="area_coor1">
+                                <input type="file" id="ev_coor_1" accept="image/*">
+                                <input type="hidden"  id="ruta_ev_coor_1">
+                                <img id="prev_coor1" class="upload-prev-coor" alt="">
+                                <div id="ph_coor1" class="upload-ph-coor">
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                    <span>Clic o arrastre</span>
+                                    <small>JPG · PNG · WEBP · máx 10 MB</small>
+                                </div>
+                                <div id="spin_coor1" class="upload-spin-coor d-none">
+                                    <div class="spinner-border spinner-border-sm text-info me-2"></div>
+                                    Subiendo…
+                                </div>
+                            </div>
+                            <div id="est_coor1" class="upload-estado mt-1"></div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="det-form-label">
+                                <i class="bi bi-camera text-secondary me-1"></i>
+                                Evidencia 2
+                                <span class="ms-1" style="font-size:.68rem;color:#888;font-weight:600;">Opcional</span>
+                            </label>
+                            <div class="upload-area-coor" id="area_coor2">
+                                <input type="file" id="ev_coor_2" accept="image/*">
+                                <input type="hidden"  id="ruta_ev_coor_2">
+                                <img id="prev_coor2" class="upload-prev-coor" alt="">
+                                <div id="ph_coor2" class="upload-ph-coor">
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                    <span>Clic o arrastre</span>
+                                    <small>JPG · PNG · WEBP · máx 10 MB</small>
+                                </div>
+                                <div id="spin_coor2" class="upload-spin-coor d-none">
+                                    <div class="spinner-border spinner-border-sm text-info me-2"></div>
+                                    Subiendo…
+                                </div>
+                            </div>
+                            <div id="est_coor2" class="upload-estado mt-1"></div>
+                        </div>
+
+                        <div class="col-12 rpt-field">
+                            <label class="det-form-label">
+                                <i class="bi bi-person-check text-info me-1"></i>
+                                Respondido por
+                            </label>
+                            <input type="text" class="form-control"
+                                   value="{{ current_user.nombre_completo }}" readonly>
+                        </div>
+
+                        <div class="col-12 pt-2">
+                            <button class="btn-coor-guardar w-100" id="btnResponder">
+                                <i class="bi bi-patch-check-fill me-2"></i>
+                                Guardar Respuesta
+                            </button>
+                        </div>
+
+                    </div>
+                    {% endif %}
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===== VALIDACIÓN NEO (lectura coordinador) ===== -->
+    {% if reporte.conformidad_neo %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="det-card">
+                <div class="det-card-header" style="background: linear-gradient(90deg, #1a3a2a, #2e9e55);">
+                    <i class="bi bi-clipboard2-check-fill me-2"></i>
+                    Validación NEO
+                    <span class="ms-auto" style="font-size:.75rem; font-weight:500; opacity:.85;">
+                        <i class="bi bi-check2-all me-1"></i>Validado por NEO
+                    </span>
+                </div>
+                <div class="det-card-body">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <div class="det-field">
+                                <span class="det-label">Conformidad</span>
+                                <span class="det-value">
+                                    {% if reporte.conformidad_neo == 'Conforme' %}
+                                    <span class="badge-conf conforme">
+                                        <i class="bi bi-check-circle-fill me-1"></i>Conforme
+                                    </span>
+                                    {% else %}
+                                    <span class="badge-conf no-conforme">
+                                        <i class="bi bi-x-circle-fill me-1"></i>No Conforme
+                                    </span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="det-field">
+                                <span class="det-label">Observación de conformidad</span>
+                                <span class="det-value det-obs">
+                                    {{ reporte.observacion_conformidad or 'Sin observación' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Variable de contexto para el JS externo -->
+<script>const REPORTE_ID = Number("{{ reporte.id }}");</script>
+<script src="{{ url_for('static', filename='js/coordinador/detalle_reporte.js') }}"></script>
+
+{% endblock %}

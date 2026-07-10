@@ -1,0 +1,373 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Usuarios — Coordinadores y Directores{% endblock %}
+
+{% block head %}
+<style>
+.nu-card {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    margin-bottom: 1.2rem;
+    overflow: hidden;
+    transition: border-color .2s;
+}
+.nu-card:hover { border-color: #334155; }
+.nu-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: #0a1628;
+    border-bottom: 1px solid #1e293b;
+}
+.nu-username {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #e2e8f0;
+    font-family: monospace;
+    letter-spacing: .03em;
+}
+.nu-nombre { font-size: .82rem; color: #64748b; }
+.nu-badge-rol {
+    padding: .2rem .7rem;
+    border-radius: 20px;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.nu-badge-coordinador { background:#0c1a2e;color:#38bdf8;border:1px solid #0369a1; }
+.nu-badge-director    { background:#1c1100;color:#fbbf24;border:1px solid #d97706; }
+.nu-estado-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+.nu-dot-on  { background:#22c55e;box-shadow:0 0 6px #22c55e88; }
+.nu-dot-off { background:#475569; }
+.nu-actions { margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap; }
+.nu-btn-edit {
+    padding:.3rem .75rem;border-radius:6px;font-size:.72rem;font-weight:600;
+    cursor:pointer;border:1px solid #334155;background:#1e293b;color:#94a3b8;transition:all .2s;
+}
+.nu-btn-edit:hover { background:#334155;color:#e2e8f0; }
+.nu-btn-deact {
+    padding:.3rem .75rem;border-radius:6px;font-size:.72rem;font-weight:600;
+    cursor:pointer;border:1px solid #ef444455;background:#1c0a0a;color:#f87171;transition:all .2s;
+}
+.nu-btn-deact:hover { background:#2d1414; }
+.nu-btn-act {
+    padding:.3rem .75rem;border-radius:6px;font-size:.72rem;font-weight:600;
+    cursor:pointer;border:1px solid #22c55e55;background:#052e16;color:#4ade80;transition:all .2s;
+}
+.nu-btn-act:hover { background:#0a3d1f; }
+.nu-btn-del {
+    padding:.3rem .6rem;border-radius:6px;font-size:.72rem;
+    cursor:pointer;border:1px solid #334155;background:transparent;color:#64748b;transition:all .2s;
+}
+.nu-btn-del:hover { background:#1e293b;color:#f87171; }
+.nu-contratos-body { padding:1rem 1.25rem; }
+.nu-contratos-label {
+    font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#475569;margin-bottom:.6rem;
+}
+.nu-checks-grid { display:flex;flex-wrap:wrap;gap:.4rem; }
+.nu-check-label {
+    display:flex;align-items:center;gap:.35rem;padding:.28rem .65rem;
+    background:#0a1628;border:1px solid #1e293b;border-radius:6px;
+    cursor:pointer;font-size:.72rem;color:#94a3b8;transition:all .18s;white-space:nowrap;
+}
+.nu-check-label:hover { border-color:#0ea5e9;color:#e2e8f0; }
+.nu-check-label input { accent-color:#0ea5e9; }
+.nu-save-btn {
+    margin-top:.75rem;padding:.3rem .9rem;border-radius:6px;
+    border:1px solid #0369a1;background:#0c1a2e;color:#38bdf8;
+    font-size:.75rem;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.nu-save-btn:hover { background:#0ea5e920; }
+.nu-save-msg {
+    display:inline-block;margin-left:.75rem;font-size:.72rem;color:#4ade80;opacity:0;transition:opacity .3s;
+}
+/* CREATE */
+.nu-create-card {
+    background:#0a1628;border:1px dashed #334155;border-radius:14px;padding:1.5rem;margin-top:1.5rem;
+}
+.nu-create-title {
+    font-size:.95rem;font-weight:700;color:#e2e8f0;margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem;
+}
+.nu-form-grid { display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem; }
+.nu-form-grid .col-full { grid-column:1/-1; }
+.nu-input {
+    width:100%;background:#0f172a;border:1px solid #1e293b;border-radius:8px;
+    padding:.5rem .75rem;color:#e2e8f0;font-size:.82rem;outline:none;transition:border-color .2s;
+}
+.nu-input:focus { border-color:#0ea5e9; }
+.nu-form-label { font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:#475569;margin-bottom:.3rem; }
+.nu-create-btn {
+    padding:.55rem 1.5rem;border-radius:8px;border:none;
+    background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;
+    font-weight:700;font-size:.83rem;cursor:pointer;transition:opacity .2s;
+}
+.nu-create-btn:hover { opacity:.85; }
+/* MODAL EDIT */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title">
+            <i class="bi bi-people me-2" style="color:var(--adm-accent)"></i>Coordinadores y Directores
+        </h1>
+        <p class="adm-page-sub">
+            {{ usuarios|length }} usuario(s) — Para NEO y Admins usa
+            <a href="{{ url_for('admin_bp.neo_usuarios') }}" style="color:var(--adm-accent)">Usuarios NEO / Admin</a>
+        </p>
+    </div>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<div class="adm-card" style="margin-bottom:1rem;padding:.75rem 1rem">
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <span style="color:#64748b;font-size:.8rem;white-space:nowrap"><i class="bi bi-funnel me-1"></i>Filtrar:</span>
+        <select id="fNombre" onchange="filtrarUsuarios()"
+            style="background:#0d1b2e;color:#e2e8f0;border:1px solid #1e293b;border-radius:8px;
+                   padding:.38rem .75rem;font-size:.82rem;outline:none;cursor:pointer;min-width:200px">
+            <option value="" style="background:#0d1b2e">— Nombre completo —</option>
+            {% for u in usuarios %}
+            <option value="{{ u.nombre_completo | lower }}" style="background:#0d1b2e">{{ u.nombre_completo }}</option>
+            {% endfor %}
+        </select>
+        <select id="fUser" onchange="filtrarUsuarios()"
+            style="background:#0d1b2e;color:#e2e8f0;border:1px solid #1e293b;border-radius:8px;
+                   padding:.38rem .75rem;font-size:.82rem;outline:none;cursor:pointer;min-width:160px">
+            <option value="" style="background:#0d1b2e">— Username —</option>
+            {% for u in usuarios %}
+            <option value="{{ u.username | lower }}" style="background:#0d1b2e">{{ u.username }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-sm" style="background:#1e293b;color:#64748b;border:1px solid #334155;font-size:.75rem"
+            onclick="document.getElementById('fNombre').value='';document.getElementById('fUser').value='';filtrarUsuarios()">
+            <i class="bi bi-x"></i> Limpiar
+        </button>
+    </div>
+</div>
+
+{% for u in usuarios %}
+<div class="nu-card" data-nombre="{{ u.nombre_completo | lower }}" data-user="{{ u.username | lower }}">
+    <div class="nu-card-header">
+        <div class="nu-estado-dot {{ 'nu-dot-on' if u.activo else 'nu-dot-off' }}"></div>
+        <div>
+            <div class="nu-username">{{ u.username }}</div>
+            <div class="nu-nombre">{{ u.nombre_completo }}</div>
+        </div>
+        <span class="nu-badge-rol nu-badge-{{ u.rol.lower() }}">{{ u.rol }}</span>
+        <div class="nu-actions">
+            <button class="nu-btn-edit"
+                data-id="{{ u.id }}"
+                data-nombre="{{ u.nombre_completo | e }}"
+                data-rol="{{ u.rol }}"
+                data-activo="{{ u.activo | lower }}"
+                onclick="abrirEditar(this)">
+                <i class="bi bi-pencil me-1"></i>Editar
+            </button>
+            {% if u.activo %}
+            <button class="nu-btn-deact"
+                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
+                onclick="toggleActivo(this, false)">
+                <i class="bi bi-slash-circle me-1"></i>Desactivar
+            </button>
+            {% else %}
+            <button class="nu-btn-act"
+                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
+                onclick="toggleActivo(this, true)">
+                <i class="bi bi-check-circle me-1"></i>Activar
+            </button>
+            {% endif %}
+            <button class="nu-btn-del"
+                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
+                onclick="eliminarUsuario(this)" title="Eliminar">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+    </div>
+    <div class="nu-contratos-body">
+        <div class="nu-contratos-label">Contratos asignados</div>
+        <div class="nu-checks-grid">
+            {% for c in contratos %}
+            <label class="nu-check-label">
+                <input type="checkbox"
+                    class="nu-ck-{{ u.id }}"
+                    value="{{ c.contrato | e }}"
+                    {% if c.contrato in asignados_por_usuario[u.id] %}checked{% endif %}>
+                <span>{{ c.contrato }}</span>
+            </label>
+            {% endfor %}
+        </div>
+        <button class="nu-save-btn" data-uid="{{ u.id }}" onclick="guardarContratos(this)">
+            <i class="bi bi-floppy me-1"></i>Guardar contratos
+        </button>
+        <span class="nu-save-msg" id="msg-{{ u.id }}">✓ Guardado</span>
+    </div>
+</div>
+{% else %}
+<div style="text-align:center;padding:3rem;color:#475569">
+    <i class="bi bi-inbox" style="font-size:2rem"></i>
+    <p class="mt-2">No hay usuarios registrados</p>
+</div>
+{% endfor %}
+
+<!-- CREAR -->
+<div class="nu-create-card">
+    <div class="nu-create-title">
+        <i class="bi bi-person-plus" style="color:#0ea5e9"></i> Crear nuevo usuario
+    </div>
+    <div id="alertaCreate" class="adm-alert"></div>
+    <div class="nu-form-grid">
+        <div>
+            <div class="nu-form-label">Usuario (login) *</div>
+            <input id="newUsername" class="nu-input" placeholder="ej. jperez" autocomplete="new-password">
+        </div>
+        <div>
+            <div class="nu-form-label">Nombre completo *</div>
+            <input id="newNombre" class="nu-input" placeholder="ej. Juan Pérez">
+        </div>
+        <div>
+            <div class="nu-form-label">Rol *</div>
+            <select id="newRol" class="nu-input">
+                <option value="">— Seleccionar —</option>
+                {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <div class="nu-form-label">Contraseña *</div>
+            <input id="newPassword" type="password" class="nu-input" placeholder="Contraseña" autocomplete="new-password">
+        </div>
+        <div class="col-full">
+            <div class="nu-form-label">Contratos asignados</div>
+            <div class="nu-checks-grid">
+                {% for c in contratos %}
+                <label class="nu-check-label">
+                    <input type="checkbox" class="new-ck" value="{{ c.contrato | e }}">
+                    <span>{{ c.contrato }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <button class="nu-create-btn" onclick="crearUsuario()">
+        <i class="bi bi-plus-lg me-1"></i>Crear usuario
+    </button>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Usuario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaEdit" class="adm-alert"></div>
+        <input type="hidden" id="editId">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label">Nombre completo *</label>
+              <input id="editNombre" class="form-control"></div>
+          <div class="col-6"><label class="form-label">Nueva contraseña</label>
+              <input id="editPassword" type="password" class="form-control" placeholder="(dejar vacío para no cambiar)"></div>
+          <div class="col-6"><label class="form-label">Rol *</label>
+              <select id="editRol" class="form-select">
+                  {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
+              </select></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarEdit()"><i class="bi bi-check-lg"></i> Actualizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filtrarUsuarios() {
+    const fN = document.getElementById('fNombre').value;
+    const fU = document.getElementById('fUser').value;
+    document.querySelectorAll('.nu-card[data-nombre]').forEach(function(card) {
+        const ok = (!fN || card.dataset.nombre === fN) &&
+                   (!fU || card.dataset.user   === fU);
+        card.style.display = ok ? '' : 'none';
+    });
+}
+
+async function guardarContratos(btn) {
+    const uid = btn.dataset.uid;
+    const sel = Array.from(document.querySelectorAll(".nu-ck-" + uid + ":checked"))
+                     .map(function(cb) { return cb.value; });
+    const r = await apiFetch("/admin/api/usuarios/" + uid + "/contratos", "POST", { contratos: sel });
+    const msg = document.getElementById("msg-" + uid);
+    if (r.success) {
+        msg.style.opacity = "1";
+        setTimeout(function() { msg.style.opacity = "0"; }, 2000);
+    } else {
+        mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+    }
+}
+
+async function toggleActivo(btn, activar) {
+    const nombre = btn.dataset.nombre;
+    if (!confirm((activar ? "¿Activar" : "¿Desactivar") + " al usuario «" + nombre + "»?")) return;
+    const r = await apiFetch("/admin/api/usuarios/" + btn.dataset.id, "PUT", { activo: activar });
+    if (r.success) location.reload();
+    else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+}
+
+async function eliminarUsuario(btn) {
+    if (!confirm("¿Eliminar permanentemente al usuario «" + btn.dataset.nombre + "»?")) return;
+    const r = await apiFetch("/admin/api/usuarios/" + btn.dataset.id, "DELETE");
+    if (r.success) location.reload();
+    else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+}
+
+function abrirEditar(btn) {
+    document.getElementById("editId").value       = btn.dataset.id;
+    document.getElementById("editNombre").value   = btn.dataset.nombre;
+    document.getElementById("editRol").value      = btn.dataset.rol;
+    document.getElementById("editPassword").value = "";
+    abrirModal("modalEdit");
+}
+
+async function guardarEdit() {
+    const id = document.getElementById("editId").value;
+    const data = {
+        nombre_completo: document.getElementById("editNombre").value.trim(),
+        rol:             document.getElementById("editRol").value,
+        password:        document.getElementById("editPassword").value || undefined
+    };
+    const r = await apiFetch("/admin/api/usuarios/" + id, "PUT", data);
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaEdit", r.mensaje, "danger");
+}
+
+async function crearUsuario() {
+    const username  = document.getElementById("newUsername").value.trim();
+    const nombre    = document.getElementById("newNombre").value.trim();
+    const rol       = document.getElementById("newRol").value;
+    const password  = document.getElementById("newPassword").value;
+    const contratos = Array.from(document.querySelectorAll(".new-ck:checked"))
+                          .map(function(cb) { return cb.value; });
+    if (!username || !nombre || !rol || !password) {
+        mostrarAlerta("alertaCreate", "Todos los campos marcados con * son requeridos.", "danger");
+        return;
+    }
+    const r = await apiFetch("/admin/api/usuarios", "POST", {
+        username: username, nombre_completo: nombre,
+        rol: rol, password: password, contrato: null
+    });
+    if (!r.success) { mostrarAlerta("alertaCreate", r.mensaje || "Error", "danger"); return; }
+    if (contratos.length > 0) {
+        await apiFetch("/admin/api/usuarios/" + r.id + "/contratos", "POST", { contratos: contratos });
+    }
+    location.reload();
+}
+</script>
+{% endblock %}

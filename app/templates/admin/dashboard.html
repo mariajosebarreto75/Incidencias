@@ -1,0 +1,79 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-speedometer2 me-2" style="color:var(--adm-accent)"></i>Dashboard</h1>
+        <p class="adm-page-sub">Resumen del sistema — haz clic en una tarjeta para ir a esa sección</p>
+    </div>
+</div>
+
+<div class="adm-stats">
+
+    <a href="{{ url_for('admin_bp.contratos') }}" class="adm-stat" style="text-decoration:none">
+        <div>
+            <div class="adm-stat-num">{{ stats.contratos }}</div>
+            <div class="adm-stat-label">Contratos</div>
+        </div>
+        <i class="bi bi-file-earmark-text adm-stat-icon"></i>
+    </a>
+
+    <a href="{{ url_for('admin_bp.usuarios') }}" class="adm-stat" style="text-decoration:none">
+        <div>
+            <div class="adm-stat-num">{{ stats.usuarios }}</div>
+            <div class="adm-stat-label">Usuarios activos</div>
+        </div>
+        <i class="bi bi-people adm-stat-icon"></i>
+    </a>
+
+    <a href="{{ url_for('admin_bp.personas') }}" class="adm-stat" style="text-decoration:none">
+        <div>
+            <div class="adm-stat-num">{{ stats.personas }}</div>
+            <div class="adm-stat-label">Personas / Cédulas</div>
+        </div>
+        <i class="bi bi-person-vcard adm-stat-icon"></i>
+    </a>
+
+    <a href="{{ url_for('admin_bp.metas') }}" class="adm-stat" style="text-decoration:none">
+        <div>
+            <div class="adm-stat-num">{{ stats.metas }}</div>
+            <div class="adm-stat-label">Metas Operativas</div>
+        </div>
+        <i class="bi bi-graph-up-arrow adm-stat-icon"></i>
+    </a>
+
+    <a href="{{ url_for('admin_bp.desvios') }}" class="adm-stat" style="text-decoration:none">
+        <div>
+            <div class="adm-stat-num">{{ stats.desvios }}</div>
+            <div class="adm-stat-label">Tipos de Desvío</div>
+        </div>
+        <i class="bi bi-exclamation-triangle adm-stat-icon"></i>
+    </a>
+
+    <a href="{{ url_for('admin_bp.parametros') }}" class="adm-stat" style="text-decoration:none">
+        <div>
+            <div class="adm-stat-num">{{ stats.parametros }}</div>
+            <div class="adm-stat-label">Parámetros NEO</div>
+        </div>
+        <i class="bi bi-sliders adm-stat-icon"></i>
+    </a>
+
+    <a href="{{ url_for('admin_bp.actividades') }}" class="adm-stat" style="text-decoration:none">
+        <div>
+            <div class="adm-stat-num">{{ stats.actividades }}</div>
+            <div class="adm-stat-label">Actividades</div>
+        </div>
+        <i class="bi bi-list-task adm-stat-icon"></i>
+    </a>
+
+    <a href="{{ url_for('admin_bp.recursos_neo') }}" class="adm-stat" style="text-decoration:none">
+        <div>
+            <div class="adm-stat-num">{{ stats.recursos_neo }}</div>
+            <div class="adm-stat-label">Recursos NEO</div>
+        </div>
+        <i class="bi bi-building adm-stat-icon"></i>
+    </a>
+
+</div>
+{% endblock %}

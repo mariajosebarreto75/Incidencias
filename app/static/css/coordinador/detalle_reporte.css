@@ -1,0 +1,219 @@
+/* ===== CARDS ===== */
+.det-card {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 14px rgba(0,0,0,.06);
+    overflow: hidden;
+    height: 100%;
+}
+
+.det-card-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 22px;
+    font-weight: 700;
+    font-size: .92rem;
+    color: #fff;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.det-card-header.neo-color  { background: linear-gradient(90deg, #005f6b, #00b8c9); }
+.det-card-header.coor-color { background: linear-gradient(90deg, #1e293b, #007E92); }
+
+.det-respondido-by {
+    font-size: .75rem;
+    font-weight: 500;
+    opacity: .85;
+    margin-left: auto;
+}
+
+.det-card-body { padding: 20px 22px; }
+
+/* ===== CAMPOS LECTURA ===== */
+.det-field { margin-bottom: 10px; }
+
+.det-label {
+    display: block;
+    font-size: .72rem;
+    font-weight: 700;
+    color: #8a9bb0;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 2px;
+}
+
+.det-value {
+    display: block;
+    font-size: .88rem;
+    color: #1a2e35;
+    font-weight: 500;
+}
+
+.det-obs {
+    white-space: pre-wrap;
+    background: #f7fbfc;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: .84rem;
+    color: #3a4d55;
+    border-left: 3px solid #00b8c9;
+}
+
+/* ===== MINIATURAS EVIDENCIA ===== */
+.det-thumb-wrap { text-align: center; }
+
+.det-thumb {
+    width: 110px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid #dce5ea;
+    transition: all .2s;
+    display: block;
+}
+
+.det-thumb:hover { border-color: #00b8c9; transform: scale(1.04); }
+
+.det-thumb-label {
+    display: block;
+    font-size: .70rem;
+    color: #888;
+    margin-top: 4px;
+}
+
+/* ===== FORMULARIO COORDINADOR ===== */
+.det-form-label {
+    font-size: .82rem;
+    font-weight: 700;
+    color: #3a4d55;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 5px;
+}
+
+.rpt-field .form-control,
+.rpt-field .form-select {
+    border-radius: 9px;
+    border: 1.5px solid #dce5ea;
+    font-size: .88rem;
+    padding: 9px 12px;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.rpt-field .form-control:focus,
+.rpt-field .form-select:focus {
+    border-color: #00B7C7;
+    box-shadow: 0 0 0 3px rgba(0,183,199,.12);
+}
+
+/* ===== UPLOAD ÁREA ===== */
+.upload-area-coor {
+    border: 2px dashed #dce5ea;
+    border-radius: 12px;
+    padding: 22px 14px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    background: #f7fbfc;
+    transition: all .2s;
+}
+
+.upload-area-coor:hover,
+.upload-area-coor.drag-over {
+    border-color: #00B7C7;
+    background: #e8fafc;
+}
+
+.upload-area-coor input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.upload-ph-coor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #8a9bb0;
+    font-size: .83rem;
+}
+
+.upload-ph-coor i { font-size: 1.8rem; color: #00B7C7; }
+
+.upload-prev-coor {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 10px;
+    display: none;
+    border: 2px solid #00B7C7;
+}
+
+.upload-prev-coor.visible { display: block; }
+
+.upload-spin-coor {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.85);
+    border-radius: 12px;
+    font-size: .85rem;
+    font-weight: 600;
+    z-index: 5;
+}
+
+.upload-estado     { font-size: .78rem; min-height: 18px; }
+.upload-estado.ok  { color: #2e9e55; }
+.upload-estado.err { color: #c0392b; }
+
+/* ===== BTN GUARDAR ===== */
+.btn-coor-guardar {
+    background: linear-gradient(135deg, #00B7C7, #007E92);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 24px;
+    font-size: .95rem;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(0,183,199,.35);
+    transition: all .25s;
+    cursor: pointer;
+}
+
+.btn-coor-guardar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(0,183,199,.45);
+}
+
+.btn-coor-guardar:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+
+/* ===== BADGES CONFORMIDAD ===== */
+.badge-conf {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: .80rem;
+    font-weight: 700;
+}
+
+.badge-conf.conforme    { background: #e8f5ee; color: #2e7d32; }
+.badge-conf.no-conforme { background: #fff0f0; color: #c0392b; }
+
+/* ===== BADGE-REQ ===== */
+.badge-req {
+    font-size: .68rem;
+    background: #fff0f0;
+    color: #c0392b;
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-weight: 600;
+}

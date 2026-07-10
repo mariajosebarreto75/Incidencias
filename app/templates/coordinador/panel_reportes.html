@@ -1,0 +1,444 @@
+{% extends 'coordinador/navbarcoor.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/coordinador/PanelCoor.css') }}">
+<style>
+/* ── Notif drawer coordinador ──────────────────────── */
+#btnNotifDrawerCoor {
+    position: fixed; bottom: 28px; left: 28px; z-index: 1040;
+    background: #0a1628; color: #e53935;
+    border: 2px solid #e53935; border-radius: 50px;
+    padding: 10px 20px; font-size: .82rem; font-weight: 800;
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.35);
+    cursor: pointer; transition: background .15s, color .15s;
+}
+#btnNotifDrawerCoor:hover { background: #e53935; color: #fff; }
+#btnNotifDrawerCoor .ndc-badge {
+    background: #e53935; color: #fff;
+    border-radius: 20px; padding: 1px 8px;
+    font-size: .7rem; font-weight: 900; display: none;
+}
+#btnNotifDrawerCoor:hover .ndc-badge { background: #fff; color: #e53935; }
+
+#ndcOverlay {
+    display: none; position: fixed; inset: 0; z-index: 1045;
+    background: rgba(0,0,0,.45); backdrop-filter: blur(2px);
+}
+#ndcDrawer {
+    position: fixed; top: 0; left: -440px; bottom: 0; width: 400px;
+    z-index: 1050; background: #0a1628;
+    display: flex; flex-direction: column;
+    box-shadow: 4px 0 30px rgba(0,0,0,.5);
+    transition: left .28s cubic-bezier(.4,0,.2,1);
+}
+#ndcDrawer.open { left: 0; }
+.ndc-header {
+    padding: 14px 16px 10px; background: #060f1e;
+    border-bottom: 1px solid #1e3a5f; flex-shrink: 0;
+}
+.ndc-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.ndc-title { font-size: .88rem; font-weight: 800; color: #e2e8f0; text-transform: uppercase; letter-spacing: .07em; display: flex; align-items: center; gap: 8px; }
+.ndc-total { background: #e53935; color: #fff; border-radius: 20px; padding: 2px 10px; font-size: .78rem; font-weight: 700; }
+.ndc-close { background: none; border: none; color: #7a97b0; font-size: 1.2rem; cursor: pointer; padding: 2px 6px; border-radius: 6px; }
+.ndc-close:hover { background: #1e3a5f; color: #e2e8f0; }
+.ndc-tabs { display: flex; gap: 4px; }
+.ndc-tab { flex: 1; text-align: center; padding: 5px 0; border-radius: 6px; font-size: .72rem; font-weight: 700; color: #7a97b0; background: transparent; border: 1px solid transparent; cursor: pointer; transition: all .15s; }
+.ndc-tab.active { background: #e53935; color: #fff; border-color: #e53935; }
+.ndc-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+.ndc-list::-webkit-scrollbar { width: 4px; }
+.ndc-list::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 4px; }
+.ndc-card { padding: 12px 14px; border-bottom: 1px solid rgba(30,58,95,.6); transition: background .1s; }
+.ndc-card:hover { background: #101e35; }
+.ndc-card.gestionada { opacity: .45; }
+.ndc-empty { padding: 48px 20px; text-align: center; color: #7a97b0; }
+.ndc-empty i { font-size: 2.2rem; opacity: .3; display: block; margin-bottom: 10px; }
+@media (max-width: 520px) { #ndcDrawer { width: 100%; left: -100%; } }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- HEADER -->
+    <div class="coor-rpt-header mb-4">
+        <div>
+            <h2 class="coor-rpt-title">
+                <i class="bi bi-bar-chart-line-fill me-2"></i>Panel de Reportes NEO
+            </h2>
+            <p class="coor-rpt-sub">
+                Revise las incidencias de sus contratos y registre su respuesta
+            </p>
+        </div>
+        <span class="badge-coor-total">
+            <i class="bi bi-files me-1"></i>
+            {{ reportes|length }} reporte{% if reportes|length != 1 %}s{% endif %}
+        </span>
+    </div>
+
+    <!-- FILTRO POR CONTRATO -->
+    {% if lista_contratos|length > 1 %}
+    <div class="coor-contratos-bar mb-3">
+        <span class="coor-contratos-label">
+            <i class="bi bi-file-earmark-text me-1"></i>Contrato:
+        </span>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('coordinador.panel_reportes') }}"
+               class="btn-contrato {% if contrato_activo == 'todos' %}active{% endif %}">
+                Todos
+            </a>
+            {% for c in lista_contratos %}
+            <a href="{{ url_for('coordinador.panel_reportes', contrato=c,
+                         fecha_ini=filtros.fecha_ini, fecha_fin=filtros.fecha_fin,
+                         recurso=filtros.recurso) }}"
+               class="btn-contrato {% if contrato_activo == c %}active{% endif %}"
+               title="{{ c }}">
+                {{ c | truncate(30, true, '…') }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% elif lista_contratos|length == 1 %}
+    <div class="coor-contrato-unico mb-3">
+        <i class="bi bi-file-earmark-check-fill me-1"></i>
+        Contrato: <strong>{{ lista_contratos[0] }}</strong>
+    </div>
+    {% endif %}
+
+    <!-- FILTROS FECHA Y RECURSO -->
+    <form method="GET" action="{{ url_for('coordinador.panel_reportes') }}"
+          class="coor-filtros-form mb-3">
+
+        {% if contrato_activo != 'todos' %}
+        <input type="hidden" name="contrato" value="{{ contrato_activo }}">
+        {% endif %}
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">
+                <i class="bi bi-calendar-range me-1"></i>Desde
+            </label>
+            <input type="date" name="fecha_ini" class="filtro-input"
+                   value="{{ filtros.fecha_ini }}">
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">
+                <i class="bi bi-calendar-range me-1"></i>Hasta
+            </label>
+            <input type="date" name="fecha_fin" class="filtro-input"
+                   value="{{ filtros.fecha_fin }}">
+        </div>
+
+        <div class="filtro-grupo filtro-recurso">
+            <label class="filtro-label">
+                <i class="bi bi-person-gear me-1"></i>Recurso
+            </label>
+            <select name="recurso" class="filtro-input">
+                <option value="">— Todos —</option>
+                {% for r in lista_recursos %}
+                <option value="{{ r }}" {% if filtros.recurso == r %}selected{% endif %}>
+                    {{ r }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filtro-acciones">
+            <button type="submit" class="btn-filtro-aplicar">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+            <a href="{{ url_for('coordinador.panel_reportes',
+                         contrato=contrato_activo if contrato_activo != 'todos' else '') }}"
+               class="btn-filtro-limpiar">
+                <i class="bi bi-x-circle me-1"></i>Limpiar
+            </a>
+        </div>
+
+    </form>
+
+    <!-- FILTROS RÁPIDOS POR ESTADO -->
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+        <span class="text-muted small fw-semibold">Ver:</span>
+        <button class="btn-filtro active" data-filtro="todos">
+            <i class="bi bi-list-ul me-1"></i>Todos
+        </button>
+        <button class="btn-filtro pendiente" data-filtro="abierto"> 
+            <i class="bi bi-hourglass-split me-1"></i>Sin respuesta
+        </button>
+        <button class="btn-filtro con-respuesta" data-filtro="con-respuesta">
+            <i class="bi bi-chat-left-text-fill me-1"></i>En espera de conformidad
+        </button>
+        <button class="btn-filtro conforme" data-filtro="conforme">
+            <i class="bi bi-check-circle-fill me-1"></i>Conformes
+        </button>
+        <button class="btn-filtro no-conforme" data-filtro="no-conforme">
+            <i class="bi bi-x-circle-fill me-1"></i>No conformes
+        </button>
+    </div>
+
+    <!-- TABLA -->
+    {% if reportes %}
+    <div class="coor-tabla-wrap">
+        <table class="table coor-tabla">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Creación</th>
+                    <th>Fecha reporte</th>
+                    {% if lista_contratos|length > 1 and contrato_activo == 'todos' %}
+                    <th>Contrato</th>
+                    {% endif %}
+                    <th>Recurso</th>
+                    <th>Tipo incidencia</th>
+                    <th>Impacto</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reportes %}
+                {% if r.conformidad_neo == 'No conforme' %}
+                    {% set cat = 'no-conforme' %}
+                {% elif r.conformidad_neo == 'Conforme' %}
+                    {% set cat = 'conforme' %}
+                {% elif r.estado == 'Respondido' %}
+                    {% set cat = 'con-respuesta' %}
+                {% else %}
+                    {% set cat = 'abierto' %}
+                {% endif %}
+                <tr class="coor-fila" data-categoria="{{ cat }}">
+                    <td class="fw-bold text-secondary">#{{ r.id }}</td>
+                    <td class="text-muted small">
+                        {{ r.fecha_creado.strftime('%d/%m/%Y %H:%M') if r.fecha_creado else '—' }}
+                    </td>
+                    <td>{{ r.fecha_reporte.strftime('%d/%m/%Y') if r.fecha_reporte else '—' }}</td>
+                    {% if lista_contratos|length > 1 and contrato_activo == 'todos' %}
+                    <td class="text-truncate" style="max-width:160px;" title="{{ r.contrato }}">
+                        {{ r.contrato }}
+                    </td>
+                    {% endif %}
+                    <td>{{ r.recurso }}</td>
+                    <td>{{ r.tipo_incidencia }}</td>
+                    <td>
+                        {% if r.impacto == 'Alto' %}
+                            <span class="badge-impacto alto">Alto</span>
+                        {% elif r.impacto == 'Medio' %}
+                            <span class="badge-impacto medio">Medio</span>
+                        {% elif r.impacto == 'Bajo' %}
+                            <span class="badge-impacto bajo">Bajo</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if cat == 'no-conforme' %}
+                            <span class="badge-estado no-conforme">
+                                <i class="bi bi-x-circle-fill me-1"></i>No conforme
+                            </span>
+                        {% elif cat == 'conforme' %}
+                            <span class="badge-estado conforme">
+                                <i class="bi bi-check-circle-fill me-1"></i>Conforme
+                            </span>
+                        {% elif cat == 'con-respuesta' %}
+                            <span class="badge-estado con-respuesta">
+                                <i class="bi bi-chat-left-text-fill me-1"></i>Con respuesta
+                            </span>
+                        {% else %}
+                            <span class="badge-estado abierto">
+                                <i class="bi bi-hourglass-split me-1"></i>Sin respuesta
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('coordinador.detalle_reporte', id=r.id) }}"
+                           class="btn-ver-detalle">
+                            {% if cat == 'abierto' %}
+                                <i class="bi bi-pencil-square me-1"></i>Responder
+                            {% else %}
+                                <i class="bi bi-eye me-1"></i>Ver
+                            {% endif %}
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div class="coor-empty">
+        <i class="bi bi-inbox"></i>
+        <p>
+            {% if filtros.fecha_ini or filtros.fecha_fin or filtros.recurso %}
+                No hay reportes que coincidan con los filtros aplicados.
+            {% elif lista_contratos %}
+                No hay reportes para
+                {% if contrato_activo != 'todos' %}<strong>{{ contrato_activo }}</strong>{% else %}sus contratos{% endif %}
+                aún.
+            {% else %}
+                No tiene contratos asignados.
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- ══ BOTÓN NOTIF COORDINADOR (IZQUIERDA) ════════════════════ -->
+<button id="btnNotifDrawerCoor" onclick="ndcAbrir()">
+    <i class="bi bi-bell-fill"></i>
+    Notificaciones
+    <span class="ndc-badge" id="ndcBadge">0</span>
+</button>
+
+<div id="ndcOverlay" onclick="ndcCerrar()"></div>
+
+<div id="ndcDrawer">
+    <div class="ndc-header">
+        <div class="ndc-title-row">
+            <div class="ndc-title">
+                <i class="bi bi-bell-fill" style="color:#e53935"></i>
+                Notificaciones
+                <span class="ndc-total" id="ndcTotal">0</span>
+            </div>
+            <button class="ndc-close" onclick="ndcCerrar()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="ndc-tabs">
+            <button class="ndc-tab active" data-ndc="pendiente" onclick="ndcSetTab(this)">Pendientes</button>
+            <button class="ndc-tab"        data-ndc="cerradas"  onclick="ndcSetTab(this)">Cerradas</button>
+        </div>
+    </div>
+    <div class="ndc-list" id="ndcList">
+        <div class="ndc-empty"><i class="bi bi-arrow-up-circle"></i>Abre el panel para ver las notificaciones</div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const btns = document.querySelectorAll(".btn-filtro");
+    const filas = document.querySelectorAll(".coor-fila");
+
+    btns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            btns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const filtro = btn.dataset.filtro;
+            filas.forEach(function (fila) {
+                fila.style.display =
+                    (filtro === "todos" || fila.dataset.categoria === filtro) ? "" : "none";
+            });
+        });
+    });
+})();
+
+// ══ NOTIFICACIONES COORDINADOR ════════════════════════════════
+const NDC_ICONOS  = { "nuevo_reporte":"bi-file-earmark-text", "reporte_respondido":"bi-chat-left-text-fill", "no_conforme":"bi-x-circle-fill" };
+const NDC_COLORES = { "nuevo_reporte":"#f5a623", "reporte_respondido":"#4fc3f7", "no_conforme":"#e53935" };
+const NDC_LABELS  = { "nuevo_reporte":"Nuevo reporte", "reporte_respondido":"Respondido", "no_conforme":"No conforme" };
+
+let ndcTabActual = "pendiente";
+
+function ndcRefreshBadge() {
+    fetch("/notificaciones/badge")
+        .then(r => r.json())
+        .then(d => {
+            const b = document.getElementById("ndcBadge");
+            b.textContent   = d.pendientes;
+            b.style.display = d.pendientes > 0 ? "" : "none";
+        }).catch(() => {});
+}
+ndcRefreshBadge();
+setInterval(ndcRefreshBadge, 30000);
+
+function ndcAbrir() {
+    document.getElementById("ndcOverlay").style.display = "block";
+    document.getElementById("ndcDrawer").classList.add("open");
+    ndcCargar();
+}
+function ndcCerrar() {
+    document.getElementById("ndcOverlay").style.display = "none";
+    document.getElementById("ndcDrawer").classList.remove("open");
+}
+function ndcSetTab(btn) {
+    document.querySelectorAll(".ndc-tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    ndcTabActual = btn.dataset.ndc;
+    ndcCargar();
+}
+
+async function ndcCargar() {
+    const list = document.getElementById("ndcList");
+    list.innerHTML = '<div class="ndc-empty"><div class="spinner-border spinner-border-sm text-danger"></div><br><br>Cargando…</div>';
+    try {
+        const r   = await fetch("/notificaciones");
+        let lista = await r.json();
+        if (ndcTabActual === "pendiente") lista = lista.filter(n => !n.gestionada);
+        else lista = lista.filter(n => n.gestionada);
+
+        document.getElementById("ndcTotal").textContent = lista.length;
+
+        if (!lista.length) {
+            const msg = ndcTabActual === "pendiente" ? "Sin notificaciones pendientes" : "Sin notificaciones cerradas";
+            list.innerHTML = `<div class="ndc-empty"><i class="bi bi-bell-slash"></i>${msg}</div>`;
+            return;
+        }
+
+        list.innerHTML = lista.map(n => {
+            const ico   = NDC_ICONOS[n.tipo]  || "bi-bell";
+            const color = NDC_COLORES[n.tipo] || "#f5a623";
+            const label = NDC_LABELS[n.tipo]  || n.tipo;
+            const esNc  = n.tipo === "no_conforme";
+            const boton = n.gestionada
+                ? ""
+                : esNc
+                    ? `<button onclick="ndcVisualizado(${n.id})"
+                               style="font-size:.72rem;padding:4px 12px;border-radius:6px;
+                                      border:1px solid #557a9a;background:none;color:#7a97b0;cursor:pointer;margin-top:6px">
+                           <i class="bi bi-eye me-1"></i>Visualizado
+                       </button>`
+                    : `<button onclick="ndcGestionar(${n.id}, ${n.reporte_id})"
+                               style="font-size:.72rem;padding:4px 12px;border-radius:6px;
+                                      border:none;background:${color};color:#0a1628;cursor:pointer;margin-top:6px;font-weight:700">
+                           <i class="bi bi-arrow-right-circle me-1"></i>Gestionar
+                       </button>`;
+            return `<div class="ndc-card${n.gestionada ? ' gestionada' : ''}" id="ndcCard-${n.id}">
+                <div style="display:flex;gap:10px;align-items:flex-start">
+                    <i class="bi ${ico}" style="color:${color};font-size:1.05rem;margin-top:2px;flex-shrink:0"></i>
+                    <div style="flex:1;min-width:0">
+                        <div style="font-size:.78rem;font-weight:700;color:#e2e8f0;margin-bottom:3px">${n.mensaje}</div>
+                        ${n.tipo_incidencia ? `<div style="font-size:.7rem;color:#7a97b0">${n.tipo_incidencia}</div>` : ""}
+                        ${n.contrato ? `<div style="font-size:.7rem;color:#4fc3f7">${n.contrato}${n.recurso ? " · " + n.recurso : ""}</div>` : ""}
+                        <div style="font-size:.68rem;color:#557a9a">${n.fecha}</div>
+                        <span style="font-size:.68rem;border-radius:4px;padding:1px 7px;font-weight:700;
+                                     display:inline-block;margin-top:4px;
+                                     background:${color}20;color:${color};border:1px solid ${color}50">${label}</span>
+                        <div>${boton}</div>
+                    </div>
+                </div>
+            </div>`;
+        }).join("");
+    } catch(e) {
+        list.innerHTML = `<div class="ndc-empty"><i class="bi bi-exclamation-triangle"></i>Error: ${e.message}</div>`;
+    }
+}
+
+function ndcGestionar(nid, repId) {
+    fetch(`/notificaciones/${nid}/gestionar`, {method:"POST"})
+        .then(r => r.json())
+        .then(d => {
+            if (d.ok) {
+                ndcCargar();
+                ndcRefreshBadge();
+                window.open(`/coordinador/reporte/${repId}`, "_blank");
+            }
+        });
+}
+function ndcVisualizado(nid) {
+    fetch(`/notificaciones/${nid}/visualizado`, {method:"POST"})
+        .then(r => r.json())
+        .then(d => { if (d.ok) { ndcCargar(); ndcRefreshBadge(); } });
+}
+</script>
+
+{% endblock %}

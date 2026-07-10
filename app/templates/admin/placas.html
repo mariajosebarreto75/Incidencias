@@ -1,0 +1,157 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Placas por Contrato{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-truck me-2" style="color:var(--adm-accent)"></i>Placas por Contrato</h1>
+        <p class="adm-page-sub">{{ placas|length }} placa(s) registrada(s) — vehículos disponibles en distribución operativa</p>
+    </div>
+    <button class="btn-adm-primary" data-bs-toggle="modal" data-bs-target="#modalAdd">
+        <i class="bi bi-plus-lg"></i> Nueva placa
+    </button>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<div class="adm-card">
+    <div class="adm-card-header">
+        <span class="adm-card-title">Catálogo de placas</span>
+        <div class="adm-search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Buscar por placa o contrato..." oninput="filtrarTabla(this.value,'tbody')">
+        </div>
+    </div>
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr><th>#</th><th>Placa</th><th>Contrato</th><th>Acciones</th></tr>
+            </thead>
+            <tbody id="tbody">
+            {% for p in placas %}
+            <tr>
+                <td style="color:#94a3b8">{{ loop.index }}</td>
+                <td><strong style="font-family:monospace;letter-spacing:.05em;color:#00b8c9">{{ p.placa }}</strong></td>
+                <td style="font-size:.78rem;color:#64748b">{{ p.contrato }}</td>
+                <td class="actions">
+                    <button class="btn-edit"
+                        data-id="{{ p.id }}"
+                        data-placa="{{ p.placa | e }}"
+                        data-contrato="{{ p.contrato | e }}"
+                        onclick="abrirEditar(this)">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    <button class="btn-del" data-id="{{ p.id }}" onclick="eliminar(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="adm-empty"><i class="bi bi-inbox"></i>Sin placas registradas</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL AGREGAR -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nueva Placa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaAdd" class="adm-alert"></div>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Placa *</label>
+            <input id="addPlaca" class="form-control" placeholder="Ej: ABC123" style="text-transform:uppercase">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Contrato *</label>
+            <select id="addContrato" class="form-select">
+              <option value="">— Seleccione contrato —</option>
+              {% for c in contratos %}<option value="{{ c.contrato }}">{{ c.contrato }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarAdd()"><i class="bi bi-check-lg"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Placa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaEdit" class="adm-alert"></div>
+        <input type="hidden" id="editId">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Placa *</label>
+            <input id="editPlaca" class="form-control" style="text-transform:uppercase">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Contrato *</label>
+            <select id="editContrato" class="form-select">
+              <option value="">— Seleccione contrato —</option>
+              {% for c in contratos %}<option value="{{ c.contrato }}">{{ c.contrato }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarEdit()"><i class="bi bi-check-lg"></i> Actualizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function abrirEditar(btn) {
+    document.getElementById("editId").value       = btn.dataset.id;
+    document.getElementById("editPlaca").value    = btn.dataset.placa;
+    document.getElementById("editContrato").value = btn.dataset.contrato;
+    abrirModal("modalEdit");
+}
+function eliminar(btn) {
+    if (!confirm("¿Eliminar esta placa?")) return;
+    apiFetch("/admin/api/placas/" + btn.dataset.id, "DELETE").then(function(r) {
+        if (r.success) location.reload();
+        else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+    });
+}
+async function guardarAdd() {
+    const data = {
+        placa:    document.getElementById("addPlaca").value.trim().toUpperCase(),
+        contrato: document.getElementById("addContrato").value
+    };
+    const r = await apiFetch("/admin/api/placas", "POST", data);
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaAdd", r.mensaje, "danger");
+}
+async function guardarEdit() {
+    const data = {
+        placa:    document.getElementById("editPlaca").value.trim().toUpperCase(),
+        contrato: document.getElementById("editContrato").value
+    };
+    const r = await apiFetch("/admin/api/placas/" + document.getElementById("editId").value, "PUT", data);
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaEdit", r.mensaje, "danger");
+}
+</script>
+{% endblock %}

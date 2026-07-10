@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incidencias NEO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #f0f4f8;
+        }
+
+        /* Panel izquierdo decorativo */
+        .login-left {
+            flex: 1;
+            background: linear-gradient(160deg, #005f6b 0%, #00b8c9 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2.5rem;
+            min-height: 100vh;
+        }
+
+        .login-left img {
+            width: 110px;
+            filter: drop-shadow(0 6px 24px rgba(0,0,0,.25));
+            margin-bottom: 2rem;
+        }
+
+        .login-left-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            text-align: center;
+            line-height: 1.25;
+        }
+
+        .login-left-sub {
+            font-size: .88rem;
+            color: rgba(255,255,255,.7);
+            text-align: center;
+            margin-top: .6rem;
+            max-width: 260px;
+            line-height: 1.6;
+        }
+
+        .login-left-badge {
+            margin-top: 2.5rem;
+            background: rgba(255,255,255,.15);
+            border: 1px solid rgba(255,255,255,.25);
+            border-radius: 30px;
+            padding: .45rem 1.1rem;
+            font-size: .75rem;
+            color: rgba(255,255,255,.85);
+            font-weight: 600;
+            letter-spacing: .04em;
+        }
+
+        /* Panel derecho — formulario */
+        .login-right {
+            width: 420px;
+            flex-shrink: 0;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem 2rem;
+            box-shadow: -4px 0 32px rgba(0,0,0,.06);
+        }
+
+        .login-form-wrap { width: 100%; max-width: 340px; }
+
+        .login-greeting {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: .3rem;
+        }
+
+        .login-greeting-sub {
+            font-size: .83rem;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+        }
+
+        .form-group { margin-bottom: 1.1rem; }
+
+        .form-label {
+            display: block;
+            font-size: .78rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: .45rem;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap .input-icon {
+            position: absolute;
+            left: .85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: .95rem;
+            pointer-events: none;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: .65rem .9rem .65rem 2.4rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: .9rem;
+            color: #0f172a;
+            background: #f8fafc;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s, background .2s;
+        }
+
+        .form-control:focus {
+            border-color: #00b8c9;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(0,184,201,.12);
+        }
+
+        .form-control::placeholder { color: #cbd5e1; }
+
+        /* toggle contraseña */
+        .btn-toggle-pwd {
+            position: absolute;
+            right: .75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 1rem;
+            padding: .1rem;
+            transition: color .2s;
+        }
+        .btn-toggle-pwd:hover { color: #00b8c9; }
+
+        /* alertas */
+        .alert-login {
+            border-radius: 10px;
+            padding: .7rem 1rem;
+            font-size: .82rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .alert-danger-dark  { background: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626; }
+        .alert-success-dark { background: #f0fdf4; border: 1.5px solid #bbf7d0; color: #16a34a; }
+
+        /* botón */
+        .btn-login {
+            width: 100%;
+            padding: .72rem;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #005f6b, #00b8c9);
+            color: #fff;
+            font-size: .93rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: .5rem;
+            letter-spacing: .02em;
+            transition: opacity .2s, transform .1s;
+            box-shadow: 0 4px 14px rgba(0,184,201,.3);
+        }
+        .btn-login:hover  { opacity: .9; }
+        .btn-login:active { transform: scale(.98); }
+
+        /* responsive */
+        @media (max-width: 680px) {
+            .login-left  { display: none; }
+            .login-right { width: 100%; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Panel izquierdo -->
+    <div class="login-left">
+        <img src="/static/img/img2.png" alt="Logo NEO">
+        <div class="login-left-title">Incidencias NEO</div>
+        <div class="login-left-sub">Plataforma de gestión operativa de campo para equipos de trabajo</div>
+        <div class="login-left-badge"><i class="bi bi-shield-check me-1"></i> Acceso seguro</div>
+    </div>
+
+    <!-- Panel derecho — formulario -->
+    <div class="login-right">
+        <div class="login-form-wrap">
+
+            <div class="login-greeting">Iniciar sesión</div>
+            <div class="login-greeting-sub">Ingresa tus credenciales para continuar</div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert-login alert-{{ 'danger-dark' if category == 'danger' else 'success-dark' }}">
+                    <i class="bi bi-{{ 'exclamation-circle-fill' if category == 'danger' else 'check-circle-fill' }}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="form-group">
+                    <label class="form-label">Usuario</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-person input-icon"></i>
+                        <input type="text" name="username" class="form-control"
+                               placeholder="Tu nombre de usuario" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Contraseña</label>
+                    <div class="input-wrap">
+                        <i class="bi bi-lock input-icon"></i>
+                        <input type="password" id="pwdInput" name="password" class="form-control"
+                               placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="btn-toggle-pwd" onclick="togglePwd()" title="Mostrar/ocultar">
+                            <i class="bi bi-eye" id="pwdIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Ingresar
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+    function togglePwd() {
+        const inp  = document.getElementById('pwdInput');
+        const icon = document.getElementById('pwdIcon');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+        } else {
+            inp.type = 'password';
+            icon.className = 'bi bi-eye';
+        }
+    }
+    </script>
+</body>
+</html>

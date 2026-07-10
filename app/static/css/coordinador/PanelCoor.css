@@ -1,0 +1,274 @@
+/* ===== HEADER PANEL ===== */
+.coor-rpt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px 28px;
+    border-left: 5px solid #00B7C7;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+
+.coor-rpt-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #1a2e35;
+    margin: 0 0 4px;
+}
+
+.coor-rpt-sub { font-size: .83rem; color: #6c757d; margin: 0; }
+
+.badge-coor-total {
+    background: #e0f8fb;
+    color: #005f6b;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: .80rem;
+    font-weight: 700;
+}
+
+/* ===== BARRA DE CONTRATOS ===== */
+.coor-contratos-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    flex-wrap: wrap;
+}
+
+.coor-contratos-label {
+    font-size: .78rem;
+    font-weight: 700;
+    color: #8a9bb0;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    white-space: nowrap;
+}
+
+.btn-contrato {
+    background: #f0f4f6;
+    border: 1.5px solid #dce5ea;
+    color: #3a4d55;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: .80rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .2s;
+    white-space: nowrap;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+}
+
+.btn-contrato:hover  { background: #e0f0f2; border-color: #00B7C7; color: #005f6b; }
+.btn-contrato.active { background: #00B7C7; border-color: #00B7C7; color: #fff; }
+
+.coor-contrato-unico {
+    background: #e0f8fb;
+    color: #005f6b;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: .84rem;
+    border: 1.5px solid #9de5ed;
+    display: inline-block;
+}
+
+/* ===== FORMULARIO DE FILTROS ===== */
+.coor-filtros-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+
+.filtro-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.filtro-recurso { flex: 1; min-width: 160px; }
+
+.filtro-label {
+    font-size: .72rem;
+    font-weight: 700;
+    color: #8a9bb0;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.filtro-input {
+    border: 1.5px solid #dce5ea;
+    border-radius: 9px;
+    padding: 7px 10px;
+    font-size: .85rem;
+    color: #1a2e35;
+    background: #f7fbfc;
+    transition: border-color .2s;
+    height: 36px;
+}
+
+.filtro-input:focus {
+    outline: none;
+    border-color: #00B7C7;
+    box-shadow: 0 0 0 3px rgba(0,183,199,.12);
+}
+
+.filtro-acciones { display: flex; gap: 8px; align-items: flex-end; }
+
+.btn-filtro-aplicar {
+    background: #00B7C7;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 7px 16px;
+    font-size: .82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    height: 36px;
+    white-space: nowrap;
+}
+
+.btn-filtro-aplicar:hover { background: #007E92; }
+
+.btn-filtro-limpiar {
+    background: #f0f4f6;
+    color: #555;
+    border: 1.5px solid #dce5ea;
+    border-radius: 9px;
+    padding: 6px 14px;
+    font-size: .82rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .2s;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.btn-filtro-limpiar:hover { background: #ffe8e8; border-color: #f5a0a0; color: #c0392b; }
+
+/* ===== FILTROS RÁPIDOS ESTADO ===== */
+.btn-filtro {
+    background: #f0f4f6;
+    border: 1.5px solid #dce5ea;
+    color: #555;
+    border-radius: 20px;
+    padding: 5px 16px;
+    font-size: .80rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+}
+
+.btn-filtro:hover,
+.btn-filtro.active {
+    background: #00B7C7;
+    border-color: #00B7C7;
+    color: #fff;
+}
+
+.btn-filtro.pendiente.active     { background: #5a7ec4; border-color: #5a7ec4; }
+.btn-filtro.con-respuesta.active { background: #00929f; border-color: #00929f; }
+.btn-filtro.conforme.active     { background: #2e9e55; border-color: #2e9e55; }
+.btn-filtro.no-conforme.active  { background: #c0392b; border-color: #c0392b; }
+
+/* ===== TABLA ===== */
+.coor-tabla-wrap {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    overflow: hidden;
+}
+
+.coor-tabla { margin: 0; font-size: .87rem; }
+
+.coor-tabla thead th {
+    background: #1e293b;
+    color: rgba(255,255,255,.85);
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    border: none;
+    padding: 12px 14px;
+    white-space: nowrap;
+}
+
+.coor-tabla tbody td {
+    padding: 11px 14px;
+    border-color: #f0f4f6;
+    vertical-align: middle;
+}
+
+.coor-fila:hover { background: #f7fbfc; }
+
+/* BADGES IMPACTO */
+.badge-impacto {
+    display: inline-block;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: .73rem;
+    font-weight: 700;
+}
+
+.badge-impacto.alto  { background: #fff0f0; color: #c0392b; }
+.badge-impacto.medio { background: #fff8e8; color: #b7791f; }
+.badge-impacto.bajo  { background: #e8f5ee; color: #2e9e55; }
+
+/* BADGES ESTADO */
+.badge-estado {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: .75rem;
+    font-weight: 700;
+}
+
+.badge-estado.abierto      { background: #eef2fb;  color: #5a7ec4; }
+.badge-estado.con-respuesta { background: #e0f7f8; color: #00737e; }
+.badge-estado.conforme     { background: #e8f5ee;  color: #2e7d32; }
+.badge-estado.no-conforme  { background: #fff0f0;  color: #c0392b; }
+
+/* BTN VER DETALLE */
+.btn-ver-detalle {
+    display: inline-flex;
+    align-items: center;
+    background: #00B7C7;
+    color: #fff;
+    border-radius: 8px;
+    padding: 5px 14px;
+    font-size: .78rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .2s;
+    white-space: nowrap;
+}
+
+.btn-ver-detalle:hover { background: #007E92; color: #fff; transform: translateY(-1px); }
+
+/* EMPTY STATE */
+.coor-empty {
+    text-align: center;
+    padding: 64px 20px;
+    color: #adb5bd;
+    font-size: 1rem;
+}
+
+.coor-empty i { font-size: 3.5rem; display: block; margin-bottom: 12px; }

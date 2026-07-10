@@ -1,0 +1,95 @@
+/* ===== VARIABLES COORDINADOR ===== */
+:root {
+    --coor-primary:  #00B7C7;
+    --coor-secondary: #007E92;
+    --coor-dark:     #1F2937;
+    --coor-bg:       #F4F7FA;
+}
+
+/* ===== BODY ===== */
+body {
+    background-color: var(--coor-bg);
+    font-family: "Segoe UI", sans-serif;
+}
+
+/* ===== NAVBAR ===== */
+.navbar-coor {
+    background: linear-gradient(90deg, #005f6b, #00b8c9);
+    box-shadow: 0 3px 16px rgba(0, 95, 107, 0.35);
+    padding: 10px 0;
+}
+
+/* BRAND */
+.coor-brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.coor-brand-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: .5px;
+}
+
+.coor-brand-sub {
+    font-size: .67rem;
+    color: rgba(255, 255, 255, 0.65);
+    letter-spacing: .3px;
+}
+
+/* LINKS */
+.coor-nav-link {
+    color: rgba(255, 255, 255, 0.88) !important;
+    font-size: .88rem;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 6px 12px !important;
+    transition: all .2s;
+}
+
+.coor-nav-link:hover,
+.coor-nav-link.active {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+/* USER CHIP */
+.coor-user-chip {
+    font-size: .80rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* BTN SALIR */
+.coor-btn-logout {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    border-radius: 8px;
+    font-size: .80rem;
+    font-weight: 600;
+    transition: all .2s;
+}
+
+.coor-btn-logout:hover {
+    background: rgba(255, 255, 255, 0.28);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* ===== CARDS ===== */
+.card {
+    border: none;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+    background: var(--coor-secondary);
+    color: white;
+    font-weight: 600;
+    border: none;
+}

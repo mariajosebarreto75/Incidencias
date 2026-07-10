@@ -1,0 +1,266 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Personas{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-person-vcard me-2" style="color:var(--adm-accent)"></i>Personas / Cédulas</h1>
+        <p class="adm-page-sub">{{ personas|length }} persona(s) registrada(s)</p>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <a href="/admin/api/personas/export" class="btn-adm-secondary" style="text-decoration:none">
+            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+        </a>
+        <button class="btn-adm-secondary" data-bs-toggle="modal" data-bs-target="#modalImport">
+            <i class="bi bi-upload"></i> Importar Excel
+        </button>
+        <button class="btn-adm-primary" data-bs-toggle="modal" data-bs-target="#modalAdd">
+            <i class="bi bi-plus-lg"></i> Nueva persona
+        </button>
+    </div>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<div class="adm-card">
+    <div class="adm-card-header" style="flex-wrap:wrap;gap:.6rem">
+        <span class="adm-card-title">Directorio de personas</span>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto">
+            <div class="adm-search" style="min-width:190px">
+                <i class="bi bi-search"></i>
+                <input id="fNombre" type="text" placeholder="Nombre..." oninput="filtrar()" autocomplete="off">
+            </div>
+            <div class="adm-search" style="min-width:140px">
+                <i class="bi bi-search"></i>
+                <input id="fDoc" type="text" placeholder="Cédula..." oninput="filtrar()" autocomplete="off">
+            </div>
+            <div class="adm-search" style="min-width:140px">
+                <i class="bi bi-search"></i>
+                <input id="fCargo" type="text" placeholder="Cargo..." oninput="filtrar()" autocomplete="off">
+            </div>
+            <button class="btn btn-sm" style="background:#1e293b;color:#64748b;border:1px solid #334155;font-size:.75rem"
+                onclick="limpiarFiltros()"><i class="bi bi-x"></i> Limpiar</button>
+        </div>
+    </div>
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr><th>#</th><th>Cédula</th><th>Nombre</th><th>Cargo</th><th>Salario</th><th>Acciones</th></tr>
+            </thead>
+            <tbody id="tbody">
+            {% for p in personas %}
+            <tr>
+                <td style="color:#94a3b8">{{ loop.index }}</td>
+                <td><code style="font-size:.78rem">{{ p.Documento }}</code></td>
+                <td>{{ p.Nombre }}</td>
+                <td style="font-size:.78rem;color:#64748b">{{ p.Cargo }}</td>
+                <td style="font-size:.78rem">{% if p.Salario %}$ {{ "{:,.0f}".format(p.Salario) }}{% else %}—{% endif %}</td>
+                <td class="actions">
+                    <button class="btn-edit"
+                        data-id="{{ p.id }}"
+                        data-nombre="{{ p.Nombre | e }}"
+                        data-cargo="{{ p.Cargo | e }}"
+                        data-salario="{{ p.Salario or '' }}"
+                        onclick="abrirEditar(this)">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    <button class="btn-del"
+                        data-id="{{ p.id }}"
+                        data-nombre="{{ p.Nombre | e }}"
+                        onclick="eliminar(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="adm-empty"><i class="bi bi-inbox"></i>Sin personas registradas</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL AGREGAR -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Nueva Persona</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaAdd" class="adm-alert"></div>
+        <div class="row g-3">
+          <div class="col-6"><label class="form-label">Cédula *</label>
+              <input id="addDoc" class="form-control" placeholder="Número de documento"></div>
+          <div class="col-6"><label class="form-label">Salario</label>
+              <input id="addSalario" class="form-control" placeholder="Opcional"></div>
+          <div class="col-12"><label class="form-label">Nombre completo *</label>
+              <input id="addNombre" class="form-control"></div>
+          <div class="col-12"><label class="form-label">Cargo *</label>
+              <input id="addCargo" class="form-control" placeholder="Ej: OPERARIO DE RED"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarAdd()"><i class="bi bi-check-lg"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Persona</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaEdit" class="adm-alert"></div>
+        <input type="hidden" id="editId">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label">Nombre completo *</label>
+              <input id="editNombre" class="form-control"></div>
+          <div class="col-8"><label class="form-label">Cargo *</label>
+              <input id="editCargo" class="form-control"></div>
+          <div class="col-4"><label class="form-label">Salario</label>
+              <input id="editSalario" class="form-control"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarEdit()"><i class="bi bi-check-lg"></i> Actualizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR -->
+<div class="modal fade" id="modalImport" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Importar Personas desde Excel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaImport" class="adm-alert"></div>
+        <div style="background:#0a1628;border:1px solid #1e293b;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.82rem;color:#94a3b8">
+            <strong style="color:#7dd3fc"><i class="bi bi-info-circle me-1"></i>Formato del Excel:</strong>
+            El archivo debe tener las columnas: <code>Documento</code>, <code>Nombre</code>, <code>Cargo</code>, <code>Salario</code> (opcional).<br>
+            Las personas que ya existan por número de documento <strong style="color:#fcd34d">serán omitidas</strong> — no se duplican ni se sobreescriben.
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Archivo Excel (.xlsx)</label>
+            <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls">
+        </div>
+        <div id="importResultado" style="display:none;background:#0a1628;border:1px solid #1e293b;border-radius:8px;padding:1rem;font-size:.85rem"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn-adm-primary" onclick="importarPersonas()">
+            <i class="bi bi-cloud-upload me-1"></i> Importar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filtrar() {
+    const fN = document.getElementById('fNombre').value.toLowerCase();
+    const fD = document.getElementById('fDoc').value.toLowerCase();
+    const fC = document.getElementById('fCargo').value.toLowerCase();
+    document.querySelectorAll('#tbody tr').forEach(function(tr) {
+        const cells = tr.querySelectorAll('td');
+        if (!cells.length) return;
+        const doc    = cells[1].textContent.toLowerCase();
+        const nombre = cells[2].textContent.toLowerCase();
+        const cargo  = cells[3].textContent.toLowerCase();
+        tr.style.display = (
+            (!fN || nombre.includes(fN)) &&
+            (!fD || doc.includes(fD))    &&
+            (!fC || cargo.includes(fC))
+        ) ? '' : 'none';
+    });
+}
+
+function limpiarFiltros() {
+    ['fNombre','fDoc','fCargo'].forEach(function(id) { document.getElementById(id).value = ''; });
+    filtrar();
+}
+
+function abrirEditar(btn) {
+    document.getElementById("editId").value      = btn.dataset.id;
+    document.getElementById("editNombre").value  = btn.dataset.nombre;
+    document.getElementById("editCargo").value   = btn.dataset.cargo;
+    document.getElementById("editSalario").value = btn.dataset.salario;
+    abrirModal("modalEdit");
+}
+
+async function guardarAdd() {
+    const data = {
+        Documento: document.getElementById("addDoc").value.trim(),
+        Nombre:    document.getElementById("addNombre").value.trim(),
+        Cargo:     document.getElementById("addCargo").value.trim(),
+        Salario:   document.getElementById("addSalario").value || null
+    };
+    const r = await apiFetch("/admin/api/personas", "POST", data);
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaAdd", r.mensaje, "danger");
+}
+
+async function guardarEdit() {
+    const id = document.getElementById("editId").value;
+    const data = {
+        Nombre:  document.getElementById("editNombre").value.trim(),
+        Cargo:   document.getElementById("editCargo").value.trim(),
+        Salario: document.getElementById("editSalario").value || null
+    };
+    const r = await apiFetch("/admin/api/personas/" + id, "PUT", data);
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaEdit", r.mensaje, "danger");
+}
+
+function eliminar(btn) {
+    if (!confirm("¿Eliminar a «" + btn.dataset.nombre + "»?")) return;
+    apiFetch("/admin/api/personas/" + btn.dataset.id, "DELETE").then(function(r) {
+        if (r.success) location.reload();
+        else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+    });
+}
+
+async function importarPersonas() {
+    const file = document.getElementById("importFile").files[0];
+    if (!file) { mostrarAlerta("alertaImport", "Selecciona un archivo Excel.", "danger"); return; }
+    const fd = new FormData();
+    fd.append("archivo", file);
+    mostrarAlerta("alertaImport", "Procesando...", "info");
+    document.getElementById("importResultado").style.display = "none";
+    try {
+        const resp = await fetch("/admin/api/personas/import", { method: "POST", body: fd });
+        const r = await resp.json();
+        if (r.success) {
+            mostrarAlerta("alertaImport", "", "");
+            const div = document.getElementById("importResultado");
+            div.style.display = "block";
+            div.innerHTML = `
+                <div style="color:#4ade80;margin-bottom:.4rem"><i class="bi bi-check-circle me-1"></i><strong>Importación completada</strong></div>
+                <div style="color:#94a3b8">
+                    <span style="color:#4ade80">✓ Insertadas: <strong>${r.insertados}</strong></span> &nbsp;|&nbsp;
+                    <span style="color:#fcd34d">⊘ Omitidas (ya existen): <strong>${r.omitidos}</strong></span>
+                </div>`;
+            if (r.insertados > 0) setTimeout(function() { location.reload(); }, 2000);
+        } else {
+            mostrarAlerta("alertaImport", r.mensaje || "Error en importación", "danger");
+        }
+    } catch(e) {
+        mostrarAlerta("alertaImport", "Error de red: " + e.message, "danger");
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,529 @@
+{% extends "neo/navbNeo.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/neo/ValidarNeo.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- ENCABEZADO -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('neo.validar_reportes') }}"
+           class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Volver
+        </a>
+        <a href="{{ url_for('neo.editar_reporte', id=reporte.id) }}"
+           class="btn btn-sm btn-outline-primary rounded-pill px-3">
+            <i class="bi bi-pencil me-1"></i> Editar
+        </a>
+        <div>
+            <h2 class="mb-0 fw-bold" style="color:#0a1f2e; font-size:1.25rem;">
+                Reporte #{{ reporte.id }} — {{ reporte.tipo_incidencia }}
+            </h2>
+            <small class="text-muted">
+                Creado {{ reporte.fecha_creado.strftime('%d/%m/%Y a las %H:%M') if reporte.fecha_creado else '' }}
+            </small>
+        </div>
+        <div class="ms-auto">
+            {% if reporte.estado == 'Respondido' %}
+            <span class="badge-estado respondido" style="font-size:.82rem; padding:6px 14px;">
+                <i class="bi bi-check-circle-fill me-1"></i>Respondido
+            </span>
+            {% else %}
+            <span class="badge-estado abierto" style="font-size:.82rem; padding:6px 14px;">
+                <i class="bi bi-circle me-1"></i>Sin respuesta
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- ===== COLUMNA IZQUIERDA: datos NEO ===== -->
+        <div class="col-lg-6">
+            <div class="det-card">
+
+                <div class="det-card-header neo-color">
+                    <i class="bi bi-clipboard2-pulse-fill me-2"></i>
+                    Información reportada
+                </div>
+
+                <div class="det-card-body">
+                    <div class="row g-2">
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Fecha reporte</span>
+                                <span class="det-value">
+                                    {{ reporte.fecha_reporte.strftime('%d/%m/%Y') if reporte.fecha_reporte else '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Contrato</span>
+                                <span class="det-value">{{ reporte.contrato or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Recurso</span>
+                                <span class="det-value">{{ reporte.recurso or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Placa</span>
+                                <span class="det-value">{{ reporte.placa or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Tipo actividad</span>
+                                <span class="det-value">{{ reporte.tipo_actividad or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Tipo cuadrilla</span>
+                                <span class="det-value">{{ reporte.tipo_cuadrilla or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-4">
+                            <div class="det-field">
+                                <span class="det-label">Hora inicio</span>
+                                <span class="det-value">
+                                    {{ reporte.hora_inicio.strftime('%H:%M') if reporte.hora_inicio else '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-4">
+                            <div class="det-field">
+                                <span class="det-label">Hora fin</span>
+                                <span class="det-value">
+                                    {{ reporte.hora_fin.strftime('%H:%M') if reporte.hora_fin else '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-4">
+                            <div class="det-field">
+                                <span class="det-label">Duración</span>
+                                <span class="det-value fw-bold" style="color:#005f6b;">
+                                    {{ reporte.duracion or '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Tipo incidencia</span>
+                                <span class="det-value">{{ reporte.tipo_incidencia or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Parámetro NEO</span>
+                                <span class="det-value">{{ reporte.parametro_neo or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Horas afectadas</span>
+                                <span class="det-value">
+                                    {{ "%.2f"|format(reporte.horas_afectadas) if reporte.horas_afectadas else '—' }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Afectación económica</span>
+                                <span class="det-value">
+                                    {% if reporte.afectacion_economica %}
+                                    ${{ "{:,.0f}".format(reporte.afectacion_economica) }}
+                                    {% else %}—{% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="det-field">
+                                <span class="det-label">Observación</span>
+                                <span class="det-value det-obs">{{ reporte.observacion or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- EVIDENCIAS NEO -->
+                        <div class="col-12">
+                            <span class="det-label">Mis evidencias</span>
+                            <div class="d-flex gap-3 mt-2 flex-wrap">
+                                {% if reporte.evidencia_1 %}
+                                <div class="det-thumb-wrap">
+                                    <a href="/neo/evidencia/{{ reporte.evidencia_1 }}" target="_blank">
+                                        <img src="/neo/evidencia/{{ reporte.evidencia_1 }}"
+                                             class="det-thumb" alt="Evidencia 1">
+                                    </a>
+                                    <span class="det-thumb-label">Foto 1</span>
+                                </div>
+                                {% endif %}
+                                {% if reporte.evidencia_2 %}
+                                <div class="det-thumb-wrap">
+                                    <a href="/neo/evidencia/{{ reporte.evidencia_2 }}" target="_blank">
+                                        <img src="/neo/evidencia/{{ reporte.evidencia_2 }}"
+                                             class="det-thumb" alt="Evidencia 2">
+                                    </a>
+                                    <span class="det-thumb-label">Foto 2</span>
+                                </div>
+                                {% endif %}
+                                {% if not reporte.evidencia_1 and not reporte.evidencia_2 %}
+                                <span class="text-muted small">Sin evidencias adjuntas</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===== COLUMNA DERECHA: respuesta coordinador ===== -->
+        <div class="col-lg-6">
+            <div class="det-card">
+
+                <div class="det-card-header coor-color">
+                    <i class="bi bi-patch-check-fill me-2"></i>
+                    Respuesta del Coordinador
+                    {% if reporte.respondido_por %}
+                    <span class="det-respondido-by">
+                        <i class="bi bi-person-check me-1"></i>{{ reporte.respondido_por }}
+                        {% if reporte.fecha_respuesta %}
+                        · {{ reporte.fecha_respuesta.strftime('%d/%m/%Y %H:%M') }}
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="det-card-body">
+
+                    {% if reporte.estado == 'Respondido' %}
+                    <div class="row g-2">
+
+                        <div class="col-12">
+                            <div class="det-field">
+                                <span class="det-label">Respuesta</span>
+                                <span class="det-value det-obs">{{ reporte.respuesta or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Parámetro</span>
+                                <span class="det-value">{{ reporte.parametro_coordinador or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <div class="det-field">
+                                <span class="det-label">Estado de conformidad</span>
+                                <span class="det-value">{{ reporte.estado_conformidad or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="det-field">
+                                <span class="det-label">Acción a tomar</span>
+                                <span class="det-value">{{ reporte.accion_a_tomar or '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <span class="det-label">Evidencias del coordinador</span>
+                            <div class="d-flex gap-3 mt-2 flex-wrap">
+                                {% if reporte.evidencia_coor_1 %}
+                                <div class="det-thumb-wrap">
+                                    <a href="/coordinador/evidencia-coor/{{ reporte.evidencia_coor_1 }}"
+                                       target="_blank">
+                                        <img src="/coordinador/evidencia-coor/{{ reporte.evidencia_coor_1 }}"
+                                             class="det-thumb" alt="Evidencia coordinador 1">
+                                    </a>
+                                    <span class="det-thumb-label">Foto 1</span>
+                                </div>
+                                {% endif %}
+                                {% if reporte.evidencia_coor_2 %}
+                                <div class="det-thumb-wrap">
+                                    <a href="/coordinador/evidencia-coor/{{ reporte.evidencia_coor_2 }}"
+                                       target="_blank">
+                                        <img src="/coordinador/evidencia-coor/{{ reporte.evidencia_coor_2 }}"
+                                             class="det-thumb" alt="Evidencia coordinador 2">
+                                    </a>
+                                    <span class="det-thumb-label">Foto 2</span>
+                                </div>
+                                {% endif %}
+                                {% if not reporte.evidencia_coor_1 and not reporte.evidencia_coor_2 %}
+                                <span class="text-muted small">Sin evidencias adjuntas</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {% else %}
+                    <!-- PENDIENTE -->
+                    <div class="neo-pendiente-box">
+                        <i class="bi bi-hourglass-split"></i>
+                        <p class="fw-semibold" style="color:#5a6a72;">
+                            Pendiente de respuesta
+                        </p>
+                        <p style="font-size:.83rem; color:#adb5bd;">
+                            El coordinador aún no ha registrado una respuesta para este reporte.
+                        </p>
+                    </div>
+                    {% endif %}
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===== SECCIÓN CONFORMIDAD NEO ===== -->
+    {% if reporte.estado == 'Respondido' %}
+    <div class="row mt-4" id="seccionConformidad">
+        <div class="col-12">
+            <div class="det-card">
+
+                <div class="det-card-header" style="background: linear-gradient(90deg, #1a3a2a, #2e9e55);">
+                    <i class="bi bi-clipboard2-check-fill me-2"></i>
+                    Validación NEO
+                    {% if reporte.conformidad_neo %}
+                    <span class="ms-auto" style="font-size:.75rem; font-weight:500; opacity:.85;">
+                        <i class="bi bi-check2-all me-1"></i>Validado
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="det-card-body">
+
+                    {% if reporte.conformidad_neo %}
+                    <!-- LECTURA + OPCIÓN CORREGIR -->
+                    <div id="confLectura">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-3">
+                                <div class="det-field">
+                                    <span class="det-label">Conformidad</span>
+                                    <span class="det-value">
+                                        {% if reporte.conformidad_neo == 'Conforme' %}
+                                        <span class="badge-conf conforme">
+                                            <i class="bi bi-check-circle-fill me-1"></i>Conforme
+                                        </span>
+                                        {% else %}
+                                        <span class="badge-conf no-conforme">
+                                            <i class="bi bi-x-circle-fill me-1"></i>No conforme
+                                        </span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="det-field">
+                                    <span class="det-label">Observación de conformidad</span>
+                                    <span class="det-value det-obs">
+                                        {{ reporte.observacion_conformidad or 'Sin observación' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-center justify-content-end">
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                        id="btnCorregirConf">
+                                    <i class="bi bi-pencil me-1"></i>Corregir
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FORMULARIO CORRECCIÓN (oculto por defecto) -->
+                    <div id="confFormCorrec" style="display:none;">
+                        <p class="text-muted small mb-3">
+                            Corrija su validación de conformidad.
+                        </p>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-md-3">
+                                <label class="det-label mb-2">
+                                    Conformidad <span class="badge-req ms-1">Requerido</span>
+                                </label>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <label class="conf-opcion {% if reporte.conformidad_neo == 'Conforme' %}selected{% endif %}"
+                                           id="lbl_conforme">
+                                        <input type="radio" name="conformidad_neo" value="Conforme"
+                                               id="radio_conforme"
+                                               {% if reporte.conformidad_neo == 'Conforme' %}checked{% endif %}>
+                                        <i class="bi bi-check-circle-fill"></i> Conforme
+                                    </label>
+                                    <label class="conf-opcion {% if reporte.conformidad_neo == 'No conforme' %}selected{% endif %}"
+                                           id="lbl_no_conforme">
+                                        <input type="radio" name="conformidad_neo" value="No conforme"
+                                               id="radio_no_conforme"
+                                               {% if reporte.conformidad_neo == 'No conforme' %}checked{% endif %}>
+                                        <i class="bi bi-x-circle-fill"></i> No conforme
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <label class="det-label mb-2">Observación</label>
+                                <textarea id="obs_conformidad" rows="3" class="form-control"
+                                    style="border-radius:9px; border:1.5px solid #dce5ea; font-size:.88rem;"
+                                    placeholder="Describa su observación (opcional)…">{{ reporte.observacion_conformidad or '' }}</textarea>
+                            </div>
+                            <div class="col-md-2 d-flex flex-column gap-2 align-items-stretch">
+                                <button class="btn-conf-guardar" id="btnGuardarConf">
+                                    <i class="bi bi-floppy-fill me-1"></i>Guardar
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                                        id="btnCancelarConf">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                        <div id="confAlerta" class="mt-2"></div>
+                    </div>
+
+                    {% else %}
+                    <!-- FORMULARIO PRIMERA VEZ -->
+                    <p class="text-muted small mb-3">
+                        El coordinador ya registró su respuesta. Indique si está conforme con ella.
+                    </p>
+                    <div class="row g-3 align-items-start">
+                        <div class="col-md-3">
+                            <label class="det-label mb-2">
+                                Conformidad <span class="badge-req ms-1">Requerido</span>
+                            </label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <label class="conf-opcion" id="lbl_conforme">
+                                    <input type="radio" name="conformidad_neo" value="Conforme" id="radio_conforme">
+                                    <i class="bi bi-check-circle-fill"></i> Conforme
+                                </label>
+                                <label class="conf-opcion" id="lbl_no_conforme">
+                                    <input type="radio" name="conformidad_neo" value="No conforme" id="radio_no_conforme">
+                                    <i class="bi bi-x-circle-fill"></i> No conforme
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="det-label mb-2">Observación</label>
+                            <textarea id="obs_conformidad" rows="3" class="form-control"
+                                style="border-radius:9px; border:1.5px solid #dce5ea; font-size:.88rem;"
+                                placeholder="Describa su observación (opcional)…"></textarea>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn-conf-guardar w-100" id="btnGuardarConf">
+                                <i class="bi bi-send-fill me-1"></i>Enviar
+                            </button>
+                        </div>
+                    </div>
+                    <div id="confAlerta" class="mt-2"></div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+(function () {
+    const REPORTE_ID = Number("{{ reporte.id }}");
+
+    /* ---- Toggle Corregir / Cancelar (solo cuando ya está validado) ---- */
+    const btnCorregir = document.getElementById("btnCorregirConf");
+    const btnCancelar = document.getElementById("btnCancelarConf");
+    const lectura     = document.getElementById("confLectura");
+    const formCorrec  = document.getElementById("confFormCorrec");
+
+    if (btnCorregir) {
+        btnCorregir.addEventListener("click", function () {
+            lectura.style.display    = "none";
+            formCorrec.style.display = "";
+        });
+    }
+    if (btnCancelar) {
+        btnCancelar.addEventListener("click", function () {
+            formCorrec.style.display = "none";
+            lectura.style.display    = "";
+        });
+    }
+
+    /* ---- Resalte visual de radio seleccionado ---- */
+    document.querySelectorAll('input[name="conformidad_neo"]').forEach(function (r) {
+        r.addEventListener("change", function () {
+            document.querySelectorAll(".conf-opcion").forEach(l => l.classList.remove("selected"));
+            r.closest(".conf-opcion").classList.add("selected");
+        });
+    });
+
+    /* ---- Guardar / Corregir conformidad ---- */
+    const btn = document.getElementById("btnGuardarConf");
+    if (!btn) return;
+
+    const labelOriginal = btn.innerHTML;
+
+    btn.addEventListener("click", function () {
+        const sel = document.querySelector('input[name="conformidad_neo"]:checked');
+        if (!sel) {
+            mostrarAlerta("Seleccione Conforme o No conforme.", "err");
+            return;
+        }
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando…';
+
+        fetch("/neo/reporte/" + REPORTE_ID + "/validar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                conformidad_neo:         sel.value,
+                observacion_conformidad: document.getElementById("obs_conformidad").value
+            })
+        })
+        .then(r => r.json())
+        .then(function (data) {
+            if (data.ok) {
+                location.reload();
+            } else {
+                mostrarAlerta(data.error || "Error al guardar.", "err");
+                btn.disabled = false;
+                btn.innerHTML = labelOriginal;
+            }
+        })
+        .catch(function () {
+            mostrarAlerta("Error de conexión.", "err");
+            btn.disabled = false;
+            btn.innerHTML = labelOriginal;
+        });
+    });
+
+    function mostrarAlerta(msg, tipo) {
+        const el = document.getElementById("confAlerta");
+        if (!el) return;
+        el.className = "conf-alerta " + tipo;
+        el.textContent = msg;
+        setTimeout(() => el.textContent = "", 4000);
+    }
+})();
+</script>
+
+{% endblock %}

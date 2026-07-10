@@ -1,0 +1,140 @@
+{% extends "neo/navbNeo.html" %}
+
+{% block content %}
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/neo/NeoHome.css') }}"
+>
+
+<div class="neo-home-wrapper">
+
+    <!-- ===== ENCABEZADO ===== -->
+
+    <div class="neo-home-header">
+
+        <img
+            src="{{ url_for('static', filename='img/logo_hesego.png') }}"
+            alt="HESEGO"
+            class="neo-logo"
+        >
+
+        <div class="neo-greeting">
+            <span class="neo-greeting-sub">Bienvenido al sistema</span>
+            <h1 class="neo-greeting-name">
+                Hola, <span class="neo-name-highlight">{{ nombre }}</span>
+            </h1>
+            <p class="neo-greeting-desc">
+                <i class="bi bi-broadcast-pin me-1"></i>
+                Módulo NEO — Gestión de incidencias operativas de campo
+            </p>
+        </div>
+
+        <div class="neo-fecha-chip">
+            <i class="bi bi-calendar3 me-1"></i>
+            <span id="neo-fecha-hoy"></span>
+        </div>
+
+    </div>
+
+    <!-- ===== OPCIONES ===== -->
+
+    <div class="neo-cards">
+
+        <!-- REPORTAR -->
+        <a href="{{ url_for('neo.panel_reportes') }}" class="neo-card neo-card-reportar">
+
+            <div class="neo-card-icon">
+                <i class="bi bi-clipboard2-pulse-fill"></i>
+            </div>
+
+            <div class="neo-card-body">
+                <h2 class="neo-card-title">Reportar</h2>
+                <p class="neo-card-desc">
+                    Registre una incidencia o novedad operativa ocurrida en campo.
+                    Adjunte evidencia fotográfica y describa el impacto.
+                </p>
+                <span class="neo-card-cta">
+                    Ir a reportar <i class="bi bi-arrow-right ms-1"></i>
+                </span>
+            </div>
+
+            <div class="neo-card-arrow">
+                <i class="bi bi-chevron-right"></i>
+            </div>
+
+        </a>
+
+        <!-- VALIDAR REPORTES -->
+        <a href="{{ url_for('neo.validar_reportes') }}" class="neo-card neo-card-validar">
+
+            <div class="neo-card-icon">
+                <i class="bi bi-patch-check-fill"></i>
+            </div>
+
+            <div class="neo-card-body">
+                <h2 class="neo-card-title">Validar Reportes</h2>
+                <p class="neo-card-desc">
+                    Revise, apruebe o rechace los reportes enviados por el equipo.
+                    Consulte el historial con evidencias y seguimiento.
+                </p>
+                <span class="neo-card-cta">
+                    Ir a validar <i class="bi bi-arrow-right ms-1"></i>
+                </span>
+            </div>
+
+            <div class="neo-card-arrow">
+                <i class="bi bi-chevron-right"></i>
+            </div>
+
+        </a>
+
+        <!-- DISTRIBUCIÓN OPERATIVA -->
+        <a href="{{ url_for('neo.distribucion_neo') }}" class="neo-card neo-card-distribucion">
+
+            <div class="neo-card-icon">
+                <i class="bi bi-table"></i>
+            </div>
+
+            <div class="neo-card-body">
+                <h2 class="neo-card-title">Distribución Operativa</h2>
+                <p class="neo-card-desc">
+                    Consulte la programación diaria de cuadrillas, recursos y
+                    actividades asignadas a su contrato.
+                </p>
+                <span class="neo-card-cta">
+                    Ver distribución <i class="bi bi-arrow-right ms-1"></i>
+                </span>
+            </div>
+
+            <div class="neo-card-arrow">
+                <i class="bi bi-chevron-right"></i>
+            </div>
+
+        </a>
+
+    </div>
+
+    <!-- ===== PIE ===== -->
+
+    <p class="neo-footer">
+        <i class="bi bi-shield-lock me-1 text-secondary"></i>
+        Sesión activa como <strong>{{ current_user.username }}</strong> ·
+        <a href="{{ url_for('auth.logout') }}" class="text-secondary">Cerrar sesión</a>
+    </p>
+
+</div>
+
+<script>
+    (function () {
+        const dias   = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+        const meses  = ["enero","febrero","marzo","abril","mayo","junio",
+                        "julio","agosto","septiembre","octubre","noviembre","diciembre"];
+        const hoy    = new Date();
+        const texto  = dias[hoy.getDay()] + ", " + hoy.getDate() +
+                       " de " + meses[hoy.getMonth()] + " de " + hoy.getFullYear();
+        document.getElementById("neo-fecha-hoy").textContent = texto;
+    })();
+</script>
+
+{% endblock %}

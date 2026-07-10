@@ -1,0 +1,402 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Contratos{% endblock %}
+
+{% block head %}
+<style>
+.ct-table th {
+    font-size:.66rem;text-transform:uppercase;letter-spacing:.09em;
+    color:#64748b;padding:.75rem 1rem;border-bottom:2px solid #1e293b;
+    white-space:nowrap;
+}
+.ct-table td {
+    padding:.8rem 1rem;border-bottom:1px solid #1e293b;
+    vertical-align:middle;font-size:.84rem;color:#cbd5e1;
+}
+.ct-table tr:last-child td { border-bottom:none; }
+.ct-table tr:hover td { background:#0d1f38; }
+
+.ct-codigo {
+    display:inline-block;padding:.25rem .65rem;border-radius:6px;
+    background:#0c2040;color:#7dd3fc;border:1px solid #0369a1;
+    font-family:monospace;font-size:.78rem;font-weight:800;
+    white-space:nowrap;letter-spacing:.04em;
+}
+.ct-nombre {
+    font-weight:700;color:#f1f5f9;font-size:.85rem;line-height:1.3;
+}
+.ct-sede {
+    color:#94a3b8;font-size:.8rem;font-weight:500;
+}
+.ct-proceso {
+    display:inline-block;padding:.2rem .6rem;border-radius:5px;
+    font-size:.7rem;font-weight:800;letter-spacing:.05em;
+    white-space:nowrap;
+}
+.ct-proc-oymm        { background:#0c2040;color:#7dd3fc;border:1px solid #0369a1; }
+.ct-proc-lyr         { background:#1a0f3c;color:#c4b5fd;border:1px solid #6d28d9; }
+.ct-proc-mtto        { background:#1c1100;color:#fcd34d;border:1px solid #b45309; }
+.ct-proc-arboricultura { background:#052e16;color:#6ee7b7;border:1px solid #065f46; }
+.ct-proc-default     { background:#1e293b;color:#94a3b8;border:1px solid #334155; }
+
+.ct-contrato-full { color:#94a3b8;font-size:.8rem;line-height:1.4; }
+
+.ct-badge-estado {
+    padding:.25rem .75rem;border-radius:20px;font-size:.68rem;
+    font-weight:800;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;
+}
+.ct-activo   { background:#052e16;color:#4ade80;border:1px solid #16a34a; }
+.ct-inactivo { background:#3b0f0f;color:#fca5a5;border:1px solid #991b1b; }
+
+.ct-usuarios { display:flex;flex-wrap:wrap;gap:.3rem; }
+.ct-user-chip {
+    display:flex;align-items:center;gap:.3rem;padding:.2rem .6rem;
+    border-radius:5px;font-size:.72rem;font-weight:600;
+}
+.ct-chip-coord { background:#0c2040;color:#7dd3fc;border:1px solid #0369a1; }
+.ct-chip-dir   { background:#1c1100;color:#fcd34d;border:1px solid #b45309; }
+.ct-chip-none  { color:#475569;font-size:.75rem;font-style:italic; }
+
+.ct-btn-toggle {
+    padding:.28rem .7rem;border-radius:6px;font-size:.72rem;
+    font-weight:700;cursor:pointer;border:none;transition:all .2s;white-space:nowrap;
+}
+.ct-btn-inhab       { background:#3b0f0f;color:#fca5a5;border:1px solid #991b1b88; }
+.ct-btn-inhab:hover { background:#4c1212; }
+.ct-btn-activ       { background:#052e16;color:#4ade80;border:1px solid #16a34a88; }
+.ct-btn-activ:hover { background:#0a4023; }
+.ct-btn-edit {
+    padding:.28rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;
+    cursor:pointer;background:#1e2d45;color:#93c5fd;border:1px solid #2d4a6e;transition:all .2s;
+}
+.ct-btn-edit:hover { background:#2d4a6e;color:#e0f2fe; }
+.ct-btn-del {
+    padding:.28rem .55rem;border-radius:6px;font-size:.72rem;
+    cursor:pointer;background:transparent;color:#64748b;border:1px solid #334155;transition:all .2s;
+}
+.ct-btn-del:hover { background:#3b0f0f;color:#fca5a5;border-color:#991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title">
+            <i class="bi bi-file-earmark-text me-2" style="color:var(--adm-accent)"></i>Contratos
+        </h1>
+        <p class="adm-page-sub">
+            {{ contratos|length }} contrato(s) —
+            {{ contratos|selectattr('activo')|list|length }} activo(s)
+        </p>
+    </div>
+    <button class="btn-adm-primary" onclick="abrirModal('modalAdd')">
+        <i class="bi bi-plus-lg"></i> Nuevo contrato
+    </button>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<div class="adm-card">
+    <div class="adm-card-header" style="flex-wrap:wrap;gap:.6rem">
+        <span class="adm-card-title">Listado de contratos</span>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto">
+            <div style="min-width:130px">
+                <select id="fCodigo" onchange="filtrarContratos()"
+                    style="background:#0d1b2e;color:#e2e8f0;border:1px solid #1e293b;border-radius:8px;
+                           width:100%;padding:.38rem .75rem;font-size:.82rem;outline:none;cursor:pointer">
+                    <option value="" style="background:#0d1b2e">— Código —</option>
+                    {% for c in contratos %}{% if c.codigo %}
+                    <option value="{{ c.codigo }}" style="background:#0d1b2e">{{ c.codigo }}</option>
+                    {% endif %}{% endfor %}
+                </select>
+            </div>
+            <div class="adm-search" style="min-width:130px">
+                <i class="bi bi-search"></i>
+                <input id="fNombre" type="text" placeholder="Nombre corto..." oninput="filtrarContratos()" autocomplete="off">
+            </div>
+            <div class="adm-search" style="min-width:100px">
+                <i class="bi bi-search"></i>
+                <input id="fSede" type="text" placeholder="Sede..." oninput="filtrarContratos()" autocomplete="off">
+            </div>
+            <div class="adm-search" style="min-width:150px">
+                <i class="bi bi-search"></i>
+                <input id="fDisplay" type="text" placeholder="Nombre completo..." oninput="filtrarContratos()" autocomplete="off">
+            </div>
+        </div>
+    </div>
+    <div class="adm-table-wrap">
+        <table class="adm-table ct-table">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre corto</th>
+                    <th>Sede</th>
+                    <th>Proceso</th>
+                    <th>Nombre completo (display)</th>
+                    <th>Estado</th>
+                    <th>Usuarios asignados</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbody">
+            {% for c in contratos %}
+            <tr>
+                <td>
+                    {% if c.codigo %}
+                    <span class="ct-codigo">{{ c.codigo }}</span>
+                    {% else %}
+                    <span style="color:#334155">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="ct-nombre">{{ c.nombre or '—' }}</div>
+                </td>
+                <td><span class="ct-sede">{{ c.sede or '—' }}</span></td>
+                <td>
+                    {% if c.proceso %}
+                    {% set proc_cls = {
+                        'OYMM': 'ct-proc-oymm',
+                        'LYR': 'ct-proc-lyr',
+                        'MTTO': 'ct-proc-mtto',
+                        'ARBORICULTURA': 'ct-proc-arboricultura'
+                    } %}
+                    <span class="ct-proceso {{ proc_cls.get(c.proceso, 'ct-proc-default') }}">{{ c.proceso }}</span>
+                    {% else %}<span style="color:#334155">—</span>{% endif %}
+                </td>
+                <td><span class="ct-contrato-full">{{ c.contrato }}</span></td>
+                <td>
+                    {% if c.activo %}
+                    <span class="ct-badge-estado ct-activo">Activo</span>
+                    {% else %}
+                    <span class="ct-badge-estado ct-inactivo">Inactivo</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="ct-usuarios">
+                        {% set asignados = usuarios_por_contrato[c.contrato] %}
+                        {% if asignados %}
+                            {% for u in asignados %}
+                            <span class="ct-user-chip {{ 'ct-chip-coord' if u.rol == 'coordinador' else 'ct-chip-dir' }}">
+                                {{ u.nombre_completo }}
+                                <small style="opacity:.55">({{ u.rol[:3] }})</small>
+                            </span>
+                            {% endfor %}
+                        {% else %}
+                        <span class="ct-chip-none">Sin asignar</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="white-space:nowrap">
+                    <button class="ct-btn-edit"
+                        data-id="{{ c.id }}"
+                        data-contrato="{{ c.contrato | e }}"
+                        data-codigo="{{ c.codigo or '' | e }}"
+                        data-nombre="{{ c.nombre or '' | e }}"
+                        data-sede="{{ c.sede or '' | e }}"
+                        data-proceso="{{ c.proceso or '' | e }}"
+                        onclick="abrirEditar(this)">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    {% if c.activo %}
+                    <button class="ct-btn-toggle ct-btn-inhab"
+                        data-id="{{ c.id }}" data-nombre="{{ c.contrato | e }}"
+                        onclick="toggleEstado(this, false)">
+                        <i class="bi bi-slash-circle me-1"></i>Inhabilitar
+                    </button>
+                    {% else %}
+                    <button class="ct-btn-toggle ct-btn-activ"
+                        data-id="{{ c.id }}" data-nombre="{{ c.contrato | e }}"
+                        onclick="toggleEstado(this, true)">
+                        <i class="bi bi-check-circle me-1"></i>Habilitar
+                    </button>
+                    {% endif %}
+                    <button class="ct-btn-del"
+                        data-id="{{ c.id }}" data-nombre="{{ c.contrato | e }}"
+                        onclick="eliminar(this)" title="Eliminar">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="adm-empty"><i class="bi bi-inbox"></i> Sin contratos</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ══════════════════════ MODAL AGREGAR ══════════════════════ -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nuevo Contrato</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaAdd" class="adm-alert"></div>
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Código *</label>
+            <input id="addCodigo" class="form-control" placeholder="ej: 021C" autocomplete="new-password">
+            <div class="form-text" style="color:#475569">Identificador corto único</div>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">Nombre corto *</label>
+            <input id="addNombre" class="form-control" placeholder="ej: 021 OYMM CHAPARRAL">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Sede</label>
+            <input id="addSede" class="form-control" placeholder="ej: Chaparral">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Proceso</label>
+            <input id="addProceso" class="form-control" placeholder="ej: OYMM, LYR, MTTO">
+          </div>
+          <div class="col-md-9">
+            <label class="form-label">Nombre completo (display) *</label>
+            <input id="addContrato" class="form-control"
+                   placeholder="ej: Tolima (021) - OyMM - Chaparral">
+            <div class="form-text" style="color:#475569">
+                Este nombre es el que verán NEO, coordinadores y demás usuarios en el sistema.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarAdd()">
+            <i class="bi bi-check-lg"></i> Crear contrato
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ MODAL EDITAR ══════════════════════ -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Contrato</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaEdit" class="adm-alert"></div>
+        <input type="hidden" id="editId">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Código</label>
+            <input id="editCodigo" class="form-control">
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">Nombre corto</label>
+            <input id="editNombre" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Sede</label>
+            <input id="editSede" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Proceso</label>
+            <input id="editProceso" class="form-control">
+          </div>
+          <div class="col-md-9">
+            <label class="form-label">Nombre completo (display) *</label>
+            <input id="editContrato" class="form-control">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarEdit()">
+            <i class="bi bi-check-lg"></i> Actualizar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filtrarContratos() {
+    const fCodigo  = document.getElementById('fCodigo').value;
+    const fNombre  = document.getElementById('fNombre').value.toLowerCase();
+    const fSede    = document.getElementById('fSede').value.toLowerCase();
+    const fDisplay = document.getElementById('fDisplay').value.toLowerCase();
+    document.querySelectorAll('#tbody tr').forEach(function(tr) {
+        const cells = tr.querySelectorAll('td');
+        if (!cells.length) return;
+        const codigo  = cells[0].textContent.trim();
+        const nombre  = cells[1].textContent.toLowerCase();
+        const sede    = cells[2].textContent.toLowerCase();
+        const display = cells[4].textContent.toLowerCase();
+        tr.style.display = (
+            (!fCodigo  || codigo === fCodigo)         &&
+            (!fNombre  || nombre.includes(fNombre))   &&
+            (!fSede    || sede.includes(fSede))       &&
+            (!fDisplay || display.includes(fDisplay))
+        ) ? '' : 'none';
+    });
+}
+
+function abrirEditar(btn) {
+    document.getElementById("editId").value       = btn.dataset.id;
+    document.getElementById("editContrato").value = btn.dataset.contrato;
+    document.getElementById("editCodigo").value   = btn.dataset.codigo;
+    document.getElementById("editNombre").value   = btn.dataset.nombre;
+    document.getElementById("editSede").value     = btn.dataset.sede;
+    document.getElementById("editProceso").value  = btn.dataset.proceso;
+    abrirModal("modalEdit");
+}
+
+async function guardarAdd() {
+    const contrato = document.getElementById("addContrato").value.trim();
+    const codigo   = document.getElementById("addCodigo").value.trim();
+    const nombre   = document.getElementById("addNombre").value.trim();
+    if (!contrato || !codigo || !nombre) {
+        mostrarAlerta("alertaAdd", "Código, nombre corto y nombre completo son requeridos.", "danger");
+        return;
+    }
+    const r = await apiFetch("/admin/api/contratos", "POST", {
+        contrato: contrato,
+        codigo:   codigo,
+        nombre:   nombre,
+        sede:     document.getElementById("addSede").value.trim(),
+        proceso:  document.getElementById("addProceso").value.trim()
+    });
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaAdd", r.mensaje, "danger");
+}
+
+async function guardarEdit() {
+    const id = document.getElementById("editId").value;
+    const contrato = document.getElementById("editContrato").value.trim();
+    if (!contrato) { mostrarAlerta("alertaEdit", "El nombre completo es requerido.", "danger"); return; }
+    const r = await apiFetch("/admin/api/contratos/" + id, "PUT", {
+        contrato: contrato,
+        codigo:   document.getElementById("editCodigo").value.trim(),
+        nombre:   document.getElementById("editNombre").value.trim(),
+        sede:     document.getElementById("editSede").value.trim(),
+        proceso:  document.getElementById("editProceso").value.trim()
+    });
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaEdit", r.mensaje, "danger");
+}
+
+async function toggleEstado(btn, activar) {
+    const accion = activar ? "habilitar" : "inhabilitar";
+    if (!confirm("¿Deseas " + accion + " el contrato «" + btn.dataset.nombre + "»?")) return;
+    const r = await apiFetch("/admin/api/contratos/" + btn.dataset.id, "PUT", { activo: activar });
+    if (r.success) location.reload();
+    else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+}
+
+async function eliminar(btn) {
+    if (!confirm("¿Eliminar el contrato «" + btn.dataset.nombre + "»? Esta acción no se puede deshacer.")) return;
+    const r = await apiFetch("/admin/api/contratos/" + btn.dataset.id, "DELETE");
+    if (r.success) location.reload();
+    else mostrarAlerta("alerta", r.mensaje || "Error al eliminar", "danger");
+}
+</script>
+{% endblock %}

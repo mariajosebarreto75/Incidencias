@@ -1,0 +1,797 @@
+{% extends "neo/navbNeo.html" %}
+{% block title %}Alertas GPS — NEO{% endblock %}
+
+{% block head %}
+<style>
+:root {
+    --ag-bg:       #0d1b2a;
+    --ag-surface:  #112236;
+    --ag-surface2: #162d44;
+    --ag-border:   #1e3a52;
+    --ag-teal:     #00b8c9;
+    --ag-yellow:   #f5a623;
+    --ag-red:      #e53e3e;
+    --ag-green:    #38a169;
+    --ag-text:     #e2e8f0;
+    --ag-muted:    #7a97b0;
+}
+
+body { background: var(--ag-bg); }
+
+.ag-wrapper {
+    display: flex;
+    gap: 0;
+    height: calc(100vh - 64px);
+    overflow: hidden;
+}
+
+/* ── PANEL IZQUIERDO (lista de alertas) ───────────────── */
+.ag-panel {
+    width: 380px;
+    min-width: 320px;
+    background: var(--ag-surface);
+    border-right: 1px solid var(--ag-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ag-panel-header {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--ag-border);
+    background: var(--ag-bg);
+}
+
+.ag-panel-title {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.ag-panel-title h2 {
+    font-size: .88rem; font-weight: 800; color: var(--ag-text);
+    letter-spacing: .08em; text-transform: uppercase; margin: 0;
+    display: flex; align-items: center; gap: 8px;
+}
+
+.ag-badge-total {
+    background: var(--ag-teal); color: #fff;
+    border-radius: 20px; padding: 2px 10px;
+    font-size: .78rem; font-weight: 700;
+}
+
+/* Tabs */
+.ag-tabs {
+    display: flex; gap: 4px; margin-bottom: 10px;
+}
+.ag-tab {
+    flex: 1; text-align: center; padding: 5px 0;
+    border-radius: 6px; font-size: .72rem; font-weight: 700;
+    color: var(--ag-muted); background: transparent;
+    border: 1px solid transparent; cursor: pointer;
+    text-decoration: none; transition: all .15s;
+}
+.ag-tab:hover { background: var(--ag-surface2); color: var(--ag-text); }
+.ag-tab.active {
+    background: var(--ag-teal); color: #fff;
+    border-color: var(--ag-teal);
+}
+
+/* Buscador */
+.ag-search {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--ag-surface2); border: 1px solid var(--ag-border);
+    border-radius: 8px; padding: 5px 10px;
+}
+.ag-search i { color: var(--ag-muted); font-size: .85rem; }
+.ag-search input {
+    background: none; border: none; outline: none;
+    color: var(--ag-text); font-size: .78rem; width: 100%;
+}
+.ag-search input::placeholder { color: var(--ag-muted); }
+
+/* Lista scrolleable */
+.ag-list {
+    flex: 1; overflow-y: auto; padding: 6px 0;
+}
+.ag-list::-webkit-scrollbar { width: 4px; }
+.ag-list::-webkit-scrollbar-track { background: var(--ag-surface); }
+.ag-list::-webkit-scrollbar-thumb { background: var(--ag-border); border-radius: 4px; }
+
+/* Grupo colapsable */
+.ag-group-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px; cursor: pointer;
+    border-bottom: 1px solid var(--ag-border);
+    user-select: none; transition: background .12s;
+    position: sticky; top: 0; z-index: 1;
+    background: var(--ag-surface);
+}
+.ag-group-header:hover { background: var(--ag-surface2); }
+
+.ag-group-left {
+    display: flex; align-items: center; gap: 8px;
+}
+.ag-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ag-yellow); flex-shrink: 0;
+}
+.ag-group-name {
+    font-size: .78rem; font-weight: 700; color: var(--ag-text);
+}
+.ag-count-badge {
+    background: var(--ag-yellow); color: #0d1b2a;
+    border-radius: 20px; padding: 1px 8px;
+    font-size: .7rem; font-weight: 800;
+}
+.ag-chevron {
+    color: var(--ag-muted); font-size: .8rem;
+    transition: transform .2s;
+}
+.ag-group-header.collapsed .ag-chevron {
+    transform: rotate(-90deg);
+}
+
+/* Item de alerta */
+.ag-items { display: block; }
+.ag-group-header.collapsed + .ag-items { display: none; }
+
+.ag-item {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(30,58,82,.5);
+    cursor: pointer; transition: background .12s;
+}
+.ag-item:hover, .ag-item.active {
+    background: var(--ag-surface2);
+}
+.ag-item-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 3px;
+}
+.ag-plate {
+    font-size: .88rem; font-weight: 800; color: #fff;
+    letter-spacing: .04em;
+}
+.ag-ot {
+    font-size: .7rem; color: var(--ag-muted);
+}
+.ag-item-time {
+    font-size: .7rem; color: var(--ag-muted);
+}
+.ag-status-dot {
+    display: inline-block; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--ag-yellow);
+    margin-right: 4px;
+}
+.ag-status-dot.resuelta { background: var(--ag-green); }
+.ag-status-dot.liberada { background: var(--ag-muted); }
+
+/* ── PANEL DERECHO (detalle) ──────────────────────────── */
+.ag-detail {
+    flex: 1; background: var(--ag-bg);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+
+.ag-detail-empty {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--ag-muted); text-align: center;
+}
+.ag-detail-empty i { font-size: 3rem; opacity: .3; margin-bottom: 12px; }
+.ag-detail-empty p { font-size: .82rem; }
+
+.ag-detail-card {
+    background: var(--ag-surface);
+    border: 1px solid var(--ag-border);
+    border-radius: 14px; padding: 22px 24px;
+    max-width: 620px;
+}
+
+.ag-detail-plate {
+    font-size: 1.6rem; font-weight: 900; color: #fff;
+    letter-spacing: .06em; margin-bottom: 4px;
+}
+.ag-detail-type {
+    display: inline-block;
+    background: rgba(245,166,35,.15); color: var(--ag-yellow);
+    border: 1px solid rgba(245,166,35,.3);
+    border-radius: 6px; padding: 2px 10px;
+    font-size: .75rem; font-weight: 700;
+    margin-bottom: 18px;
+}
+
+.ag-fields {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; margin-bottom: 20px;
+}
+.ag-field label {
+    font-size: .65rem; font-weight: 700; color: var(--ag-muted);
+    text-transform: uppercase; letter-spacing: .07em;
+    display: block; margin-bottom: 3px;
+}
+.ag-field span {
+    font-size: .82rem; color: var(--ag-text); font-weight: 500;
+}
+
+.ag-actions {
+    display: flex; gap: 10px; flex-wrap: wrap;
+}
+.ag-btn {
+    flex: 1; padding: 10px 0; border: none; border-radius: 9px;
+    font-size: .82rem; font-weight: 700; cursor: pointer;
+    transition: opacity .15s; display: flex;
+    align-items: center; justify-content: center; gap: 6px;
+}
+.ag-btn:hover { opacity: .82; }
+.ag-btn-resolver {
+    background: linear-gradient(135deg, #2e9e55, #38a169);
+    color: #fff;
+}
+.ag-btn-liberar {
+    background: var(--ag-surface2); color: var(--ag-muted);
+    border: 1px solid var(--ag-border);
+}
+.ag-btn-liberar:hover { color: var(--ag-text); }
+
+.ag-atendida {
+    background: rgba(56,161,105,.1); color: #68d391;
+    border: 1px solid rgba(56,161,105,.25);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: .8rem; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+}
+.ag-liberada {
+    background: rgba(122,151,176,.1); color: var(--ag-muted);
+    border: 1px solid var(--ag-border);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: .8rem; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+}
+
+/* Empty state */
+.ag-no-alertas {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px 20px; text-align: center;
+    color: var(--ag-muted);
+}
+.ag-no-alertas i { font-size: 2.5rem; opacity: .3; margin-bottom: 10px; }
+
+@media (max-width: 700px) {
+    .ag-panel { width: 100%; min-width: unset; }
+    .ag-detail { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ag-wrapper">
+
+    <!-- ══ PANEL IZQUIERDO ══════════════════════════════════ -->
+    <div class="ag-panel">
+
+        <div class="ag-panel-header">
+            <div class="ag-panel-title">
+                <h2><i class="bi bi-bell-fill" style="color:var(--ag-yellow)"></i> Alertas GPS</h2>
+                <span class="ag-badge-total">{{ total_alertas }}</span>
+            </div>
+
+            <!-- Tabs estado -->
+            <div class="ag-tabs">
+                <a href="{{ url_for('neo.alertas_gps', filtro='pendiente', placa=placa, contrato=contrato, recurso=recurso, orden=orden, scope=scope) }}"
+                   class="ag-tab {% if filtro == 'pendiente' %}active{% endif %}">Abiertas</a>
+                <a href="{{ url_for('neo.alertas_gps', filtro='resuelta', placa=placa, contrato=contrato, recurso=recurso, orden=orden, scope=scope) }}"
+                   class="ag-tab {% if filtro == 'resuelta' %}active{% endif %}">Cerradas</a>
+                <a href="{{ url_for('neo.alertas_gps', filtro='todas', placa=placa, contrato=contrato, recurso=recurso, orden=orden, scope=scope) }}"
+                   class="ag-tab {% if filtro == 'todas' %}active{% endif %}">Todas</a>
+            </div>
+
+            <!-- Filtros avanzados -->
+            <form method="GET" action="{{ url_for('neo.alertas_gps') }}" id="frmFiltros">
+                <input type="hidden" name="filtro" value="{{ filtro }}">
+
+                <!-- Scope: todas / con contrato / sin contrato -->
+                <div style="display:flex;gap:4px;margin-bottom:8px">
+                    <a href="{{ url_for('neo.alertas_gps', filtro=filtro, placa=placa, recurso=recurso, orden=orden, scope='todos') }}"
+                       style="flex:1;text-align:center;padding:5px 0;border-radius:6px;font-size:.7rem;font-weight:700;
+                              text-decoration:none;border:1px solid {% if scope == 'todos' %}var(--ag-teal){% else %}var(--ag-border){% endif %};
+                              background:{% if scope == 'todos' %}rgba(0,184,201,.15){% else %}transparent{% endif %};
+                              color:{% if scope == 'todos' %}var(--ag-teal){% else %}var(--ag-muted){% endif %}">
+                        Todas
+                    </a>
+                    <a href="{{ url_for('neo.alertas_gps', filtro=filtro, placa=placa, recurso=recurso, orden=orden, scope='con_contrato') }}"
+                       style="flex:1;text-align:center;padding:5px 0;border-radius:6px;font-size:.7rem;font-weight:700;
+                              text-decoration:none;border:1px solid {% if scope == 'con_contrato' %}var(--ag-teal){% else %}var(--ag-border){% endif %};
+                              background:{% if scope == 'con_contrato' %}rgba(0,184,201,.15){% else %}transparent{% endif %};
+                              color:{% if scope == 'con_contrato' %}var(--ag-teal){% else %}var(--ag-muted){% endif %}">
+                        Con contrato
+                    </a>
+                    <a href="{{ url_for('neo.alertas_gps', filtro=filtro, placa=placa, recurso=recurso, orden=orden, scope='sin_contrato') }}"
+                       style="flex:1;text-align:center;padding:5px 0;border-radius:6px;font-size:.7rem;font-weight:700;
+                              text-decoration:none;border:1px solid {% if scope == 'sin_contrato' %}#f5a623{% else %}var(--ag-border){% endif %};
+                              background:{% if scope == 'sin_contrato' %}rgba(245,166,35,.15){% else %}transparent{% endif %};
+                              color:{% if scope == 'sin_contrato' %}#f5a623{% else %}var(--ag-muted){% endif %}">
+                        Sin contrato
+                    </a>
+                </div>
+
+                <!-- Placa -->
+                <div class="ag-search mb-1">
+                    <i class="bi bi-search"></i>
+                    <input type="text" name="placa" value="{{ placa }}"
+                           placeholder="Buscar placa…" autocomplete="off">
+                </div>
+
+                <!-- Recurso -->
+                <div class="ag-search mb-1">
+                    <i class="bi bi-truck"></i>
+                    <input type="text" name="recurso" value="{{ recurso }}"
+                           placeholder="Buscar recurso…" autocomplete="off">
+                </div>
+
+                <div style="display:flex;gap:6px;margin-top:2px">
+                    <!-- Contrato -->
+                    <select name="contrato"
+                            style="flex:1;background:var(--ag-surface2);border:1px solid var(--ag-border);
+                                   border-radius:8px;color:{% if contrato %}var(--ag-text){% else %}var(--ag-muted){% endif %};
+                                   font-size:.75rem;padding:5px 8px;outline:none">
+                        <option value="" {% if not contrato %}selected{% endif %}
+                                style="color:var(--ag-muted)">Contrato…</option>
+                        {% for c in codigos_contrato %}
+                        <option value="{{ c }}" {% if contrato == c %}selected{% endif %}
+                                style="color:var(--ag-text)">{{ c }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <!-- Orden -->
+                    <select name="orden"
+                            style="flex:1;background:var(--ag-surface2);border:1px solid var(--ag-border);
+                                   border-radius:8px;color:var(--ag-text);
+                                   font-size:.75rem;padding:5px 8px;outline:none">
+                        <option value="reciente" {% if orden == 'reciente' %}selected{% endif %}>Más reciente</option>
+                        <option value="antiguo"  {% if orden == 'antiguo'  %}selected{% endif %}>Más antiguo</option>
+                    </select>
+                </div>
+
+                <input type="hidden" name="scope" value="{{ scope }}">
+
+                <div style="display:flex;gap:6px;margin-top:6px">
+                    <button type="submit"
+                            style="flex:1;background:var(--ag-teal);color:#fff;border:none;
+                                   border-radius:8px;padding:6px 0;font-size:.75rem;font-weight:700;cursor:pointer">
+                        <i class="bi bi-funnel-fill me-1"></i>Filtrar
+                    </button>
+                    <a href="{{ url_for('neo.alertas_gps', filtro=filtro) }}"
+                       style="flex:0 0 auto;background:var(--ag-surface2);color:var(--ag-muted);border:1px solid var(--ag-border);
+                              border-radius:8px;padding:6px 10px;font-size:.75rem;text-decoration:none;
+                              display:flex;align-items:center" title="Limpiar filtros">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Lista de grupos -->
+        <div class="ag-list" id="agList">
+
+            {% if grupos %}
+                {# grupos = tipo → {placa → [alertas]} #}
+                {% for tipo, por_placa in grupos.items() %}
+                {# total de alertas en este tipo #}
+                {% set tipo_total = namespace(n=0) %}
+                {% for p, lst in por_placa.items() %}{% set tipo_total.n = tipo_total.n + lst|length %}{% endfor %}
+
+                <div class="ag-group-header" onclick="toggleGrupo(this)">
+                    <div class="ag-group-left">
+                        <span class="ag-dot"></span>
+                        <span class="ag-group-name">{{ tipo }}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <span class="ag-count-badge">{{ tipo_total.n }}</span>
+                        <i class="bi bi-chevron-down ag-chevron"></i>
+                    </div>
+                </div>
+                <div class="ag-items">
+                    {# Por cada placa mostramos la alerta más reciente (primera de la lista, ya ordenada desc) #}
+                    {% for plate, alertas_placa in por_placa.items() %}
+                    {% set a = alertas_placa[0] %}
+                    {% set cnt = alertas_placa|length %}
+                    {% set ex = extras.get(a.id, {}) %}
+                    <div class="ag-item" onclick="mostrarDetalle({{ a.id }})"
+                         id="item-{{ a.id }}"
+                         data-id="{{ a.id }}"
+                         data-plate="{{ a.vehicle_plate or '' }}"
+                         data-type="{{ tipo }}"
+                         data-time="{{ a.triggered_at or '' }}"
+                         data-contract="{{ a.contract_code or '—' }}"
+                         data-resource="{{ a.resource_code or '—' }}"
+                         data-brigade="{{ a.brigade_type or '—' }}"
+                         data-plan="{{ a.plan_date or '—' }}"
+                         data-order="{{ a.order_number or '' }}"
+                         data-duration="{{ a.item_duration_min or '' }}"
+                         data-lat="{{ a.lat or '' }}"
+                         data-lon="{{ a.lon or '' }}"
+                         data-estado="{{ a.estado_local }}"
+                         data-atendida="{{ a.atendida_por or '' }}"
+                         data-tech1="{{ a.tech1_doc or '' }}"
+                         data-tech2="{{ a.tech2_doc or '' }}"
+                         data-tech3="{{ a.tech3_doc or '' }}"
+                         data-tech4="{{ a.tech4_doc or '' }}"
+                         data-tech5="{{ a.tech5_doc or '' }}"
+                         data-velocidad="{{ ex.get('velocidad', '') }}"
+                         data-duracion="{{ ex.get('duracion_min', '') }}"
+                         data-count="{{ cnt }}">
+
+                        <div class="ag-item-top">
+                            <span class="ag-plate">
+                                <span class="ag-status-dot {{ a.estado_local }}"></span>
+                                {{ a.vehicle_plate or '—' }}
+                            </span>
+                            <div style="display:flex;align-items:center;gap:5px">
+                                {% if cnt > 1 %}
+                                <span style="background:var(--ag-yellow);color:#0d1b2a;
+                                             border-radius:20px;padding:1px 7px;
+                                             font-size:.67rem;font-weight:800">
+                                    ×{{ cnt }}
+                                </span>
+                                {% endif %}
+                                {% if a.order_number %}
+                                <span class="ag-ot">#{{ a.order_number }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {# Línea de metadata según tipo #}
+                        {% if ex.get('velocidad') %}
+                        <div style="font-size:.7rem;color:#f5a623;font-weight:600;margin-bottom:2px">
+                            <i class="bi bi-speedometer2 me-1"></i>{{ ex.velocidad }} km/h
+                            {% if ex.get('duracion_min') %}· {{ ex.duracion_min }} min{% endif %}
+                        </div>
+                        {% endif %}
+
+                        <div class="ag-item-time">
+                            <span class="ag-hora-col" data-utc="{{ a.triggered_at or '' }}">{{ a.triggered_at[:16].replace('T',' ') if a.triggered_at else '—' }}</span>
+                            {% if cnt > 1 %}<span style="color:var(--ag-muted)"> · última de {{ cnt }}</span>{% endif %}
+                            {% if a.contract_code %}· {{ a.contract_code }}{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="ag-no-alertas">
+                <i class="bi bi-bell-slash"></i>
+                <p>Sin alertas {{ 'pendientes' if filtro == 'pendiente' else '' }}<br>
+                   {% if placa %}para la placa <strong>{{ placa }}</strong>{% endif %}
+                </p>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- ══ PANEL DERECHO (detalle + mapa) ═══════════════════ -->
+    <div class="ag-detail" id="agDetail">
+
+        <!-- Empty state -->
+        <div class="ag-detail-empty" id="agEmpty">
+            <i class="bi bi-cursor-text"></i>
+            <p>Selecciona una alerta<br>de la lista para ver el detalle</p>
+        </div>
+
+        <!-- Contenido con detalle arriba y mapa abajo -->
+        <div id="agCard" style="display:none;height:100%;display:none;flex-direction:column">
+
+            <!-- Info de la alerta -->
+            <div style="padding:20px 24px;overflow-y:auto;flex:0 0 auto">
+                <div class="ag-detail-card">
+                    <div class="ag-detail-plate" id="dPlate">—</div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+                        <div class="ag-detail-type" id="dType" style="margin-bottom:0">—</div>
+                        <div id="dMetaChips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+                    </div>
+
+                    <div class="ag-fields">
+                        <div class="ag-field">
+                            <label><i class="bi bi-calendar3 me-1"></i>Fecha / Hora</label>
+                            <span id="dTime">—</span>
+                        </div>
+                        <div class="ag-field">
+                            <label><i class="bi bi-file-earmark-text me-1"></i>Contrato</label>
+                            <span id="dContract">—</span>
+                        </div>
+                        <div class="ag-field">
+                            <label><i class="bi bi-truck me-1"></i>Recurso</label>
+                            <span id="dResource">—</span>
+                        </div>
+                        <div class="ag-field">
+                            <label><i class="bi bi-people me-1"></i>Brigada</label>
+                            <span id="dBrigade">—</span>
+                        </div>
+                        <div class="ag-field">
+                            <label><i class="bi bi-calendar-check me-1"></i>Fecha plan</label>
+                            <span id="dPlan">—</span>
+                        </div>
+                        <div class="ag-field">
+                            <label><i class="bi bi-geo-alt me-1"></i>Coordenadas</label>
+                            <span id="dCoords">—</span>
+                        </div>
+                    </div>
+
+                    <!-- Técnicos -->
+                    <div id="dTechBlock" style="margin-bottom:16px;display:none">
+                        <div style="font-size:.65rem;font-weight:700;color:var(--ag-muted);
+                                    text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">
+                            Técnicos asignados
+                        </div>
+                        <div id="dTechs" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                    </div>
+
+                    <!-- OT -->
+                    <div id="dOTBlock" style="margin-bottom:16px;display:none;
+                         background:var(--ag-surface2);border-radius:8px;padding:12px">
+                        <div style="font-size:.65rem;font-weight:700;color:var(--ag-muted);
+                                    text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">
+                            Orden de Trabajo
+                        </div>
+                        <div class="ag-fields" style="margin:0">
+                            <div class="ag-field">
+                                <label>Número OT</label><span id="dOTNum">—</span>
+                            </div>
+                            <div class="ag-field">
+                                <label>Duración estándar</label><span id="dOTDur">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div id="dActions" class="ag-actions"></div>
+                </div>
+            </div>
+
+            <!-- Mapa -->
+            <div id="dMapBlock" style="flex:1;min-height:280px;display:none;
+                 flex-direction:column;border-top:1px solid var(--ag-border)">
+
+                <!-- Barra del mapa -->
+                <div style="display:flex;align-items:center;justify-content:space-between;
+                            padding:8px 16px;background:var(--ag-surface);flex-shrink:0">
+                    <span style="font-size:.72rem;font-weight:700;color:var(--ag-muted);
+                                 text-transform:uppercase;letter-spacing:.07em">
+                        <i class="bi bi-map me-1" style="color:var(--ag-teal)"></i>
+                        Ubicación de la alerta
+                    </span>
+                    <a id="dMapLink" href="#" target="_blank"
+                       style="font-size:.72rem;color:var(--ag-teal);text-decoration:none;
+                              display:flex;align-items:center;gap:4px">
+                        <i class="bi bi-box-arrow-up-right"></i> Abrir en Maps
+                    </a>
+                </div>
+
+                <!-- iframe de Google Maps -->
+                <iframe id="dMapFrame"
+                        style="flex:1;width:100%;border:none"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        src="about:blank">
+                </iframe>
+            </div>
+
+            <!-- Sin coordenadas -->
+            <div id="dNoMap" style="display:none;padding:16px 24px;
+                 background:var(--ag-surface);border-top:1px solid var(--ag-border)">
+                <div style="background:var(--ag-surface2);border:1px solid var(--ag-border);
+                            border-radius:10px;padding:16px;text-align:center;color:var(--ag-muted);
+                            font-size:.78rem">
+                    <i class="bi bi-geo-alt-fill me-2" style="opacity:.4"></i>
+                    Sin coordenadas para esta alerta
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let alertaActiva = null;
+
+// Convierte string UTC a hora Colombia (UTC-5)
+function fmtHora(utcStr) {
+    if (!utcStr) return "—";
+    const s = utcStr.endsWith("Z") ? utcStr : utcStr + "Z";
+    const d = new Date(s);
+    if (isNaN(d)) return utcStr.slice(0, 16).replace("T", " ");
+    return d.toLocaleString("es-CO", {
+        timeZone: "America/Bogota",
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", hour12: false
+    }).replace(",", "");
+}
+
+// Convierte todas las horas UTC visibles en la lista a hora Colombia
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".ag-hora-col").forEach(el => {
+        el.textContent = fmtHora(el.dataset.utc);
+    });
+});
+
+function toggleGrupo(header) {
+    header.classList.toggle("collapsed");
+}
+
+function mostrarDetalle(id) {
+    // Marcar item activo
+    document.querySelectorAll(".ag-item").forEach(el => el.classList.remove("active"));
+    const item = document.getElementById("item-" + id);
+    if (!item) return;
+    item.classList.add("active");
+    alertaActiva = id;
+
+    const d = item.dataset;
+
+    document.getElementById("agEmpty").style.display  = "none";
+    document.getElementById("agCard").style.display   = "flex";
+
+    // Campos principales
+    document.getElementById("dPlate").textContent    = d.plate || "—";
+    document.getElementById("dType").textContent     = d.type  || "—";
+
+    // Chips de metadata (velocidad, recurrencia)
+    const chips = [];
+    if (d.count > 1) chips.push(
+        `<span style="background:rgba(245,166,35,.2);color:var(--ag-yellow);
+                      border:1px solid rgba(245,166,35,.4);border-radius:20px;
+                      padding:2px 10px;font-size:.72rem;font-weight:800">
+            ×${d.count} alertas
+        </span>`
+    );
+    if (d.velocidad) chips.push(
+        `<span style="background:rgba(229,62,62,.15);color:#fc8181;
+                      border:1px solid rgba(229,62,62,.3);border-radius:20px;
+                      padding:2px 10px;font-size:.72rem;font-weight:700">
+            <i class="bi bi-speedometer2"></i> ${d.velocidad} km/h
+        </span>`
+    );
+    if (d.duracion) chips.push(
+        `<span style="background:rgba(99,102,241,.15);color:#a5b4fc;
+                      border:1px solid rgba(99,102,241,.3);border-radius:20px;
+                      padding:2px 10px;font-size:.72rem;font-weight:700">
+            <i class="bi bi-clock"></i> ${d.duracion} min
+        </span>`
+    );
+    document.getElementById("dMetaChips").innerHTML = chips.join("");
+    document.getElementById("dTime").textContent     = fmtHora(d.time);
+    document.getElementById("dContract").textContent = d.contract || "—";
+    document.getElementById("dResource").textContent = d.resource || "—";
+    document.getElementById("dBrigade").textContent  = d.brigade  || "—";
+    document.getElementById("dPlan").textContent     = d.plan || "—";
+
+    const lat = d.lat, lon = d.lon;
+
+    // Mostrar coordenadas con coma (formato Colombia) — precisión completa
+    if (lat && lon) {
+        const latStr = String(parseFloat(lat)).replace(".", ",");
+        const lonStr = String(parseFloat(lon)).replace(".", ",");
+        document.getElementById("dCoords").textContent = `${latStr}  /  ${lonStr}`;
+    } else {
+        document.getElementById("dCoords").textContent = "—";
+    }
+
+    // Mapa
+    const mapBlock = document.getElementById("dMapBlock");
+    const noMap    = document.getElementById("dNoMap");
+    const mapFrame = document.getElementById("dMapFrame");
+    const mapLink  = document.getElementById("dMapLink");
+
+    if (lat && lon) {
+        mapBlock.style.display = "flex";
+        noMap.style.display    = "none";
+        // URL directa a Google Maps con todas las decimales (sin toFixed)
+        const latFull = parseFloat(lat);
+        const lonFull = parseFloat(lon);
+        mapLink.href  = `https://www.google.com/maps?q=${latFull},${lonFull}`;
+        // Embed con pin exacto usando q= y t=m (mapa normal)
+        mapFrame.src  = `https://maps.google.com/maps?q=${latFull},${lonFull}&z=16&t=m&output=embed&hl=es&markers=${latFull},${lonFull}`;
+    } else {
+        mapBlock.style.display = "none";
+        noMap.style.display    = "block";
+    }
+
+    // Técnicos
+    const techs = [d.tech1, d.tech2, d.tech3, d.tech4, d.tech5].filter(Boolean);
+    const techBlock = document.getElementById("dTechBlock");
+    if (techs.length) {
+        techBlock.style.display = "block";
+        document.getElementById("dTechs").innerHTML = techs.map(t =>
+            `<span style="background:var(--ag-surface2);border:1px solid var(--ag-border);
+                          border-radius:6px;padding:3px 10px;font-size:.75rem;
+                          color:var(--ag-text);font-family:monospace">${t}</span>`
+        ).join("");
+    } else {
+        techBlock.style.display = "none";
+    }
+
+    // OT
+    const otBlock = document.getElementById("dOTBlock");
+    if (d.order) {
+        otBlock.style.display = "block";
+        document.getElementById("dOTNum").textContent = d.order;
+        document.getElementById("dOTDur").textContent = d.duration ? d.duration + " min" : "—";
+    } else {
+        otBlock.style.display = "none";
+    }
+
+    // Acciones
+    const actions = document.getElementById("dActions");
+    if (d.estado === "pendiente") {
+        actions.innerHTML = `
+            <button class="ag-btn ag-btn-resolver" onclick="responder(${id}, 'resolver')">
+                <i class="bi bi-check-circle-fill"></i> Resolver
+            </button>
+            <button class="ag-btn ag-btn-liberar" onclick="responder(${id}, 'liberar')">
+                <i class="bi bi-arrow-counterclockwise"></i> Liberar
+            </button>`;
+    } else if (d.estado === "resuelta") {
+        actions.innerHTML = `<div class="ag-atendida">
+            <i class="bi bi-check-circle-fill"></i>
+            Resuelta por <strong>${d.atendida || "—"}</strong>
+        </div>`;
+    } else {
+        actions.innerHTML = `<div class="ag-liberada">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Liberada — devuelta a GPS Monitor
+        </div>`;
+    }
+}
+
+async function responder(id, accion) {
+    const btn = event.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando…';
+
+    try {
+        const r = await fetch(`/neo/alertas/${id}/responder`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ accion })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            // Actualizar el item en la lista y recargar detalle
+            const item = document.getElementById("item-" + id);
+            if (item) {
+                item.dataset.estado = accion === "resolver" ? "resuelta" : "liberada";
+                const dot = item.querySelector(".ag-status-dot");
+                if (dot) {
+                    dot.classList.remove("resuelta", "liberada");
+                    dot.classList.add(accion === "resolver" ? "resuelta" : "liberada");
+                }
+            }
+            mostrarDetalle(id);
+            actualizarBadge();
+        } else {
+            alert("Error: " + (data.error || "No se pudo procesar"));
+            btn.disabled = false;
+        }
+    } catch (e) {
+        alert("Error de conexión: " + e.message);
+        btn.disabled = false;
+    }
+}
+
+function actualizarBadge() {
+    fetch("/neo/alertas/badge")
+        .then(r => r.json())
+        .then(d => {
+            const b = document.getElementById("navBadgeAlertas");
+            if (b) b.textContent = d.pendientes;
+        });
+}
+
+// Polling del badge cada 60 segundos
+setInterval(actualizarBadge, 60000);
+</script>
+{% endblock %}

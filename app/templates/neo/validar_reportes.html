@@ -1,0 +1,335 @@
+{% extends "neo/navbNeo.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/neo/ValidarNeo.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- HEADER -->
+    <div class="neo-rpt-header mb-4">
+        <div>
+            <h2 class="neo-rpt-title">
+                <i class="bi bi-patch-check-fill me-2"></i>Mis Reportes
+            </h2>
+            <p class="neo-rpt-sub">
+                Seguimiento de incidencias reportadas y respuestas del coordinador
+            </p>
+        </div>
+        <span class="badge-neo-total">
+            <i class="bi bi-files me-1"></i>
+            {{ reportes|length }} reporte{% if reportes|length != 1 %}s{% endif %}
+        </span>
+    </div>
+
+    <!-- FILTROS SERVIDOR -->
+    <form method="GET" action="{{ url_for('neo.validar_reportes') }}"
+          class="neo-filtros-form mb-3">
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">
+                <i class="bi bi-calendar-event me-1"></i>Creación desde
+            </label>
+            <input type="date" name="fecha_ini" class="filtro-input"
+                   value="{{ filtros.fecha_ini }}">
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">
+                <i class="bi bi-calendar-event me-1"></i>Creación hasta
+            </label>
+            <input type="date" name="fecha_fin" class="filtro-input"
+                   value="{{ filtros.fecha_fin }}">
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">
+                <i class="bi bi-calendar-range me-1"></i>Reporte desde
+            </label>
+            <input type="date" name="fecha_rep_ini" class="filtro-input"
+                   value="{{ filtros.fecha_rep_ini }}">
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">
+                <i class="bi bi-calendar-range me-1"></i>Reporte hasta
+            </label>
+            <input type="date" name="fecha_rep_fin" class="filtro-input"
+                   value="{{ filtros.fecha_rep_fin }}">
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">
+                <i class="bi bi-file-earmark-text me-1"></i>Contrato
+            </label>
+            <select name="contrato" class="filtro-input">
+                <option value="">— Todos —</option>
+                {% for c in lista_contratos %}
+                <option value="{{ c }}" {% if filtros.contrato == c %}selected{% endif %}>
+                    {{ c }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filtro-grupo">
+            <label class="filtro-label">
+                <i class="bi bi-person-gear me-1"></i>Recurso
+            </label>
+            <select name="recurso" class="filtro-input">
+                <option value="">— Todos —</option>
+                {% for r in lista_recursos %}
+                <option value="{{ r }}" {% if filtros.recurso == r %}selected{% endif %}>
+                    {{ r }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filtro-acciones">
+            <button type="submit" class="btn-filtro-aplicar">
+                <i class="bi bi-search me-1"></i>Filtrar
+            </button>
+            <a href="{{ url_for('neo.validar_reportes') }}" class="btn-filtro-limpiar">
+                <i class="bi bi-x-circle me-1"></i>Limpiar
+            </a>
+        </div>
+
+    </form>
+
+    <!-- FILTROS RÁPIDOS POR ESTADO -->
+    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+        <span class="text-muted small fw-semibold">Ver:</span>
+        <button class="btn-filtro-neo active" data-filtro="todos">
+            <i class="bi bi-list-ul me-1"></i>Todos
+        </button>
+        <button class="btn-filtro-neo pendiente" data-filtro="abierto">
+            <i class="bi bi-hourglass-split me-1"></i>Sin respuesta
+        </button>
+        <button class="btn-filtro-neo con-respuesta" data-filtro="con-respuesta">
+            <i class="bi bi-chat-left-text-fill me-1"></i>Con respuesta
+        </button>
+        <button class="btn-filtro-neo conforme" data-filtro="conforme">
+            <i class="bi bi-check-circle-fill me-1"></i>Conformes
+        </button>
+        <button class="btn-filtro-neo no-conforme" data-filtro="no-conforme">
+            <i class="bi bi-x-circle-fill me-1"></i>No conformes
+        </button>
+    </div>
+
+    <!-- BARRA DE SELECCIÓN (aparece al marcar filas) -->
+    <div class="neo-select-bar d-none" id="selectBar">
+        <i class="bi bi-check2-square me-1"></i>
+        <span id="selectCount">0</span> seleccionado(s)
+        <button class="btn-neo-eliminar ms-auto" id="btnEliminar">
+            <i class="bi bi-trash3-fill me-1"></i>Eliminar seleccionados
+        </button>
+    </div>
+
+    <!-- TABLA -->
+    {% if reportes %}
+    <div class="neo-tabla-wrap">
+        <table class="table neo-tabla">
+            <thead>
+                <tr>
+                    <th style="width:38px; text-align:center;">
+                        <input type="checkbox" id="chkTodos" class="neo-check"
+                               title="Seleccionar todos">
+                    </th>
+                    <th>#</th>
+                    <th>Creación</th>
+                    <th>Fecha reporte</th>
+                    <th>Contrato</th>
+                    <th>Recurso</th>
+                    <th>Tipo incidencia</th>
+                    <th>Impacto</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reportes %}
+                {% if r.conformidad_neo == 'No conforme' %}
+                    {% set cat = 'no-conforme' %}
+                {% elif r.conformidad_neo == 'Conforme' %}
+                    {% set cat = 'conforme' %}
+                {% elif r.estado == 'Respondido' %}
+                    {% set cat = 'con-respuesta' %}
+                {% else %}
+                    {% set cat = 'abierto' %}
+                {% endif %}
+                <tr class="neo-fila" data-categoria="{{ cat }}">
+                    <td style="text-align:center; vertical-align:middle;">
+                        <input type="checkbox" class="neo-check chk-fila"
+                               data-id="{{ r.id }}">
+                    </td>
+                    <td class="fw-bold text-secondary">#{{ r.id }}</td>
+                    <td class="text-muted small">
+                        {{ r.fecha_creado.strftime('%d/%m/%Y') if r.fecha_creado else '—' }}
+                    </td>
+                    <td>{{ r.fecha_reporte.strftime('%d/%m/%Y') if r.fecha_reporte else '—' }}</td>
+                    <td class="text-truncate" style="max-width:130px;" title="{{ r.contrato }}">
+                        {{ r.contrato or '—' }}
+                    </td>
+                    <td>{{ r.recurso or '—' }}</td>
+                    <td>{{ r.tipo_incidencia or '—' }}</td>
+                    <td>
+                        {% if r.impacto == 'Alto' %}
+                            <span class="badge-impacto alto">Alto</span>
+                        {% elif r.impacto == 'Medio' %}
+                            <span class="badge-impacto medio">Medio</span>
+                        {% elif r.impacto == 'Bajo' %}
+                            <span class="badge-impacto bajo">Bajo</span>
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if cat == 'no-conforme' %}
+                            <span class="badge-estado no-conforme">
+                                <i class="bi bi-x-circle-fill me-1"></i>No conforme
+                            </span>
+                        {% elif cat == 'conforme' %}
+                            <span class="badge-estado conforme">
+                                <i class="bi bi-check-circle-fill me-1"></i>Conforme
+                            </span>
+                        {% elif cat == 'con-respuesta' %}
+                            <span class="badge-estado con-respuesta">
+                                <i class="bi bi-chat-left-text-fill me-1"></i>Con respuesta
+                            </span>
+                        {% else %}
+                            <span class="badge-estado abierto">
+                                <i class="bi bi-hourglass-split me-1"></i>Sin respuesta
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('neo.detalle_neo', id=r.id) }}"
+                           class="btn-neo-ver">
+                            <i class="bi bi-eye me-1"></i>Ver
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div class="neo-empty">
+        <i class="bi bi-inbox"></i>
+        <p>
+            {% if filtros.fecha_ini or filtros.fecha_fin or filtros.fecha_rep_ini
+                  or filtros.fecha_rep_fin or filtros.recurso or filtros.contrato %}
+                No hay reportes que coincidan con los filtros aplicados.
+            {% else %}
+                Aún no tiene reportes registrados.
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+(function () {
+
+    /* ---- Filtros rápidos por categoría ---- */
+    const btns  = document.querySelectorAll(".btn-filtro-neo");
+    const filas = document.querySelectorAll(".neo-fila");
+
+    btns.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            btns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const filtro = btn.dataset.filtro;
+            filas.forEach(function (fila) {
+                fila.style.display =
+                    (filtro === "todos" || fila.dataset.categoria === filtro) ? "" : "none";
+            });
+            actualizarSeleccion();
+        });
+    });
+
+    /* ---- Selección de filas ---- */
+    const chkTodos  = document.getElementById("chkTodos");
+    const selectBar = document.getElementById("selectBar");
+    const countEl   = document.getElementById("selectCount");
+
+    function filasVisibles() {
+        return Array.from(document.querySelectorAll(".chk-fila")).filter(
+            c => c.closest("tr").style.display !== "none"
+        );
+    }
+
+    function actualizarSeleccion() {
+        const marcados = Array.from(document.querySelectorAll(".chk-fila:checked")).filter(
+            c => c.closest("tr").style.display !== "none"
+        );
+        countEl.textContent = marcados.length;
+        if (marcados.length > 0) {
+            selectBar.classList.remove("d-none");
+        } else {
+            selectBar.classList.add("d-none");
+        }
+        const visibles = filasVisibles();
+        chkTodos.indeterminate = marcados.length > 0 && marcados.length < visibles.length;
+        chkTodos.checked = visibles.length > 0 && marcados.length === visibles.length;
+    }
+
+    if (chkTodos) {
+        chkTodos.addEventListener("change", function () {
+            filasVisibles().forEach(c => c.checked = chkTodos.checked);
+            actualizarSeleccion();
+        });
+    }
+
+    document.querySelectorAll(".chk-fila").forEach(c =>
+        c.addEventListener("change", actualizarSeleccion)
+    );
+
+    /* ---- Eliminar seleccionados ---- */
+    const btnEliminar = document.getElementById("btnEliminar");
+    if (btnEliminar) {
+        btnEliminar.addEventListener("click", function () {
+            const ids = Array.from(document.querySelectorAll(".chk-fila:checked"))
+                .filter(c => c.closest("tr").style.display !== "none")
+                .map(c => Number(c.dataset.id));
+
+            if (!ids.length) return;
+
+            const plural = ids.length === 1 ? "este reporte" : `estos ${ids.length} reportes`;
+            if (!confirm(`¿Está seguro de que desea eliminar ${plural}? Esta acción no se puede deshacer.`)) return;
+
+            btnEliminar.disabled = true;
+            btnEliminar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Eliminando…';
+
+            fetch("/neo/eliminar-reportes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ids: ids })
+            })
+            .then(r => r.json())
+            .then(function (data) {
+                if (data.ok) {
+                    window.location.reload();
+                } else {
+                    alert(data.error || "Error al eliminar.");
+                    btnEliminar.disabled = false;
+                    btnEliminar.innerHTML = '<i class="bi bi-trash3-fill me-1"></i>Eliminar seleccionados';
+                }
+            })
+            .catch(function () {
+                alert("Error de conexión.");
+                btnEliminar.disabled = false;
+                btnEliminar.innerHTML = '<i class="bi bi-trash3-fill me-1"></i>Eliminar seleccionados';
+            });
+        });
+    }
+
+})();
+</script>
+
+{% endblock %}

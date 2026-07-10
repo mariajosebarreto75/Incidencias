@@ -1,0 +1,126 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Parámetros NEO{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-sliders me-2" style="color:var(--adm-accent)"></i>Parámetros NEO</h1>
+        <p class="adm-page-sub">{{ parametros|length }} parámetro(s) registrado(s) — usados en el formulario de reporte NEO</p>
+    </div>
+    <button class="btn-adm-primary" data-bs-toggle="modal" data-bs-target="#modalAdd">
+        <i class="bi bi-plus-lg"></i> Nuevo parámetro
+    </button>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<div class="adm-card">
+    <div class="adm-card-header">
+        <span class="adm-card-title">Catálogo de parámetros NEO</span>
+        <div class="adm-search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Buscar..." oninput="filtrarTabla(this.value,'tbody')">
+        </div>
+    </div>
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr><th>#</th><th>Parámetro</th><th>Acciones</th></tr>
+            </thead>
+            <tbody id="tbody">
+            {% for p in parametros %}
+            <tr>
+                <td style="color:#94a3b8">{{ loop.index }}</td>
+                <td><strong>{{ p.parametroNeo }}</strong></td>
+                <td class="actions">
+                    <button class="btn-edit"
+                        data-id="{{ p.id }}"
+                        data-nombre="{{ p.parametroNeo | e }}"
+                        onclick="abrirEditar(this)">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    <button class="btn-del" data-id="{{ p.id }}" onclick="eliminar(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="adm-empty"><i class="bi bi-inbox"></i>Sin parámetros registrados</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL AGREGAR -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nuevo Parámetro NEO</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaAdd" class="adm-alert"></div>
+        <label class="form-label">Nombre del parámetro *</label>
+        <input id="addNombre" class="form-control" placeholder="Ej: Salida tarde, Herramienta...">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarAdd()"><i class="bi bi-check-lg"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Parámetro</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaEdit" class="adm-alert"></div>
+        <input type="hidden" id="editId">
+        <label class="form-label">Nombre del parámetro *</label>
+        <input id="editNombre" class="form-control">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarEdit()"><i class="bi bi-check-lg"></i> Actualizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function abrirEditar(btn) {
+    document.getElementById("editId").value     = btn.dataset.id;
+    document.getElementById("editNombre").value = btn.dataset.nombre;
+    abrirModal("modalEdit");
+}
+async function guardarAdd() {
+    const r = await apiFetch("/admin/api/parametros", "POST", { parametroNeo: document.getElementById("addNombre").value.trim() });
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaAdd", r.mensaje, "danger");
+}
+async function guardarEdit() {
+    const r = await apiFetch("/admin/api/parametros/" + document.getElementById("editId").value, "PUT", { parametroNeo: document.getElementById("editNombre").value.trim() });
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaEdit", r.mensaje, "danger");
+}
+function eliminar(btn) {
+    if (!confirm("¿Eliminar este parámetro?")) return;
+    apiFetch("/admin/api/parametros/" + btn.dataset.id, "DELETE").then(function(r) {
+        if (r.success) location.reload();
+        else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+    });
+    if (r.success) location.reload();
+    else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+}
+</script>
+{% endblock %}

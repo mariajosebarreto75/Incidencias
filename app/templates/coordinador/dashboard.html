@@ -1,0 +1,237 @@
+{% extends 'coordinador/navbarcoor.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<style>
+/* ── Colores extra para los 3 módulos externos ─────────── */
+:root {
+    --orange-primary: #f97316;
+    --orange-dark:    #c2410c;
+    --purple-primary: #7c3aed;
+    --purple-dark:    #5b21b6;
+    --indigo-primary: #3b82f6;
+    --indigo-dark:    #1d4ed8;
+}
+
+.dash-card--seguimiento:hover {
+    box-shadow: 0 20px 50px rgba(249,115,22,.18);
+    border-color: var(--orange-primary);
+}
+.dash-card-icon--seguimiento {
+    background: linear-gradient(135deg,#fff3e0,#ffe0b2);
+    color: var(--orange-primary);
+}
+.dash-card--seguimiento:hover .dash-card-icon--seguimiento {
+    background: linear-gradient(135deg, var(--orange-primary), var(--orange-dark));
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(249,115,22,.35);
+}
+.dash-card-btn--seguimiento { background: var(--orange-primary); }
+.dash-card--seguimiento:hover .dash-card-btn--seguimiento {
+    background: var(--orange-dark);
+    box-shadow: 0 6px 16px rgba(249,115,22,.35);
+}
+
+.dash-card--inspecciones:hover {
+    box-shadow: 0 20px 50px rgba(124,58,237,.18);
+    border-color: var(--purple-primary);
+}
+.dash-card-icon--inspecciones {
+    background: linear-gradient(135deg,#ede9fe,#ddd6fe);
+    color: var(--purple-primary);
+}
+.dash-card--inspecciones:hover .dash-card-icon--inspecciones {
+    background: linear-gradient(135deg, var(--purple-primary), var(--purple-dark));
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(124,58,237,.35);
+}
+.dash-card-btn--inspecciones { background: var(--purple-primary); }
+.dash-card--inspecciones:hover .dash-card-btn--inspecciones {
+    background: var(--purple-dark);
+    box-shadow: 0 6px 16px rgba(124,58,237,.35);
+}
+
+.dash-card--agenda:hover {
+    box-shadow: 0 20px 50px rgba(59,130,246,.18);
+    border-color: var(--indigo-primary);
+}
+.dash-card-icon--agenda {
+    background: linear-gradient(135deg,#dbeafe,#bfdbfe);
+    color: var(--indigo-primary);
+}
+.dash-card--agenda:hover .dash-card-icon--agenda {
+    background: linear-gradient(135deg, var(--indigo-primary), var(--indigo-dark));
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(59,130,246,.35);
+}
+.dash-card-btn--agenda { background: var(--indigo-primary); }
+.dash-card--agenda:hover .dash-card-btn--agenda {
+    background: var(--indigo-dark);
+    box-shadow: 0 6px 16px rgba(59,130,246,.35);
+}
+
+/* Todas las tarjetas en tamaño uniforme */
+.dash-card--sm {
+    padding: 30px 24px;
+}
+.dash-card-icon--sm {
+    width: 66px !important;
+    height: 66px !important;
+    font-size: 1.65rem !important;
+    border-radius: 16px !important;
+    margin-bottom: 16px !important;
+}
+.dash-card--sm .dash-card-title { font-size: 1.05rem; }
+.dash-card--sm .dash-card-desc  { font-size: .82rem; margin-bottom: 18px; }
+.dash-card--sm .dash-card-btn   { font-size: .8rem; padding: 9px 20px; }
+
+/* badge externo */
+.dash-ext-badge {
+    font-size: .62rem; font-weight: 700; letter-spacing: .05em;
+    background: #f1f5f9; color: #94a3b8;
+    border-radius: 6px; padding: 2px 7px;
+    display: inline-block; margin-bottom: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-4 px-4">
+
+    <!-- HEADER -->
+    <div class="dash-header shadow-sm mb-5" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <img src="{{ url_for('static', filename='img/logo_hesego.png') }}"
+             alt="HESEGO Ingeniería" class="dash-logo">
+        <div style="flex:1;min-width:200px">
+            <span style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:#0ea5e9;font-weight:700">
+                Bienvenido al sistema
+            </span>
+            <h2 class="mb-1" style="font-size:1.75rem;font-weight:800;margin:4px 0 6px">
+                Hola, <span style="color:#0ea5e9">{{ current_user.nombre_completo }}</span>
+            </h2>
+            <p class="mb-0" style="color:#64748b;font-size:.85rem">
+                <i class="bi bi-grid-3x3-gap me-1"></i>
+                Seleccione el módulo que desea gestionar
+            </p>
+        </div>
+        <div style="background:#e0f2fe;color:#0369a1;border-radius:20px;padding:.4rem 1rem;font-size:.78rem;font-weight:600;white-space:nowrap">
+            <i class="bi bi-calendar3 me-1"></i>
+            <span id="dashFecha"></span>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        const d = new Date();
+        const dias   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+        const meses  = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        document.getElementById('dashFecha').textContent =
+            dias[d.getDay()] + ', ' + d.getDate() + ' de ' + meses[d.getMonth()] + ' ' + d.getFullYear();
+    })();
+    </script>
+
+    <!-- GRILLA ÚNICA: 5 tarjetas del mismo tamaño -->
+    <div class="row g-4 justify-content-center">
+
+        <!-- DISTRIBUCIÓN OPERATIVA -->
+        <div class="col-sm-6 col-lg-4">
+            <a href="/coordinador/distribucion-operativa" class="text-decoration-none">
+                <div class="dash-card dash-card--sm">
+                    <div class="dash-card-icon dash-card-icon--sm">
+                        <i class="bi bi-diagram-3-fill"></i>
+                    </div>
+                    <h4 class="dash-card-title">Distribución Operativa</h4>
+                    <p class="dash-card-desc">
+                        Gestione recursos, cuadrillas y órdenes de trabajo diarias.
+                    </p>
+                    <span class="dash-card-btn">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Ingresar
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- PANEL DE REPORTES NEO -->
+        <div class="col-sm-6 col-lg-4">
+            <a href="/coordinador/panelReportes" class="text-decoration-none">
+                <div class="dash-card dash-card--reportes dash-card--sm">
+                    <div class="dash-card-icon dash-card-icon--reportes dash-card-icon--sm">
+                        <i class="bi bi-clipboard-data-fill"></i>
+                    </div>
+                    <h4 class="dash-card-title">Panel de Reportes NEO</h4>
+                    <p class="dash-card-desc">
+                        Valide y gestione los reportes operacionales de la plataforma NEO.
+                    </p>
+                    <span class="dash-card-btn dash-card-btn--reportes">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Ingresar
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- ARCHIVO DE SEGUIMIENTO -->
+        <div class="col-sm-6 col-lg-4">
+            <a href="https://informesseguimientos.infinityfreeapp.com/dashboard.php"
+               target="_blank" class="text-decoration-none">
+                <div class="dash-card dash-card--seguimiento dash-card--sm">
+                    <span class="dash-ext-badge"><i class="bi bi-box-arrow-up-right me-1"></i>Enlace externo</span>
+                    <div class="dash-card-icon dash-card-icon--seguimiento dash-card-icon--sm">
+                        <i class="bi bi-folder2-open"></i>
+                    </div>
+                    <h4 class="dash-card-title">Archivo de Seguimiento</h4>
+                    <p class="dash-card-desc">
+                        Acceda al sistema de seguimiento e informes operacionales.
+                    </p>
+                    <span class="dash-card-btn dash-card-btn--seguimiento">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Abrir
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- INSPECCIONES (Power BI) -->
+        <div class="col-sm-6 col-lg-4">
+            <a href="https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9"
+               target="_blank" class="text-decoration-none">
+                <div class="dash-card dash-card--inspecciones dash-card--sm">
+                    <span class="dash-ext-badge"><i class="bi bi-bar-chart-fill me-1"></i>Power BI</span>
+                    <div class="dash-card-icon dash-card-icon--inspecciones dash-card-icon--sm">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h4 class="dash-card-title">Inspecciones</h4>
+                    <p class="dash-card-desc">
+                        Visualice reportes e indicadores de inspección en Power BI.
+                    </p>
+                    <span class="dash-card-btn dash-card-btn--inspecciones">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Abrir
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- AGENDA DE COMPROMISOS -->
+        <div class="col-sm-6 col-lg-4">
+            <a href="https://agendacompromisos.pages.dev/Compromisos"
+               target="_blank" class="text-decoration-none">
+                <div class="dash-card dash-card--agenda dash-card--sm">
+                    <span class="dash-ext-badge"><i class="bi bi-box-arrow-up-right me-1"></i>Enlace externo</span>
+                    <div class="dash-card-icon dash-card-icon--agenda dash-card-icon--sm">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+                    <h4 class="dash-card-title">Agenda de Compromisos</h4>
+                    <p class="dash-card-desc">
+                        Consulte y gestione los compromisos pendientes del equipo.
+                    </p>
+                    <span class="dash-card-btn dash-card-btn--agenda">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Abrir
+                    </span>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

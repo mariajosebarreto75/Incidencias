@@ -1,0 +1,354 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Meta Operativa{% endblock %}
+
+{% block head %}
+<style>
+.meta-ck { width:15px;height:15px;cursor:pointer;accent-color:var(--adm-accent); }
+.meta-row-sel { background:#0c2040 !important; }
+#btnBulkDel {
+    display:none;
+    padding:.35rem .9rem;border-radius:6px;font-size:.75rem;font-weight:700;
+    background:#3b0f0f;color:#fca5a5;border:1px solid #991b1b;cursor:pointer;transition:all .2s;
+}
+#btnBulkDel:hover { background:#4c1212; }
+#btnBulkDel.visible { display:inline-flex;align-items:center;gap:.4rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-graph-up-arrow me-2" style="color:var(--adm-accent)"></i>Meta Operativa</h1>
+        <p class="adm-page-sub" id="subtitulo">{{ metas|length }} meta(s) registrada(s)</p>
+    </div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <button id="btnBulkDel" onclick="eliminarSeleccionados()">
+            <i class="bi bi-trash"></i> Eliminar seleccionados (<span id="cntSel">0</span>)
+        </button>
+        <a href="/admin/api/metas/export" class="btn-adm-secondary" style="text-decoration:none">
+            <i class="bi bi-file-earmark-excel"></i> Exportar
+        </a>
+        <button class="btn-adm-secondary" data-bs-toggle="modal" data-bs-target="#modalImport">
+            <i class="bi bi-upload"></i> Importar
+        </button>
+        <button class="btn-adm-primary" data-bs-toggle="modal" data-bs-target="#modalAdd">
+            <i class="bi bi-plus-lg"></i> Nueva meta
+        </button>
+    </div>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<div class="adm-card">
+    <div class="adm-card-header" style="flex-wrap:wrap;gap:.6rem">
+        <div style="display:flex;align-items:center;gap:.6rem">
+            <span class="adm-card-title">Metas por contrato y cuadrilla</span>
+            <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer;font-size:.78rem;color:#64748b">
+                <input type="checkbox" class="meta-ck" id="ckAll" onchange="toggleTodos(this)"> Todos
+            </label>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto">
+            <div class="adm-search" style="min-width:190px">
+                <i class="bi bi-search"></i>
+                <select id="fContrato" class="form-select form-select-sm" style="background:#0a1628;color:#e2e8f0;border:none;font-size:.8rem" onchange="filtrar()">
+                    <option value="">— Todos los contratos —</option>
+                    {% for c in contratos %}<option value="{{ c.contrato }}">{{ c.contrato }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="adm-search" style="min-width:140px">
+                <i class="bi bi-search"></i>
+                <input id="fTipo" type="text" placeholder="Tipo cuadrilla..." oninput="filtrar()" autocomplete="off">
+            </div>
+            <div class="adm-search" style="min-width:100px">
+                <i class="bi bi-search"></i>
+                <input id="fProceso" type="text" placeholder="Proceso..." oninput="filtrar()" autocomplete="off">
+            </div>
+            <button class="btn btn-sm" style="background:#1e293b;color:#64748b;border:1px solid #334155;font-size:.75rem"
+                onclick="limpiarFiltros()"><i class="bi bi-x"></i> Limpiar</button>
+        </div>
+    </div>
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr>
+                    <th style="width:36px"></th>
+                    <th>#</th>
+                    <th>Contrato</th>
+                    <th>Tipo Cuadrilla</th>
+                    <th>Proceso</th>
+                    <th>Meta Producción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbody">
+            {% for m in metas %}
+            <tr data-id="{{ m.id }}"
+                data-contrato="{{ m.contrato | lower }}"
+                data-tipo="{{ m.Tipo_cuadrilla | lower }}"
+                data-proceso="{{ (m.Proceso or '') | lower }}">
+                <td>
+                    <input type="checkbox" class="meta-ck row-ck" data-id="{{ m.id }}" onchange="onCkChange()">
+                </td>
+                <td style="color:#94a3b8">{{ loop.index }}</td>
+                <td style="font-size:.78rem">{{ m.contrato }}</td>
+                <td><strong>{{ m.Tipo_cuadrilla }}</strong></td>
+                <td style="color:#64748b">{{ m.Proceso or '—' }}</td>
+                <td><strong style="color:var(--adm-accent)">{{ "{:,.0f}".format(m.Meta_Produccion) }}</strong></td>
+                <td class="actions">
+                    <button class="btn-edit"
+                        data-id="{{ m.id }}"
+                        data-contrato="{{ m.contrato | e }}"
+                        data-tipo="{{ m.Tipo_cuadrilla | e }}"
+                        data-proceso="{{ m.Proceso or '' | e }}"
+                        data-meta="{{ m.Meta_Produccion }}"
+                        onclick="abrirEditar(this)">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    <button class="btn-del" data-id="{{ m.id }}" onclick="eliminar(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="adm-empty"><i class="bi bi-inbox"></i>Sin metas registradas</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL AGREGAR -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nueva Meta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaAdd" class="adm-alert"></div>
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label">Contrato *</label>
+              <select id="addContrato" class="form-select">
+                  <option value="">— Seleccione —</option>
+                  {% for c in contratos %}<option value="{{ c.contrato }}">{{ c.contrato }}</option>{% endfor %}
+              </select></div>
+          <div class="col-7"><label class="form-label">Tipo Cuadrilla *</label>
+              <input id="addTipo" class="form-control" placeholder="Ej: CUAD (MTTO)"></div>
+          <div class="col-5"><label class="form-label">Meta Producción *</label>
+              <input id="addMeta" class="form-control" type="number" min="0" placeholder="0"></div>
+          <div class="col-12"><label class="form-label">Proceso</label>
+              <input id="addProceso" class="form-control" placeholder="Opcional"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarAdd()"><i class="bi bi-check-lg"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Meta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaEdit" class="adm-alert"></div>
+        <input type="hidden" id="editId">
+        <div class="row g-3">
+          <div class="col-12"><label class="form-label">Contrato *</label>
+              <select id="editContrato" class="form-select">
+                  {% for c in contratos %}<option value="{{ c.contrato }}">{{ c.contrato }}</option>{% endfor %}
+              </select></div>
+          <div class="col-7"><label class="form-label">Tipo Cuadrilla *</label>
+              <input id="editTipo" class="form-control"></div>
+          <div class="col-5"><label class="form-label">Meta Producción *</label>
+              <input id="editMeta" class="form-control" type="number" min="0"></div>
+          <div class="col-12"><label class="form-label">Proceso</label>
+              <input id="editProceso" class="form-control"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarEdit()"><i class="bi bi-check-lg"></i> Actualizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR -->
+<div class="modal fade" id="modalImport" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-upload me-2"></i>Importar Metas desde Excel</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaImport" class="adm-alert"></div>
+        <div style="background:#0a1628;border:1px solid #1e293b;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.82rem;color:#94a3b8">
+            <strong style="color:#7dd3fc"><i class="bi bi-info-circle me-1"></i>Formato del Excel:</strong>
+            Columnas: <code>contrato</code>, <code>Tipo_cuadrilla</code>, <code>Proceso</code> (opcional), <code>Meta_Produccion</code>.<br>
+            Si ya existe la combinación contrato + tipo cuadrilla, <strong style="color:#fcd34d">se actualiza</strong> el valor de meta.
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Archivo Excel (.xlsx)</label>
+            <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls">
+        </div>
+        <div id="importResultado" style="display:none;background:#0a1628;border:1px solid #1e293b;border-radius:8px;padding:1rem;font-size:.85rem"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button class="btn-adm-primary" onclick="importarMetas()">
+            <i class="bi bi-cloud-upload me-1"></i> Importar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Filtrado ──────────────────────────────────────────────
+function filtrar() {
+    const fC = (document.getElementById('fContrato').value || "").toLowerCase();
+    const fT = document.getElementById('fTipo').value.toLowerCase();
+    const fP = document.getElementById('fProceso').value.toLowerCase();
+    let visible = 0;
+    document.querySelectorAll('#tbody tr[data-id]').forEach(function(tr) {
+        const ok = (!fC || tr.dataset.contrato.includes(fC)) &&
+                   (!fT || tr.dataset.tipo.includes(fT))     &&
+                   (!fP || tr.dataset.proceso.includes(fP));
+        tr.style.display = ok ? '' : 'none';
+        if (ok) visible++;
+    });
+    document.getElementById('subtitulo').textContent = visible + ' meta(s) visible(s)';
+    onCkChange();
+}
+
+function limpiarFiltros() {
+    document.getElementById('fContrato').value = '';
+    document.getElementById('fTipo').value = '';
+    document.getElementById('fProceso').value = '';
+    filtrar();
+}
+
+// ── Checkboxes ────────────────────────────────────────────
+function toggleTodos(ck) {
+    document.querySelectorAll('#tbody tr[data-id]').forEach(function(tr) {
+        if (tr.style.display === 'none') return;
+        const rowCk = tr.querySelector('.row-ck');
+        if (rowCk) rowCk.checked = ck.checked;
+        tr.classList.toggle('meta-row-sel', ck.checked);
+    });
+    onCkChange();
+}
+
+function onCkChange() {
+    const sel = document.querySelectorAll('.row-ck:checked').length;
+    document.getElementById('cntSel').textContent = sel;
+    const btn = document.getElementById('btnBulkDel');
+    btn.classList.toggle('visible', sel > 0);
+    document.getElementById('ckAll').indeterminate =
+        sel > 0 && sel < document.querySelectorAll('.row-ck').length;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.row-ck').forEach(function(ck) {
+        ck.addEventListener('change', function() {
+            this.closest('tr').classList.toggle('meta-row-sel', this.checked);
+            onCkChange();
+        });
+    });
+});
+
+// ── CRUD ─────────────────────────────────────────────────
+function abrirEditar(btn) {
+    document.getElementById("editId").value       = btn.dataset.id;
+    document.getElementById("editContrato").value = btn.dataset.contrato;
+    document.getElementById("editTipo").value     = btn.dataset.tipo;
+    document.getElementById("editProceso").value  = btn.dataset.proceso;
+    document.getElementById("editMeta").value     = btn.dataset.meta;
+    abrirModal("modalEdit");
+}
+
+async function guardarAdd() {
+    const data = {
+        contrato:        document.getElementById("addContrato").value,
+        Tipo_cuadrilla:  document.getElementById("addTipo").value.trim(),
+        Meta_Produccion: parseFloat(document.getElementById("addMeta").value),
+        Proceso:         document.getElementById("addProceso").value.trim()
+    };
+    const r = await apiFetch("/admin/api/metas", "POST", data);
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaAdd", r.mensaje, "danger");
+}
+
+async function guardarEdit() {
+    const id = document.getElementById("editId").value;
+    const data = {
+        contrato:        document.getElementById("editContrato").value,
+        Tipo_cuadrilla:  document.getElementById("editTipo").value.trim(),
+        Meta_Produccion: parseFloat(document.getElementById("editMeta").value),
+        Proceso:         document.getElementById("editProceso").value.trim()
+    };
+    const r = await apiFetch("/admin/api/metas/" + id, "PUT", data);
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaEdit", r.mensaje, "danger");
+}
+
+function eliminar(btn) {
+    if (!confirm("¿Eliminar esta meta?")) return;
+    apiFetch("/admin/api/metas/" + btn.dataset.id, "DELETE").then(function(r) {
+        if (r.success) location.reload();
+        else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+    });
+}
+
+async function eliminarSeleccionados() {
+    const ids = Array.from(document.querySelectorAll('.row-ck:checked'))
+                     .map(function(ck) { return parseInt(ck.dataset.id); });
+    if (!ids.length) return;
+    if (!confirm("¿Eliminar " + ids.length + " meta(s) seleccionada(s)?")) return;
+    const r = await apiFetch("/admin/api/metas/bulk-delete", "DELETE", { ids: ids });
+    if (r.success) location.reload();
+    else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+}
+
+// ── Import ────────────────────────────────────────────────
+async function importarMetas() {
+    const file = document.getElementById("importFile").files[0];
+    if (!file) { mostrarAlerta("alertaImport", "Selecciona un archivo Excel.", "danger"); return; }
+    const fd = new FormData();
+    fd.append("archivo", file);
+    mostrarAlerta("alertaImport", "Procesando...", "info");
+    document.getElementById("importResultado").style.display = "none";
+    try {
+        const resp = await fetch("/admin/api/metas/import", { method: "POST", body: fd });
+        const r = await resp.json();
+        if (r.success) {
+            mostrarAlerta("alertaImport", "", "");
+            const div = document.getElementById("importResultado");
+            div.style.display = "block";
+            div.innerHTML = `
+                <div style="color:#4ade80;margin-bottom:.4rem"><i class="bi bi-check-circle me-1"></i><strong>Importación completada</strong></div>
+                <div style="color:#94a3b8">
+                    <span style="color:#4ade80">✓ Nuevas: <strong>${r.insertados}</strong></span> &nbsp;|&nbsp;
+                    <span style="color:#7dd3fc">↺ Actualizadas: <strong>${r.actualizados}</strong></span>
+                </div>`;
+            setTimeout(function() { location.reload(); }, 2000);
+        } else {
+            mostrarAlerta("alertaImport", r.mensaje || "Error en importación", "danger");
+        }
+    } catch(e) {
+        mostrarAlerta("alertaImport", "Error de red: " + e.message, "danger");
+    }
+}
+</script>
+{% endblock %}

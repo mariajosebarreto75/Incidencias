@@ -1,0 +1,272 @@
+:root {
+    --hesego-primary:   #00b8c9;
+    --hesego-secondary: #007d8a;
+    --hesego-dark:      #005f6b;
+    --hesego-light:     #f4f7f9;
+    --hesego-border:    #dce5ea;
+    --transition:       all 0.2s ease;
+}
+
+/* ===== BODY ===== */
+
+body {
+    background: #f0f4f7;
+}
+
+/* ===== HEADER ===== */
+
+.hesego-header {
+    background: linear-gradient(135deg, #ffffff 0%, #f5fdfe 100%);
+    border-radius: 12px;
+    padding: 22px 30px;
+    border-left: 5px solid var(--hesego-primary);
+}
+
+.hesego-header h2 {
+    color: #1a2e35;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.hesego-header p {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.hesego-logo {
+    width: 80px;
+    filter: drop-shadow(0 2px 6px rgba(0, 184, 201, 0.18));
+}
+
+/* ===== KPI CARDS ===== */
+
+.kpi-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--hesego-border);
+    transition: var(--transition);
+    cursor: default;
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 184, 201, 0.15);
+    border-color: var(--hesego-primary);
+}
+
+.kpi-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #e6f9fb, #cff3f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 1.25rem;
+    color: var(--hesego-secondary);
+}
+
+.kpi-card h3 {
+    color: var(--hesego-secondary);
+    font-weight: 700;
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+}
+
+.kpi-card span {
+    color: #6c757d;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ===== CARD HEADER ===== */
+
+.hesego-card-header {
+    background: linear-gradient(90deg, var(--hesego-secondary), var(--hesego-dark));
+    color: white;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.3px;
+    padding: 12px 20px;
+}
+
+/* ===== BUTTONS ===== */
+
+.btn-hesego {
+    background: var(--hesego-primary);
+    color: white;
+    border: none;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.btn-hesego:hover {
+    background: var(--hesego-secondary);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 184, 201, 0.3);
+}
+
+.btn-hesego:focus {
+    box-shadow: 0 0 0 3px rgba(0, 184, 201, 0.25);
+    color: white;
+}
+
+.btn-hesego-dark {
+    background: var(--hesego-secondary);
+    color: white;
+    border: none;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.btn-hesego-dark:hover {
+    background: var(--hesego-dark);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 125, 138, 0.3);
+}
+
+.btn-hesego-dark:focus {
+    box-shadow: 0 0 0 3px rgba(0, 125, 138, 0.25);
+    color: white;
+}
+
+/* ===== TOOLBAR ===== */
+
+.hesego-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    border-radius: 10px;
+    padding: 14px 20px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid var(--hesego-border);
+}
+
+/* ===== CELDA CON ERROR ===== */
+
+.celda-error {
+    background-color: #fff0f0 !important;
+    outline: 2px solid #dc3545 !important;
+    outline-offset: -2px;
+}
+
+/* ===== TABLE WRAPPER ===== */
+
+#tablaDistribucion {
+    width: 100%;
+}
+
+.tabulator {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0 0 10px 10px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05) !important;
+    font-size: .85rem !important;
+}
+
+/* ===== HEADER — limpio y compacto ===== */
+
+.tabulator-header {
+    background: #f8fafc !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+}
+
+.tabulator .tabulator-header .tabulator-col {
+    background: #f8fafc !important;
+    border-right: 1px solid #e8edf2 !important;
+    padding: 0 !important;
+}
+
+/* Título de columna */
+.tabulator-col-title {
+    color: #475569 !important;
+    font-size: .68rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: .07em !important;
+    padding: 6px 10px 4px !important;
+    white-space: nowrap;
+}
+
+/* Icono de orden */
+.tabulator-col .tabulator-col-sorter .tabulator-arrow {
+    border-top-color: #94a3b8 !important;
+}
+
+/* ===== FILTROS — finos y sutiles ===== */
+
+.tabulator-header-filter {
+    padding: 0 6px 5px !important;
+    background: #f8fafc !important;
+}
+
+.tabulator-header-filter input,
+.tabulator-header-filter select {
+    height: 24px !important;
+    font-size: .75rem !important;
+    border-radius: 5px !important;
+    border: 1.5px solid #e2e8f0 !important;
+    background: #fff !important;
+    color: #334155 !important;
+    padding: 0 6px !important;
+    transition: border-color .15s !important;
+    outline: none !important;
+    width: 100% !important;
+    box-shadow: none !important;
+}
+
+.tabulator-header-filter input:focus,
+.tabulator-header-filter select:focus {
+    border-color: var(--hesego-primary) !important;
+    background: #f0fdfe !important;
+}
+
+.tabulator-header-filter input::placeholder {
+    color: #b0bec5 !important;
+    font-size: .72rem !important;
+}
+
+/* ===== FILAS ===== */
+
+.tabulator-row {
+    border-bottom: 1px solid #f1f5f9 !important;
+    transition: background .1s !important;
+}
+
+.tabulator-row:nth-child(even) {
+    background: #fafbfc !important;
+}
+
+.tabulator-row:hover {
+    background: #f0fdfe !important;
+}
+
+.tabulator-row .tabulator-cell {
+    padding: .55rem .75rem !important;
+    color: #1e293b !important;
+    border-right: 1px solid #f1f5f9 !important;
+    font-size: .84rem !important;
+}
+
+/* Columna congelada — sombra sutil a la derecha */
+.tabulator-frozen {
+    box-shadow: 3px 0 8px rgba(0,0,0,.06) !important;
+}
+
+/* Fila seleccionada */
+.tabulator-row.tabulator-selected {
+    background: #e0f7fa !important;
+}
+.tabulator-row.tabulator-selected:hover {
+    background: #ccf2f6 !important;
+}

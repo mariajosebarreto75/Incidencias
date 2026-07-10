@@ -1,0 +1,124 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Tipos de Desvío{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-exclamation-triangle me-2" style="color:var(--adm-accent)"></i>Tipos de Desvío</h1>
+        <p class="adm-page-sub">{{ desvios|length }} tipo(s) registrado(s) — aparecen en el formulario de reporte NEO</p>
+    </div>
+    <button class="btn-adm-primary" data-bs-toggle="modal" data-bs-target="#modalAdd">
+        <i class="bi bi-plus-lg"></i> Nuevo tipo
+    </button>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<div class="adm-card">
+    <div class="adm-card-header">
+        <span class="adm-card-title">Catálogo de tipos de desvío</span>
+        <div class="adm-search">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Buscar..." oninput="filtrarTabla(this.value,'tbody')">
+        </div>
+    </div>
+    <div class="adm-table-wrap">
+        <table class="adm-table">
+            <thead>
+                <tr><th>#</th><th>Tipo de Desvío</th><th>Acciones</th></tr>
+            </thead>
+            <tbody id="tbody">
+            {% for d in desvios %}
+            <tr>
+                <td style="color:#94a3b8">{{ loop.index }}</td>
+                <td>{{ d.tipo_desvio }}</td>
+                <td class="actions">
+                    <button class="btn-edit"
+                        data-id="{{ d.id }}"
+                        data-nombre="{{ d.tipo_desvio | e }}"
+                        onclick="abrirEditar(this)">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    <button class="btn-del" data-id="{{ d.id }}" onclick="eliminar(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="adm-empty"><i class="bi bi-inbox"></i>Sin tipos registrados</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL AGREGAR -->
+<div class="modal fade" id="modalAdd" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nuevo Tipo de Desvío</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaAdd" class="adm-alert"></div>
+        <label class="form-label">Nombre *</label>
+        <input id="addNombre" class="form-control" placeholder="Ej: Salida tarde">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarAdd()"><i class="bi bi-check-lg"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR -->
+<div class="modal fade" id="modalEdit" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Tipo de Desvío</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaEdit" class="adm-alert"></div>
+        <input type="hidden" id="editId">
+        <label class="form-label">Nombre *</label>
+        <input id="editNombre" class="form-control">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="guardarEdit()"><i class="bi bi-check-lg"></i> Actualizar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function abrirEditar(btn) {
+    document.getElementById("editId").value     = btn.dataset.id;
+    document.getElementById("editNombre").value = btn.dataset.nombre;
+    abrirModal("modalEdit");
+}
+async function guardarAdd() {
+    const r = await apiFetch("/admin/api/desvios", "POST", { tipo_desvio: document.getElementById("addNombre").value.trim() });
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaAdd", r.mensaje, "danger");
+}
+async function guardarEdit() {
+    const r = await apiFetch("/admin/api/desvios/" + document.getElementById("editId").value, "PUT", { tipo_desvio: document.getElementById("editNombre").value.trim() });
+    if (r.success) location.reload();
+    else mostrarAlerta("alertaEdit", r.mensaje, "danger");
+}
+function eliminar(btn) {
+    if (!confirm("¿Eliminar este tipo de desvío?")) return;
+    apiFetch("/admin/api/desvios/" + btn.dataset.id, "DELETE").then(function(r) {
+        if (r.success) location.reload();
+        else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+    });
+}
+</script>
+{% endblock %}

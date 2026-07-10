@@ -1,0 +1,331 @@
+{% extends "neo/navbNeo.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/neo/ValidarNeo.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- ENCABEZADO -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <a href="{{ url_for('neo.detalle_neo', id=reporte.id) }}"
+           class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+            <i class="bi bi-arrow-left me-1"></i> Volver
+        </a>
+        <div>
+            <h2 class="mb-0 fw-bold" style="color:#0a1f2e; font-size:1.25rem;">
+                Editar Reporte #{{ reporte.id }}
+            </h2>
+            <small class="text-muted">{{ reporte.recurso }} · {{ reporte.contrato }}</small>
+        </div>
+    </div>
+
+    <!-- ADVERTENCIA SI YA HAY RESPUESTA DEL COORDINADOR -->
+    {% if reporte.estado == 'Respondido' %}
+    <div class="edit-aviso-coor mb-4">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        El coordinador ya respondió este reporte. Puede corregir sus datos, pero tenga en
+        cuenta que la respuesta fue emitida sobre la información original.
+    </div>
+    {% endif %}
+
+    <div id="editAlerta" class="mb-3"></div>
+
+    <!-- TARJETA PRINCIPAL -->
+    <div class="edit-card">
+        <div class="edit-card-header">
+            <i class="bi bi-pencil-square me-2"></i>Datos del reporte
+            <small class="ms-auto opacity-75" style="font-weight:500;">
+                Creado {{ reporte.fecha_creado.strftime('%d/%m/%Y %H:%M') if reporte.fecha_creado else '' }}
+                · por {{ reporte.reportado_por }}
+            </small>
+        </div>
+
+        <div class="edit-card-body">
+
+            <!-- CONTEXTO NO EDITABLE -->
+            <div class="row g-2 mb-4 pb-3 edit-separador">
+                <div class="col-md-6">
+                    <span class="edit-label">Contrato</span>
+                    <div class="edit-readonly">{{ reporte.contrato }}</div>
+                </div>
+                <div class="col-md-6">
+                    <span class="edit-label">Recurso</span>
+                    <div class="edit-readonly">{{ reporte.recurso }}</div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+
+                <!-- FECHA Y PLACA -->
+                <div class="col-md-3">
+                    <label class="edit-label" for="fecha_reporte">Fecha reporte</label>
+                    <input type="date" id="fecha_reporte" class="edit-input"
+                           value="{{ reporte.fecha_reporte.strftime('%Y-%m-%d') if reporte.fecha_reporte else '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="edit-label" for="placa">Placa</label>
+                    <input type="text" id="placa" class="edit-input"
+                           value="{{ reporte.placa or '' }}" placeholder="—">
+                </div>
+                <div class="col-md-3">
+                    <label class="edit-label" for="tipo_actividad">Tipo actividad</label>
+                    <input type="text" id="tipo_actividad" class="edit-input"
+                           value="{{ reporte.tipo_actividad or '' }}" placeholder="—">
+                </div>
+                <div class="col-md-3">
+                    <label class="edit-label" for="tipo_cuadrilla">Tipo cuadrilla</label>
+                    <input type="text" id="tipo_cuadrilla" class="edit-input"
+                           value="{{ reporte.tipo_cuadrilla or '' }}" placeholder="—">
+                </div>
+
+                <!-- HORAS -->
+                <div class="col-md-3">
+                    <label class="edit-label" for="hora_inicio">Hora inicio</label>
+                    <input type="time" id="hora_inicio" class="edit-input"
+                           value="{{ reporte.hora_inicio.strftime('%H:%M') if reporte.hora_inicio else '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="edit-label" for="hora_fin">Hora fin</label>
+                    <input type="time" id="hora_fin" class="edit-input"
+                           value="{{ reporte.hora_fin.strftime('%H:%M') if reporte.hora_fin else '' }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="edit-label">Duración (auto)</label>
+                    <input type="text" id="duracion_display" class="edit-input edit-readonly-input"
+                           value="{{ reporte.duracion or '—' }}" readonly>
+                </div>
+
+                <!-- TIPO INCIDENCIA Y PARÁMETRO -->
+                <div class="col-md-6">
+                    <label class="edit-label" for="tipo_incidencia">Tipo incidencia</label>
+                    <select id="tipo_incidencia" class="edit-input">
+                        {% for t in tipos_desvio %}
+                        <option value="{{ t.tipo_desvio }}"
+                            {% if t.tipo_desvio == reporte.tipo_incidencia %}selected{% endif %}>
+                            {{ t.tipo_desvio }}
+                        </option>
+                        {% endfor %}
+                        {# Si el valor guardado no está en el catálogo, agregarlo igual #}
+                        {% if reporte.tipo_incidencia and reporte.tipo_incidencia not in tipos_desvio|map(attribute='tipo_desvio')|list %}
+                        <option value="{{ reporte.tipo_incidencia }}" selected>
+                            {{ reporte.tipo_incidencia }}
+                        </option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="edit-label" for="parametro_neo">Parámetro NEO</label>
+                    <select id="parametro_neo" class="edit-input">
+                        {% for p in parametros_neo %}
+                        <option value="{{ p.parametroNeo }}"
+                            {% if p.parametroNeo == reporte.parametro_neo %}selected{% endif %}>
+                            {{ p.parametroNeo }}
+                        </option>
+                        {% endfor %}
+                        {% if reporte.parametro_neo and reporte.parametro_neo not in parametros_neo|map(attribute='parametroNeo')|list %}
+                        <option value="{{ reporte.parametro_neo }}" selected>
+                            {{ reporte.parametro_neo }}
+                        </option>
+                        {% endif %}
+                    </select>
+                </div>
+
+                <!-- OBSERVACIÓN -->
+                <div class="col-12">
+                    <label class="edit-label" for="observacion">Observación</label>
+                    <textarea id="observacion" rows="4" class="edit-input"
+                              placeholder="Descripción de la incidencia…">{{ reporte.observacion or '' }}</textarea>
+                </div>
+
+                <!-- EVIDENCIAS -->
+                <div class="col-md-6">
+                    <label class="edit-label">
+                        Evidencia 1
+                        <span class="text-muted small ms-1">clic para reemplazar</span>
+                    </label>
+                    <div class="edit-upload-area" id="area_ev1">
+                        <input type="file" id="ev1" accept="image/*">
+                        <input type="hidden" id="ruta_ev1" value="{{ reporte.evidencia_1 or '' }}">
+                        {% if reporte.evidencia_1 %}
+                        <img src="/neo/evidencia/{{ reporte.evidencia_1 }}"
+                             id="prev_ev1" class="edit-prev" alt="Evidencia 1">
+                        {% else %}
+                        <div id="ph_ev1" class="edit-upload-ph">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            <span>Clic para subir imagen</span>
+                            <small>JPG · PNG · WEBP · máx 10 MB</small>
+                        </div>
+                        {% endif %}
+                        <div id="spin_ev1" class="edit-upload-spin d-none">
+                            <div class="spinner-border spinner-border-sm text-info me-2"></div>Subiendo…
+                        </div>
+                    </div>
+                    <div id="est_ev1" class="upload-estado mt-1"></div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="edit-label">
+                        Evidencia 2
+                        <span class="text-muted small ms-1">opcional</span>
+                    </label>
+                    <div class="edit-upload-area" id="area_ev2">
+                        <input type="file" id="ev2" accept="image/*">
+                        <input type="hidden" id="ruta_ev2" value="{{ reporte.evidencia_2 or '' }}">
+                        {% if reporte.evidencia_2 %}
+                        <img src="/neo/evidencia/{{ reporte.evidencia_2 }}"
+                             id="prev_ev2" class="edit-prev" alt="Evidencia 2">
+                        {% else %}
+                        <div id="ph_ev2" class="edit-upload-ph">
+                            <i class="bi bi-cloud-arrow-up"></i>
+                            <span>Clic para subir imagen</span>
+                            <small>JPG · PNG · WEBP · máx 10 MB</small>
+                        </div>
+                        {% endif %}
+                        <div id="spin_ev2" class="edit-upload-spin d-none">
+                            <div class="spinner-border spinner-border-sm text-info me-2"></div>Subiendo…
+                        </div>
+                    </div>
+                    <div id="est_ev2" class="upload-estado mt-1"></div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="edit-card-footer">
+            <button class="btn-edit-guardar" id="btnGuardarEdit">
+                <i class="bi bi-floppy-fill me-2"></i>Guardar cambios
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function () {
+
+    const REPORTE_ID = Number("{{ reporte.id }}");
+
+    /* ---- Duración automática ---- */
+    const hiEl = document.getElementById("hora_inicio");
+    const hfEl = document.getElementById("hora_fin");
+    const durEl = document.getElementById("duracion_display");
+
+    function calcDuracion() {
+        if (!hiEl.value || !hfEl.value) return;
+        const [h1, m1] = hiEl.value.split(":").map(Number);
+        const [h2, m2] = hfEl.value.split(":").map(Number);
+        let ini = h1 * 60 + m1, fin = h2 * 60 + m2;
+        if (fin <= ini) fin += 1440;
+        const diff = fin - ini;
+        const h = Math.floor(diff / 60), m = diff % 60;
+        durEl.value = h + "h " + String(m).padStart(2, "0") + "m";
+    }
+
+    hiEl.addEventListener("input", calcDuracion);
+    hfEl.addEventListener("input", calcDuracion);
+
+    /* ---- Subir evidencias ---- */
+    function subirEv(num) {
+        const file = document.getElementById("ev" + num).files[0];
+        if (!file) return;
+        const spin = document.getElementById("spin_ev" + num);
+        const est  = document.getElementById("est_ev" + num);
+        const ruta = document.getElementById("ruta_ev" + num);
+        const ph   = document.getElementById("ph_ev" + num);
+
+        spin.classList.remove("d-none");
+        est.textContent = "";
+
+        const fd = new FormData();
+        fd.append("archivo", file);
+        fd.append("reporte_id", REPORTE_ID);
+        fd.append("numero", num);
+
+        fetch("/neo/subir-evidencia", { method: "POST", body: fd })
+            .then(r => r.json())
+            .then(function (data) {
+                spin.classList.add("d-none");
+                if (data.success) {
+                    ruta.value = data.ruta;
+                    let img = document.getElementById("prev_ev" + num);
+                    if (!img) {
+                        img = document.createElement("img");
+                        img.id = "prev_ev" + num;
+                        img.className = "edit-prev";
+                        img.alt = "Evidencia " + num;
+                        document.getElementById("area_ev" + num).prepend(img);
+                    }
+                    img.src = data.url;
+                    if (ph) ph.style.display = "none";
+                    est.className = "upload-estado ok";
+                    est.textContent = "Imagen cargada correctamente";
+                } else {
+                    est.className = "upload-estado err";
+                    est.textContent = data.mensaje || "Error al subir";
+                }
+            })
+            .catch(function () {
+                spin.classList.add("d-none");
+                est.className = "upload-estado err";
+                est.textContent = "Error de conexión";
+            });
+    }
+
+    document.getElementById("ev1").addEventListener("change", () => subirEv(1));
+    document.getElementById("ev2").addEventListener("change", () => subirEv(2));
+
+    /* ---- Guardar edición ---- */
+    document.getElementById("btnGuardarEdit").addEventListener("click", function () {
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando…';
+
+        fetch("/neo/reporte/" + REPORTE_ID + "/editar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                fecha_reporte:   document.getElementById("fecha_reporte").value,
+                placa:           document.getElementById("placa").value,
+                tipo_actividad:  document.getElementById("tipo_actividad").value,
+                tipo_cuadrilla:  document.getElementById("tipo_cuadrilla").value,
+                hora_inicio:     document.getElementById("hora_inicio").value,
+                hora_fin:        document.getElementById("hora_fin").value,
+                tipo_incidencia: document.getElementById("tipo_incidencia").value,
+                parametro_neo:   document.getElementById("parametro_neo").value,
+                observacion:     document.getElementById("observacion").value,
+                evidencia_1:     document.getElementById("ruta_ev1").value,
+                evidencia_2:     document.getElementById("ruta_ev2").value
+            })
+        })
+        .then(r => r.json())
+        .then(function (data) {
+            if (data.ok) {
+                window.location.href = "/neo/reporte/" + REPORTE_ID;
+            } else {
+                mostrarAlerta(data.error || "Error al guardar.");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-floppy-fill me-2"></i>Guardar cambios';
+            }
+        })
+        .catch(function () {
+            mostrarAlerta("Error de conexión.");
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-floppy-fill me-2"></i>Guardar cambios';
+        });
+    });
+
+    function mostrarAlerta(msg) {
+        const el = document.getElementById("editAlerta");
+        el.className = "alert alert-danger rounded-3 py-2 px-3";
+        el.style.fontSize = ".85rem";
+        el.textContent = msg;
+        setTimeout(() => { el.className = ""; el.textContent = ""; }, 5000);
+    }
+
+})();
+</script>
+
+{% endblock %}

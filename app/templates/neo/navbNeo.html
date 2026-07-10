@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}NEO — Incidencias{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/neo/navNeo.css') }}">
+
+    {% block head %}{% endblock %}
+
+</head>
+
+<body>
+
+    <!-- NAVBAR NEO -->
+
+    <nav class="navbar navbar-expand-lg navbar-neo">
+
+        <div class="container-fluid px-4">
+
+            <!-- BRAND -->
+            <a class="navbar-brand d-flex align-items-center gap-2"
+               href="{{ url_for('neo.home_neo') }}">
+
+                <img src="{{ url_for('static', filename='img/logo_hesego.png') }}"
+                     alt="HESEGO" height="38">
+
+                <div class="neo-brand-text">
+                    <span class="neo-brand-title">NEO</span>
+                    <span class="neo-brand-sub">Plataforma Operativa</span>
+                </div>
+
+            </a>
+
+            <button class="navbar-toggler" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#navNeo">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navNeo">
+
+                <!-- LINKS -->
+                <ul class="navbar-nav me-auto ms-3">
+
+                    {% if current_user.is_authenticated %}
+
+                    <li class="nav-item">
+                        <a class="nav-link neo-nav-link" href="{{ url_for('neo.home_neo') }}">
+                            <i class="bi bi-house me-1"></i>Inicio
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link neo-nav-link" href="{{ url_for('neo.panel_reportes') }}">
+                            <i class="bi bi-clipboard2-pulse me-1"></i>Reportar
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link neo-nav-link" href="{{ url_for('neo.validar_reportes') }}">
+                            <i class="bi bi-patch-check me-1"></i>Validar
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link neo-nav-link" href="{{ url_for('neo.distribucion_neo') }}">
+                            <i class="bi bi-table me-1"></i>Distribución Operativa
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link neo-nav-link position-relative"
+                           href="{{ url_for('neo.alertas_gps') }}">
+                            <i class="bi bi-bell me-1"></i>Alertas
+                            <span id="navBadgeAlertas"
+                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill"
+                                  style="background:#f5a623;color:#0d1b2a;font-size:.6rem;
+                                         min-width:18px;padding:3px 5px;display:none">
+                                0
+                            </span>
+                        </a>
+                    </li>
+
+                    {% endif %}
+
+                </ul>
+
+                <!-- USUARIO -->
+                {% if current_user.is_authenticated %}
+
+                <div class="d-flex align-items-center gap-3">
+
+                    <!-- CAMPANA DE NOTIFICACIONES -->
+                    <div class="position-relative">
+                        <button id="btnNotifNeo" onclick="notifToggle()"
+                                style="background:none;border:none;color:#f5a623;font-size:1.3rem;
+                                       position:relative;padding:0 4px;cursor:pointer;">
+                            <i class="bi bi-bell-fill"></i>
+                            <span id="notifBadgeNeo"
+                                  style="position:absolute;top:-6px;right:-6px;background:#e53935;
+                                         color:#fff;border-radius:50%;font-size:.6rem;
+                                         min-width:17px;height:17px;display:none;
+                                         align-items:center;justify-content:center;font-weight:700;">
+                                0
+                            </span>
+                        </button>
+
+                        <!-- PANEL -->
+                        <div id="notifPanelNeo"
+                             style="display:none;position:absolute;right:0;top:calc(100% + 8px);
+                                    width:360px;max-height:500px;
+                                    display:none;flex-direction:column;
+                                    background:#0d1b2a;border:1px solid #1e3a5f;
+                                    border-radius:10px;box-shadow:0 8px 32px #0008;z-index:9999;">
+                            <div style="padding:10px 14px 8px;font-size:.8rem;color:#7eb3d8;
+                                        border-bottom:1px solid #1e3a5f;font-weight:600;flex-shrink:0">
+                                NOTIFICACIONES
+                            </div>
+                            <!-- Tabs -->
+                            <div style="display:flex;gap:4px;padding:8px 10px 4px;flex-shrink:0">
+                                <button class="np-tab active" data-nptab="pendiente" onclick="npSetTab(this)"
+                                        style="flex:1;padding:4px 0;border-radius:6px;font-size:.7rem;font-weight:700;
+                                               background:#e53935;color:#fff;border:1px solid #e53935;cursor:pointer">
+                                    Pendientes
+                                </button>
+                                <button class="np-tab" data-nptab="cerradas" onclick="npSetTab(this)"
+                                        style="flex:1;padding:4px 0;border-radius:6px;font-size:.7rem;font-weight:700;
+                                               background:transparent;color:#7a97b0;border:1px solid #1e3a5f;cursor:pointer">
+                                    Cerradas
+                                </button>
+                            </div>
+                            <div id="notifListaNeo" style="overflow-y:auto;max-height:380px;padding:4px 0;">
+                                <div style="padding:16px;text-align:center;color:#7eb3d8;font-size:.82rem;">
+                                    Cargando…
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <span class="neo-user-chip">
+                        <i class="bi bi-person-circle me-1"></i>
+                        {{ current_user.nombre_completo }}
+                    </span>
+
+                    <a href="{{ url_for('auth.logout') }}"
+                       class="btn neo-btn-logout btn-sm">
+                        <i class="bi bi-box-arrow-right me-1"></i>Salir
+                    </a>
+
+                </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </nav>
+
+    <!-- MENSAJES FLASH -->
+
+    <div class="container-fluid px-4 mt-2">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- CONTENIDO -->
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% if current_user.is_authenticated %}
+    <script>
+    // ── Badge alertas GPS ────────────────────────────────────────────────────
+    function _refreshAlertasBadge() {
+        fetch("{{ url_for('neo.badge_alertas') }}")
+            .then(r => r.json())
+            .then(d => {
+                const b = document.getElementById("navBadgeAlertas");
+                if (!b) return;
+                if (d.pendientes > 0) {
+                    b.textContent = d.pendientes;
+                    b.style.display = "";
+                } else {
+                    b.style.display = "none";
+                }
+            }).catch(() => {});
+    }
+    _refreshAlertasBadge();
+    setInterval(_refreshAlertasBadge, 60000);
+
+    // ── Notificaciones NEO ─────────────────────────────────────────────────────
+    let notifAbierto  = false;
+    let notifIdsVistos = new Set(
+        JSON.parse(localStorage.getItem("notif_neo_vistos") || "[]")
+    );
+
+    const NOTIF_ICONOS  = { "nuevo_reporte":"bi-file-earmark-text", "reporte_respondido":"bi-chat-left-text-fill", "no_conforme":"bi-x-circle-fill" };
+    const NOTIF_COLORES = { "nuevo_reporte":"#f5a623", "reporte_respondido":"#4fc3f7", "no_conforme":"#e53935" };
+    const NOTIF_LABELS  = { "nuevo_reporte":"Nuevo reporte", "reporte_respondido":"Respondido", "no_conforme":"No conforme" };
+
+    // ── Sonido (Web Audio API) ────────────────────────────────────────────────
+    function notifSonido() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const secuencia = [
+                { freq: 880, t: 0,    dur: 0.12 },
+                { freq: 1100, t: 0.14, dur: 0.12 },
+                { freq: 1320, t: 0.28, dur: 0.18 },
+            ];
+            secuencia.forEach(({ freq, t, dur }) => {
+                const osc  = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type      = "sine";
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.28, ctx.currentTime + t);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + dur);
+                osc.start(ctx.currentTime + t);
+                osc.stop(ctx.currentTime + t + dur + 0.05);
+            });
+        } catch(_) {}
+    }
+
+    // ── Toast flotante ────────────────────────────────────────────────────────
+    function notifToast(n) {
+        const color = NOTIF_COLORES[n.tipo] || "#f5a623";
+        const ico   = NOTIF_ICONOS[n.tipo]  || "bi-bell-fill";
+        const label = NOTIF_LABELS[n.tipo]  || "";
+
+        const toast = document.createElement("div");
+        toast.style.cssText = `
+            position:fixed; bottom:88px; right:24px; z-index:9999;
+            background:#0d1b2a; border:1.5px solid ${color};
+            border-radius:12px; padding:14px 16px;
+            width:300px; box-shadow:0 8px 32px rgba(0,0,0,.55);
+            display:flex; gap:12px; align-items:flex-start;
+            animation: ndSlideIn .3s ease;
+        `;
+        toast.innerHTML = `
+            <i class="bi ${ico}" style="color:${color};font-size:1.2rem;margin-top:2px;flex-shrink:0"></i>
+            <div style="flex:1;min-width:0">
+                <div style="font-size:.75rem;font-weight:800;color:#fff;margin-bottom:2px">${n.mensaje}</div>
+                ${n.tipo_incidencia ? `<div style="font-size:.68rem;color:#7eb3d8">${n.tipo_incidencia}</div>` : ""}
+                ${n.contrato ? `<div style="font-size:.68rem;color:#4fc3f7">${n.contrato}</div>` : ""}
+                <span style="font-size:.63rem;border-radius:4px;padding:1px 6px;font-weight:700;
+                             background:${color}25;color:${color};border:1px solid ${color}55;
+                             display:inline-block;margin-top:3px">${label}</span>
+            </div>
+            <button onclick="this.parentElement.remove()"
+                    style="background:none;border:none;color:#557a9a;font-size:.9rem;
+                           cursor:pointer;line-height:1;flex-shrink:0">✕</button>
+        `;
+        if (!document.getElementById("ndToastStyle")) {
+            const st = document.createElement("style");
+            st.id = "ndToastStyle";
+            st.textContent = `@keyframes ndSlideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+                              @keyframes ndFadeOut{from{opacity:1}to{opacity:0}}`;
+            document.head.appendChild(st);
+        }
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = "ndFadeOut .4s ease forwards";
+            setTimeout(() => toast.remove(), 400);
+        }, 5000);
+    }
+
+    // ── Polling principal (cada 10 seg) ───────────────────────────────────────
+    async function notifPoll() {
+        try {
+            const r    = await fetch("/notificaciones");
+            const lista = await r.json();
+            const pendientes = lista.filter(n => !n.gestionada);
+
+            // Actualizar badge
+            const b = document.getElementById("notifBadgeNeo");
+            if (b) {
+                if (pendientes.length > 0) { b.textContent = pendientes.length; b.style.display = "flex"; }
+                else b.style.display = "none";
+            }
+
+            // Detectar nuevas (IDs no vistos antes)
+            const nuevas = pendientes.filter(n => !notifIdsVistos.has(n.id));
+            nuevas.forEach(n => {
+                notifIdsVistos.add(n.id);
+                notifSonido();
+                notifToast(n);
+            });
+            if (nuevas.length) {
+                localStorage.setItem("notif_neo_vistos", JSON.stringify([...notifIdsVistos]));
+            }
+
+            // Refrescar panel si está abierto
+            if (notifAbierto) notifCargar();
+        } catch(_) {}
+    }
+    notifPoll();
+    setInterval(notifPoll, 10000);
+
+    // ── Panel toggle ─────────────────────────────────────────────────────────
+    let npTabActual = "pendiente";
+
+    function npSetTab(btn) {
+        document.querySelectorAll(".np-tab").forEach(b => {
+            b.style.background = "transparent";
+            b.style.color      = "#7a97b0";
+            b.style.borderColor = "#1e3a5f";
+        });
+        btn.style.background  = "#e53935";
+        btn.style.color       = "#fff";
+        btn.style.borderColor = "#e53935";
+        npTabActual = btn.dataset.nptab;
+        notifCargar();
+    }
+
+    function notifToggle() {
+        notifAbierto = !notifAbierto;
+        const panel = document.getElementById("notifPanelNeo");
+        panel.style.display = notifAbierto ? "flex" : "none";
+        if (notifAbierto) notifCargar();
+    }
+
+    document.addEventListener("click", function(e) {
+        const btn = document.getElementById("btnNotifNeo");
+        const panel = document.getElementById("notifPanelNeo");
+        if (!btn || !panel) return;
+        if (!btn.contains(e.target) && !panel.contains(e.target)) {
+            panel.style.display = "none";
+            notifAbierto = false;
+        }
+    });
+
+    // ── Render panel ─────────────────────────────────────────────────────────
+    function notifCargar() {
+        fetch("/notificaciones")
+            .then(r => r.json())
+            .then(todas => {
+                const lista = npTabActual === "pendiente"
+                    ? todas.filter(n => !n.gestionada)
+                    : todas.filter(n => n.gestionada);
+                const c = document.getElementById("notifListaNeo");
+                if (!lista.length) {
+                    const msg = npTabActual === "pendiente" ? "Sin notificaciones pendientes" : "Sin notificaciones cerradas";
+                    c.innerHTML = `<div style="padding:20px;text-align:center;color:#7eb3d8;font-size:.8rem">${msg}</div>`;
+                    return;
+                }
+                c.innerHTML = lista.map(n => {
+                    const ico   = NOTIF_ICONOS[n.tipo]  || "bi-bell";
+                    const color = NOTIF_COLORES[n.tipo] || "#f5a623";
+                    const label = NOTIF_LABELS[n.tipo]  || n.tipo;
+                    const esNc  = n.tipo === "no_conforme";
+                    const boton = n.gestionada
+                        ? ""
+                        : esNc
+                            ? `<button onclick="notifVisualizado(${n.id})"
+                                       style="font-size:.67rem;padding:3px 10px;border-radius:5px;
+                                              border:1px solid #7eb3d8;background:none;color:#7eb3d8;cursor:pointer;margin-top:5px">
+                                   <i class="bi bi-eye me-1"></i>Visualizado
+                               </button>`
+                            : `<button onclick="notifGestionar(${n.id}, ${n.reporte_id})"
+                                       style="font-size:.67rem;padding:3px 10px;border-radius:5px;
+                                              border:none;background:${color};color:#0d1b2a;cursor:pointer;margin-top:5px;font-weight:700">
+                                   <i class="bi bi-arrow-right-circle me-1"></i>Gestionar
+                               </button>`;
+                    return `<div style="padding:10px 14px;border-bottom:1px solid #1e3a5f">
+                        <div style="display:flex;gap:10px;align-items:flex-start">
+                            <i class="bi ${ico}" style="color:${color};font-size:1rem;margin-top:2px;flex-shrink:0"></i>
+                            <div style="flex:1;min-width:0">
+                                <div style="font-size:.76rem;color:#fff;font-weight:700;line-height:1.35;margin-bottom:3px">${n.mensaje}</div>
+                                <div style="font-size:.66rem;color:#557a9a">${n.fecha}</div>
+                                <span style="font-size:.62rem;border-radius:4px;padding:1px 6px;font-weight:700;
+                                             background:${color}20;color:${color};border:1px solid ${color}50;
+                                             display:inline-block;margin-top:2px">${label}</span>
+                                <div>${boton}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join("");
+            }).catch(() => {});
+    }
+
+    function notifGestionar(nid, repId) {
+        fetch(`/notificaciones/${nid}/gestionar`, {method:"POST"})
+            .then(r => r.json())
+            .then(d => { if (d.ok) { notifCargar(); notifPoll(); window.open(`/neo/reporte/${repId}`, "_blank"); } });
+    }
+    function notifVisualizado(nid) {
+        fetch(`/notificaciones/${nid}/visualizado`, {method:"POST"})
+            .then(r => r.json())
+            .then(d => { if (d.ok) { notifCargar(); notifPoll(); } });
+    }
+    </script>
+    {% endif %}
+
+    {% block scripts %}{% endblock %}
+
+</body>
+
+</html>
