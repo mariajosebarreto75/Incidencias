@@ -96,5 +96,9 @@ def obtener_plan_del_dia(from_date, to_date=None):
         timeout=_TIMEOUT
     )
     resp.raise_for_status()
+    text = resp.text.strip()
+    print(f"[Plan GPS] status={resp.status_code} body={repr(text[:120])}")
+    if not text:
+        return []
     data = resp.json()
     return data if isinstance(data, list) else []
