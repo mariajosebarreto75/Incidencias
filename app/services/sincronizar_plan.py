@@ -10,6 +10,7 @@ from datetime import date, timedelta
 
 from app.extensions import db
 from app.models.distribucion_operativa import DistribucionOperativa
+from app.models.contrato import Contrato
 from app.services.gps_monitor import obtener_plan_del_dia
 
 
@@ -67,6 +68,18 @@ def sincronizar_plan(from_date=None, to_date=None):
             .delete(synchronize_session=False)
         )
 
+    # Precarga el mapeo código → nombre completo de contrato
+    _codigos = {item.get("contract_code") for item in items if item.get("contract_code")}
+    _contratos_db = {
+        c.codigo: c.contrato
+        for c in Contrato.query.filter(Contrato.codigo.in_(_codigos)).all()
+    }
+
+    def _resolver_contrato(code):
+        if not code:
+            return "—"
+        return _contratos_db.get(code, code)
+
     # Insertar nuevos registros
     insertados = 0
     for item in items:
@@ -80,7 +93,7 @@ def sincronizar_plan(from_date=None, to_date=None):
 
         registro = DistribucionOperativa(
             fecha           = fecha_plan,
-            contrato        = item.get("contract_code")  or "—",
+            contrato        = _resolver_contrato(item.get("contract_code")),
             recurso         = item.get("resource_code")  or item.get("plate") or "—",
             placa           = item.get("plate"),
             orden_trabajo   = item.get("order_number"),

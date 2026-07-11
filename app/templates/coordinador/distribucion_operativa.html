@@ -2,283 +2,177 @@
 
 {% block content %}
 
-<link
-    href="https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator_bootstrap5.min.css"
-    rel="stylesheet"
->
-
-<link
-    rel="stylesheet"
-    href="{{ url_for('static', filename='css/distribucion_operativa.css') }}"
->
+<link href="https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/distribucion_operativa.css') }}">
 
 <div class="container-fluid mt-4 px-4">
 
     <!-- HEADER -->
-
     <div class="hesego-header shadow-sm mb-4">
-
         <div class="d-flex align-items-center">
-
-            <img
-                src="{{ url_for('static', filename='img/logo_hesego.png') }}"
-                alt="HESEGO Ingeniería"
-                class="hesego-logo"
-            >
-
+            <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="HESEGO Ingeniería" class="hesego-logo">
             <div class="ms-4">
-
-                <h2 class="mb-1">
-                    Distribución Operativa
-                </h2>
-
+                <h2 class="mb-1">Distribución Operativa</h2>
                 <p class="mb-0">
-                    <i class="bi bi-geo-alt-fill me-1"></i>
-                    Gestión diaria de recursos, cuadrillas y actividades
+                    <i class="bi bi-cloud-download me-1 text-info"></i>
+                    Datos sincronizados desde GPS Monitor &mdash; solo lectura
                 </p>
-
             </div>
-
         </div>
-
     </div>
 
     <!-- KPIs -->
-
     <div class="row g-3 mb-4">
-
         <div class="col-md-3">
             <div class="kpi-card">
-                <div class="kpi-icon">
-                    <i class="bi bi-list-check"></i>
-                </div>
+                <div class="kpi-icon"><i class="bi bi-list-check"></i></div>
                 <h3 id="totalRegistros">{{ datos_tabla|length }}</h3>
                 <span>Registros</span>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="kpi-card">
-                <div class="kpi-icon">
-                    <i class="bi bi-diagram-3"></i>
-                </div>
+                <div class="kpi-icon"><i class="bi bi-diagram-3"></i></div>
                 <h3>Operación</h3>
                 <span>Distribución</span>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="kpi-card">
-                <div class="kpi-icon">
-                    <i class="bi bi-building"></i>
-                </div>
+                <div class="kpi-icon"><i class="bi bi-building"></i></div>
                 <h3>HESEGO</h3>
                 <span>Ingeniería SAS</span>
             </div>
         </div>
-
         <div class="col-md-3">
             <div class="kpi-card">
-                <div class="kpi-icon">
-                    <i class="bi bi-cpu"></i>
-                </div>
+                <div class="kpi-icon"><i class="bi bi-cpu"></i></div>
                 <h3>NEO</h3>
                 <span>Plataforma Operativa</span>
             </div>
         </div>
-
-    </div>
-
-    <!-- IMPORTAR -->
-
-    <div class="card shadow-sm mb-4">
-
-        <div class="card-header hesego-card-header">
-            <i class="bi bi-upload me-2"></i>
-            Importar Distribución Operativa
-        </div>
-
-        <div class="card-body">
-
-            <form
-                method="POST"
-                enctype="multipart/form-data"
-            >
-
-                <div class="row g-3">
-
-                    <div class="col-md-8">
-
-                        <label class="form-label small text-muted mb-1">
-                            <i class="bi bi-file-earmark-excel me-1 text-success"></i>
-                            Seleccione el archivo Excel (.xlsx)
-                        </label>
-
-                        <input
-                            type="file"
-                            name="archivo"
-                            class="form-control"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="col-md-4 d-flex align-items-end">
-
-                        <button
-                            type="submit"
-                            class="btn btn-hesego w-100"
-                        >
-                            <i class="bi bi-upload me-2"></i>
-                            Importar Excel
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </form>
-
-        </div>
-
     </div>
 
     <!-- SINCRONIZAR GPS MONITOR -->
-
     <div class="card shadow-sm mb-4 border-0" style="border-left:4px solid #0ea5e9 !important;">
-        <div class="card-body d-flex flex-wrap align-items-center gap-3 py-3">
-            <div class="flex-grow-1">
-                <div class="fw-semibold text-dark"><i class="bi bi-cloud-download me-2 text-info"></i>Sincronizar Plan GPS Monitor</div>
-                <div class="small text-muted">Descarga el plan del día desde GPS Monitor y lo actualiza en la tabla.</div>
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap align-items-start gap-3">
+                <div class="flex-grow-1">
+                    <div class="fw-semibold text-dark">
+                        <i class="bi bi-cloud-download me-2 text-info"></i>Sincronizar Plan GPS Monitor
+                    </div>
+                    <div class="small text-muted">
+                        Descarga el plan del día desde GPS Monitor y lo guarda en la BD local para consulta histórica.
+                        Los registros manuales no se modifican.
+                    </div>
+                </div>
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <div>
+                        <label class="form-label small text-muted mb-1">Desde</label>
+                        <input type="date" id="syncFechaDesde" class="form-control form-control-sm" style="width:150px;">
+                    </div>
+                    <div>
+                        <label class="form-label small text-muted mb-1">Hasta</label>
+                        <input type="date" id="syncFechaHasta" class="form-control form-control-sm" style="width:150px;">
+                    </div>
+                    <div class="d-flex align-items-end" style="padding-bottom:1px;">
+                        <button id="btnSyncGPS" class="btn btn-sm btn-info text-white">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Sincronizar
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="d-flex gap-2 align-items-center flex-wrap">
-                <input type="date" id="syncFechaDesde" class="form-control form-control-sm" style="width:160px;">
-                <input type="date" id="syncFechaHasta" class="form-control form-control-sm" style="width:160px;">
-                <button id="btnSyncGPS" class="btn btn-sm btn-info text-white">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Sincronizar
-                </button>
-            </div>
-            <div id="syncStatus" class="small"></div>
+            <div id="syncStatus" class="small mt-2"></div>
         </div>
     </div>
 
-    <!-- BOTONES -->
-
-    <div class="hesego-toolbar mb-4">
-
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-
-            <button
-                id="btnAgregarFila"
-                class="btn btn-hesego"
-            >
-                <i class="bi bi-plus-circle me-1"></i>
-                Agregar Fila
-            </button>
-
-            <button
-                id="btnEliminar"
-                class="btn btn-danger"
-            >
-                <i class="bi bi-trash me-1"></i>
-                Eliminar
-            </button>
-
-            <button
-                id="btnGuardar"
-                class="btn btn-hesego-dark"
-            >
-                <i class="bi bi-floppy me-1"></i>
-                Guardar Cambios
-            </button>
-
-            <button
-                id="btnExportar"
-                class="btn btn-hesego-dark"
-            >
-                <i class="bi bi-file-earmark-excel me-1"></i>
-                Exportar Excel
-            </button>
-
+    <!-- FILTROS DE CONSULTA -->
+    <form method="GET" action="" class="card shadow-sm mb-4">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap gap-3 align-items-end">
+                <div>
+                    <label class="form-label small text-muted mb-1">Fecha desde</label>
+                    <input type="date" name="fecha_desde" class="form-control form-control-sm"
+                           value="{{ fecha_desde }}" style="width:160px;">
+                </div>
+                <div>
+                    <label class="form-label small text-muted mb-1">Fecha hasta</label>
+                    <input type="date" name="fecha_hasta" class="form-control form-control-sm"
+                           value="{{ fecha_hasta }}" style="width:160px;">
+                </div>
+                <div>
+                    <label class="form-label small text-muted mb-1">Contrato</label>
+                    <select name="contrato" class="form-select form-select-sm" style="min-width:220px;" id="selectContrato">
+                        <option value="">Todos mis contratos</option>
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-sm btn-hesego">
+                        <i class="bi bi-search me-1"></i>Consultar
+                    </button>
+                </div>
+                <div>
+                    <a href="/coordinador/distribucion-operativa" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Hoy
+                    </a>
+                </div>
+                <div class="ms-auto">
+                    <button id="btnExportar" type="button" class="btn btn-sm btn-hesego-dark">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+                    </button>
+                </div>
+            </div>
         </div>
+    </form>
 
-        <span
-            id="estadoCambios"
-            class="badge bg-success"
-        >
-            <i class="bi bi-check-circle me-1"></i>
-            Guardado
-        </span>
-
+    <!-- AVISO SOLO LECTURA -->
+    <div class="alert alert-info alert-sm py-2 mb-3 d-flex align-items-center gap-2" style="font-size:13px;">
+        <i class="bi bi-info-circle-fill"></i>
+        Esta tabla es <strong>solo lectura</strong>. Todos los datos provienen de GPS Monitor.
+        Para modificar la distribución, realiza los cambios en la aplicación GPS Monitor y sincroniza.
     </div>
-
-    <!-- ALERTA GUARDAR -->
-
-    <div id="alertaGuardar" class="mb-3"></div>
 
     <!-- TABLA -->
-
     <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);">
-
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #e2e8f0;background:#f8fafc;">
-            <span style="font-size:.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.07em;">
-                <i class="bi bi-table me-2" style="color:#00b8c9"></i>Registros Operativos
-            </span>
-            <span style="font-size:.72rem;color:#94a3b8;">
-                <i class="bi bi-info-circle me-1"></i>
-                Arrastra bordes para redimensionar · Columna <strong>Fecha</strong> congelada
-            </span>
-        </div>
-
         <div id="tablaDistribucion"></div>
-
     </div>
 
 </div>
 
-<!-- DATOS PARA TABULATOR -->
-
+<!-- DATOS -->
 <script>
+    const datosDistribucion = JSON.parse('{{ datos_tabla|safe }}');
+    const contratosUsuario  = JSON.parse('{{ contratos|safe }}');
+    const contrato_filtro   = '{{ contrato_filtro|e }}';
 
-    const datosDistribucion =
-        JSON.parse(
-            '{{ datos_tabla|safe }}'
-        );
-
-    const contratosUsuario =
-    JSON.parse(
-        '{{ contratos|safe }}'
-    );
-    const cuadrillasUsuario =
-    JSON.parse(
-        '{{ cuadrillas|safe }}'
-    );
-
+    // Poblar select de contratos
+    const selContrato = document.getElementById('selectContrato');
+    contratosUsuario.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        if (c === contrato_filtro) opt.selected = true;
+        selContrato.appendChild(opt);
+    });
 </script>
 
-<!-- SHEETJS (requerido por Tabulator para exportar XLSX) -->
-
+<!-- SHEETJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- TABULATOR -->
-
 <script src="https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js"></script>
 
 <!-- JS PROPIO -->
-
-<script
-    src="{{ url_for('static', filename='js/distribucion_operativa.js') }}"
-></script>
+<script src="{{ url_for('static', filename='js/distribucion_operativa.js') }}"></script>
 
 <!-- JS SINCRONIZAR GPS MONITOR -->
 <script>
 (function () {
-    const btnSync = document.getElementById('btnSyncGPS');
+    const btnSync  = document.getElementById('btnSyncGPS');
     const statusEl = document.getElementById('syncStatus');
     const desdeEl  = document.getElementById('syncFechaDesde');
     const hastaEl  = document.getElementById('syncFechaHasta');
 
-    // Prellenar con fecha de hoy
     const hoy = new Date().toISOString().slice(0, 10);
     desdeEl.value = hoy;
     hastaEl.value = hoy;
@@ -298,15 +192,21 @@
         })
         .then(r => r.json())
         .then(data => {
-            if (data.error) {
-                statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.error}</span>`;
+            if (!data.ok) {
+                const msg = data.error || 'Error desconocido';
+                statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${msg}</span>`;
             } else {
-                statusEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.insertados} registros importados (${data.eliminados} reemplazados)</span>`;
-                setTimeout(() => location.reload(), 1500);
+                statusEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.insertados} registros importados (${data.eliminados} reemplazados). Recargando…</span>`;
+                setTimeout(() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('fecha_desde', desde);
+                    url.searchParams.set('fecha_hasta', hasta);
+                    window.location.href = url.toString();
+                }, 1400);
             }
         })
-        .catch(e => {
-            statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión</span>`;
+        .catch(() => {
+            statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión con el servidor</span>`;
         })
         .finally(() => {
             btnSync.disabled = false;
