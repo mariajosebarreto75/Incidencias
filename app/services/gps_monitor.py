@@ -100,5 +100,11 @@ def obtener_plan_del_dia(from_date, to_date=None):
     print(f"[Plan GPS] status={resp.status_code} body={repr(text[:120])}")
     if not text:
         return []
+    content_type = resp.headers.get("Content-Type", "")
+    if text.startswith("<") or "text/html" in content_type:
+        raise ValueError(
+            "El endpoint /plan/items devolvió HTML en vez de JSON. "
+            "El endpoint aún no está disponible en GPS Monitor."
+        )
     data = resp.json()
     return data if isinstance(data, list) else []
