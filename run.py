@@ -54,6 +54,13 @@ def create_app():
                 from app.services.sincronizar_alertas import sincronizar
                 sincronizar()
 
+        # Sincroniza el plan del día desde GPS Monitor todos los días a las 5:30 AM
+        @scheduler.task("cron", id="sync_plan_gps", hour=5, minute=30, misfire_grace_time=300)
+        def job_sync_plan():
+            with app.app_context():
+                from app.services.sincronizar_plan import sincronizar_plan
+                sincronizar_plan()
+
         # Evita doble arranque con el reloader de Flask en modo debug
         if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
             scheduler.start()

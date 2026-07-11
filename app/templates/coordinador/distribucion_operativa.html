@@ -143,6 +143,25 @@
 
     </div>
 
+    <!-- SINCRONIZAR GPS MONITOR -->
+
+    <div class="card shadow-sm mb-4 border-0" style="border-left:4px solid #0ea5e9 !important;">
+        <div class="card-body d-flex flex-wrap align-items-center gap-3 py-3">
+            <div class="flex-grow-1">
+                <div class="fw-semibold text-dark"><i class="bi bi-cloud-download me-2 text-info"></i>Sincronizar Plan GPS Monitor</div>
+                <div class="small text-muted">Descarga el plan del día desde GPS Monitor y lo actualiza en la tabla.</div>
+            </div>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <input type="date" id="syncFechaDesde" class="form-control form-control-sm" style="width:160px;">
+                <input type="date" id="syncFechaHasta" class="form-control form-control-sm" style="width:160px;">
+                <button id="btnSyncGPS" class="btn btn-sm btn-info text-white">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Sincronizar
+                </button>
+            </div>
+            <div id="syncStatus" class="small"></div>
+        </div>
+    </div>
+
     <!-- BOTONES -->
 
     <div class="hesego-toolbar mb-4">
@@ -250,5 +269,51 @@
 <script
     src="{{ url_for('static', filename='js/distribucion_operativa.js') }}"
 ></script>
+
+<!-- JS SINCRONIZAR GPS MONITOR -->
+<script>
+(function () {
+    const btnSync = document.getElementById('btnSyncGPS');
+    const statusEl = document.getElementById('syncStatus');
+    const desdeEl  = document.getElementById('syncFechaDesde');
+    const hastaEl  = document.getElementById('syncFechaHasta');
+
+    // Prellenar con fecha de hoy
+    const hoy = new Date().toISOString().slice(0, 10);
+    desdeEl.value = hoy;
+    hastaEl.value = hoy;
+
+    btnSync.addEventListener('click', function () {
+        const desde = desdeEl.value || hoy;
+        const hasta = hastaEl.value || desde;
+
+        btnSync.disabled = true;
+        btnSync.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sincronizando…';
+        statusEl.innerHTML = '';
+
+        fetch('/coordinador/plan/sincronizar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ desde: desde, hasta: hasta })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.error}</span>`;
+            } else {
+                statusEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.insertados} registros importados (${data.eliminados} reemplazados)</span>`;
+                setTimeout(() => location.reload(), 1500);
+            }
+        })
+        .catch(e => {
+            statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión</span>`;
+        })
+        .finally(() => {
+            btnSync.disabled = false;
+            btnSync.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Sincronizar';
+        });
+    });
+})();
+</script>
 
 {% endblock %}

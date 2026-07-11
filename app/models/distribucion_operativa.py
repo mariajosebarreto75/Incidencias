@@ -99,3 +99,6 @@ class DistribucionOperativa(
     meta = db.Column(
         db.Float
     )
+
+    # "gps_monitor" = importado desde API | None = cargado manualmente
+    origen = db.Column(db.String(50), nullable=True)

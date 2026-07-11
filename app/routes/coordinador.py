@@ -241,6 +241,20 @@ def panel_reportes():
 # DISTRIBUCION OPERATIVA
 # =====================================
 
+@coordinador.route("/coordinador/plan/sincronizar", methods=["POST"])
+@login_required
+def sincronizar_plan_gps():
+    """Sincroniza el plan del día desde GPS Monitor para la fecha solicitada."""
+    from app.services.sincronizar_plan import sincronizar_plan
+    datos = request.get_json(silent=True) or {}
+    from_date = datos.get("desde") or datos.get("fecha") or None
+    to_date   = datos.get("hasta") or datos.get("fecha_fin") or from_date
+    resultado = sincronizar_plan(from_date, to_date)
+    if "error" in resultado:
+        return jsonify({"ok": False, "error": resultado["error"]}), 500
+    return jsonify({"ok": True, **resultado})
+
+
 @coordinador.route(
     "/coordinador/distribucion-operativa",
     methods=["GET", "POST"]

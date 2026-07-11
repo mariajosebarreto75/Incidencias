@@ -73,3 +73,28 @@ def responder_alertas(respuestas):
             resultados.append({"alert_id": alert_id, "ok": False, "detalle": str(e)})
 
     return resultados
+
+
+def obtener_plan_del_dia(from_date, to_date=None):
+    """
+    Descarga el plan operativo diario del API GPS Monitor.
+    from_date / to_date: str "YYYY-MM-DD" o datetime.date
+    Devuelve lista de dicts (un dict por OT/plan_item).
+    """
+    def _str(d):
+        if d is None:
+            return None
+        return d if isinstance(d, str) else d.strftime("%Y-%m-%d")
+
+    from_str = _str(from_date)
+    to_str   = _str(to_date) if to_date is not None else from_str
+
+    resp = requests.get(
+        f"{BASE_URL}/plan/items",
+        headers=_HEADERS,
+        params={"from": from_str, "to": to_str},
+        timeout=_TIMEOUT
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data if isinstance(data, list) else []
