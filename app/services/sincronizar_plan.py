@@ -1,12 +1,10 @@
 """
-sincronizar_plan.py
-
-Descarga el plan del día desde GPS Monitor y lo guarda en distribucion_operativa.
-Cada ejecución reemplaza los registros del rango de fechas solicitado
-(borra los existentes del rango y reinscerta los nuevos).
+Descarga el plan del día desde GPS Monitor (DataFrame) y lo guarda
+en distribucion_operativa. Reemplaza solo los registros de origen=gps_monitor
+para el rango de fechas solicitado.
 """
 
-from datetime import date, timedelta
+from datetime import date
 
 from app.extensions import db
 from app.models.distribucion_operativa import DistribucionOperativa
@@ -16,12 +14,9 @@ from app.services.gps_monitor import obtener_plan_del_dia
 
 def sincronizar_plan(from_date=None, to_date=None):
     """
-    Sincroniza el plan operativo de GPS Monitor → distribucion_operativa.
-
-    - from_date: fecha inicio (str "YYYY-MM-DD" o date). Default: hoy.
-    - to_date:   fecha fin   (str "YYYY-MM-DD" o date). Default: igual a from_date.
-
-    Devuelve dict con: {"insertados": N, "eliminados": N, "fecha_desde": ..., "fecha_hasta": ...}
+    from_date / to_date: str "YYYY-MM-DD" o datetime.date. Default: hoy.
+    Devuelve dict: {"insertados", "eliminados", "fecha_desde", "fecha_hasta"}
+                o  {"error": "..."}
     """
     from datetime import datetime
 
@@ -35,80 +30,84 @@ def sincronizar_plan(from_date=None, to_date=None):
     fd = _to_date(from_date)
     ft = _to_date(to_date) if to_date is not None else fd
 
+    # ── Llamar la función del desarrollador ──────────────────────────────
     try:
-        items = obtener_plan_del_dia(fd.isoformat(), ft.isoformat())
+        df = obtener_plan_del_dia(fd.isoformat(), ft.isoformat())
     except Exception as e:
         print(f"[Plan GPS] Error al consultar API: {e}")
         return {"error": str(e)}
 
-    if not items:
+    # ── Validar que el DataFrame no esté vacío ───────────────────────────
+    if df.empty:
         print(f"[Plan GPS] Sin datos para {fd} → {ft}")
-        return {"insertados": 0, "eliminados": 0,
-                "fecha_desde": fd.isoformat(), "fecha_hasta": ft.isoformat()}
+        return {
+            "insertados": 0,
+            "eliminados": 0,
+            "fecha_desde": fd.isoformat(),
+            "fecha_hasta": ft.isoformat(),
+            "mensaje": "No hay plan cargado en GPS Monitor para ese rango de fechas.",
+        }
 
-    # Determinar las fechas reales presentes en la respuesta
-    fechas_en_datos = set()
-    for item in items:
-        pd_str = item.get("plan_date")
-        if pd_str:
-            try:
-                fechas_en_datos.add(datetime.strptime(str(pd_str)[:10], "%Y-%m-%d").date())
-            except ValueError:
-                pass
+    # ── Resolver contract_code → nombre completo de contrato ─────────────
+    codigos = set(df["contract_code"].dropna().astype(str).unique())
+    contratos_db = {
+        c.codigo: c.contrato
+        for c in Contrato.query.filter(Contrato.codigo.in_(codigos)).all()
+    }
 
-    # Eliminar registros existentes solo en esas fechas (origen = GPS Monitor)
+    def resolver_contrato(code):
+        if not code or str(code) == "nan":
+            return "—"
+        return contratos_db.get(str(code), str(code))
+
+    # ── Determinar fechas presentes en los datos ──────────────────────────
+    fechas = set(df["plan_date"].dropna().unique())
+
+    # ── Eliminar registros existentes de GPS Monitor para esas fechas ─────
     eliminados = 0
-    if fechas_en_datos:
+    if fechas:
         eliminados = (
             DistribucionOperativa.query
             .filter(
-                DistribucionOperativa.fecha.in_(list(fechas_en_datos)),
-                DistribucionOperativa.origen == "gps_monitor"
+                DistribucionOperativa.fecha.in_(list(fechas)),
+                DistribucionOperativa.origen == "gps_monitor",
             )
             .delete(synchronize_session=False)
         )
 
-    # Precarga el mapeo código → nombre completo de contrato
-    _codigos = {item.get("contract_code") for item in items if item.get("contract_code")}
-    _contratos_db = {
-        c.codigo: c.contrato
-        for c in Contrato.query.filter(Contrato.codigo.in_(_codigos)).all()
-    }
+    # ── Insertar nuevos registros ─────────────────────────────────────────
+    def _str(val):
+        """Convierte valor del DataFrame a str limpio o None."""
+        import pandas as pd
+        if val is None or (isinstance(val, float) and pd.isna(val)):
+            return None
+        s = str(val).strip()
+        return s if s and s.lower() != "nan" else None
 
-    def _resolver_contrato(code):
-        if not code:
-            return "—"
-        return _contratos_db.get(code, code)
-
-    # Insertar nuevos registros
     insertados = 0
-    for item in items:
-        pd_str = item.get("plan_date")
-        if not pd_str:
-            continue
-        try:
-            fecha_plan = datetime.strptime(str(pd_str)[:10], "%Y-%m-%d").date()
-        except ValueError:
+    for _, row in df.iterrows():
+        fecha_plan = row.get("plan_date")
+        if fecha_plan is None:
             continue
 
         registro = DistribucionOperativa(
-            fecha           = fecha_plan,
-            contrato        = _resolver_contrato(item.get("contract_code")),
-            recurso         = item.get("resource_code")  or item.get("plate") or "—",
-            placa           = item.get("plate"),
-            orden_trabajo   = item.get("order_number"),
-            tipo_actividad  = item.get("order_type"),
-            tipo_cuadrilla  = item.get("brigade_type"),
-            cedula_1        = str(item["tech1_doc"]) if item.get("tech1_doc") else None,
-            cedula_2        = str(item["tech2_doc"]) if item.get("tech2_doc") else None,
-            cedula_3        = str(item["tech3_doc"]) if item.get("tech3_doc") else None,
-            cedula_4        = str(item["tech4_doc"]) if item.get("tech4_doc") else None,
-            cedula_5        = str(item["tech5_doc"]) if item.get("tech5_doc") else None,
-            latitud         = str(item["client_lat"]) if item.get("client_lat") else None,
-            longitud        = str(item["client_lon"]) if item.get("client_lon") else None,
-            duracion_actividad = str(item["duration_min"]) if item.get("duration_min") else None,
-            observacion     = item.get("observation"),
-            origen          = "gps_monitor",
+            fecha              = fecha_plan,
+            contrato           = resolver_contrato(row.get("contract_code")),
+            recurso            = _str(row.get("resource_code")) or _str(row.get("plate")) or "—",
+            placa              = _str(row.get("plate")),
+            orden_trabajo      = _str(row.get("order_number")),
+            tipo_actividad     = _str(row.get("order_type")),
+            tipo_cuadrilla     = _str(row.get("brigade_type")),
+            cedula_1           = _str(row.get("tech1_doc")),
+            cedula_2           = _str(row.get("tech2_doc")),
+            cedula_3           = _str(row.get("tech3_doc")),
+            cedula_4           = _str(row.get("tech4_doc")),
+            cedula_5           = _str(row.get("tech5_doc")),
+            latitud            = _str(row.get("client_lat")),
+            longitud           = _str(row.get("client_lon")),
+            duracion_actividad = _str(row.get("duration_min")),
+            observacion        = _str(row.get("observation")),
+            origen             = "gps_monitor",
         )
         db.session.add(registro)
         insertados += 1
@@ -122,8 +121,8 @@ def sincronizar_plan(from_date=None, to_date=None):
 
     print(f"[Plan GPS] Sync {fd}→{ft}: {eliminados} eliminados, {insertados} insertados")
     return {
-        "insertados":   insertados,
-        "eliminados":   eliminados,
-        "fecha_desde":  fd.isoformat(),
-        "fecha_hasta":  ft.isoformat(),
+        "insertados":  insertados,
+        "eliminados":  eliminados,
+        "fecha_desde": fd.isoformat(),
+        "fecha_hasta": ft.isoformat(),
     }
