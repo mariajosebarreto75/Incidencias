@@ -9,6 +9,7 @@ from datetime import date
 from app.extensions import db
 from app.models.distribucion_operativa import DistribucionOperativa
 from app.models.contrato import Contrato
+from app.models.meta_operativa import MetaOperativa
 from app.services.gps_monitor import obtener_plan_del_dia
 
 
@@ -60,6 +61,36 @@ def sincronizar_plan(from_date=None, to_date=None):
             return "—"
         return contratos_db.get(str(code), str(code))
 
+    # ── Cargar metas operativas para lookup ─────────────────────────────
+    # Estructura: {(contrato, tipo_cuadrilla, proceso): meta}
+    #             {(contrato, tipo_cuadrilla, None):    meta}  ← sin proceso
+    metas_lookup = {}
+    for m in MetaOperativa.query.all():
+        key_con_proceso = (m.contrato, m.Tipo_cuadrilla, m.Proceso)
+        key_sin_proceso = (m.contrato, m.Tipo_cuadrilla, None)
+        metas_lookup[key_con_proceso] = m.Meta_Produccion
+        if m.Proceso is None:
+            metas_lookup[key_sin_proceso] = m.Meta_Produccion
+
+    def resolver_meta(contrato_nombre, tipo_cuadrilla, tipo_actividad):
+        """Busca meta: primero con proceso, luego sin proceso."""
+        if not contrato_nombre or not tipo_cuadrilla:
+            return None
+        # intento 1: contrato + cuadrilla + proceso (tipo_actividad)
+        meta = metas_lookup.get((contrato_nombre, tipo_cuadrilla, tipo_actividad))
+        if meta is not None:
+            return meta
+        # intento 2: contrato + cuadrilla sin importar proceso
+        meta = metas_lookup.get((contrato_nombre, tipo_cuadrilla, None))
+        if meta is not None:
+            return meta
+        # intento 3: recorrer y buscar cuadrilla que coincida ignorando caso
+        tc_lower = tipo_cuadrilla.lower().strip()
+        for (c, tc, _), v in metas_lookup.items():
+            if c == contrato_nombre and tc and tc.lower().strip() == tc_lower:
+                return v
+        return None
+
     # ── Determinar fechas presentes en los datos ──────────────────────────
     fechas = set(df["plan_date"].dropna().unique())
 
@@ -96,14 +127,18 @@ def sincronizar_plan(from_date=None, to_date=None):
         if fecha_plan is None:
             continue
 
+        contrato_nombre  = resolver_contrato(row.get("contract_code"))
+        tipo_cuadrilla_v = _str(row.get("brigade_type"))
+        tipo_actividad_v = _str(row.get("order_type"))
+
         registro = DistribucionOperativa(
             fecha              = fecha_plan,
-            contrato           = resolver_contrato(row.get("contract_code")),
+            contrato           = contrato_nombre,
             recurso            = _str(row.get("resource_code")) or _str(row.get("plate")) or "—",
             placa              = _str(row.get("plate")),
             orden_trabajo      = _str(row.get("order_number")),
-            tipo_actividad     = _str(row.get("order_type")),
-            tipo_cuadrilla     = _str(row.get("brigade_type")),
+            tipo_actividad     = tipo_actividad_v,
+            tipo_cuadrilla     = tipo_cuadrilla_v,
             cedula_1           = _str(row.get("tech1_doc"), es_cedula=True),
             cedula_2           = _str(row.get("tech2_doc"), es_cedula=True),
             cedula_3           = _str(row.get("tech3_doc"), es_cedula=True),
@@ -113,6 +148,7 @@ def sincronizar_plan(from_date=None, to_date=None):
             longitud           = _str(row.get("client_lon")),
             duracion_actividad = _str(row.get("duration_min")),
             observacion        = _str(row.get("observation")),
+            meta               = resolver_meta(contrato_nombre, tipo_cuadrilla_v, tipo_actividad_v),
             origen             = "gps_monitor",
         )
         db.session.add(registro)
