@@ -119,11 +119,15 @@ let tabla = new Tabulator("#tablaDistribucion", {
             title: "Meta",
             field: "meta",
             headerFilter: false,
-            width: 90,
+            width: 120,
             hozAlign: "right",
             formatter: function(cell) {
                 const v = cell.getValue();
-                return v !== null && v !== undefined && v !== "" ? v : "—";
+                if (v === null || v === undefined || v === "") return "—";
+                return "$ " + Number(v).toLocaleString("es-CO", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                });
             },
         },
         {
