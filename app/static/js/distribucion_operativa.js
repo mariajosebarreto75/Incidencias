@@ -92,12 +92,6 @@ let tabla = new Tabulator("#tablaDistribucion", {
             minWidth: 180,
         },
         {
-            title: "Cargo",
-            field: "cargo_1",
-            headerFilter: true,
-            minWidth: 140,
-        },
-        {
             title: "Cédula 2",
             field: "cedula_2",
             headerFilter: true,

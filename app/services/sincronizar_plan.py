@@ -76,11 +76,17 @@ def sincronizar_plan(from_date=None, to_date=None):
         )
 
     # ── Insertar nuevos registros ─────────────────────────────────────────
-    def _str(val):
+    def _str(val, es_cedula=False):
         """Convierte valor del DataFrame a str limpio o None."""
         import pandas as pd
         if val is None or (isinstance(val, float) and pd.isna(val)):
             return None
+        # Cédulas vienen como float (1006323227.0) → convertir a int primero
+        if es_cedula:
+            try:
+                return str(int(float(val)))
+            except (ValueError, TypeError):
+                return None
         s = str(val).strip()
         return s if s and s.lower() != "nan" else None
 
@@ -98,11 +104,11 @@ def sincronizar_plan(from_date=None, to_date=None):
             orden_trabajo      = _str(row.get("order_number")),
             tipo_actividad     = _str(row.get("order_type")),
             tipo_cuadrilla     = _str(row.get("brigade_type")),
-            cedula_1           = _str(row.get("tech1_doc")),
-            cedula_2           = _str(row.get("tech2_doc")),
-            cedula_3           = _str(row.get("tech3_doc")),
-            cedula_4           = _str(row.get("tech4_doc")),
-            cedula_5           = _str(row.get("tech5_doc")),
+            cedula_1           = _str(row.get("tech1_doc"), es_cedula=True),
+            cedula_2           = _str(row.get("tech2_doc"), es_cedula=True),
+            cedula_3           = _str(row.get("tech3_doc"), es_cedula=True),
+            cedula_4           = _str(row.get("tech4_doc"), es_cedula=True),
+            cedula_5           = _str(row.get("tech5_doc"), es_cedula=True),
             latitud            = _str(row.get("client_lat")),
             longitud           = _str(row.get("client_lon")),
             duracion_actividad = _str(row.get("duration_min")),
