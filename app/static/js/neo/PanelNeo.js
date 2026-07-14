@@ -16,6 +16,13 @@ function limpiarCamposAuto() {
     setField("meta",           "");
 }
 
+function limpiarContrato() {
+    const sel = document.getElementById("contrato");
+    sel.innerHTML = '<option value="">— Seleccione un contrato —</option>';
+    sel.disabled  = true;
+    limpiarRecurso();
+}
+
 function limpiarRecurso() {
     document.getElementById("recurso").innerHTML =
         '<option value="">— Seleccione un recurso —</option>';
@@ -36,6 +43,43 @@ function mostrarAlerta(mensaje, tipo) {
 function limpiarAlerta() {
     const el = document.getElementById("rptAlerta");
     if (el) el.innerHTML = "";
+}
+
+// =====================================
+// CARGAR CONTRATOS (por fecha desde distribución)
+// =====================================
+
+async function cargarContratos() {
+    const fecha = document.getElementById("fecha_reporte").value;
+    limpiarContrato();
+    if (!fecha) return;
+
+    try {
+        const resp   = await fetch("/neo/contratos-distribucion?fecha=" + fecha);
+        const lista  = await resp.json();
+        const sel    = document.getElementById("contrato");
+
+        if (lista.length === 0) {
+            sel.innerHTML =
+                '<option value="">— Sin distribución para esa fecha —</option>';
+            mostrarAlerta(
+                "No hay distribución operativa cargada para esa fecha. Sincroniza primero desde GPS Monitor.",
+                "warning"
+            );
+            return;
+        }
+
+        limpiarAlerta();
+        sel.disabled = false;
+        lista.forEach(function(c) {
+            const opt = document.createElement("option");
+            opt.value = c; opt.textContent = c;
+            sel.appendChild(opt);
+        });
+
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 // =====================================
@@ -162,7 +206,7 @@ async function cargarDatosOperativos() {
 // =====================================
 
 document.getElementById("fecha_reporte")
-    .addEventListener("change", cargarRecursos);
+    .addEventListener("change", cargarContratos);
 
 document.getElementById("contrato")
     .addEventListener("change", cargarRecursos);

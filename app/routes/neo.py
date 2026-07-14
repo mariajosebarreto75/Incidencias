@@ -500,21 +500,40 @@ def panel_reportes():
     tipos_desvio   = TipoDesvio.query.order_by(TipoDesvio.tipo_desvio).all()
     parametros_neo = ParametroNeo.query.order_by(ParametroNeo.parametroNeo).all()
 
-    # Si el usuario tiene contratos asignados, usar solo esos; si no, todos
-    asignados = UserContrato.query.filter_by(user_id=current_user.id).all()
-    if asignados:
-        nombres_asignados = [uc.contrato for uc in asignados]
-        contratos = sorted(nombres_asignados)
-    else:
-        contratos = [c.contrato for c in
-                     Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()]
-
     return render_template(
         "neo/panelReportes.html",
-        contratos      = contratos,
         tipos_desvio   = tipos_desvio,
         parametros_neo = parametros_neo
     )
+
+
+# =====================================
+# API: CONTRATOS POR FECHA (distribución)
+# =====================================
+
+@neo.route("/neo/contratos-distribucion")
+@login_required
+def contratos_distribucion():
+    fecha_str = request.args.get("fecha", "").strip()
+    if not fecha_str:
+        return jsonify([])
+    try:
+        fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify([])
+
+    filas = (
+        db.session.query(DistribucionOperativa.contrato)
+        .filter(
+            DistribucionOperativa.fecha    == fecha,
+            DistribucionOperativa.contrato != None,
+            DistribucionOperativa.contrato != ""
+        )
+        .distinct()
+        .order_by(DistribucionOperativa.contrato)
+        .all()
+    )
+    return jsonify([r[0] for r in filas if r[0]])
 
 
 # =====================================

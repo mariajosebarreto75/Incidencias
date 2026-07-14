@@ -354,11 +354,8 @@
                         Contrato
                         <span class="badge-req ms-1">Requerido</span>
                     </label>
-                    <select id="contrato" class="form-select">
-                        <option value="">— Seleccione un contrato —</option>
-                        {% for c in contratos %}
-                        <option value="{{ c }}">{{ c }}</option>
-                        {% endfor %}
+                    <select id="contrato" class="form-select" disabled>
+                        <option value="">— Seleccione primero la fecha —</option>
                     </select>
                 </div>
 
