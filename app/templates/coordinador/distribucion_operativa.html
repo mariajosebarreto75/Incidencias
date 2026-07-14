@@ -1,4 +1,4 @@
-{% extends 'coordinador/navbarcoor.html' %}
+﻿{% extends 'coordinador/navbarcoor.html' %}
 
 {% block content %}
 
@@ -10,9 +10,9 @@
     <!-- HEADER -->
     <div class="hesego-header shadow-sm mb-4">
         <div class="d-flex align-items-center">
-            <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="HESEGO Ingeniería" class="hesego-logo">
+            <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="HESEGO IngenierÃ­a" class="hesego-logo">
             <div class="ms-4">
-                <h2 class="mb-1">Distribución Operativa</h2>
+                <h2 class="mb-1">DistribuciÃ³n Operativa</h2>
                 <p class="mb-0">
                     <i class="bi bi-cloud-download me-1 text-info"></i>
                     Datos sincronizados desde GPS Monitor &mdash; solo lectura
@@ -33,15 +33,15 @@
         <div class="col-md-3">
             <div class="kpi-card">
                 <div class="kpi-icon"><i class="bi bi-diagram-3"></i></div>
-                <h3>Operación</h3>
-                <span>Distribución</span>
+                <h3>OperaciÃ³n</h3>
+                <span>DistribuciÃ³n</span>
             </div>
         </div>
         <div class="col-md-3">
             <div class="kpi-card">
                 <div class="kpi-icon"><i class="bi bi-building"></i></div>
                 <h3>HESEGO</h3>
-                <span>Ingeniería SAS</span>
+                <span>IngenierÃ­a SAS</span>
             </div>
         </div>
         <div class="col-md-3">
@@ -62,7 +62,7 @@
                         <i class="bi bi-cloud-download me-2 text-info"></i>Sincronizar Plan GPS Monitor
                     </div>
                     <div class="small text-muted">
-                        Descarga el plan del día desde GPS Monitor y lo guarda en la BD local para consulta histórica.
+                        Descarga el plan del dÃ­a desde GPS Monitor y lo guarda en la BD local para consulta histÃ³rica.
                         Los registros manuales no se modifican.
                     </div>
                 </div>
@@ -129,7 +129,7 @@
     <div class="alert alert-info alert-sm py-2 mb-3 d-flex align-items-center gap-2" style="font-size:13px;">
         <i class="bi bi-info-circle-fill"></i>
         Esta tabla es <strong>solo lectura</strong>. Todos los datos provienen de GPS Monitor.
-        Para modificar la distribución, realiza los cambios en la aplicación GPS Monitor y sincroniza.
+        Para modificar la distribuciÃ³n, realiza los cambios en la aplicaciÃ³n GPS Monitor y sincroniza.
     </div>
 
     <!-- TABLA -->
@@ -140,14 +140,17 @@
 </div>
 
 <!-- DATOS -->
+<script type="application/json" id="datos-distribucion">{{ datos_tabla|safe }}</script>
+<script type="application/json" id="datos-contratos">{{ contratos|safe }}</script>
+
 <script>
-    const datosDistribucion = JSON.parse('{{ datos_tabla|safe }}');
-    const contratosUsuario  = JSON.parse('{{ contratos|safe }}');
-    const contrato_filtro   = '{{ contrato_filtro|e }}';
+    const datosDistribucion = JSON.parse(document.getElementById('datos-distribucion').textContent);
+    const contratosUsuario  = JSON.parse(document.getElementById('datos-contratos').textContent);
+    const contrato_filtro   = {{ contrato_filtro|tojson }};
 
     // Poblar select de contratos
     const selContrato = document.getElementById('selectContrato');
-    contratosUsuario.forEach(c => {
+    contratosUsuario.forEach(function(c) {
         const opt = document.createElement('option');
         opt.value = c;
         opt.textContent = c;
@@ -158,21 +161,28 @@
 
 <!-- SHEETJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <!-- TABULATOR -->
 <script src="https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js"></script>
-
-<!-- JS PROPIO -->
+<!-- JS PROPIO (define tabla como variable global) -->
 <script src="{{ url_for('static', filename='js/distribucion_operativa.js') }}"></script>
 
-<!-- JS SINCRONIZAR GPS MONITOR -->
+<!-- FILTRO CONTRATO + SINCRONIZAR -->
 <script>
 (function () {
+    // Filtro de contrato (client-side sobre tabla ya definida)
+    selContrato.addEventListener('change', function () {
+        if (this.value) {
+            tabla.setFilter('contrato', 'like', this.value);
+        } else {
+            tabla.clearFilter();
+        }
+    });
+
+    // Sincronizar GPS Monitor
     const btnSync  = document.getElementById('btnSyncGPS');
     const statusEl = document.getElementById('syncStatus');
     const desdeEl  = document.getElementById('syncFechaDesde');
     const hastaEl  = document.getElementById('syncFechaHasta');
-
     const hoy = new Date().toISOString().slice(0, 10);
     desdeEl.value = hoy;
     hastaEl.value = hoy;
@@ -180,9 +190,8 @@
     btnSync.addEventListener('click', function () {
         const desde = desdeEl.value || hoy;
         const hasta = hastaEl.value || desde;
-
         btnSync.disabled = true;
-        btnSync.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sincronizando…';
+        btnSync.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sincronizandoâ€¦';
         statusEl.innerHTML = '';
 
         fetch('/coordinador/plan/sincronizar', {
@@ -193,20 +202,20 @@
         .then(r => r.json())
         .then(data => {
             if (!data.ok) {
-                const msg = data.error || 'Error desconocido';
-                statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${msg}</span>`;
+                statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.error || 'Error desconocido'}</span>`;
             } else {
-                statusEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.insertados} registros importados (${data.eliminados} reemplazados). Recargando…</span>`;
+                statusEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.insertados} registros importados. Recargandoâ€¦</span>`;
                 setTimeout(() => {
                     const url = new URL(window.location.href);
                     url.searchParams.set('fecha_desde', desde);
                     url.searchParams.set('fecha_hasta', hasta);
+                    url.searchParams.delete('contrato');
                     window.location.href = url.toString();
                 }, 1400);
             }
         })
         .catch(() => {
-            statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión con el servidor</span>`;
+            statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexiÃ³n</span>`;
         })
         .finally(() => {
             btnSync.disabled = false;

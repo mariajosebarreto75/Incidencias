@@ -170,22 +170,4 @@ tabla.on("dataFiltered", function(filters, rows) {
     if (el) el.textContent = rows.length;
 });
 
-// Filtro de contrato desde el dropdown del formulario (client-side, sin recargar)
-const selContrato = document.getElementById("selectContrato");
-if (selContrato) {
-    selContrato.addEventListener("change", function() {
-        const val = this.value;
-        if (val) {
-            tabla.setFilter("contrato", "like", val);
-        } else {
-            tabla.removeFilter("contrato", "like");
-        }
-    });
-}
-
-// Aplicar filtro inicial si viene seleccionado
-document.addEventListener("DOMContentLoaded", function() {
-    if (selContrato && selContrato.value) {
-        tabla.setFilter("contrato", "like", selContrato.value);
-    }
-});
+// El filtro de contrato se maneja desde el template (acceso a variable tabla via window)
