@@ -337,7 +337,7 @@ def distribucion_operativa():
     return render_template(
         "coordinador/distribucion_operativa.html",
         datos_tabla=json.dumps(datos_tabla, ensure_ascii=False),
-            contratos=json.dumps(lista_valores, ensure_ascii=False),
+            contratos=json.dumps(sorted(lista_contratos), ensure_ascii=False),
         fecha_desde=fecha_desde_str,
         fecha_hasta=fecha_hasta_str,
         contrato_filtro=contrato_filtro,
