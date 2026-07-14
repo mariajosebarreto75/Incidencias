@@ -10,9 +10,9 @@
     <!-- HEADER -->
     <div class="hesego-header shadow-sm mb-4">
         <div class="d-flex align-items-center">
-            <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="HESEGO IngenierÃ­a" class="hesego-logo">
+            <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="HESEGO Ingeniería" class="hesego-logo">
             <div class="ms-4">
-                <h2 class="mb-1">DistribuciÃ³n Operativa</h2>
+                <h2 class="mb-1">Distribución Operativa</h2>
                 <p class="mb-0">
                     <i class="bi bi-cloud-download me-1 text-info"></i>
                     Datos sincronizados desde GPS Monitor &mdash; solo lectura
@@ -33,15 +33,15 @@
         <div class="col-md-3">
             <div class="kpi-card">
                 <div class="kpi-icon"><i class="bi bi-diagram-3"></i></div>
-                <h3>OperaciÃ³n</h3>
-                <span>DistribuciÃ³n</span>
+                <h3>Operación</h3>
+                <span>Distribución</span>
             </div>
         </div>
         <div class="col-md-3">
             <div class="kpi-card">
                 <div class="kpi-icon"><i class="bi bi-building"></i></div>
                 <h3>HESEGO</h3>
-                <span>IngenierÃ­a SAS</span>
+                <span>Ingeniería SAS</span>
             </div>
         </div>
         <div class="col-md-3">
@@ -62,7 +62,7 @@
                         <i class="bi bi-cloud-download me-2 text-info"></i>Sincronizar Plan GPS Monitor
                     </div>
                     <div class="small text-muted">
-                        Descarga el plan del dÃ­a desde GPS Monitor y lo guarda en la BD local para consulta histÃ³rica.
+                        Descarga el plan del día desde GPS Monitor y lo guarda en la BD local para consulta histórica.
                         Los registros manuales no se modifican.
                     </div>
                 </div>
@@ -125,11 +125,11 @@
         </div>
     </form>
 
-    <!-- AVISO SOLO LECTURA -->
+    <!-- AVISO solo lectura -->
     <div class="alert alert-info alert-sm py-2 mb-3 d-flex align-items-center gap-2" style="font-size:13px;">
         <i class="bi bi-info-circle-fill"></i>
         Esta tabla es <strong>solo lectura</strong>. Todos los datos provienen de GPS Monitor.
-        Para modificar la distribuciÃ³n, realiza los cambios en la aplicaciÃ³n GPS Monitor y sincroniza.
+        Para modificar la Distribución, realiza los cambios en la aplicación GPS Monitor y sincroniza.
     </div>
 
     <!-- TABLA -->
@@ -193,7 +193,7 @@
         const desde = desdeEl.value || hoy;
         const hasta = hastaEl.value || desde;
         btnSync.disabled = true;
-        btnSync.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sincronizandoâ€¦';
+        btnSync.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sincronizando…';
         statusEl.innerHTML = '';
 
         fetch('/coordinador/plan/sincronizar', {
@@ -206,7 +206,7 @@
             if (!data.ok) {
                 statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>${data.error || 'Error desconocido'}</span>`;
             } else {
-                statusEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.insertados} registros importados. Recargandoâ€¦</span>`;
+                statusEl.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${data.insertados} registros importados. Recargando…</span>`;
                 setTimeout(() => {
                     const url = new URL(window.location.href);
                     url.searchParams.set('fecha_desde', desde);
@@ -217,7 +217,7 @@
             }
         })
         .catch(() => {
-            statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexiÃ³n</span>`;
+            statusEl.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Error de conexión</span>`;
         })
         .finally(() => {
             btnSync.disabled = false;
