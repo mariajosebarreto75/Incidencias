@@ -294,10 +294,10 @@ def distribucion_operativa():
     lista_codigos   = [c.codigo for c in _contratos_obj if c.codigo]
     lista_valores   = list(set(lista_contratos + lista_codigos))
 
-    # Consultar todos los registros del rango de fechas (sin filtro de contrato en BD)
-    # El filtro de contrato se aplica en la tabla del lado del cliente (Tabulator)
+    # Consultar solo los registros del coordinador (por sus contratos asignados)
     q = DistribucionOperativa.query.filter(
-        DistribucionOperativa.fecha.between(fecha_desde, fecha_hasta)
+        DistribucionOperativa.fecha.between(fecha_desde, fecha_hasta),
+        DistribucionOperativa.contrato.in_(lista_valores) if lista_valores else False
     )
     registros = q.order_by(DistribucionOperativa.fecha.asc(), DistribucionOperativa.id.asc()).all()
 
