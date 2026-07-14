@@ -171,9 +171,10 @@
 (function () {
     // Filtro de contrato (client-side, match exacto)
     selContrato.addEventListener('change', function () {
-        tabla.removeFilter();
         if (this.value) {
-            tabla.addFilter('contrato', '=', this.value);
+            tabla.setFilter('contrato', '=', this.value);
+        } else {
+            tabla.clearFilter();
         }
         const el = document.getElementById('totalRegistros');
         if (el) el.textContent = tabla.getDataCount('active');
