@@ -276,29 +276,31 @@ def distribucion_operativa():
         fecha_desde = fecha_hasta = _date.today()
         fecha_desde_str = fecha_hasta_str = str(_date.today())
 
-    # Contratos del coordinador
+    # Contratos del coordinador (objetos completos para obtener nombre y código)
     _uc2 = UserContrato.query.filter_by(user_id=current_user.id).all()
     if _uc2:
         _nombres_uc2 = [uc.contrato for uc in _uc2]
-        lista_contratos = [
-            c.contrato for c in Contrato.query.filter(
-                Contrato.contrato.in_(_nombres_uc2), Contrato.activo == True
-            ).all()
-        ]
+        _contratos_obj = Contrato.query.filter(
+            Contrato.contrato.in_(_nombres_uc2), Contrato.activo == True
+        ).all()
     else:
-        lista_contratos = [
-            c.contrato for c in Contrato.query.filter_by(
-                coordinador=current_user.nombre_completo, activo=True
-            ).all()
-        ]
+        _contratos_obj = Contrato.query.filter_by(
+            coordinador=current_user.nombre_completo, activo=True
+        ).all()
+
+    lista_contratos = [c.contrato for c in _contratos_obj]
+    # Incluir códigos cortos (ej: "021C") para que los registros de GPS Monitor
+    # que no resolvieron al nombre completo también aparezcan
+    lista_codigos   = [c.codigo for c in _contratos_obj if c.codigo]
+    lista_valores   = list(set(lista_contratos + lista_codigos))
 
     # Consultar registros con filtros
     q = DistribucionOperativa.query.filter(
         DistribucionOperativa.fecha.between(fecha_desde, fecha_hasta)
     )
-    if lista_contratos:
-        q = q.filter(DistribucionOperativa.contrato.in_(lista_contratos))
-    if contrato_filtro and contrato_filtro in lista_contratos:
+    if lista_valores:
+        q = q.filter(DistribucionOperativa.contrato.in_(lista_valores))
+    if contrato_filtro and contrato_filtro in lista_valores:
         q = q.filter(DistribucionOperativa.contrato == contrato_filtro)
     registros = q.order_by(DistribucionOperativa.fecha.asc(), DistribucionOperativa.id.asc()).all()
 
@@ -338,7 +340,7 @@ def distribucion_operativa():
     return render_template(
         "coordinador/distribucion_operativa.html",
         datos_tabla=json.dumps(datos_tabla, ensure_ascii=False),
-        contratos=json.dumps(lista_contratos, ensure_ascii=False),
+        contratos=json.dumps(lista_valores, ensure_ascii=False),
         fecha_desde=fecha_desde_str,
         fecha_hasta=fecha_hasta_str,
         contrato_filtro=contrato_filtro,
