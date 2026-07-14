@@ -294,14 +294,11 @@ def distribucion_operativa():
     lista_codigos   = [c.codigo for c in _contratos_obj if c.codigo]
     lista_valores   = list(set(lista_contratos + lista_codigos))
 
-    # Consultar registros con filtros
+    # Consultar todos los registros del rango de fechas (sin filtro de contrato en BD)
+    # El filtro de contrato se aplica en la tabla del lado del cliente (Tabulator)
     q = DistribucionOperativa.query.filter(
         DistribucionOperativa.fecha.between(fecha_desde, fecha_hasta)
     )
-    if lista_valores:
-        q = q.filter(DistribucionOperativa.contrato.in_(lista_valores))
-    if contrato_filtro and contrato_filtro in lista_valores:
-        q = q.filter(DistribucionOperativa.contrato == contrato_filtro)
     registros = q.order_by(DistribucionOperativa.fecha.asc(), DistribucionOperativa.id.asc()).all()
 
     # Lookup personas
@@ -340,7 +337,7 @@ def distribucion_operativa():
     return render_template(
         "coordinador/distribucion_operativa.html",
         datos_tabla=json.dumps(datos_tabla, ensure_ascii=False),
-        contratos=json.dumps(lista_valores, ensure_ascii=False),
+            contratos=json.dumps(lista_valores, ensure_ascii=False),
         fecha_desde=fecha_desde_str,
         fecha_hasta=fecha_hasta_str,
         contrato_filtro=contrato_filtro,
