@@ -126,13 +126,21 @@ let tabla = new Tabulator("#tablaDistribucion", {
             title: "Latitud",
             field: "latitud",
             headerFilter: true,
-            width: 110,
+            width: 120,
+            formatter: function(cell) {
+                const v = cell.getValue();
+                return v ? String(v).replace(".", ",") : "";
+            },
         },
         {
             title: "Longitud",
             field: "longitud",
             headerFilter: true,
-            width: 110,
+            width: 120,
+            formatter: function(cell) {
+                const v = cell.getValue();
+                return v ? String(v).replace(".", ",") : "";
+            },
         },
         {
             title: "Observación",
