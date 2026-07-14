@@ -145,16 +145,16 @@
 
 <script>
     const datosDistribucion = JSON.parse(document.getElementById('datos-distribucion').textContent);
-    const contratosUsuario  = JSON.parse(document.getElementById('datos-contratos').textContent);
-    const contrato_filtro   = {{ contrato_filtro|tojson }};
 
-    // Poblar select de contratos
+    // Extraer contratos únicos de los datos reales (no solo los asignados al usuario)
     const selContrato = document.getElementById('selectContrato');
-    contratosUsuario.forEach(function(c) {
+    const contratosUnicos = [...new Set(
+        datosDistribucion.map(r => r.contrato).filter(Boolean)
+    )].sort();
+    contratosUnicos.forEach(function(c) {
         const opt = document.createElement('option');
         opt.value = c;
         opt.textContent = c;
-        if (c === contrato_filtro) opt.selected = true;
         selContrato.appendChild(opt);
     });
 </script>
@@ -169,13 +169,14 @@
 <!-- FILTRO CONTRATO + SINCRONIZAR -->
 <script>
 (function () {
-    // Filtro de contrato (client-side sobre tabla ya definida)
+    // Filtro de contrato (client-side, match exacto)
     selContrato.addEventListener('change', function () {
+        tabla.removeFilter();
         if (this.value) {
-            tabla.setFilter('contrato', 'like', this.value);
-        } else {
-            tabla.clearFilter();
+            tabla.addFilter('contrato', '=', this.value);
         }
+        const el = document.getElementById('totalRegistros');
+        if (el) el.textContent = tabla.getDataCount('active');
     });
 
     // Sincronizar GPS Monitor
