@@ -13,74 +13,54 @@
     --dn-text:  #0f172a;
     --dn-muted: #64748b;
 }
-
 body { background: var(--dn-bg); }
-
 .dn-wrapper { max-width: 100%; padding: 1.25rem 1.5rem; }
-
-/* Header */
-.dn-header {
-    display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem;
-}
-.dn-title { font-size: 1.25rem; font-weight: 800; color: var(--dn-text); }
-.dn-title span { color: var(--dn-teal); }
-.dn-sub { font-size: .8rem; color: var(--dn-muted); margin-top: .1rem; }
-
-/* Filtros */
+.dn-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; margin-bottom:1rem; }
+.dn-title { font-size:1.25rem; font-weight:800; color:var(--dn-text); }
+.dn-title span { color:var(--dn-teal); }
+.dn-sub { font-size:.8rem; color:var(--dn-muted); margin-top:.1rem; }
 .dn-filters {
-    background: var(--dn-card); border: 1px solid var(--dn-border);
-    border-radius: 12px; padding: .8rem 1rem;
-    display: flex; gap: .65rem; flex-wrap: wrap; align-items: flex-end;
-    margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    background:var(--dn-card); border:1px solid var(--dn-border);
+    border-radius:12px; padding:.8rem 1rem;
+    display:flex; gap:.65rem; flex-wrap:wrap; align-items:flex-end;
+    margin-bottom:1rem; box-shadow:0 2px 8px rgba(0,0,0,.05);
 }
-.dn-filters label { font-size: .72rem; font-weight: 700; color: var(--dn-muted);
-    text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: .28rem; }
+.dn-filters label { font-size:.72rem; font-weight:700; color:var(--dn-muted);
+    text-transform:uppercase; letter-spacing:.05em; display:block; margin-bottom:.28rem; }
 .dn-filters select, .dn-filters input[type="date"] {
-    background: #f8fafc; border: 1.5px solid var(--dn-border); border-radius: 8px;
-    color: var(--dn-text); padding: .42rem .75rem; font-size: .84rem; outline: none; transition: border-color .2s;
+    background:#f8fafc; border:1.5px solid var(--dn-border); border-radius:8px;
+    color:var(--dn-text); padding:.42rem .75rem; font-size:.84rem; outline:none; transition:border-color .2s;
 }
-.dn-filters select:focus, .dn-filters input:focus { border-color: var(--dn-teal); }
-.dn-btn { display: inline-flex; align-items: center; gap: .35rem;
-    border: none; border-radius: 8px; padding: .48rem 1rem; font-size: .82rem;
-    font-weight: 700; cursor: pointer; transition: opacity .18s; white-space: nowrap; }
-.dn-btn:hover { opacity: .86; }
-.dn-btn-filter { background: linear-gradient(135deg,#005f6b,#00b8c9); color: #fff; }
-.dn-btn-clear  { background: #f1f5f9; color: var(--dn-muted); border: 1.5px solid var(--dn-border);
-    text-decoration: none; }
-.dn-btn-clear:hover { background: #e2e8f0; color: var(--dn-text); }
-.dn-btn-export { background: #f0fdf4; color: #15803d; border: 1.5px solid #bbf7d0; }
-.dn-btn-export:hover { background: #dcfce7; }
-
-/* Stats */
-.dn-stats { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .85rem; }
+.dn-filters select:focus, .dn-filters input:focus { border-color:var(--dn-teal); }
+.dn-btn { display:inline-flex; align-items:center; gap:.35rem;
+    border:none; border-radius:8px; padding:.48rem 1rem; font-size:.82rem;
+    font-weight:700; cursor:pointer; transition:opacity .18s; white-space:nowrap; }
+.dn-btn:hover { opacity:.86; }
+.dn-btn-filter { background:linear-gradient(135deg,#005f6b,#00b8c9); color:#fff; }
+.dn-btn-clear  { background:#f1f5f9; color:var(--dn-muted); border:1.5px solid var(--dn-border); text-decoration:none; }
+.dn-btn-clear:hover { background:#e2e8f0; color:var(--dn-text); }
+.dn-btn-export { background:#f0fdf4; color:#15803d; border:1.5px solid #bbf7d0; }
+.dn-btn-export:hover { background:#dcfce7; }
+.dn-stats { display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.85rem; }
 .dn-chip {
-    background: #fff; border: 1px solid var(--dn-border); border-radius: 20px;
-    padding: .3rem .85rem; font-size: .77rem; font-weight: 600; color: var(--dn-muted);
-    display: flex; align-items: center; gap: .35rem;
+    background:#fff; border:1px solid var(--dn-border); border-radius:20px;
+    padding:.3rem .85rem; font-size:.77rem; font-weight:600; color:var(--dn-muted);
+    display:flex; align-items:center; gap:.35rem;
 }
-.dn-chip i { color: var(--dn-teal); }
-
-/* Tabulator overrides — limpio y legible */
+.dn-chip i { color:var(--dn-teal); }
 #dnTable {
-    border: 1px solid var(--dn-border) !important;
-    border-radius: 12px !important;
-    overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0,0,0,.06);
-    font-size: .88rem !important;
+    border:1px solid var(--dn-border) !important;
+    border-radius:12px !important; overflow:hidden;
+    box-shadow:0 2px 12px rgba(0,0,0,.06); font-size:.88rem !important;
 }
-.tabulator-header { background: #f8fafc !important; border-bottom: 2px solid var(--dn-border) !important; }
-.tabulator-col { background: #f8fafc !important; border-right: 1px solid var(--dn-border) !important; }
-.tabulator-col-title { font-size: .7rem !important; font-weight: 700 !important;
-    text-transform: uppercase; letter-spacing: .07em; color: var(--dn-muted) !important; }
-.tabulator-row { border-bottom: 1px solid #f1f5f9 !important; }
-.tabulator-row:hover { background: #f0f9ff !important; }
-.tabulator-row .tabulator-cell { padding: .75rem 1rem !important; color: var(--dn-text) !important; font-size: .87rem !important; }
-
-/* Columna fecha congelada — resaltar borde derecho */
-.tabulator-frozen { box-shadow: 3px 0 8px rgba(0,0,0,.08) !important; }
-
-/* badge fecha */
+.tabulator-header { background:#f8fafc !important; border-bottom:2px solid var(--dn-border) !important; }
+.tabulator-col { background:#f8fafc !important; border-right:1px solid var(--dn-border) !important; }
+.tabulator-col-title { font-size:.7rem !important; font-weight:700 !important;
+    text-transform:uppercase; letter-spacing:.07em; color:var(--dn-muted) !important; }
+.tabulator-row { border-bottom:1px solid #f1f5f9 !important; }
+.tabulator-row:hover { background:#f0f9ff !important; }
+.tabulator-row .tabulator-cell { padding:.75rem 1rem !important; color:var(--dn-text) !important; font-size:.87rem !important; }
+.tabulator-frozen { box-shadow:3px 0 8px rgba(0,0,0,.08) !important; }
 .dn-badge-fecha { display:inline-block; background:#e0f2fe; color:#0369a1;
     padding:.18rem .55rem; border-radius:5px; font-size:.78rem; font-weight:700; white-space:nowrap; }
 .dn-badge-recurso { font-family:monospace; background:#f0fdf4; color:#15803d;
@@ -88,6 +68,8 @@ body { background: var(--dn-bg); }
 .dn-badge-meta { background:#e0f2fe; color:#005f6b; padding:.18rem .55rem;
     border-radius:5px; font-size:.82rem; font-weight:800; }
 .dn-nombre { font-weight:600; color:#0f172a; }
+.badge-origen-gps { background:#0ea5e9; color:#fff; font-size:11px; padding:.2rem .5rem; border-radius:4px; }
+.badge-origen-manual { background:#94a3b8; color:#fff; font-size:11px; padding:.2rem .5rem; border-radius:4px; }
 </style>
 {% endblock %}
 
@@ -97,7 +79,7 @@ body { background: var(--dn-bg); }
     <div class="dn-header">
         <div>
             <div class="dn-title"><i class="bi bi-table me-2" style="color:var(--dn-teal)"></i>Distribución <span>Operativa</span></div>
-            <div class="dn-sub">Vista de solo lectura — puedes redimensionar y congelar columnas, y exportar a Excel</div>
+            <div class="dn-sub"><i class="bi bi-eye me-1"></i>Vista de solo lectura — datos sincronizados desde GPS Monitor</div>
         </div>
         <button class="dn-btn dn-btn-export" onclick="exportarExcel()">
             <i class="bi bi-file-earmark-excel"></i> Exportar Excel
@@ -107,37 +89,37 @@ body { background: var(--dn-bg); }
     <!-- FILTROS -->
     <form method="GET" action="{{ url_for('neo.distribucion_neo') }}" class="dn-filters">
         <div>
-            <label>Fecha</label>
-            <input type="date" name="fecha" value="{{ fecha_sel }}">
+            <label>Fecha desde</label>
+            <input type="date" name="fecha_desde" value="{{ fecha_desde }}" style="width:155px;">
+        </div>
+        <div>
+            <label>Fecha hasta</label>
+            <input type="date" name="fecha_hasta" value="{{ fecha_hasta }}" style="width:155px;">
         </div>
         <div>
             <label>Contrato</label>
-            <select name="contrato">
+            <select id="selectContrato" style="min-width:240px;">
                 <option value="">— Todos —</option>
-                {% for c in lista_contratos %}
-                <option value="{{ c }}" {% if c == contrato_sel %}selected{% endif %}>{{ c }}</option>
-                {% endfor %}
             </select>
         </div>
         <button type="submit" class="dn-btn dn-btn-filter">
             <i class="bi bi-funnel"></i> Filtrar
         </button>
         <a href="{{ url_for('neo.distribucion_neo') }}" class="dn-btn dn-btn-clear">
-            <i class="bi bi-x"></i> Limpiar
+            <i class="bi bi-x"></i> Hoy
         </a>
     </form>
 
     <!-- STATS -->
     <div class="dn-stats">
-        <div class="dn-chip"><i class="bi bi-list-check"></i> {{ registros|length }} registro(s)</div>
-        {% if fecha_sel %}<div class="dn-chip"><i class="bi bi-calendar3"></i> {{ fecha_sel }}</div>{% endif %}
-        {% if contrato_sel %}<div class="dn-chip"><i class="bi bi-file-earmark-text"></i> {{ contrato_sel[:45] }}{% if contrato_sel|length > 45 %}…{% endif %}</div>{% endif %}
-        <div class="dn-chip" style="color:#64748b;font-size:.72rem">
-            <i class="bi bi-info-circle"></i> Arrastra bordes de columna para redimensionar · Columna <strong>Fecha</strong> está congelada
+        <div class="dn-chip"><i class="bi bi-list-check"></i> <span id="totalRegistros">0</span> registro(s)</div>
+        <div class="dn-chip"><i class="bi bi-calendar3"></i> {{ fecha_desde }} → {{ fecha_hasta }}</div>
+        <div class="dn-chip" style="font-size:.72rem">
+            <i class="bi bi-info-circle"></i> Solo lectura · arrastra columnas para redimensionar
         </div>
     </div>
 
-    <!-- TABLA TABULATOR -->
+    <!-- TABLA -->
     <div id="dnTable"></div>
 
 </div>
@@ -145,88 +127,112 @@ body { background: var(--dn-bg); }
 
 {% block scripts %}
 <script src="https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script type="application/json" id="datos-distribucion-neo">{{ datos_tabla|safe }}</script>
 
 <script>
-// Datos desde Jinja
-const filas = [
-    {% for r in registros %}
-    {
-        fecha:        "{{ r.fecha }}",
-        contrato:     {{ r.contrato | tojson }},
-        recurso:      {{ (r.recurso or '') | tojson }},
-        placa:        {{ (r.placa or '') | tojson }},
-        orden_trabajo:{{ (r.orden_trabajo or '') | tojson }},
-        tipo_actividad:{{ (r.tipo_actividad or '') | tojson }},
-        tipo_cuadrilla:{{ (r.tipo_cuadrilla or '') | tojson }},
-        meta:         {% if r.meta %}"{{ '{:,.0f}'.format(r.meta) }}"{% else %}""{% endif %},
-        hora_salida:  "{{ r.hora_salida_sede or '' }}",
-        hora_llegada: "{{ r.hora_llegada_sede or '' }}",
-        cedula_1:     {{ (r.cedula_1 or '') | tojson }},
-        nombre_1:     {{ personas_map.get(r.cedula_1, '') | tojson if r.cedula_1 else '""' }},
-        cedula_2:     {{ (r.cedula_2 or '') | tojson }},
-        cedula_3:     {{ (r.cedula_3 or '') | tojson }},
-        celular:      {{ (r.numero_celular or '') | tojson }},
-        latitud:      {{ (r.latitud or '') | tojson }},
-        longitud:     {{ (r.longitud or '') | tojson }},
-        duracion:     {{ (r.duracion_actividad or '') | tojson }},
-        observacion:  {{ (r.observacion or '') | tojson }}
-    }{% if not loop.last %},{% endif %}
-    {% endfor %}
-];
+const filas = JSON.parse(document.getElementById('datos-distribucion-neo').textContent);
+
+// Dropdown contratos desde datos reales
+const selContrato = document.getElementById('selectContrato');
+const contratosUnicos = [...new Set(filas.map(r => r.contrato).filter(Boolean))].sort();
+contratosUnicos.forEach(function(c) {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    selContrato.appendChild(opt);
+});
+
+function fmtFecha(val) {
+    if (!val) return "";
+    const p = String(val).split("-");
+    return p.length === 3 ? p[2]+"/"+p[1]+"/"+p[0] : val;
+}
 
 const tabla = new Tabulator("#dnTable", {
     data: filas,
-    layout: "fitDataFill",
-    height: "calc(100vh - 310px)",
+    layout: "fitDataStretch",
+    height: "calc(100vh - 300px)",
+    pagination: true,
+    paginationSize: 50,
     resizableColumns: true,
     movableColumns: true,
-    pagination: false,
-    placeholder: "<div style='padding:3rem;text-align:center;color:#94a3b8'><i class='bi bi-inbox' style='font-size:2rem'></i><p class='mt-2'>Sin registros</p></div>",
+    placeholder: "<div style='padding:3rem;text-align:center;color:#94a3b8'><i class='bi bi-inbox' style='font-size:2rem'></i><p class='mt-2'>Sin registros para este rango</p></div>",
     columns: [
         {
-            title: "Fecha", field: "fecha", frozen: true, width: 110, resizable: true,
+            title: "Fecha", field: "fecha", frozen: true, width: 110,
             formatter: function(cell) {
-                return '<span class="dn-badge-fecha">' + (cell.getValue() || '—') + '</span>';
-            }
+                return '<span class="dn-badge-fecha">' + fmtFecha(cell.getValue()) + '</span>';
+            },
+            headerFilter: true,
         },
-        { title: "Contrato",       field: "contrato",      width: 220, resizable: true, tooltip: true },
+        { title: "Contrato",        field: "contrato",       minWidth: 220, headerFilter: true, tooltip: true },
         {
-            title: "Recurso", field: "recurso", width: 130, resizable: true,
+            title: "Recurso", field: "recurso", width: 130,
             formatter: function(cell) {
                 const v = cell.getValue();
-                return v ? '<span class="dn-badge-recurso">' + v + '</span>' : '—';
+                return v ? '<span class="dn-badge-recurso">'+v+'</span>' : '—';
             }
         },
-        { title: "Placa",          field: "placa",         width: 90,  resizable: true },
-        { title: "OT",             field: "orden_trabajo", width: 100, resizable: true },
-        { title: "Tipo Actividad", field: "tipo_actividad",width: 150, resizable: true },
-        { title: "Tipo Cuadrilla", field: "tipo_cuadrilla",width: 140, resizable: true,
-          formatter: function(cell){ const v=cell.getValue(); return v ? '<strong>'+v+'</strong>' : '—'; }},
+        { title: "Placa",           field: "placa",          width: 90  },
+        { title: "OT",              field: "orden_trabajo",  width: 110, headerFilter: true },
+        { title: "Tipo Actividad",  field: "tipo_actividad", minWidth: 150, headerFilter: true },
         {
-            title: "Meta", field: "meta", width: 100, resizable: true, hozAlign: "right",
+            title: "Tipo Cuadrilla", field: "tipo_cuadrilla", minWidth: 140, headerFilter: true,
+            formatter: function(cell) { const v=cell.getValue(); return v ? '<strong>'+v+'</strong>' : '—'; }
+        },
+        { title: "Cédula 1",  field: "cedula_1",  width: 115, headerFilter: true },
+        {
+            title: "Nombre", field: "nombre_1", minWidth: 200, headerFilter: true,
+            formatter: function(cell) { const v=cell.getValue(); return v ? '<span class="dn-nombre">'+v+'</span>' : '—'; }
+        },
+        { title: "Cédula 2",  field: "cedula_2",  width: 115 },
+        { title: "Cédula 3",  field: "cedula_3",  width: 115 },
+        { title: "Cédula 4",  field: "cedula_4",  width: 115 },
+        { title: "Cédula 5",  field: "cedula_5",  width: 115 },
+        {
+            title: "Latitud", field: "latitud", width: 120,
+            formatter: function(cell) { const v=cell.getValue(); return v ? String(v).replace(".", ",") : ""; }
+        },
+        {
+            title: "Longitud", field: "longitud", width: 120,
+            formatter: function(cell) { const v=cell.getValue(); return v ? String(v).replace(".", ",") : ""; }
+        },
+        { title: "Duración (min)", field: "duracion_actividad", width: 120, hozAlign: "right" },
+        { title: "Observación",    field: "observacion",        minWidth: 200, tooltip: true },
+        {
+            title: "Origen", field: "origen", width: 120,
             formatter: function(cell) {
-                const v = cell.getValue();
-                return v ? '<span class="dn-badge-meta">' + v + '</span>' : '—';
+                const v = (cell.getValue() || "").toLowerCase();
+                return v === "gps_monitor"
+                    ? '<span class="badge-origen-gps">GPS Monitor</span>'
+                    : '<span class="badge-origen-manual">Manual</span>';
             }
         },
-        { title: "Hora Salida",  field: "hora_salida",  width: 110, resizable: true },
-        { title: "Hora Llegada", field: "hora_llegada", width: 110, resizable: true },
-        { title: "Cédula 1",     field: "cedula_1",     width: 110, resizable: true },
-        { title: "Nombre",       field: "nombre_1",     width: 200, resizable: true,
-          formatter: function(cell){ const v=cell.getValue(); return v ? '<span class="dn-nombre">'+v+'</span>' : '—'; }},
-        { title: "Cédula 2",     field: "cedula_2",     width: 110, resizable: true },
-        { title: "Cédula 3",     field: "cedula_3",     width: 110, resizable: true },
-        { title: "Celular",      field: "celular",      width: 115, resizable: true },
-        { title: "Latitud",      field: "latitud",      width: 120, resizable: true },
-        { title: "Longitud",     field: "longitud",     width: 120, resizable: true },
-        { title: "Duración",     field: "duracion",     width: 95,  resizable: true },
-        { title: "Observación",  field: "observacion",  width: 200, resizable: true, tooltip: true }
     ]
 });
 
+// Actualizar contador
+tabla.on("dataFiltered", function(filters, rows) {
+    const el = document.getElementById("totalRegistros");
+    if (el) el.textContent = rows.length;
+});
+tabla.on("tableBuilt", function() {
+    const el = document.getElementById("totalRegistros");
+    if (el) el.textContent = tabla.getDataCount();
+});
+
+// Filtro contrato client-side
+selContrato.addEventListener('change', function() {
+    if (this.value) {
+        tabla.setFilter('contrato', '=', this.value);
+    } else {
+        tabla.clearFilter();
+    }
+});
+
 function exportarExcel() {
-    tabla.download("xlsx", "distribucion_operativa.xlsx", { sheetName: "Distribución" });
+    tabla.download("xlsx", "distribucion_operativa_neo.xlsx", { sheetName: "Distribución" });
 }
 </script>
 {% endblock %}

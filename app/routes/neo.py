@@ -147,52 +147,70 @@ def _parsear_float(valor):
 @neo.route("/neo/distribucion-operativa")
 @login_required
 def distribucion_neo():
-    from app.models.user_contrato import UserContrato
-
-    # Contratos asignados al usuario NEO
-    _uc = UserContrato.query.filter_by(user_id=current_user.id).all()
-    if _uc:
-        lista_contratos = [uc.contrato for uc in _uc]
-    else:
-        lista_contratos = [c.contrato for c in Contrato.query.filter_by(activo=True).all()]
+    import json as _json
+    from app.models.persona import Persona
 
     from datetime import date as _date
-    hoy = _date.today()
+    hoy = str(_date.today())
 
-    # Filtros opcionales
-    fecha_str  = request.args.get("fecha", "")
-    contrato_f = request.args.get("contrato", "")
+    fecha_desde_str = request.args.get("fecha_desde") or hoy
+    fecha_hasta_str = request.args.get("fecha_hasta") or fecha_desde_str
 
-    q = DistribucionOperativa.query
-    if lista_contratos:
-        q = q.filter(DistribucionOperativa.contrato.in_(lista_contratos))
-    if fecha_str:
-        try:
-            from datetime import datetime as _dt
-            q = q.filter(DistribucionOperativa.fecha == _dt.strptime(fecha_str, "%Y-%m-%d").date())
-        except ValueError:
-            pass
-    if contrato_f:
-        q = q.filter(DistribucionOperativa.contrato == contrato_f)
+    try:
+        fecha_desde = datetime.strptime(fecha_desde_str, "%Y-%m-%d").date()
+        fecha_hasta = datetime.strptime(fecha_hasta_str, "%Y-%m-%d").date()
+    except ValueError:
+        fecha_desde = fecha_hasta = _date.today()
+        fecha_desde_str = fecha_hasta_str = hoy
 
-    registros = q.order_by(DistribucionOperativa.fecha.desc(), DistribucionOperativa.id.desc()).limit(500).all()
+    # Neo ve TODOS los contratos activos (sin restricción por usuario)
+    lista_contratos = sorted(
+        c.contrato for c in Contrato.query.filter_by(activo=True).all()
+    )
 
-    # Nombres por cédula_1
-    from app.models.persona import Persona
+    registros = (
+        DistribucionOperativa.query
+        .filter(DistribucionOperativa.fecha.between(fecha_desde, fecha_hasta))
+        .order_by(DistribucionOperativa.fecha.asc(), DistribucionOperativa.id.asc())
+        .all()
+    )
+
     cedulas = {r.cedula_1 for r in registros if r.cedula_1}
     personas_map = {
         p.Documento: p.Nombre
         for p in Persona.query.filter(Persona.Documento.in_(cedulas)).all()
     } if cedulas else {}
 
+    datos_tabla = []
+    for r in registros:
+        datos_tabla.append({
+            "fecha":            str(r.fecha),
+            "contrato":         r.contrato or "",
+            "recurso":          r.recurso or "",
+            "placa":            r.placa or "",
+            "orden_trabajo":    r.orden_trabajo or "",
+            "tipo_actividad":   r.tipo_actividad or "",
+            "tipo_cuadrilla":   r.tipo_cuadrilla or "",
+            "meta":             r.meta,
+            "cedula_1":         r.cedula_1 or "",
+            "nombre_1":         personas_map.get(r.cedula_1, ""),
+            "cedula_2":         r.cedula_2 or "",
+            "cedula_3":         r.cedula_3 or "",
+            "cedula_4":         r.cedula_4 or "",
+            "cedula_5":         r.cedula_5 or "",
+            "latitud":          r.latitud or "",
+            "longitud":         r.longitud or "",
+            "duracion_actividad": r.duracion_actividad or "",
+            "observacion":      r.observacion or "",
+            "origen":           r.origen or "manual",
+        })
+
     return render_template(
         "neo/distribucion_neo.html",
-        registros=registros,
+        datos_tabla=_json.dumps(datos_tabla, ensure_ascii=False),
         lista_contratos=lista_contratos,
-        fecha_sel=fecha_str,
-        contrato_sel=contrato_f,
-        hoy=hoy,
-        personas_map=personas_map
+        fecha_desde=fecha_desde_str,
+        fecha_hasta=fecha_hasta_str,
     )
 
 
