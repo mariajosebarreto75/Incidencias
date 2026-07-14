@@ -116,21 +116,6 @@ let tabla = new Tabulator("#tablaDistribucion", {
             width: 100,
         },
         {
-            title: "Meta",
-            field: "meta",
-            headerFilter: false,
-            width: 120,
-            hozAlign: "right",
-            formatter: function(cell) {
-                const v = cell.getValue();
-                if (v === null || v === undefined || v === "") return "—";
-                return "$ " + Number(v).toLocaleString("es-CO", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0
-                });
-            },
-        },
-        {
             title: "Duración (min)",
             field: "duracion_actividad",
             headerFilter: true,
