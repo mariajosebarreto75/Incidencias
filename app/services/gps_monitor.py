@@ -31,8 +31,8 @@ def responder_alertas(respuestas):
 
     respuestas: [{"alert_id": 123, "accion": "resolver" | "liberar"}, ...]
 
-    "resolver" → alerta atendida, se cierra
-    "liberar"  → no se pudo atender, vuelve a pending
+    "resolver" → atendida y cerrada en GPS Monitor
+    "liberar"  → descartada y cerrada en GPS Monitor (desaparece de ambas apps)
     """
     resultados = []
     for item in respuestas:
@@ -53,8 +53,9 @@ def responder_alertas(respuestas):
                 })
                 continue
 
-            # Luego resolver o liberar
-            endpoint = "resolve" if accion == "resolver" else "release"
+            # Ambas acciones cierran la alerta en GPS Monitor (resolve)
+            # La diferencia entre "resolver" y "liberar" es solo interna en NEO
+            endpoint = "resolve"
             paso2 = requests.post(
                 f"{BASE_URL}/alerts/{alert_id}/{endpoint}",
                 headers=_HEADERS,

@@ -1,247 +1,6 @@
-{% extends "neo/navbNeo.html" %}
+﻿﻿{% extends "neo/navbNeo.html" %}
 
-{% block head %}
-<style>
-/* ── Botón flotante Notificaciones (izquierda) ─────────── */
-#btnNotifDrawer {
-    position: fixed; bottom: 28px; left: 28px; z-index: 1040;
-    background: #0d1b2a; color: #e53935;
-    border: 2px solid #e53935; border-radius: 50px;
-    padding: 10px 20px; font-size: .82rem; font-weight: 800;
-    display: flex; align-items: center; gap: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.35);
-    cursor: pointer; transition: background .15s, color .15s;
-    text-decoration: none;
-}
-#btnNotifDrawer:hover { background: #e53935; color: #fff; }
-#btnNotifDrawer .nd-badge {
-    background: #e53935; color: #fff;
-    border-radius: 20px; padding: 1px 8px;
-    font-size: .7rem; font-weight: 900; display: none;
-}
-#btnNotifDrawer:hover .nd-badge { background: #fff; color: #e53935; }
-
-/* ── Overlay notif ─────────────────────────────────────── */
-#ndOverlay {
-    display: none; position: fixed; inset: 0; z-index: 1045;
-    background: rgba(0,0,0,.45); backdrop-filter: blur(2px);
-}
-
-/* ── Drawer notif (izquierda) ──────────────────────────── */
-#ndDrawer {
-    position: fixed; top: 0; left: -480px; bottom: 0; width: 400px;
-    z-index: 1050; background: #0d1b2a;
-    display: flex; flex-direction: column;
-    box-shadow: 4px 0 30px rgba(0,0,0,.5);
-    transition: left .28s cubic-bezier(.4,0,.2,1);
-}
-#ndDrawer.open { left: 0; }
-
-/* Reutiliza clases ad- para el header */
-@media (max-width: 520px) {
-    #ndDrawer { width: 100%; left: -100%; }
-}
-
-/* ── Tarjeta de notif ──────────────────────────────────── */
-.nd-card {
-    padding: 12px 14px;
-    border-bottom: 1px solid rgba(30,58,82,.6);
-    transition: background .1s;
-}
-.nd-card:hover { background: #162d44; }
-.nd-card.gestionada { opacity: .45; }
-.nd-tipo-ico {
-    font-size: 1.05rem; margin-top: 2px; flex-shrink: 0;
-}
-.nd-msg {
-    font-size: .78rem; font-weight: 700; color: #e2e8f0;
-    line-height: 1.3; margin-bottom: 3px;
-}
-.nd-meta {
-    font-size: .7rem; color: #7a97b0;
-}
-.nd-tag {
-    font-size: .68rem; border-radius: 4px;
-    padding: 1px 7px; font-weight: 700;
-    display: inline-block; margin-top: 5px;
-}
-.nd-btn-gestionar {
-    font-size: .72rem; padding: 4px 12px; border-radius: 6px;
-    border: none; cursor: pointer; font-weight: 700; margin-top: 6px;
-}
-.nd-btn-visualizado {
-    font-size: .72rem; padding: 4px 12px; border-radius: 6px;
-    border: 1px solid #557a9a; background: none;
-    color: #7a97b0; cursor: pointer; margin-top: 6px;
-}
-.nd-btn-visualizado:hover { background: #162d44; color: #e2e8f0; }
-
-/* ── Botón flotante Alertas ───────────────────────────── */
-#btnAlertasDrawer {
-    position: fixed; bottom: 28px; right: 28px; z-index: 1040;
-    background: #0d1b2a; color: #f5a623;
-    border: 2px solid #f5a623; border-radius: 50px;
-    padding: 10px 20px; font-size: .82rem; font-weight: 800;
-    display: flex; align-items: center; gap: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.35);
-    cursor: pointer; transition: background .15s, color .15s;
-    text-decoration: none;
-}
-#btnAlertasDrawer:hover { background: #f5a623; color: #0d1b2a; }
-#btnAlertasDrawer .ad-badge {
-    background: #f5a623; color: #0d1b2a;
-    border-radius: 20px; padding: 1px 8px;
-    font-size: .7rem; font-weight: 900; display: none;
-}
-#btnAlertasDrawer:hover .ad-badge { background: #0d1b2a; color: #f5a623; }
-
-/* ── Overlay ──────────────────────────────────────────── */
-#adOverlay {
-    display: none; position: fixed; inset: 0; z-index: 1045;
-    background: rgba(0,0,0,.45); backdrop-filter: blur(2px);
-}
-
-/* ── Drawer ───────────────────────────────────────────── */
-#adDrawer {
-    position: fixed; top: 0; right: -480px; bottom: 0; width: 460px;
-    z-index: 1050; background: #0d1b2a;
-    display: flex; flex-direction: column;
-    box-shadow: -4px 0 30px rgba(0,0,0,.5);
-    transition: right .28s cubic-bezier(.4,0,.2,1);
-}
-#adDrawer.open { right: 0; }
-
-/* Header del drawer */
-.ad-header {
-    padding: 14px 16px 10px;
-    background: #0a1520;
-    border-bottom: 1px solid #1e3a52;
-    flex-shrink: 0;
-}
-.ad-title-row {
-    display: flex; align-items: center;
-    justify-content: space-between; margin-bottom: 10px;
-}
-.ad-title {
-    font-size: .88rem; font-weight: 800; color: #e2e8f0;
-    text-transform: uppercase; letter-spacing: .07em;
-    display: flex; align-items: center; gap: 8px;
-}
-.ad-total-badge {
-    background: #00b8c9; color: #fff;
-    border-radius: 20px; padding: 2px 10px;
-    font-size: .78rem; font-weight: 700;
-}
-.ad-close {
-    background: none; border: none; color: #7a97b0;
-    font-size: 1.2rem; cursor: pointer; line-height: 1;
-    padding: 2px 6px; border-radius: 6px;
-}
-.ad-close:hover { background: #1e3a52; color: #e2e8f0; }
-
-/* Tabs */
-.ad-tabs {
-    display: flex; gap: 4px; margin-bottom: 10px;
-}
-.ad-tab {
-    flex: 1; text-align: center; padding: 5px 0;
-    border-radius: 6px; font-size: .72rem; font-weight: 700;
-    color: #7a97b0; background: transparent;
-    border: 1px solid transparent; cursor: pointer;
-    transition: all .15s;
-}
-.ad-tab:hover { background: #162d44; color: #e2e8f0; }
-.ad-tab.active { background: #00b8c9; color: #fff; border-color: #00b8c9; }
-
-/* Filtros */
-.ad-filters { display: flex; flex-direction: column; gap: 6px; }
-.ad-search {
-    display: flex; align-items: center; gap: 6px;
-    background: #162d44; border: 1px solid #1e3a52;
-    border-radius: 8px; padding: 5px 10px;
-}
-.ad-search i { color: #7a97b0; font-size: .82rem; }
-.ad-search input {
-    background: none; border: none; outline: none;
-    color: #e2e8f0; font-size: .76rem; width: 100%;
-}
-.ad-search input::placeholder { color: #7a97b0; }
-.ad-sel {
-    background: #162d44; border: 1px solid #1e3a52;
-    border-radius: 8px; color: #e2e8f0;
-    font-size: .76rem; padding: 5px 8px; outline: none; flex: 1;
-}
-.ad-scope-btn {
-    flex: 1; padding: 4px 0; border-radius: 6px; font-size: .68rem;
-    font-weight: 700; color: #7a97b0; background: transparent;
-    border: 1px solid #1e3a52; cursor: pointer; transition: all .15s;
-}
-.ad-scope-btn.active { background: rgba(0,184,201,.15); color: #00b8c9; border-color: #00b8c9; }
-.ad-scope-btn.sin.active { background: rgba(245,166,35,.15); color: #f5a623; border-color: #f5a623; }
-
-.ad-btn-filtrar {
-    flex: 1; background: #00b8c9; color: #fff;
-    border: none; border-radius: 8px; padding: 6px 0;
-    font-size: .76rem; font-weight: 700; cursor: pointer;
-}
-.ad-btn-clear {
-    background: #162d44; color: #7a97b0;
-    border: 1px solid #1e3a52; border-radius: 8px;
-    padding: 6px 10px; font-size: .76rem; cursor: pointer;
-}
-.ad-btn-clear:hover { color: #e2e8f0; }
-
-/* Lista */
-.ad-list {
-    flex: 1; overflow-y: auto; padding: 4px 0;
-}
-.ad-list::-webkit-scrollbar { width: 4px; }
-.ad-list::-webkit-scrollbar-thumb { background: #1e3a52; border-radius: 4px; }
-
-.ad-group-hdr {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 14px; cursor: pointer;
-    border-bottom: 1px solid #1e3a52;
-    background: #112236; position: sticky; top: 0; z-index: 1;
-    user-select: none;
-}
-.ad-group-hdr:hover { background: #162d44; }
-.ad-group-name { font-size: .78rem; font-weight: 700; color: #e2e8f0; }
-.ad-cnt { background: #f5a623; color: #0d1b2a; border-radius: 20px;
-          padding: 1px 8px; font-size: .68rem; font-weight: 900; }
-.ad-chevron { color: #7a97b0; font-size: .75rem; transition: transform .2s; }
-.ad-group-hdr.collapsed .ad-chevron { transform: rotate(-90deg); }
-.ad-group-body { display: block; }
-.ad-group-hdr.collapsed + .ad-group-body { display: none; }
-
-.ad-item {
-    padding: 9px 14px; border-bottom: 1px solid rgba(30,58,82,.5);
-    cursor: pointer; transition: background .1s;
-}
-.ad-item:hover { background: #162d44; }
-.ad-item-top {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 3px;
-}
-.ad-plate { font-size: .85rem; font-weight: 800; color: #fff; }
-.ad-status { width: 7px; height: 7px; border-radius: 50%;
-             background: #f5a623; display: inline-block; margin-right: 5px; }
-.ad-status.resuelta { background: #38a169; }
-.ad-status.liberada { background: #7a97b0; }
-.ad-sub { font-size: .68rem; color: #7a97b0; }
-.ad-speed { font-size: .68rem; color: #f5a623; font-weight: 600; }
-
-/* Empty */
-.ad-empty {
-    padding: 48px 20px; text-align: center; color: #7a97b0;
-}
-.ad-empty i { font-size: 2.2rem; opacity: .3; display: block; margin-bottom: 10px; }
-
-@media (max-width: 520px) {
-    #adDrawer { width: 100%; right: -100%; }
-}
-</style>
-{% endblock %}
+{% block head %}{% endblock %}
 
 {% block content %}
 
@@ -276,6 +35,30 @@
         </a>
 
     </div>
+
+    <!-- ===== BANNER ALERTA GPS ===== -->
+    {% if alerta_ctx %}
+    <div id="bannerAlertaGPS" style="
+        background: linear-gradient(135deg, #0d1b2a, #112236);
+        border: 1px solid #f5a623; border-radius: 12px;
+        padding: 14px 20px; margin-bottom: 1.2rem;
+        display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <i class="bi bi-bell-fill" style="color:#f5a623;font-size:1.4rem;flex-shrink:0"></i>
+        <div style="flex:1;min-width:0">
+            <div style="font-weight:800;color:#f5a623;font-size:.9rem;margin-bottom:2px">
+                Resolviendo alerta GPS — {{ alerta_ctx.placa or 'Sin placa' }}
+            </div>
+            <div style="font-size:.78rem;color:#7a97b0">
+                Contrato: <strong style="color:#e2e8f0">{{ alerta_ctx.contrato or '—' }}</strong>
+                &nbsp;·&nbsp; Recurso: <strong style="color:#e2e8f0">{{ alerta_ctx.recurso or '—' }}</strong>
+                &nbsp;·&nbsp; OT: <strong style="color:#e2e8f0">{{ alerta_ctx.orden_trabajo or '—' }}</strong>
+            </div>
+        </div>
+        <div style="font-size:.75rem;color:#f5a623;font-weight:700;white-space:nowrap">
+            <i class="bi bi-info-circle me-1"></i>Los campos se han pre-llenado automáticamente
+        </div>
+    </div>
+    {% endif %}
 
     <!-- ===== STEPS ===== -->
 
@@ -660,484 +443,85 @@
 </div>
 <script src="{{ url_for('static', filename='js/neo/PanelNeo.js') }}"></script>
 
-<!-- ══ BOTÓN NOTIF (IZQUIERDA) ══════════════════════════════ -->
-<button id="btnNotifDrawer" onclick="ndAbrir()">
-    <i class="bi bi-bell-fill"></i>
-    Notificaciones
-    <span class="nd-badge" id="ndBadge">0</span>
-</button>
 
-<!-- ══ OVERLAY NOTIF ════════════════════════════════════════ -->
-<div id="ndOverlay" onclick="ndCerrar()"></div>
-
-<!-- ══ DRAWER NOTIF ═════════════════════════════════════════ -->
-<div id="ndDrawer">
-
-    <div class="ad-header">
-        <div class="ad-title-row">
-            <div class="ad-title">
-                <i class="bi bi-bell-fill" style="color:#e53935"></i>
-                Notificaciones
-                <span class="ad-total-badge" id="ndTotal" style="background:#e53935">0</span>
-            </div>
-            <button class="ad-close" onclick="ndCerrar()">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        </div>
-
-        <!-- Tabs -->
-        <div class="ad-tabs">
-            <button class="ad-tab active" data-nd="pendiente" onclick="ndSetTab(this)">Pendientes</button>
-            <button class="ad-tab"        data-nd="cerradas"  onclick="ndSetTab(this)">Cerradas</button>
-        </div>
-    </div>
-
-    <!-- Lista -->
-    <div class="ad-list" id="ndList">
-        <div class="ad-empty"><i class="bi bi-arrow-up-circle"></i>Abre el panel para ver las notificaciones</div>
-    </div>
-
-</div>
-
-<!-- ══ BOTÓN FLOTANTE ══════════════════════════════════════ -->
-<button id="btnAlertasDrawer" onclick="adAbrir()">
-    <i class="bi bi-bell-fill"></i>
-    Alertas GPS
-    <span class="ad-badge" id="adBadge">0</span>
-</button>
-
-<!-- ══ OVERLAY ═════════════════════════════════════════════ -->
-<div id="adOverlay" onclick="adCerrar()"></div>
-
-<!-- ══ DRAWER ══════════════════════════════════════════════ -->
-<div id="adDrawer">
-
-    <div class="ad-header">
-        <div class="ad-title-row">
-            <div class="ad-title">
-                <i class="bi bi-bell-fill" style="color:#f5a623"></i>
-                Alertas GPS
-                <span class="ad-total-badge" id="adTotal">0</span>
-            </div>
-            <button class="ad-close" onclick="adCerrar()">
-                <i class="bi bi-x-lg"></i>
-            </button>
-        </div>
-
-        <!-- Tabs estado -->
-        <div class="ad-tabs">
-            <button class="ad-tab active" data-filtro="pendiente" onclick="adSetFiltro(this)">Abiertas</button>
-            <button class="ad-tab"        data-filtro="resuelta"  onclick="adSetFiltro(this)">Cerradas</button>
-            <button class="ad-tab"        data-filtro="todas"     onclick="adSetFiltro(this)">Todas</button>
-        </div>
-
-        <!-- Filtros -->
-        <div class="ad-filters">
-            <!-- Scope -->
-            <div style="display:flex;gap:4px">
-                <button class="ad-scope-btn active" data-scope="todos"        onclick="adSetScope(this)">Todas</button>
-                <button class="ad-scope-btn"        data-scope="con_contrato" onclick="adSetScope(this)">Con contrato</button>
-                <button class="ad-scope-btn sin"    data-scope="sin_contrato" onclick="adSetScope(this)">Sin contrato</button>
-            </div>
-            <div class="ad-search">
-                <i class="bi bi-search"></i>
-                <input type="text" id="adFPlaca" placeholder="Buscar placa…">
-            </div>
-            <div class="ad-search">
-                <i class="bi bi-truck"></i>
-                <input type="text" id="adFRecurso" placeholder="Buscar recurso…">
-            </div>
-            <div style="display:flex;gap:6px">
-                <select id="adFContrato" class="ad-sel">
-                    <option value="">Contrato…</option>
-                </select>
-                <select id="adFOrden" class="ad-sel">
-                    <option value="reciente">Más reciente</option>
-                    <option value="antiguo">Más antiguo</option>
-                </select>
-            </div>
-            <div style="display:flex;gap:6px">
-                <button class="ad-btn-filtrar" onclick="adCargar()">
-                    <i class="bi bi-funnel-fill me-1"></i>Filtrar
-                </button>
-                <button class="ad-btn-clear" onclick="adLimpiar()">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Lista de alertas -->
-    <div class="ad-list" id="adList">
-        <div class="ad-empty"><i class="bi bi-arrow-up-circle"></i>Abre el panel para ver las alertas</div>
-    </div>
-
-</div>
-
+{% if alerta_ctx %}
 <script>
-// ── Estado del drawer ─────────────────────────────────────
-let adFiltroActual = "pendiente";
-let adScopeActual  = "todos";
-let adCargando     = false;
-let adContratos    = [];
+(function() {
+    const ctx = {{ alerta_ctx | tojson }};
 
-function fmtHoraAD(utcStr) {
-    if (!utcStr) return "—";
-    const s = utcStr.endsWith("Z") ? utcStr : utcStr + "Z";
-    const d = new Date(s);
-    if (isNaN(d)) return utcStr.slice(0,16).replace("T"," ");
-    return d.toLocaleString("es-CO", {
-        timeZone: "America/Bogota",
-        month: "2-digit", day: "2-digit",
-        hour: "2-digit", minute: "2-digit", hour12: false
-    }).replace(",","");
-}
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
 
-function adAbrir() {
-    document.getElementById("adOverlay").style.display = "block";
-    document.getElementById("adDrawer").classList.add("open");
-    adCargar();
-}
+    // Fecha hoy + campos directos
+    const hoy = new Date().toISOString().slice(0, 10);
+    setVal("fecha_reporte",  hoy);
+    setVal("placa",          ctx.placa);
+    setVal("tipo_cuadrilla", ctx.tipo_cuadrilla);
 
-function adCerrar() {
-    document.getElementById("adOverlay").style.display = "none";
-    document.getElementById("adDrawer").classList.remove("open");
-}
+    // Cascade: fecha → contrato → recurso → OT
+    async function preLlenarCascade() {
+        const fechaEl = document.getElementById("fecha_reporte");
+        if (fechaEl) fechaEl.dispatchEvent(new Event("change"));
 
-function adSetFiltro(btn) {
-    document.querySelectorAll(".ad-tab").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    adFiltroActual = btn.dataset.filtro;
-    adCargar();
-}
-
-function adSetScope(btn) {
-    document.querySelectorAll(".ad-scope-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    adScopeActual = btn.dataset.scope;
-    adCargar();
-}
-
-function adLimpiar() {
-    document.getElementById("adFPlaca").value    = "";
-    document.getElementById("adFRecurso").value  = "";
-    document.getElementById("adFContrato").value = "";
-    document.getElementById("adFOrden").value    = "reciente";
-    adScopeActual = "todos";
-    document.querySelectorAll(".ad-scope-btn").forEach(b => b.classList.remove("active"));
-    document.querySelector(".ad-scope-btn[data-scope='todos']").classList.add("active");
-    adCargar();
-}
-
-// Helper: genera un campo de detalle con label + valor
-function adCampo(label, val) {
-    return `<div>
-        <div style="font-size:.6rem;color:#7a97b0;text-transform:uppercase;font-weight:700;letter-spacing:.06em;margin-bottom:2px">${label}</div>
-        <div style="font-size:.75rem;color:#e2e8f0;font-weight:500">${val}</div>
-    </div>`;
-}
-
-// Expandir / colapsar detalle de un item
-function adToggleDetalle(id) {
-    const det  = document.getElementById("adDet-"  + id);
-    const chev = document.getElementById("adChev-" + id);
-    if (!det) return;
-    const abierto = det.style.display !== "none";
-    det.style.display  = abierto ? "none" : "block";
-    if (chev) chev.style.transform = abierto ? "" : "rotate(180deg)";
-}
-
-async function adCargar() {
-    if (adCargando) return;
-    adCargando = true;
-    const list = document.getElementById("adList");
-    list.innerHTML = '<div class="ad-empty"><div class="spinner-border spinner-border-sm text-info"></div><br><br>Cargando…</div>';
-
-    const params = new URLSearchParams({
-        filtro:   adFiltroActual,
-        scope:    adScopeActual,
-        placa:    document.getElementById("adFPlaca").value.trim(),
-        recurso:  document.getElementById("adFRecurso").value.trim(),
-        contrato: document.getElementById("adFContrato").value,
-        orden:    document.getElementById("adFOrden").value,
-    });
-
-    try {
-        const r   = await fetch(`/neo/alertas/datos?${params}`);
-        const d   = await r.json();
-
-        // Badge y total
-        document.getElementById("adTotal").textContent = d.total;
-        const badge = document.getElementById("adBadge");
-        badge.textContent = d.pendientes;
-        badge.style.display = d.pendientes > 0 ? "" : "none";
-
-        // Contratos (poblar select primera vez)
-        if (adContratos.length === 0 && d.codigos_contrato.length) {
-            adContratos = d.codigos_contrato;
-            const sel = document.getElementById("adFContrato");
-            adContratos.forEach(c => {
-                const o = document.createElement("option");
-                o.value = c; o.textContent = c;
-                sel.appendChild(o);
-            });
-        }
-
-        if (!d.grupos.length) {
-            list.innerHTML = '<div class="ad-empty"><i class="bi bi-bell-slash"></i>Sin alertas para los filtros seleccionados</div>';
-            adCargando = false; return;
-        }
-
-        // Renderizar grupos
-        list.innerHTML = d.grupos.map(g => `
-            <div class="ad-group-hdr" onclick="this.classList.toggle('collapsed')">
-                <span style="display:flex;align-items:center;gap:7px">
-                    <span style="width:7px;height:7px;border-radius:50%;background:#f5a623;display:inline-block"></span>
-                    <span class="ad-group-name">${g.tipo}</span>
-                </span>
-                <span style="display:flex;align-items:center;gap:6px">
-                    <span class="ad-cnt">${g.total}</span>
-                    <i class="bi bi-chevron-down ad-chevron"></i>
-                </span>
-            </div>
-            <div class="ad-group-body">
-                ${g.items.map(a => `
-                <div class="ad-item" id="adItem-${a.id}">
-
-                    <!-- Fila principal — clic para expandir -->
-                    <div class="ad-item-top" onclick="adToggleDetalle(${a.id})" style="cursor:pointer">
-                        <span class="ad-plate">
-                            <span class="ad-status ${a.estado}"></span>${a.plate}
-                        </span>
-                        <span style="display:flex;align-items:center;gap:5px">
-                            ${a.count > 1 ? `<span style="background:#f5a623;color:#0d1b2a;border-radius:20px;padding:1px 6px;font-size:.66rem;font-weight:900">×${a.count}</span>` : ""}
-                            ${a.order ? `<span class="ad-sub">#${a.order}</span>` : ""}
-                            <i class="bi bi-chevron-down ad-item-chev" id="adChev-${a.id}"
-                               style="color:#7a97b0;font-size:.7rem;transition:transform .2s"></i>
-                        </span>
-                    </div>
-
-                    ${a.velocidad ? `<div class="ad-speed" onclick="adToggleDetalle(${a.id})" style="cursor:pointer"><i class="bi bi-speedometer2"></i> ${a.velocidad} km/h${a.duracion_min ? " · " + a.duracion_min + " min" : ""}</div>` : ""}
-                    <div class="ad-sub" onclick="adToggleDetalle(${a.id})" style="cursor:pointer">
-                        ${fmtHoraAD(a.triggered_at)}
-                        ${a.count > 1 ? `<span style="color:#4a6578"> · última de ${a.count}</span>` : ""}
-                        ${a.contract ? " · " + a.contract : ""}
-                    </div>
-
-                    <!-- Detalle expandible -->
-                    <div id="adDet-${a.id}" style="display:none;margin-top:10px">
-                        <div style="background:#0d1b2a;border:1px solid #1e3a52;border-radius:10px;padding:12px">
-
-                            <!-- Campos -->
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-                                ${adCampo("Fecha / Hora", fmtHoraAD(a.triggered_at))}
-                                ${adCampo("Contrato", a.contract || "—")}
-                                ${adCampo("Recurso", a.resource || "—")}
-                                ${adCampo("Brigada", a.brigade || "—")}
-                                ${adCampo("Fecha plan", a.plan_date || "—")}
-                                ${a.lat && a.lon
-                                    ? `<div><div style="font-size:.6rem;color:#7a97b0;text-transform:uppercase;font-weight:700;letter-spacing:.06em;margin-bottom:2px">Ubicación</div>
-                                       <a href="https://maps.google.com/?q=${a.lat},${a.lon}" target="_blank"
-                                          style="font-size:.75rem;color:#00b8c9;text-decoration:none">
-                                          ${parseFloat(a.lat).toFixed(4)}, ${parseFloat(a.lon).toFixed(4)}
-                                       </a></div>`
-                                    : adCampo("Ubicación", "—")}
-                            </div>
-
-                            <!-- Técnicos -->
-                            ${[a.tech1,a.tech2,a.tech3,a.tech4,a.tech5].filter(Boolean).length ? `
-                            <div style="margin-bottom:10px">
-                                <div style="font-size:.6rem;color:#7a97b0;text-transform:uppercase;font-weight:700;letter-spacing:.06em;margin-bottom:5px">Técnicos</div>
-                                <div style="display:flex;flex-wrap:wrap;gap:4px">
-                                    ${[a.tech1,a.tech2,a.tech3,a.tech4,a.tech5].filter(Boolean).map(t =>
-                                        `<span style="background:#162d44;border:1px solid #1e3a52;border-radius:5px;padding:2px 8px;font-size:.7rem;color:#e2e8f0;font-family:monospace">${t}</span>`
-                                    ).join("")}
-                                </div>
-                            </div>` : ""}
-
-                            <!-- Botones acción -->
-                            ${a.estado === "pendiente" ? `
-                            <div style="display:flex;gap:6px;margin-bottom:8px">
-                                <button onclick="adResponder(${a.id},'resolver',this)"
-                                    style="flex:1;background:#38a169;color:#fff;border:none;border-radius:7px;
-                                           padding:6px 0;font-size:.72rem;font-weight:700;cursor:pointer">
-                                    <i class="bi bi-check-circle-fill me-1"></i>Resolver
-                                </button>
-                                <button onclick="adResponder(${a.id},'liberar',this)"
-                                    style="flex:1;background:#162d44;color:#7a97b0;border:1px solid #1e3a52;
-                                           border-radius:7px;padding:6px 0;font-size:.72rem;cursor:pointer">
-                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Liberar
-                                </button>
-                            </div>` : `
-                            <div style="margin-bottom:8px;font-size:.72rem;color:${a.estado==='resuelta'?'#68d391':'#7a97b0'}">
-                                <i class="bi bi-${a.estado==='resuelta'?'check-circle-fill':'arrow-counterclockwise'} me-1"></i>
-                                ${a.estado==='resuelta'?'Resuelta':'Liberada'}${a.atendida_por?' por <strong>'+a.atendida_por+'</strong>':''}
-                            </div>`}
-
-                            <!-- Ver más -->
-                            <a href="/neo/alertas" target="_blank"
-                               style="display:flex;align-items:center;justify-content:center;gap:6px;
-                                      background:#162d44;color:#00b8c9;border:1px solid #1e3a52;
-                                      border-radius:7px;padding:6px 0;font-size:.72rem;font-weight:700;
-                                      text-decoration:none;transition:background .15s"
-                               onmouseover="this.style.background='#1e3a52'"
-                               onmouseout="this.style.background='#162d44'">
-                                <i class="bi bi-box-arrow-up-right"></i> Ver en panel completo
-                            </a>
-                        </div>
-                    </div>
-
-                </div>`).join("")}
-            </div>
-        `).join("");
-
-    } catch(e) {
-        list.innerHTML = `<div class="ad-empty"><i class="bi bi-exclamation-triangle"></i>Error al cargar: ${e.message}</div>`;
-    }
-    adCargando = false;
-}
-
-async function adResponder(id, accion, btn) {
-    btn.disabled = true;
-    try {
-        const r = await fetch(`/neo/alertas/${id}/responder`, {
-            method: "POST",
-            headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({accion})
+        // Esperar contrato
+        await new Promise(resolve => {
+            let n = 0;
+            const t = setInterval(() => {
+                const s = document.getElementById("contrato");
+                if ((s && s.options.length > 1) || ++n > 30) { clearInterval(t); resolve(); }
+            }, 300);
         });
-        const d = await r.json();
-        if (d.ok) {
-            adCargar();
-        } else {
-            alert("Error: " + (d.error || "No se pudo procesar"));
-            btn.disabled = false;
-        }
-    } catch(e) {
-        alert("Error: " + e.message);
-        btn.disabled = false;
-    }
-}
-
-// Badge inicial al cargar la página
-(async function() {
-    try {
-        const r = await fetch("/neo/alertas/badge");
-        const d = await r.json();
-        const b = document.getElementById("adBadge");
-        b.textContent    = d.pendientes;
-        b.style.display  = d.pendientes > 0 ? "" : "none";
-    } catch(_) {}
-})();
-setInterval(async () => {
-    try {
-        const r = await fetch("/neo/alertas/badge");
-        const d = await r.json();
-        const b = document.getElementById("adBadge");
-        b.textContent   = d.pendientes;
-        b.style.display = d.pendientes > 0 ? "" : "none";
-    } catch(_) {}
-}, 60000);
-
-// ══ DRAWER NOTIFICACIONES ══════════════════════════════════════════
-const ND_ICONOS  = { "nuevo_reporte":"bi-file-earmark-text", "reporte_respondido":"bi-chat-left-text-fill", "no_conforme":"bi-x-circle-fill" };
-const ND_COLORES = { "nuevo_reporte":"#f5a623", "reporte_respondido":"#4fc3f7", "no_conforme":"#e53935" };
-const ND_LABELS  = { "nuevo_reporte":"Nuevo reporte", "reporte_respondido":"Respondido", "no_conforme":"No conforme" };
-
-let ndTabActual = "pendiente";
-
-function ndRefreshBadge() {
-    fetch("/notificaciones/badge")
-        .then(r => r.json())
-        .then(d => {
-            const b = document.getElementById("ndBadge");
-            b.textContent  = d.pendientes;
-            b.style.display = d.pendientes > 0 ? "" : "none";
-        }).catch(() => {});
-}
-ndRefreshBadge();
-setInterval(ndRefreshBadge, 30000);
-
-function ndAbrir() {
-    document.getElementById("ndOverlay").style.display = "block";
-    document.getElementById("ndDrawer").classList.add("open");
-    ndCargar();
-}
-function ndCerrar() {
-    document.getElementById("ndOverlay").style.display = "none";
-    document.getElementById("ndDrawer").classList.remove("open");
-}
-function ndSetTab(btn) {
-    document.querySelectorAll(".ad-tab[data-nd]").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    ndTabActual = btn.dataset.nd;
-    ndCargar();
-}
-
-async function ndCargar() {
-    const list = document.getElementById("ndList");
-    list.innerHTML = '<div class="ad-empty"><div class="spinner-border spinner-border-sm text-danger"></div><br><br>Cargando…</div>';
-    try {
-        const r    = await fetch("/notificaciones");
-        let lista  = await r.json();
-        if (ndTabActual === "pendiente") lista = lista.filter(n => !n.gestionada);
-        else lista = lista.filter(n => n.gestionada);
-
-        document.getElementById("ndTotal").textContent = lista.length;
-
-        if (!lista.length) {
-            const msg = ndTabActual === "pendiente" ? "Sin notificaciones pendientes" : "Sin notificaciones cerradas";
-            list.innerHTML = `<div class="ad-empty"><i class="bi bi-bell-slash"></i>${msg}</div>`;
-            return;
-        }
-
-        list.innerHTML = lista.map(n => {
-            const ico   = ND_ICONOS[n.tipo]  || "bi-bell";
-            const color = ND_COLORES[n.tipo] || "#f5a623";
-            const label = ND_LABELS[n.tipo]  || n.tipo;
-            const esNc  = n.tipo === "no_conforme";
-            const boton = n.gestionada
-                ? ""
-                : esNc
-                    ? `<button class="nd-btn-visualizado" onclick="ndVisualizado(${n.id})"><i class="bi bi-eye me-1"></i>Visualizado</button>`
-                    : `<button class="nd-btn-gestionar" style="background:${color};color:#0d1b2a"
-                               onclick="ndGestionar(${n.id}, ${n.reporte_id})">
-                           <i class="bi bi-arrow-right-circle me-1"></i>Gestionar
-                       </button>`;
-            return `<div class="nd-card${n.gestionada ? ' gestionada' : ''}" id="ndCard-${n.id}">
-                <div style="display:flex;gap:10px;align-items:flex-start">
-                    <i class="bi ${ico} nd-tipo-ico" style="color:${color}"></i>
-                    <div style="flex:1;min-width:0">
-                        <div class="nd-msg">${n.mensaje}</div>
-                        ${n.tipo_incidencia ? `<div class="nd-meta">${n.tipo_incidencia}</div>` : ""}
-                        ${n.contrato        ? `<div class="nd-meta" style="color:#4fc3f7">${n.contrato}${n.recurso ? " · " + n.recurso : ""}</div>` : ""}
-                        <div class="nd-meta">${n.fecha}</div>
-                        <span class="nd-tag" style="background:${color}20;color:${color};border:1px solid ${color}50">${label}</span>
-                        <div>${boton}</div>
-                    </div>
-                </div>
-            </div>`;
-        }).join("");
-    } catch(e) {
-        list.innerHTML = `<div class="ad-empty"><i class="bi bi-exclamation-triangle"></i>Error: ${e.message}</div>`;
-    }
-}
-
-function ndGestionar(nid, repId) {
-    fetch(`/notificaciones/${nid}/gestionar`, {method:"POST"})
-        .then(r => r.json())
-        .then(d => {
-            if (d.ok) {
-                ndCargar();
-                ndRefreshBadge();
-                window.open(`/neo/reporte/${repId}`, "_blank");
+        const selCont = document.getElementById("contrato");
+        if (selCont && ctx.contrato) {
+            for (let i = 0; i < selCont.options.length; i++) {
+                if (selCont.options[i].value === ctx.contrato) {
+                    selCont.selectedIndex = i;
+                    selCont.dispatchEvent(new Event("change"));
+                    break;
+                }
             }
+        }
+
+        // Esperar recurso
+        await new Promise(resolve => {
+            let n = 0;
+            const t = setInterval(() => {
+                const s = document.getElementById("recurso");
+                if ((s && s.options.length > 1) || ++n > 30) { clearInterval(t); resolve(); }
+            }, 300);
         });
-}
-function ndVisualizado(nid) {
-    fetch(`/notificaciones/${nid}/visualizado`, {method:"POST"})
-        .then(r => r.json())
-        .then(d => { if (d.ok) { ndCargar(); ndRefreshBadge(); } });
-}
+        const selRec = document.getElementById("recurso");
+        if (selRec && ctx.recurso) {
+            for (let i = 0; i < selRec.options.length; i++) {
+                if (selRec.options[i].value === ctx.recurso) {
+                    selRec.selectedIndex = i;
+                    selRec.dispatchEvent(new Event("change"));
+                    break;
+                }
+            }
+        }
+
+        // Esperar OT
+        await new Promise(resolve => setTimeout(resolve, 700));
+        const selOT = document.getElementById("orden_trabajo");
+        if (selOT && ctx.orden_trabajo) {
+            for (let i = 0; i < selOT.options.length; i++) {
+                if (selOT.options[i].value === ctx.orden_trabajo) {
+                    selOT.selectedIndex = i;
+                    selOT.dispatchEvent(new Event("change"));
+                    break;
+                }
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        preLlenarCascade();
+        // Marcar botón guardar con el ID de alerta para enviarlo en el payload
+        const btn = document.getElementById("btnGuardarReporte");
+        if (btn) btn.dataset.alertaId = ctx.id;
+    });
+})();
 </script>
+{% endif %}
 
 {% endblock %}

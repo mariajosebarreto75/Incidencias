@@ -518,6 +518,7 @@ document.getElementById("btnGuardarReporte")
 
     const payload = {
         fecha_reporte:          fechaVal,
+        alerta_id:              (document.getElementById("btnGuardarReporte").dataset.alertaId || null),
         contrato:               contratoVal,
         recurso:                recursoVal,
         orden_trabajo:          ordenVal,

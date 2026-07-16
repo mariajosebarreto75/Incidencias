@@ -188,6 +188,9 @@
     const hoy = new Date().toISOString().slice(0, 10);
     desdeEl.value = hoy;
     hastaEl.value = hoy;
+    // Precargar los inputs de sync con la fecha que se cargó
+    const fechaCargada = "{{ fecha_desde }}";
+    if (fechaCargada) { desdeEl.value = fechaCargada; hastaEl.value = "{{ fecha_hasta }}" || fechaCargada; }
 
     btnSync.addEventListener('click', function () {
         const desde = desdeEl.value || hoy;

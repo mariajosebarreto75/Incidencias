@@ -63,6 +63,38 @@ body {
     white-space: nowrap;
 }
 
+/* DROPDOWN */
+.dropdown-menu-coor {
+    background: #0a1f2e;
+    border: 1px solid rgba(0,184,201,.25);
+    border-radius: 10px;
+    padding: 6px;
+    margin-top: 6px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    min-width: 210px;
+}
+
+.dropdown-item-coor {
+    color: rgba(255,255,255,.82) !important;
+    font-size: .84rem;
+    font-weight: 500;
+    border-radius: 7px;
+    padding: 8px 12px;
+    transition: background .15s;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-item-coor:hover {
+    background: rgba(0,184,201,.18) !important;
+    color: #fff !important;
+}
+
+.dropdown-item-coor i:first-child {
+    color: #00b8c9;
+    font-size: .92rem;
+}
+
 /* BTN SALIR */
 .coor-btn-logout {
     background: rgba(255, 255, 255, 0.15);

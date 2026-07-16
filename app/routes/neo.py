@@ -151,17 +151,23 @@ def distribucion_neo():
     from app.models.persona import Persona
 
     from datetime import date as _date
-    hoy = str(_date.today())
+    hoy = _date.today()
 
-    fecha_desde_str = request.args.get("fecha_desde") or hoy
-    fecha_hasta_str = request.args.get("fecha_hasta") or fecha_desde_str
+    fecha_desde_str = request.args.get("fecha_desde") or ""
+    fecha_hasta_str = request.args.get("fecha_hasta") or ""
 
-    try:
-        fecha_desde = datetime.strptime(fecha_desde_str, "%Y-%m-%d").date()
-        fecha_hasta = datetime.strptime(fecha_hasta_str, "%Y-%m-%d").date()
-    except ValueError:
-        fecha_desde = fecha_hasta = _date.today()
-        fecha_desde_str = fecha_hasta_str = hoy
+    if fecha_desde_str:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde_str, "%Y-%m-%d").date()
+            fecha_hasta = datetime.strptime(fecha_hasta_str or fecha_desde_str, "%Y-%m-%d").date()
+        except ValueError:
+            fecha_desde = fecha_hasta = hoy
+            fecha_desde_str = fecha_hasta_str = str(hoy)
+    else:
+        # Sin parámetro: usar última fecha con datos en BD
+        ultima = DistribucionOperativa.query.order_by(DistribucionOperativa.fecha.desc()).first()
+        fecha_desde = fecha_hasta = (ultima.fecha if ultima else hoy)
+        fecha_desde_str = fecha_hasta_str = str(fecha_desde)
 
     # Neo ve TODOS los contratos activos (sin restricción por usuario)
     lista_contratos = sorted(
@@ -333,7 +339,7 @@ def eliminar_reportes():
     eliminados = 0
     for rid in ids:
         reporte = ReporteOperacional.query.get(rid)
-        if not reporte or reporte.reportado_por != current_user.username:
+        if not reporte:
             continue
         # Eliminar archivos físicos de evidencias NEO
         for campo in ("evidencia_1", "evidencia_2"):
@@ -500,10 +506,32 @@ def panel_reportes():
     tipos_desvio   = TipoDesvio.query.order_by(TipoDesvio.tipo_desvio).all()
     parametros_neo = ParametroNeo.query.order_by(ParametroNeo.parametroNeo).all()
 
+    # Datos de alerta GPS pre-cargados (cuando se llega desde "Resolver")
+    alerta_ctx = None
+    alerta_id  = request.args.get("alerta_id", "").strip()
+    if alerta_id:
+        alerta_obj = AlertaGPS.query.get(alerta_id)
+        if alerta_obj and alerta_obj.estado_local == "pendiente":
+            # Resolver nombre completo del contrato desde código corto
+            contrato_nombre = alerta_obj.contract_code or ""
+            if alerta_obj.contract_code:
+                c_obj = Contrato.query.filter_by(codigo=alerta_obj.contract_code).first()
+                if c_obj:
+                    contrato_nombre = c_obj.contrato
+            alerta_ctx = {
+                "id":             alerta_obj.id,
+                "placa":          alerta_obj.vehicle_plate or "",
+                "contrato":       contrato_nombre,
+                "recurso":        alerta_obj.resource_code or "",
+                "orden_trabajo":  alerta_obj.order_number  or "",
+                "tipo_cuadrilla": alerta_obj.brigade_type  or "",
+            }
+
     return render_template(
         "neo/panelReportes.html",
         tipos_desvio   = tipos_desvio,
-        parametros_neo = parametros_neo
+        parametros_neo = parametros_neo,
+        alerta_ctx     = alerta_ctx,
     )
 
 
@@ -821,10 +849,26 @@ def guardar_reporte():
                 ))
                 db.session.commit()
 
+        # Si el reporte viene de una alerta GPS, resolverla ahora
+        alerta_id_from = datos.get("alerta_id")
+        if alerta_id_from:
+            alerta_obj = AlertaGPS.query.get(int(alerta_id_from))
+            if alerta_obj and alerta_obj.estado_local == "pendiente":
+                try:
+                    from app.services.gps_monitor import responder_alertas
+                    responder_alertas([{"alert_id": alerta_obj.alert_id_gps, "accion": "resolver"}])
+                except Exception:
+                    pass  # No bloquear si GPS Monitor falla
+                alerta_obj.estado_local   = "resuelta"
+                alerta_obj.atendida_por   = current_user.username
+                alerta_obj.fecha_atencion = datetime.utcnow()
+                db.session.commit()
+
         return jsonify({
-            "success": True,
-            "id":      reporte.id,
-            "mensaje": f"Reporte #{reporte.id} guardado correctamente."
+            "success":   True,
+            "id":        reporte.id,
+            "mensaje":   f"Reporte #{reporte.id} guardado correctamente.",
+            "alerta_id": alerta_id_from,
         })
 
     except Exception as e:

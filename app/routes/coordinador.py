@@ -265,16 +265,24 @@ def distribucion_operativa():
     from datetime import date as _date
 
     # Filtros de la URL
-    fecha_desde_str = request.args.get("fecha_desde") or str(_date.today())
-    fecha_hasta_str = request.args.get("fecha_hasta") or fecha_desde_str
+    fecha_desde_str = request.args.get("fecha_desde") or ""
+    fecha_hasta_str = request.args.get("fecha_hasta") or ""
     contrato_filtro = request.args.get("contrato") or ""
 
-    try:
-        fecha_desde = datetime.strptime(fecha_desde_str, "%Y-%m-%d").date()
-        fecha_hasta = datetime.strptime(fecha_hasta_str, "%Y-%m-%d").date()
-    except ValueError:
-        fecha_desde = fecha_hasta = _date.today()
-        fecha_desde_str = fecha_hasta_str = str(_date.today())
+    hoy = _date.today()
+
+    if fecha_desde_str:
+        try:
+            fecha_desde = datetime.strptime(fecha_desde_str, "%Y-%m-%d").date()
+            fecha_hasta = datetime.strptime(fecha_hasta_str or fecha_desde_str, "%Y-%m-%d").date()
+        except ValueError:
+            fecha_desde = fecha_hasta = hoy
+            fecha_desde_str = fecha_hasta_str = str(hoy)
+    else:
+        # Sin parámetro: usar última fecha con datos en BD
+        ultima = DistribucionOperativa.query.order_by(DistribucionOperativa.fecha.desc()).first()
+        fecha_desde = fecha_hasta = (ultima.fecha if ultima else hoy)
+        fecha_desde_str = fecha_hasta_str = str(fecha_desde)
 
     # Contratos del coordinador (objetos completos para obtener nombre y código)
     _uc2 = UserContrato.query.filter_by(user_id=current_user.id).all()

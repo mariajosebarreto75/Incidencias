@@ -728,11 +728,11 @@ function mostrarDetalle(id) {
     const actions = document.getElementById("dActions");
     if (d.estado === "pendiente") {
         actions.innerHTML = `
-            <button class="ag-btn ag-btn-resolver" onclick="responder(${id}, 'resolver')">
-                <i class="bi bi-check-circle-fill"></i> Resolver
+            <button class="ag-btn ag-btn-resolver" onclick="irAReporte(${id})">
+                <i class="bi bi-file-earmark-plus-fill"></i> Resolver (hacer reporte)
             </button>
             <button class="ag-btn ag-btn-liberar" onclick="responder(${id}, 'liberar')">
-                <i class="bi bi-arrow-counterclockwise"></i> Liberar
+                <i class="bi bi-x-circle"></i> Liberar
             </button>`;
     } else if (d.estado === "resuelta") {
         actions.innerHTML = `<div class="ag-atendida">
@@ -741,10 +741,14 @@ function mostrarDetalle(id) {
         </div>`;
     } else {
         actions.innerHTML = `<div class="ag-liberada">
-            <i class="bi bi-arrow-counterclockwise"></i>
-            Liberada — devuelta a GPS Monitor
+            <i class="bi bi-x-circle"></i>
+            Liberada — cerrada sin reporte
         </div>`;
     }
+}
+
+function irAReporte(id) {
+    window.location.href = `/neo/panelReportes?alerta_id=${id}`;
 }
 
 async function responder(id, accion) {
@@ -760,17 +764,15 @@ async function responder(id, accion) {
         });
         const data = await r.json();
         if (data.ok) {
-            // Actualizar el item en la lista y recargar detalle
             const item = document.getElementById("item-" + id);
+            // Ambas acciones (resolver y liberar) cierran la alerta → remover de la lista
             if (item) {
-                item.dataset.estado = accion === "resolver" ? "resuelta" : "liberada";
-                const dot = item.querySelector(".ag-status-dot");
-                if (dot) {
-                    dot.classList.remove("resuelta", "liberada");
-                    dot.classList.add(accion === "resolver" ? "resuelta" : "liberada");
-                }
+                item.remove();
             }
-            mostrarDetalle(id);
+            // Limpiar panel derecho
+            document.getElementById("agCard").style.display  = "none";
+            document.getElementById("agEmpty").style.display = "flex";
+            alertaActiva = null;
             actualizarBadge();
         } else {
             alert("Error: " + (data.error || "No se pudo procesar"));

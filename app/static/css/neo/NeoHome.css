@@ -92,14 +92,8 @@
     margin-bottom: 28px;
 }
 
-/* La tercera card ocupa todo el ancho de la fila */
-.neo-card-distribucion {
-    grid-column: 1 / -1;
-}
-
 @media (max-width: 640px) {
     .neo-cards { grid-template-columns: 1fr; }
-    .neo-card-distribucion { grid-column: auto; }
 }
 
 .neo-card {
@@ -172,6 +166,20 @@
 
 .neo-card-distribucion .neo-card-cta { color: #6366f1; }
 .neo-card-distribucion .neo-card-arrow { color: #6366f1; }
+
+/* GPS MONITOR */
+.neo-card-gps { border-color: rgba(245,166,35,.2); }
+.neo-card-gps::before { background: linear-gradient(135deg, #fef9ec, #fff); }
+.neo-card-gps:hover { border-color: #f5a623; }
+.neo-card-gps:hover::before { opacity: 1; }
+
+.neo-card-gps .neo-card-icon {
+    background: linear-gradient(135deg, #f5a623, #c97d0a);
+    color: #fff;
+}
+
+.neo-card-gps .neo-card-cta { color: #f5a623; }
+.neo-card-gps .neo-card-arrow { color: #f5a623; }
 
 /* PARTES DE LA CARD */
 .neo-card-icon {

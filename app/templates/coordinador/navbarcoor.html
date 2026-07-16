@@ -53,22 +53,75 @@
                     <li class="nav-item">
                         <a class="nav-link coor-nav-link"
                            href="{{ url_for('coordinador.dashboard_coordinador') }}">
-                            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                            <i class="bi bi-house me-1"></i>Inicio
                         </a>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link coor-nav-link"
-                           href="{{ url_for('coordinador.distribucion_operativa') }}">
-                            <i class="bi bi-table me-1"></i>Distribución Operativa
+                    <!-- NEO dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link coor-nav-link dropdown-toggle" href="#"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-broadcast-pin me-1"></i>NEO
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-coor">
+                            <li>
+                                <a class="dropdown-item dropdown-item-coor"
+                                   href="/coordinador/PanelReportes">
+                                    <i class="bi bi-bar-chart-line me-2"></i>Panel Reportes
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-coor"
+                                   href="{{ url_for('coordinador.distribucion_operativa') }}">
+                                    <i class="bi bi-table me-2"></i>Distribución Operativa
+                                </a>
+                            </li>
+                        </ul>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link coor-nav-link"
-                           href="/coordinador/PanelReportes">
-                            <i class="bi bi-bar-chart-line me-1"></i>Panel de Reportes
+                    <!-- SEGUIMIENTO dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link coor-nav-link dropdown-toggle" href="#"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-clipboard2-data me-1"></i>Seguimiento
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-coor">
+                            <li>
+                                <a class="dropdown-item dropdown-item-coor"
+                                   href="/coordinador/seguimiento/archivo">
+                                    <i class="bi bi-folder2-open me-2"></i>Archivo de Seguimiento
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-coor"
+                                   href="/coordinador/seguimiento/inspecciones">
+                                    <i class="bi bi-search me-2"></i>Inspecciones
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-coor"
+                                   href="/coordinador/seguimiento/agenda">
+                                    <i class="bi bi-calendar-check me-2"></i>Agenda Compromisos
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- GPS dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link coor-nav-link dropdown-toggle" href="#"
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-geo-alt-fill me-1"></i>GPS
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-coor">
+                            <li>
+                                <a class="dropdown-item dropdown-item-coor"
+                                   href="https://plataforma.sistemagps.online/ui/map/objects" target="_blank">
+                                    <i class="bi bi-map me-2"></i>Rastrear
+                                    <i class="bi bi-box-arrow-up-right ms-1" style="font-size:.7rem;opacity:.6"></i>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
 
                     {% endif %}
