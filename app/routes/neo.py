@@ -904,6 +904,7 @@ def alertas_gps():
     contrato = request.args.get("contrato", "").strip()
     recurso  = request.args.get("recurso",  "").strip()
     orden    = request.args.get("orden",    "reciente")
+    fecha    = request.args.get("fecha",    "").strip()   # YYYY-MM-DD, vacío = todas
     # "todos" | "con_contrato" | "sin_contrato"
     scope    = request.args.get("scope",    "todos")
 
@@ -916,6 +917,14 @@ def alertas_gps():
         q = q.filter(AlertaGPS.contract_code == None)
     elif scope == "con_contrato":
         q = q.filter(AlertaGPS.contract_code != None)
+    # Filtro de fecha
+    if fecha:
+        try:
+            from datetime import datetime as _dt
+            f_date = _dt.strptime(fecha, "%Y-%m-%d").date()
+            q = q.filter(db.func.date(AlertaGPS.triggered_at) == f_date)
+        except ValueError:
+            pass
     # Filtros adicionales
     if placa:
         q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
