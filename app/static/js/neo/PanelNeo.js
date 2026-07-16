@@ -14,6 +14,15 @@ function limpiarCamposAuto() {
     setField("placa",          "");
     setField("tipo_cuadrilla", "");
     setField("meta",           "");
+    const placaEl = document.getElementById("placa");
+    if (placaEl) {
+        placaEl.readOnly    = true;
+        placaEl.placeholder = "Automático";
+        placaEl.style.background = "";
+        placaEl.style.border = "";
+    }
+    const badge = document.getElementById("placaBadge");
+    if (badge) { badge.textContent = "Auto"; badge.style.background = ""; badge.style.color = ""; }
 }
 
 function limpiarContrato() {
@@ -216,23 +225,44 @@ document.getElementById("recurso")
 
 document.getElementById("orden_trabajo")
     .addEventListener("change", function () {
+        const placaEl = document.getElementById("placa");
         const opt = this.options[this.selectedIndex];
         if (!opt || !opt.value) {
             setField("tipo_actividad", "");
             setField("placa",          "");
             setField("tipo_cuadrilla", "");
             setField("meta",           "");
+            placaEl.readOnly = true;
+            placaEl.placeholder = "Automático";
+            placaEl.style.background = "";
             return;
         }
-        const tipoAct = opt.dataset.tipoActividad || "";
-        setField("tipo_actividad", tipoAct);
-        setField("placa",          opt.dataset.placa         || "");
+        const tipoAct = (opt.dataset.tipoActividad || "").trim();
+        const otVal   = (opt.value || "").trim().toUpperCase();
+        const esNA    = otVal === "NA" || tipoAct === "" || tipoAct.toUpperCase() === "NA"
+                        || tipoAct.toLowerCase() === "no aplica";
+
+        setField("tipo_actividad", esNA ? "" : tipoAct);
         setField("tipo_cuadrilla", opt.dataset.tipoCuadrilla || "");
         setField("meta",           opt.dataset.meta           || "");
 
-        if (tipoAct.trim().toLowerCase() === "no aplica") {
-            this.value = "NA";
-            setField("tipo_actividad", "NA");
+        const badge = document.getElementById("placaBadge");
+        if (esNA) {
+            // Orden/actividad NA → placa editable manualmente
+            setField("placa", "");
+            placaEl.readOnly    = false;
+            placaEl.placeholder = "Ingrese la placa manualmente";
+            placaEl.style.background = "#fffbe6";
+            placaEl.style.border = "1.5px solid #f5a623";
+            if (badge) { badge.textContent = "Manual"; badge.style.background = "#f5a623"; badge.style.color = "#fff"; }
+            placaEl.focus();
+        } else {
+            setField("placa", opt.dataset.placa || "");
+            placaEl.readOnly    = true;
+            placaEl.placeholder = "Automático";
+            placaEl.style.background = "";
+            placaEl.style.border = "";
+            if (badge) { badge.textContent = "Auto"; badge.style.background = ""; badge.style.color = ""; }
         }
     });
 
