@@ -364,17 +364,25 @@ function determinarImpacto() {
         document.getElementById("duracion").value
     );
 
-    const impactosAltos = [
-        "fuera de ruta", "tiempo muerto", "inicio tardío de labores",
-        "salida tardia", "finalización temprana",
-        "error en la información", "mal enrutamiento"
+    // Fragmentos que garantizan impacto Alto sin importar tildes, mayúsculas ni espacios dobles
+    const fragmentosAlto = [
+        "fuera de ruta",
+        "tiempo muerto",
+        "inicio tard",      // cubre "Inicio Tardío labores" e "inicio tardío de labores"
+        "salida tard",      // cubre "Salida Tardía" y "salida tardia"
+        "finalizaci",       // cubre "Finalización temprana"
+        "error en la",
+        "mal enrutamiento", "mal  enrutamiento"
     ];
 
     let impacto = "";
 
-    if (impactosAltos.includes(tipoNombre)) {
+    // Normalizar: minúsculas y colapsar espacios múltiples
+    const tipoNorm = tipoNombre.replace(/\s+/g, " ");
+
+    if (fragmentosAlto.some(f => tipoNorm.includes(f))) {
         impacto = "Alto";
-    } else if (tipoNombre.includes("excede tiempo")) {
+    } else if (tipoNorm.includes("excede tiempo")) {
         if      (duracionMin > 0  && duracionMin < 15)  impacto = "Bajo";
         else if (duracionMin >= 15 && duracionMin < 25)  impacto = "Medio";
         else if (duracionMin >= 25)                      impacto = "Alto";
