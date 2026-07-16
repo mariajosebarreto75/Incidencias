@@ -28,8 +28,13 @@
             <a class="navbar-brand d-flex align-items-center gap-2"
                href="{{ url_for('neo.home_neo') }}">
 
-                <img src="{{ url_for('static', filename='img/logo_hesego.png') }}"
-                     alt="HESEGO" height="38">
+                <div style="background:rgba(255,255,255,.12);border-radius:10px;padding:4px 6px;display:flex;align-items:center;">
+                    <img src="{{ url_for('static', filename='img/img2.png') }}"
+                         alt="NEO" height="40"
+                         style="filter:drop-shadow(0 2px 8px rgba(0,184,201,.5));display:block;">
+                </div>
+
+                <div style="width:1px;height:32px;background:rgba(255,255,255,.2);margin:0 2px;flex-shrink:0;"></div>
 
                 <div class="neo-brand-text">
                     <span class="neo-brand-title">NEO</span>
