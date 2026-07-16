@@ -1,4 +1,5 @@
 from flask import Flask, redirect, url_for
+from sqlalchemy import text
 
 from config import Config
 
@@ -28,6 +29,34 @@ from app.routes.admin import admin_bp
 from app.routes.notificaciones import notif_bp
 
 
+# Lock de Postgres para que, con gunicorn -w N, solo un worker arranque el
+# scheduler (si no, cada worker corre su propia copia y los jobs se disparan
+# N veces por ciclo). La conexión se mantiene abierta a propósito: el lock
+# se libera automáticamente cuando el worker muere y esa conexión se cierra.
+_SCHEDULER_LOCK_ID = 727100501
+_scheduler_lock_conn = None
+
+
+def _tiene_lock_scheduler(app):
+    global _scheduler_lock_conn
+    try:
+        with app.app_context():
+            conn = db.engine.connect()
+            adquirido = conn.execute(
+                text("SELECT pg_try_advisory_lock(:id)"), {"id": _SCHEDULER_LOCK_ID}
+            ).scalar()
+    except Exception as e:
+        # Si la BD no está disponible al arrancar, este worker simplemente
+        # no corre el scheduler en vez de tumbar el arranque de toda la app.
+        print(f"[Scheduler] No se pudo adquirir el lock ({e}); scheduler deshabilitado en este worker")
+        return False
+    if adquirido:
+        _scheduler_lock_conn = conn
+        return True
+    conn.close()
+    return False
+
+
 def create_app():
     app = Flask(
         __name__,
@@ -45,7 +74,7 @@ def create_app():
     # Scheduler — sincroniza alertas GPS cada 5 minutos
     import os
     app.config["SCHEDULER_API_ENABLED"] = False
-    if not scheduler.running:
+    if not scheduler.running and _tiene_lock_scheduler(app):
         scheduler.init_app(app)
 
         @scheduler.task("interval", id="sync_alertas_gps", minutes=5, misfire_grace_time=60)
