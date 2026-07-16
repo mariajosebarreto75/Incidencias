@@ -1,0 +1,19 @@
+services:
+  incidencias:
+    build: .
+    container_name: incidencias
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - backend-net
+      - nginx-proxy
+    environment:
+      - VIRTUAL_HOST=neohesego.com
+      - VIRTUAL_PORT=5000
+
+networks:
+  backend-net:
+    external: true
+  nginx-proxy:
+    external: true
