@@ -84,7 +84,7 @@ def create_app():
                 sincronizar()
 
         # Sincroniza el plan del día automáticamente cada 30 minutos
-        @scheduler.task("interval", id="sync_plan_gps", minutes=30, misfire_grace_time=120)
+        @scheduler.task("interval", id="sync_plan_gps", minutes=10, misfire_grace_time=60)
         def job_sync_plan():
             with app.app_context():
                 from app.services.sincronizar_plan import sincronizar_plan
