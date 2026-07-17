@@ -394,9 +394,8 @@ function determinarImpacto() {
     if (impacto === "Bajo")  impactoEl.classList.add("impacto-bajo");
 
     // Afectación económica: Meta / 7 * duración_en_minutos
-    const meta        = parseFloat(document.getElementById("meta")?.value || 0) || 0;
-    const duracionMin = duracionAMinutos(document.getElementById("duracion").value);
-    const afEl        = document.getElementById("afectacion");
+    const meta  = parseFloat(document.getElementById("meta")?.value || 0) || 0;
+    const afEl  = document.getElementById("afectacion");
     if (afEl) afEl.value = meta > 0 ? ((meta / 7) * duracionMin).toFixed(2) : "";
 
 }
