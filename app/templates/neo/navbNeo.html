@@ -28,8 +28,13 @@
             <a class="navbar-brand d-flex align-items-center gap-2"
                href="{{ url_for('neo.home_neo') }}">
 
-                <img src="{{ url_for('static', filename='img/logo_hesego.png') }}"
-                     alt="HESEGO" height="38">
+                <div style="background:rgba(255,255,255,.12);border-radius:10px;padding:4px 6px;display:flex;align-items:center;">
+                    <img src="{{ url_for('static', filename='img/img2.png') }}"
+                         alt="NEO" height="40"
+                         style="filter:drop-shadow(0 2px 8px rgba(0,184,201,.5));display:block;">
+                </div>
+
+                <div style="width:1px;height:32px;background:rgba(255,255,255,.2);margin:0 2px;flex-shrink:0;"></div>
 
                 <div class="neo-brand-text">
                     <span class="neo-brand-title">NEO</span>
@@ -73,6 +78,12 @@
                                 <a class="dropdown-item dropdown-item-neo"
                                    href="{{ url_for('neo.validar_reportes') }}">
                                     <i class="bi bi-patch-check me-2"></i>Validar
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item dropdown-item-neo"
+                                   href="{{ url_for('neo.distribucion_neo') }}">
+                                    <i class="bi bi-table me-2"></i>Distribución Operativa
                                 </a>
                             </li>
                         </ul>
@@ -748,6 +759,13 @@
                     <i class="bi bi-truck"></i>
                     <input type="text" id="adFRecurso" placeholder="Buscar recurso…">
                 </div>
+                <div style="display:flex;gap:6px;align-items:center">
+                    <i class="bi bi-calendar3" style="color:#557a9a;font-size:.85rem;flex-shrink:0"></i>
+                    <input type="date" id="adFFecha"
+                           style="flex:1;background:#0d1b2a;border:1px solid #1e3a5f;border-radius:7px;
+                                  color:#c9d8e8;font-size:.76rem;padding:5px 8px;outline:none;"
+                           title="Filtrar por fecha">
+                </div>
                 <div style="display:flex;gap:6px">
                     <select id="adFContrato" class="ad-sel"><option value="">Contrato…</option></select>
                     <select id="adFOrden" class="ad-sel">
@@ -810,6 +828,7 @@
         document.getElementById("adFRecurso").value  = "";
         document.getElementById("adFContrato").value = "";
         document.getElementById("adFOrden").value    = "reciente";
+        document.getElementById("adFFecha").value    = "";
         adScopeActual = "todos";
         document.querySelectorAll(".ad-scope-btn").forEach(b => b.classList.remove("active"));
         document.querySelector(".ad-scope-btn[data-scope='todos']").classList.add("active");
@@ -843,6 +862,7 @@
             recurso:  document.getElementById("adFRecurso").value.trim(),
             contrato: document.getElementById("adFContrato").value,
             orden:    document.getElementById("adFOrden").value,
+            fecha:    document.getElementById("adFFecha").value,
         });
 
         try {
@@ -908,10 +928,25 @@
                                     ${adCampo("Brigada", a.brigade || "—")}
                                     ${adCampo("Fecha plan", a.plan_date || "—")}
                                     ${a.lat && a.lon
-                                        ? `<div><div style="font-size:.6rem;color:#7a97b0;text-transform:uppercase;font-weight:700;letter-spacing:.06em;margin-bottom:2px">Ubicación</div>
-                                           <a href="https://maps.google.com/?q=${a.lat},${a.lon}" target="_blank" style="font-size:.75rem;color:#00b8c9;text-decoration:none">
-                                               ${parseFloat(a.lat).toFixed(4)}, ${parseFloat(a.lon).toFixed(4)}
-                                           </a></div>`
+                                        ? `<div style="grid-column:1/-1;margin-top:4px">
+                                               <div style="font-size:.6rem;color:#7a97b0;text-transform:uppercase;font-weight:700;letter-spacing:.06em;margin-bottom:6px">Ubicación</div>
+                                               <div style="font-size:.73rem;color:#c9d8e8;margin-bottom:6px;font-family:monospace">
+                                                   ${parseFloat(a.lat).toFixed(5)}, ${parseFloat(a.lon).toFixed(5)}
+                                               </div>
+                                               <a href="https://maps.google.com/?q=${a.lat},${a.lon}" target="_blank"
+                                                  style="display:flex;align-items:center;justify-content:center;gap:8px;
+                                                         background:linear-gradient(135deg,#1a3a55,#1e4a6e);
+                                                         border:1px solid #2a5a8a;border-radius:8px;
+                                                         padding:9px 12px;text-decoration:none;
+                                                         color:#4fc3f7;font-size:.78rem;font-weight:700;
+                                                         transition:background .15s"
+                                                  onmouseover="this.style.background='linear-gradient(135deg,#1e4a6e,#2563a8)'"
+                                                  onmouseout="this.style.background='linear-gradient(135deg,#1a3a55,#1e4a6e)'">
+                                                   <i class="bi bi-geo-alt-fill" style="font-size:1rem;color:#f5a623"></i>
+                                                   Ver en Google Maps
+                                                   <i class="bi bi-box-arrow-up-right" style="font-size:.7rem;opacity:.7"></i>
+                                               </a>
+                                           </div>`
                                         : adCampo("Ubicación", "—")}
                                 </div>
                                 ${[a.tech1,a.tech2,a.tech3,a.tech4,a.tech5].filter(Boolean).length ? `

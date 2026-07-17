@@ -14,6 +14,15 @@ function limpiarCamposAuto() {
     setField("placa",          "");
     setField("tipo_cuadrilla", "");
     setField("meta",           "");
+    const placaEl = document.getElementById("placa");
+    if (placaEl) {
+        placaEl.readOnly    = true;
+        placaEl.placeholder = "Automático";
+        placaEl.style.background = "";
+        placaEl.style.border = "";
+    }
+    const badge = document.getElementById("placaBadge");
+    if (badge) { badge.textContent = "Auto"; badge.style.background = ""; badge.style.color = ""; }
 }
 
 function limpiarContrato() {
@@ -216,23 +225,44 @@ document.getElementById("recurso")
 
 document.getElementById("orden_trabajo")
     .addEventListener("change", function () {
+        const placaEl = document.getElementById("placa");
         const opt = this.options[this.selectedIndex];
         if (!opt || !opt.value) {
             setField("tipo_actividad", "");
             setField("placa",          "");
             setField("tipo_cuadrilla", "");
             setField("meta",           "");
+            placaEl.readOnly = true;
+            placaEl.placeholder = "Automático";
+            placaEl.style.background = "";
             return;
         }
-        const tipoAct = opt.dataset.tipoActividad || "";
-        setField("tipo_actividad", tipoAct);
-        setField("placa",          opt.dataset.placa         || "");
+        const tipoAct = (opt.dataset.tipoActividad || "").trim();
+        const otVal   = (opt.value || "").trim().toUpperCase();
+        const esNA    = otVal === "NA" || tipoAct === "" || tipoAct.toUpperCase() === "NA"
+                        || tipoAct.toLowerCase() === "no aplica";
+
+        setField("tipo_actividad", esNA ? "" : tipoAct);
         setField("tipo_cuadrilla", opt.dataset.tipoCuadrilla || "");
         setField("meta",           opt.dataset.meta           || "");
 
-        if (tipoAct.trim().toLowerCase() === "no aplica") {
-            this.value = "NA";
-            setField("tipo_actividad", "NA");
+        const badge = document.getElementById("placaBadge");
+        if (esNA) {
+            // Orden/actividad NA → placa editable manualmente
+            setField("placa", "");
+            placaEl.readOnly    = false;
+            placaEl.placeholder = "Ingrese la placa manualmente";
+            placaEl.style.background = "#fffbe6";
+            placaEl.style.border = "1.5px solid #f5a623";
+            if (badge) { badge.textContent = "Manual"; badge.style.background = "#f5a623"; badge.style.color = "#fff"; }
+            placaEl.focus();
+        } else {
+            setField("placa", opt.dataset.placa || "");
+            placaEl.readOnly    = true;
+            placaEl.placeholder = "Automático";
+            placaEl.style.background = "";
+            placaEl.style.border = "";
+            if (badge) { badge.textContent = "Auto"; badge.style.background = ""; badge.style.color = ""; }
         }
     });
 
@@ -334,17 +364,25 @@ function determinarImpacto() {
         document.getElementById("duracion").value
     );
 
-    const impactosAltos = [
-        "fuera de ruta", "tiempo muerto", "inicio tardío de labores",
-        "salida tardia", "finalización temprana",
-        "error en la información", "mal enrutamiento"
+    // Fragmentos que garantizan impacto Alto sin importar tildes, mayúsculas ni espacios dobles
+    const fragmentosAlto = [
+        "fuera de ruta",
+        "tiempo muerto",
+        "inicio tard",      // cubre "Inicio Tardío labores" e "inicio tardío de labores"
+        "salida tard",      // cubre "Salida Tardía" y "salida tardia"
+        "finalizaci",       // cubre "Finalización temprana"
+        "error en la",
+        "mal enrutamiento", "mal  enrutamiento"
     ];
 
     let impacto = "";
 
-    if (impactosAltos.includes(tipoNombre)) {
+    // Normalizar: minúsculas y colapsar espacios múltiples
+    const tipoNorm = tipoNombre.replace(/\s+/g, " ");
+
+    if (fragmentosAlto.some(f => tipoNorm.includes(f))) {
         impacto = "Alto";
-    } else if (tipoNombre.includes("excede tiempo")) {
+    } else if (tipoNorm.includes("excede tiempo")) {
         if      (duracionMin > 0  && duracionMin < 15)  impacto = "Bajo";
         else if (duracionMin >= 15 && duracionMin < 25)  impacto = "Medio";
         else if (duracionMin >= 25)                      impacto = "Alto";

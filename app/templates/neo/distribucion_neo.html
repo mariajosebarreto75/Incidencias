@@ -81,10 +81,17 @@ body { background: var(--dn-bg); }
             <div class="dn-title"><i class="bi bi-table me-2" style="color:var(--dn-teal)"></i>Distribución <span>Operativa</span></div>
             <div class="dn-sub"><i class="bi bi-eye me-1"></i>Vista de solo lectura — datos sincronizados desde GPS Monitor</div>
         </div>
-        <button class="dn-btn dn-btn-export" onclick="exportarExcel()">
-            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
-        </button>
+        <div style="display:flex;gap:.5rem;align-items:center">
+            <button id="dnBtnSync" class="dn-btn" style="background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;"
+                    onclick="dnSincronizar()">
+                <i class="bi bi-arrow-clockwise"></i> Sincronizar
+            </button>
+            <button class="dn-btn dn-btn-export" onclick="exportarExcel()">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </button>
+        </div>
     </div>
+    <div id="dnSyncStatus" style="font-size:.78rem;color:#0369a1;margin-bottom:.5rem;display:none;"></div>
 
     <!-- FILTROS -->
     <form method="GET" action="{{ url_for('neo.distribucion_neo') }}" class="dn-filters">
@@ -128,6 +135,44 @@ body { background: var(--dn-bg); }
 {% block scripts %}
 <script src="https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+function dnSincronizar() {
+    const btn    = document.getElementById('dnBtnSync');
+    const status = document.getElementById('dnSyncStatus');
+    const desde  = document.querySelector('input[name="fecha_desde"]').value
+                   || new Date().toISOString().slice(0,10);
+    const hasta  = document.querySelector('input[name="fecha_hasta"]').value || desde;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sincronizando…';
+    status.style.display = 'block';
+    status.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Conectando con GPS Monitor…';
+
+    fetch('/coordinador/plan/sincronizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ desde: desde, hasta: hasta })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.ok) {
+            status.innerHTML = `<i class="bi bi-check-circle-fill me-1" style="color:#15803d"></i>
+                Sincronizado: ${d.insertados ?? 0} registros. Recargando…`;
+            setTimeout(() => window.location.reload(), 1200);
+        } else {
+            status.innerHTML = `<i class="bi bi-x-circle-fill me-1" style="color:#dc2626"></i>${d.error || 'Error al sincronizar'}`;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Sincronizar';
+        }
+    })
+    .catch(() => {
+        status.innerHTML = '<i class="bi bi-x-circle-fill me-1" style="color:#dc2626"></i>Error de conexión';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Sincronizar';
+    });
+}
+</script>
 
 <script type="application/json" id="datos-distribucion-neo">{{ datos_tabla|safe }}</script>
 

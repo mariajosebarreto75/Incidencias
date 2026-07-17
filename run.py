@@ -83,16 +83,24 @@ def create_app():
                 from app.services.sincronizar_alertas import sincronizar
                 sincronizar()
 
-        # Sincroniza el plan del día desde GPS Monitor todos los días a las 5:30 AM
-        @scheduler.task("cron", id="sync_plan_gps", hour=5, minute=30, misfire_grace_time=300)
+        # Sincroniza el plan del día automáticamente cada 30 minutos
+        @scheduler.task("interval", id="sync_plan_gps", minutes=10, misfire_grace_time=60)
         def job_sync_plan():
             with app.app_context():
                 from app.services.sincronizar_plan import sincronizar_plan
-                sincronizar_plan()
+                sincronizar_plan()  # sin args → hoy
 
         # Evita doble arranque con el reloader de Flask en modo debug
         if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
             scheduler.start()
+            # Sincronización inicial al arrancar para que los datos estén disponibles de inmediato
+            try:
+                with app.app_context():
+                    from app.services.sincronizar_plan import sincronizar_plan
+                    resultado = sincronizar_plan()
+                    print(f"[Plan GPS] Sync inicial: {resultado}")
+            except Exception as e:
+                print(f"[Plan GPS] Sync inicial falló: {e}")
 
     # Blueprints
     app.register_blueprint(auth)
