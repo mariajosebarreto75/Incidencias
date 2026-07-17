@@ -1,6 +1,7 @@
 {% extends 'coordinador/navbarcoor.html' %}
 
 {% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/neo/ValidarNeo.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/coordinador/PanelCoor.css') }}">
 <style>
 /* ── Notif drawer coordinador ──────────────────────── */
@@ -75,41 +76,39 @@
 
 {% block content %}
 
-<div class="container-fluid px-4 py-4">
+<div class="vr-page">
 
     <!-- HEADER -->
-    <div class="coor-rpt-header mb-4">
-        <div>
-            <h2 class="coor-rpt-title">
-                <i class="bi bi-bar-chart-line-fill me-2"></i>Panel de Reportes NEO
-            </h2>
-            <p class="coor-rpt-sub">
-                Revise las incidencias de sus contratos y registre su respuesta
-            </p>
+    <div class="vr-header">
+        <div class="vr-header-left">
+            <div class="vr-header-icon" style="background:linear-gradient(135deg,#1e293b,#007E92)">
+                <i class="bi bi-bar-chart-line-fill"></i>
+            </div>
+            <div>
+                <div class="vr-header-title">Panel de Reportes NEO</div>
+                <div class="vr-header-sub">Revise las incidencias y registre su respuesta</div>
+            </div>
         </div>
-        <span class="badge-coor-total">
-            <i class="bi bi-files me-1"></i>
-            {{ reportes|length }} reporte{% if reportes|length != 1 %}s{% endif %}
-        </span>
+        <div class="vr-header-right">
+            <div class="vr-stat-chip">
+                <span class="vr-stat-num" id="vrContador">{{ reportes|length }}</span>
+                <span class="vr-stat-lbl">reportes</span>
+            </div>
+        </div>
     </div>
 
     <!-- FILTRO POR CONTRATO -->
     {% if lista_contratos|length > 1 %}
     <div class="coor-contratos-bar mb-3">
-        <span class="coor-contratos-label">
-            <i class="bi bi-file-earmark-text me-1"></i>Contrato:
-        </span>
+        <span class="coor-contratos-label"><i class="bi bi-file-earmark-text me-1"></i>Contrato:</span>
         <div class="d-flex gap-2 flex-wrap">
             <a href="{{ url_for('coordinador.panel_reportes') }}"
-               class="btn-contrato {% if contrato_activo == 'todos' %}active{% endif %}">
-                Todos
-            </a>
+               class="btn-contrato {% if contrato_activo == 'todos' %}active{% endif %}">Todos</a>
             {% for c in lista_contratos %}
             <a href="{{ url_for('coordinador.panel_reportes', contrato=c,
                          fecha_ini=filtros.fecha_ini, fecha_fin=filtros.fecha_fin,
                          recurso=filtros.recurso) }}"
-               class="btn-contrato {% if contrato_activo == c %}active{% endif %}"
-               title="{{ c }}">
+               class="btn-contrato {% if contrato_activo == c %}active{% endif %}" title="{{ c }}">
                 {{ c | truncate(30, true, '…') }}
             </a>
             {% endfor %}
@@ -117,98 +116,74 @@
     </div>
     {% elif lista_contratos|length == 1 %}
     <div class="coor-contrato-unico mb-3">
-        <i class="bi bi-file-earmark-check-fill me-1"></i>
-        Contrato: <strong>{{ lista_contratos[0] }}</strong>
+        <i class="bi bi-file-earmark-check-fill me-1"></i>Contrato: <strong>{{ lista_contratos[0] }}</strong>
     </div>
     {% endif %}
 
-    <!-- FILTROS FECHA Y RECURSO -->
-    <form method="GET" action="{{ url_for('coordinador.panel_reportes') }}"
-          class="coor-filtros-form mb-3">
+    <!-- FILTROS -->
+    <div class="vr-filtros-panel">
+        <form method="GET" action="{{ url_for('coordinador.panel_reportes') }}" class="vr-filtros-form">
+            {% if contrato_activo != 'todos' %}
+            <input type="hidden" name="contrato" value="{{ contrato_activo }}">
+            {% endif %}
+            <div class="vr-filtros-grid">
+                <div class="vr-fg">
+                    <label class="vr-flbl"><i class="bi bi-calendar-range"></i> Desde</label>
+                    <input type="date" name="fecha_ini" class="vr-finput" value="{{ filtros.fecha_ini }}">
+                </div>
+                <div class="vr-fg">
+                    <label class="vr-flbl"><i class="bi bi-calendar-range"></i> Hasta</label>
+                    <input type="date" name="fecha_fin" class="vr-finput" value="{{ filtros.fecha_fin }}">
+                </div>
+                <div class="vr-fg vr-fg-wide">
+                    <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso</label>
+                    <select name="recurso" class="vr-finput">
+                        <option value="">— Todos —</option>
+                        {% for r in lista_recursos %}
+                        <option value="{{ r }}" {% if filtros.recurso == r %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="vr-filtros-acciones">
+                    <button type="submit" class="vr-btn-filtrar"><i class="bi bi-search"></i> Filtrar</button>
+                    <a href="{{ url_for('coordinador.panel_reportes', contrato=contrato_activo if contrato_activo != 'todos' else '') }}"
+                       class="vr-btn-limpiar"><i class="bi bi-x-circle"></i> Limpiar</a>
+                </div>
+            </div>
+        </form>
+    </div>
 
-        {% if contrato_activo != 'todos' %}
-        <input type="hidden" name="contrato" value="{{ contrato_activo }}">
-        {% endif %}
+    <!-- TABS -->
+    <div class="vr-tabs-bar">
+        <button class="vr-tab active" data-filtro="todos"><i class="bi bi-list-ul"></i> Todos <span class="vr-tab-cnt" id="cnt-todos">{{ reportes|length }}</span></button>
+        <button class="vr-tab pendiente" data-filtro="abierto"><i class="bi bi-hourglass-split"></i> Sin respuesta <span class="vr-tab-cnt" id="cnt-abierto">0</span></button>
+        <button class="vr-tab con-respuesta" data-filtro="con-respuesta"><i class="bi bi-chat-left-text-fill"></i> En espera <span class="vr-tab-cnt" id="cnt-con-respuesta">0</span></button>
+        <button class="vr-tab conforme" data-filtro="conforme"><i class="bi bi-check-circle-fill"></i> Conformes <span class="vr-tab-cnt" id="cnt-conforme">0</span></button>
+        <button class="vr-tab no-conforme" data-filtro="no-conforme"><i class="bi bi-x-circle-fill"></i> No conformes <span class="vr-tab-cnt" id="cnt-no-conforme">0</span></button>
+    </div>
 
-        <div class="filtro-grupo">
-            <label class="filtro-label">
-                <i class="bi bi-calendar-range me-1"></i>Desde
-            </label>
-            <input type="date" name="fecha_ini" class="filtro-input"
-                   value="{{ filtros.fecha_ini }}">
-        </div>
-
-        <div class="filtro-grupo">
-            <label class="filtro-label">
-                <i class="bi bi-calendar-range me-1"></i>Hasta
-            </label>
-            <input type="date" name="fecha_fin" class="filtro-input"
-                   value="{{ filtros.fecha_fin }}">
-        </div>
-
-        <div class="filtro-grupo filtro-recurso">
-            <label class="filtro-label">
-                <i class="bi bi-person-gear me-1"></i>Recurso
-            </label>
-            <select name="recurso" class="filtro-input">
-                <option value="">— Todos —</option>
-                {% for r in lista_recursos %}
-                <option value="{{ r }}" {% if filtros.recurso == r %}selected{% endif %}>
-                    {{ r }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="filtro-acciones">
-            <button type="submit" class="btn-filtro-aplicar">
-                <i class="bi bi-search me-1"></i>Filtrar
-            </button>
-            <a href="{{ url_for('coordinador.panel_reportes',
-                         contrato=contrato_activo if contrato_activo != 'todos' else '') }}"
-               class="btn-filtro-limpiar">
-                <i class="bi bi-x-circle me-1"></i>Limpiar
-            </a>
-        </div>
-
-    </form>
-
-    <!-- FILTROS RÁPIDOS POR ESTADO -->
-    <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
-        <span class="text-muted small fw-semibold">Ver:</span>
-        <button class="btn-filtro active" data-filtro="todos">
-            <i class="bi bi-list-ul me-1"></i>Todos
-        </button>
-        <button class="btn-filtro pendiente" data-filtro="abierto"> 
-            <i class="bi bi-hourglass-split me-1"></i>Sin respuesta
-        </button>
-        <button class="btn-filtro con-respuesta" data-filtro="con-respuesta">
-            <i class="bi bi-chat-left-text-fill me-1"></i>En espera de conformidad
-        </button>
-        <button class="btn-filtro conforme" data-filtro="conforme">
-            <i class="bi bi-check-circle-fill me-1"></i>Conformes
-        </button>
-        <button class="btn-filtro no-conforme" data-filtro="no-conforme">
-            <i class="bi bi-x-circle-fill me-1"></i>No conformes
-        </button>
+    <!-- BUSCADOR -->
+    <div class="vr-search-bar">
+        <i class="bi bi-search vr-search-ico"></i>
+        <input type="text" id="vrBuscar" class="vr-search-input" placeholder="Buscar por recurso, tipo de incidencia, contrato…">
+        <span class="vr-search-clear" id="vrBuscarClear" title="Limpiar">×</span>
     </div>
 
     <!-- TABLA -->
     {% if reportes %}
-    <div class="coor-tabla-wrap">
-        <table class="table coor-tabla">
+    <div class="vr-tabla-wrap">
+        <table class="vr-tabla" id="vrTabla">
             <thead>
                 <tr>
-                    <th>Creación</th>
                     <th>Fecha reporte</th>
                     {% if lista_contratos|length > 1 and contrato_activo == 'todos' %}
                     <th>Contrato</th>
                     {% endif %}
                     <th>Recurso</th>
                     <th>Tipo incidencia</th>
-                    <th>Impacto</th>
-                    <th>Estado</th>
-                    <th></th>
+                    <th class="vr-th-center">Impacto</th>
+                    <th class="vr-th-center">Estado</th>
+                    <th class="vr-th-center"></th>
                 </tr>
             </thead>
             <tbody>
@@ -222,55 +197,46 @@
                 {% else %}
                     {% set cat = 'abierto' %}
                 {% endif %}
-                <tr class="coor-fila" data-categoria="{{ cat }}">
-                    <td class="text-muted small">
-                        {{ r.fecha_creado.strftime('%d/%m/%Y %H:%M') if r.fecha_creado else '—' }}
+                <tr class="vr-fila coor-fila" data-categoria="{{ cat }}"
+                    data-texto="{{ (r.contrato or '') ~ ' ' ~ (r.recurso or '') ~ ' ' ~ (r.tipo_incidencia or '') }}">
+                    <td class="vr-td-fecha">
+                        <div class="vr-fecha-principal">{{ r.fecha_reporte.strftime('%d/%m/%Y') if r.fecha_reporte else '—' }}</div>
+                        <div class="vr-fecha-sub">Creado {{ r.fecha_creado.strftime('%d/%m/%Y') if r.fecha_creado else '—' }}</div>
                     </td>
-                    <td>{{ r.fecha_reporte.strftime('%d/%m/%Y') if r.fecha_reporte else '—' }}</td>
                     {% if lista_contratos|length > 1 and contrato_activo == 'todos' %}
-                    <td style="white-space:nowrap;" title="{{ r.contrato }}">
-                        {{ r.contrato }}
+                    <td class="vr-td-contrato" title="{{ r.contrato }}">
+                        <span class="vr-contrato-chip">{{ r.contrato }}</span>
                     </td>
                     {% endif %}
-                    <td>{{ r.recurso }}</td>
-                    <td>{{ r.tipo_incidencia }}</td>
-                    <td>
+                    <td class="vr-td-recurso">{{ r.recurso or '—' }}</td>
+                    <td class="vr-td-tipo">{{ r.tipo_incidencia or '—' }}</td>
+                    <td class="vr-th-center">
                         {% if r.impacto == 'Alto' %}
-                            <span class="badge-impacto alto">Alto</span>
+                            <span class="vr-badge-imp alto"><i class="bi bi-exclamation-triangle-fill"></i> Alto</span>
                         {% elif r.impacto == 'Medio' %}
-                            <span class="badge-impacto medio">Medio</span>
+                            <span class="vr-badge-imp medio"><i class="bi bi-dash-circle-fill"></i> Medio</span>
                         {% elif r.impacto == 'Bajo' %}
-                            <span class="badge-impacto bajo">Bajo</span>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
+                            <span class="vr-badge-imp bajo"><i class="bi bi-check-circle-fill"></i> Bajo</span>
+                        {% else %}<span class="text-muted">—</span>{% endif %}
                     </td>
-                    <td>
+                    <td class="vr-th-center">
                         {% if cat == 'no-conforme' %}
-                            <span class="badge-estado no-conforme">
-                                <i class="bi bi-x-circle-fill me-1"></i>No conforme
-                            </span>
+                            <span class="vr-badge-est no-conforme"><i class="bi bi-x-circle-fill"></i> No conforme</span>
                         {% elif cat == 'conforme' %}
-                            <span class="badge-estado conforme">
-                                <i class="bi bi-check-circle-fill me-1"></i>Conforme
-                            </span>
+                            <span class="vr-badge-est conforme"><i class="bi bi-check-circle-fill"></i> Conforme</span>
                         {% elif cat == 'con-respuesta' %}
-                            <span class="badge-estado con-respuesta">
-                                <i class="bi bi-chat-left-text-fill me-1"></i>Con respuesta
-                            </span>
+                            <span class="vr-badge-est con-respuesta"><i class="bi bi-chat-left-text-fill"></i> Con respuesta</span>
                         {% else %}
-                            <span class="badge-estado abierto">
-                                <i class="bi bi-hourglass-split me-1"></i>Sin respuesta
-                            </span>
+                            <span class="vr-badge-est abierto"><i class="bi bi-hourglass-split"></i> Sin respuesta</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <td class="vr-th-center">
                         <a href="{{ url_for('coordinador.detalle_reporte', id=r.id) }}"
-                           class="btn-ver-detalle">
+                           class="vr-btn-ver {% if cat == 'abierto' %}vr-btn-responder{% endif %}">
                             {% if cat == 'abierto' %}
-                                <i class="bi bi-pencil-square me-1"></i>Responder
+                                <i class="bi bi-pencil-square"></i> Responder
                             {% else %}
-                                <i class="bi bi-eye me-1"></i>Ver
+                                <i class="bi bi-eye-fill"></i> Ver
                             {% endif %}
                         </a>
                     </td>
@@ -278,18 +244,19 @@
                 {% endfor %}
             </tbody>
         </table>
+        <div class="vr-no-resultados d-none" id="vrNoResultados">
+            <i class="bi bi-funnel"></i><p>No hay reportes que coincidan.</p>
+        </div>
     </div>
 
     {% else %}
-    <div class="coor-empty">
+    <div class="vr-empty">
         <i class="bi bi-inbox"></i>
         <p>
             {% if filtros.fecha_ini or filtros.fecha_fin or filtros.recurso %}
                 No hay reportes que coincidan con los filtros aplicados.
             {% elif lista_contratos %}
-                No hay reportes para
-                {% if contrato_activo != 'todos' %}<strong>{{ contrato_activo }}</strong>{% else %}sus contratos{% endif %}
-                aún.
+                No hay reportes para {% if contrato_activo != 'todos' %}<strong>{{ contrato_activo }}</strong>{% else %}sus contratos{% endif %} aún.
             {% else %}
                 No tiene contratos asignados.
             {% endif %}
@@ -333,20 +300,59 @@
 
 <script>
 (function () {
-    const btns = document.querySelectorAll(".btn-filtro");
-    const filas = document.querySelectorAll(".coor-fila");
+    const filas = Array.from(document.querySelectorAll(".vr-fila"));
+    const cats  = ["todos","abierto","con-respuesta","conforme","no-conforme"];
+    cats.forEach(c => {
+        const el = document.getElementById("cnt-" + c);
+        if (!el) return;
+        el.textContent = c === "todos" ? filas.length
+            : filas.filter(f => f.dataset.categoria === c).length;
+    });
 
-    btns.forEach(function (btn) {
+    const inputBuscar = document.getElementById("vrBuscar");
+    const btnClear    = document.getElementById("vrBuscarClear");
+    const noRes       = document.getElementById("vrNoResultados");
+    let   filtroTab   = "todos";
+    let   textoBuscar = "";
+
+    function aplicarFiltros() {
+        let visibles = 0;
+        filas.forEach(f => {
+            const matchTab = filtroTab === "todos" || f.dataset.categoria === filtroTab;
+            const matchTxt = !textoBuscar || (f.dataset.texto || "").toLowerCase().includes(textoBuscar);
+            const mostrar  = matchTab && matchTxt;
+            f.style.display = mostrar ? "" : "none";
+            if (mostrar) visibles++;
+        });
+        const cnt = document.getElementById("vrContador");
+        if (cnt) cnt.textContent = visibles;
+        if (noRes) noRes.classList.toggle("d-none", visibles > 0);
+    }
+
+    if (inputBuscar) {
+        inputBuscar.addEventListener("input", function () {
+            textoBuscar = this.value.trim().toLowerCase();
+            btnClear.style.display = textoBuscar ? "" : "none";
+            aplicarFiltros();
+        });
+        if (btnClear) btnClear.addEventListener("click", function () {
+            inputBuscar.value = "";
+            textoBuscar = "";
+            btnClear.style.display = "none";
+            aplicarFiltros();
+        });
+    }
+
+    document.querySelectorAll(".vr-tab").forEach(btn => {
         btn.addEventListener("click", function () {
-            btns.forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            const filtro = btn.dataset.filtro;
-            filas.forEach(function (fila) {
-                fila.style.display =
-                    (filtro === "todos" || fila.dataset.categoria === filtro) ? "" : "none";
-            });
+            document.querySelectorAll(".vr-tab").forEach(b => b.classList.remove("active"));
+            this.classList.add("active");
+            filtroTab = this.dataset.filtro;
+            aplicarFiltros();
         });
     });
+
+    aplicarFiltros();
 })();
 
 // ══ NOTIFICACIONES COORDINADOR ════════════════════════════════
