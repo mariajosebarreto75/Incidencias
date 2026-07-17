@@ -219,7 +219,7 @@
             {% endif %}
             {% endwith %}
 
-            <form method="POST">
+            <form method="POST" action="{{ url_for('auth.login') }}">
                 <div class="form-group">
                     <label class="form-label">Usuario</label>
                     <div class="input-wrap">
