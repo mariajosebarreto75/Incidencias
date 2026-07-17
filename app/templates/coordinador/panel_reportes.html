@@ -4,22 +4,38 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/coordinador/PanelCoor.css') }}">
 <style>
 /* ── Notif drawer coordinador ──────────────────────── */
+#ndcBtnWrap {
+    position: fixed; bottom: 16px; left: 16px; z-index: 1040;
+}
 #btnNotifDrawerCoor {
-    position: fixed; bottom: 28px; left: 28px; z-index: 1040;
     background: #0a1628; color: #e53935;
     border: 2px solid #e53935; border-radius: 50px;
-    padding: 10px 20px; font-size: .82rem; font-weight: 800;
-    display: flex; align-items: center; gap: 8px;
+    padding: 7px 14px; font-size: .76rem; font-weight: 800;
+    display: flex; align-items: center; gap: 6px;
     box-shadow: 0 4px 20px rgba(0,0,0,.35);
-    cursor: pointer; transition: background .15s, color .15s;
+    cursor: pointer; transition: background .15s, color .15s, max-width .25s, padding .25s;
+    max-width: 180px; overflow: hidden; white-space: nowrap;
 }
 #btnNotifDrawerCoor:hover { background: #e53935; color: #fff; }
 #btnNotifDrawerCoor .ndc-badge {
     background: #e53935; color: #fff;
-    border-radius: 20px; padding: 1px 8px;
-    font-size: .7rem; font-weight: 900; display: none;
+    border-radius: 20px; padding: 1px 7px;
+    font-size: .68rem; font-weight: 900; display: none;
 }
 #btnNotifDrawerCoor:hover .ndc-badge { background: #fff; color: #e53935; }
+#ndcBtnWrap.collapsed #btnNotifDrawerCoor {
+    padding: 7px 10px; max-width: 44px; border-radius: 50%;
+}
+#ndcBtnWrap.collapsed #ndcBtnLabel { display: none; }
+#ndcBtnToggle {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #1e3a52; border: 1px solid #e53935;
+    color: #e53935; font-size: .62rem; font-weight: 900;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.4); transition: background .15s;
+    position: absolute; top: -5px; left: -5px; z-index: 2;
+}
+#ndcBtnToggle:hover { background: #e53935; color: #fff; }
 
 #ndcOverlay {
     display: none; position: fixed; inset: 0; z-index: 1045;
@@ -183,7 +199,6 @@
         <table class="table coor-tabla">
             <thead>
                 <tr>
-                    <th>#</th>
                     <th>Creación</th>
                     <th>Fecha reporte</th>
                     {% if lista_contratos|length > 1 and contrato_activo == 'todos' %}
@@ -208,7 +223,6 @@
                     {% set cat = 'abierto' %}
                 {% endif %}
                 <tr class="coor-fila" data-categoria="{{ cat }}">
-                    <td class="fw-bold text-secondary">#{{ r.id }}</td>
                     <td class="text-muted small">
                         {{ r.fecha_creado.strftime('%d/%m/%Y %H:%M') if r.fecha_creado else '—' }}
                     </td>
@@ -286,11 +300,14 @@
 </div>
 
 <!-- ══ BOTÓN NOTIF COORDINADOR (IZQUIERDA) ════════════════════ -->
-<button id="btnNotifDrawerCoor" onclick="ndcAbrir()">
-    <i class="bi bi-bell-fill"></i>
-    Notificaciones
-    <span class="ndc-badge" id="ndcBadge">0</span>
-</button>
+<div id="ndcBtnWrap" style="position:relative;">
+    <button id="ndcBtnToggle" onclick="ndcToggleBtn()" title="Minimizar / expandir">×</button>
+    <button id="btnNotifDrawerCoor" onclick="ndcAbrir()">
+        <i class="bi bi-bell-fill"></i>
+        <span id="ndcBtnLabel">Notificaciones</span>
+        <span class="ndc-badge" id="ndcBadge">0</span>
+    </button>
+</div>
 
 <div id="ndcOverlay" onclick="ndcCerrar()"></div>
 
@@ -439,6 +456,21 @@ function ndcVisualizado(nid) {
         .then(r => r.json())
         .then(d => { if (d.ok) { ndcCargar(); ndcRefreshBadge(); } });
 }
+function ndcToggleBtn() {
+    const wrap = document.getElementById("ndcBtnWrap");
+    const tog  = document.getElementById("ndcBtnToggle");
+    const collapsed = wrap.classList.toggle("collapsed");
+    tog.textContent = collapsed ? "▶" : "×";
+    tog.title = collapsed ? "Expandir" : "Minimizar";
+    localStorage.setItem("ndcBtnCollapsed", collapsed ? "1" : "0");
+}
+(function() {
+    if (localStorage.getItem("ndcBtnCollapsed") === "1") {
+        const wrap = document.getElementById("ndcBtnWrap");
+        const tog  = document.getElementById("ndcBtnToggle");
+        if (wrap) { wrap.classList.add("collapsed"); tog.textContent = "▶"; tog.title = "Expandir"; }
+    }
+})();
 </script>
 
 {% endblock %}

@@ -138,7 +138,6 @@
                         <input type="checkbox" id="chkTodos" class="neo-check"
                                title="Seleccionar todos">
                     </th>
-                    <th>#</th>
                     <th>Creación</th>
                     <th>Fecha reporte</th>
                     <th>Contrato</th>
@@ -165,7 +164,6 @@
                         <input type="checkbox" class="neo-check chk-fila"
                                data-id="{{ r.id }}">
                     </td>
-                    <td class="fw-bold text-secondary">#{{ r.id }}</td>
                     <td class="text-muted small">
                         {{ r.fecha_creado.strftime('%d/%m/%Y') if r.fecha_creado else '—' }}
                     </td>

@@ -488,22 +488,39 @@
     {% if current_user.is_authenticated %}
     <!-- ══ DRAWER NOTIFICACIONES (global NEO) ═══════════════════════════════ -->
     <style>
+    #ndBtnWrap {
+        position: fixed; bottom: 16px; left: 16px; z-index: 1040;
+    }
     #btnNotifDrawer {
-        position: fixed; bottom: 28px; left: 28px; z-index: 1040;
         background: #0d1b2a; color: #e53935;
         border: 2px solid #e53935; border-radius: 50px;
-        padding: 10px 20px; font-size: .82rem; font-weight: 800;
-        display: flex; align-items: center; gap: 8px;
+        padding: 7px 14px; font-size: .76rem; font-weight: 800;
+        display: flex; align-items: center; gap: 6px;
         box-shadow: 0 4px 20px rgba(0,0,0,.35);
-        cursor: pointer; transition: background .15s, color .15s;
+        cursor: pointer; transition: background .15s, color .15s, max-width .25s, padding .25s;
+        max-width: 180px; overflow: hidden; white-space: nowrap;
     }
     #btnNotifDrawer:hover { background: #e53935; color: #fff; }
     #btnNotifDrawer .nd-badge {
         background: #e53935; color: #fff;
-        border-radius: 20px; padding: 1px 8px;
-        font-size: .7rem; font-weight: 900; display: none;
+        border-radius: 20px; padding: 1px 7px;
+        font-size: .68rem; font-weight: 900; display: none;
     }
     #btnNotifDrawer:hover .nd-badge { background: #fff; color: #e53935; }
+    #ndBtnWrap.collapsed #btnNotifDrawer {
+        padding: 7px 10px; max-width: 44px; border-radius: 50%;
+    }
+    #ndBtnWrap.collapsed #ndBtnLabel { display: none; }
+    #ndBtnToggle {
+        width: 20px; height: 20px; border-radius: 50%;
+        background: #1e3a52; border: 1px solid #e53935;
+        color: #e53935; font-size: .62rem; font-weight: 900;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,.4);
+        transition: background .15s;
+        position: absolute; top: -5px; left: -5px; z-index: 2;
+    }
+    #ndBtnToggle:hover { background: #e53935; color: #fff; }
     #ndOverlay {
         display: none; position: fixed; inset: 0; z-index: 1045;
         background: rgba(0,0,0,.45); backdrop-filter: blur(2px);
@@ -529,11 +546,14 @@
     .nd-btn-visualizado:hover { background: #162d44; color: #e2e8f0; }
     </style>
 
-    <button id="btnNotifDrawer" onclick="ndAbrir()">
-        <i class="bi bi-bell-fill"></i>
-        Notificaciones
-        <span class="nd-badge" id="ndBadge">0</span>
-    </button>
+    <div id="ndBtnWrap" style="position:relative;">
+        <button id="ndBtnToggle" onclick="ndToggleBtn()" title="Minimizar / expandir">×</button>
+        <button id="btnNotifDrawer" onclick="ndAbrir()">
+            <i class="bi bi-bell-fill"></i>
+            <span id="ndBtnLabel">Notificaciones</span>
+            <span class="nd-badge" id="ndBadge">0</span>
+        </button>
+    </div>
     <div id="ndOverlay" onclick="ndCerrar()"></div>
     <div id="ndDrawer">
         <div class="ad-header">
@@ -649,40 +669,36 @@
     <!-- ══ DRAWER ALERTAS GPS (global NEO) ══════════════════════════════════ -->
     <style>
     #adBtnWrap {
-        position: fixed; bottom: 28px; right: 28px; z-index: 1040;
-        display: flex; align-items: center; gap: 6px;
+        position: fixed; bottom: 16px; right: 16px; z-index: 1040;
     }
     #btnAlertasDrawer {
         background: #0d1b2a; color: #f5a623;
         border: 2px solid #f5a623; border-radius: 50px;
-        padding: 10px 20px; font-size: .82rem; font-weight: 800;
-        display: flex; align-items: center; gap: 8px;
+        padding: 7px 14px; font-size: .76rem; font-weight: 800;
+        display: flex; align-items: center; gap: 6px;
         box-shadow: 0 4px 20px rgba(0,0,0,.35);
-        cursor: pointer; transition: background .15s, color .15s, max-width .25s, padding .25s, opacity .2s;
-        max-width: 200px; overflow: hidden; white-space: nowrap;
+        cursor: pointer; transition: background .15s, color .15s, max-width .25s, padding .25s;
+        max-width: 180px; overflow: hidden; white-space: nowrap;
     }
     #btnAlertasDrawer:hover { background: #f5a623; color: #0d1b2a; }
     #btnAlertasDrawer .ad-badge {
         background: #f5a623; color: #0d1b2a;
-        border-radius: 20px; padding: 1px 8px;
-        font-size: .7rem; font-weight: 900; display: none;
+        border-radius: 20px; padding: 1px 7px;
+        font-size: .68rem; font-weight: 900; display: none;
     }
     #btnAlertasDrawer:hover .ad-badge { background: #0d1b2a; color: #f5a623; }
-    /* Estado colapsado: solo ícono campana */
     #adBtnWrap.collapsed #btnAlertasDrawer {
-        padding: 10px 13px; max-width: 52px; border-radius: 50%;
+        padding: 7px 10px; max-width: 44px; border-radius: 50%;
     }
     #adBtnWrap.collapsed #adBtnLabel { display: none; }
-    #adBtnWrap.collapsed #btnAlertasDrawer .ad-badge { border-radius: 50%; padding: 1px 6px; }
     #adBtnToggle {
-        width: 22px; height: 22px; border-radius: 50%;
+        width: 20px; height: 20px; border-radius: 50%;
         background: #1e3a52; border: 1px solid #f5a623;
-        color: #f5a623; font-size: .65rem; font-weight: 900;
+        color: #f5a623; font-size: .62rem; font-weight: 900;
         cursor: pointer; display: flex; align-items: center; justify-content: center;
         box-shadow: 0 2px 8px rgba(0,0,0,.4);
         transition: background .15s;
-        position: absolute; top: -6px; left: -6px;
-        z-index: 2;
+        position: absolute; top: -5px; left: -5px; z-index: 2;
     }
     #adBtnToggle:hover { background: #f5a623; color: #0d1b2a; }
     #adOverlay {
@@ -841,11 +857,25 @@
         localStorage.setItem("adBtnCollapsed", collapsed ? "1" : "0");
     }
 
-    // Restaurar estado colapsado entre páginas
+    function ndToggleBtn() {
+        const wrap = document.getElementById("ndBtnWrap");
+        const tog  = document.getElementById("ndBtnToggle");
+        const collapsed = wrap.classList.toggle("collapsed");
+        tog.textContent = collapsed ? "▶" : "×";
+        tog.title = collapsed ? "Expandir" : "Minimizar";
+        localStorage.setItem("ndBtnCollapsed", collapsed ? "1" : "0");
+    }
+
+    // Restaurar estados colapsados entre páginas
     (function() {
         if (localStorage.getItem("adBtnCollapsed") === "1") {
             const wrap = document.getElementById("adBtnWrap");
             const tog  = document.getElementById("adBtnToggle");
+            if (wrap) { wrap.classList.add("collapsed"); tog.textContent = "▶"; tog.title = "Expandir"; }
+        }
+        if (localStorage.getItem("ndBtnCollapsed") === "1") {
+            const wrap = document.getElementById("ndBtnWrap");
+            const tog  = document.getElementById("ndBtnToggle");
             if (wrap) { wrap.classList.add("collapsed"); tog.textContent = "▶"; tog.title = "Expandir"; }
         }
     })();

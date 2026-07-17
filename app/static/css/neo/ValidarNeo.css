@@ -33,23 +33,23 @@
 /* ===== FORMULARIO DE FILTROS SERVIDOR ===== */
 .neo-filtros-form {
     display: flex;
-    align-items: flex-end;
-    gap: 10px;
+    align-items: center;
+    gap: 6px;
     flex-wrap: wrap;
     background: #fff;
-    border-radius: 12px;
-    padding: 14px 18px;
+    border-radius: 10px;
+    padding: 8px 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
 
 .filtro-grupo {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .filtro-label {
-    font-size: .72rem;
+    font-size: .65rem;
     font-weight: 700;
     color: #8a9bb0;
     text-transform: uppercase;
@@ -58,34 +58,34 @@
 
 .filtro-input {
     border: 1.5px solid #dce5ea;
-    border-radius: 9px;
-    padding: 7px 10px;
-    font-size: .85rem;
+    border-radius: 7px;
+    padding: 4px 7px;
+    font-size: .78rem;
     color: #1a2e35;
     background: #f7fbfc;
     transition: border-color .2s;
-    height: 36px;
+    height: 30px;
 }
 
 .filtro-input:focus {
     outline: none;
     border-color: #00B7C7;
-    box-shadow: 0 0 0 3px rgba(0,183,199,.12);
+    box-shadow: 0 0 0 2px rgba(0,183,199,.12);
 }
 
-.filtro-acciones { display: flex; gap: 8px; align-items: flex-end; }
+.filtro-acciones { display: flex; gap: 6px; align-items: flex-end; }
 
 .btn-filtro-aplicar {
     background: #00B7C7;
     color: #fff;
     border: none;
-    border-radius: 9px;
-    padding: 7px 16px;
-    font-size: .82rem;
+    border-radius: 7px;
+    padding: 4px 12px;
+    font-size: .76rem;
     font-weight: 700;
     cursor: pointer;
     transition: all .2s;
-    height: 36px;
+    height: 30px;
     white-space: nowrap;
 }
 
@@ -95,14 +95,14 @@
     background: #f0f4f6;
     color: #555;
     border: 1.5px solid #dce5ea;
-    border-radius: 9px;
-    padding: 6px 14px;
-    font-size: .82rem;
+    border-radius: 7px;
+    padding: 3px 10px;
+    font-size: .76rem;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
     transition: all .2s;
-    height: 36px;
+    height: 30px;
     display: inline-flex;
     align-items: center;
     white-space: nowrap;
@@ -178,25 +178,25 @@
     background: #fff;
     border-radius: 14px;
     box-shadow: 0 2px 12px rgba(0,0,0,.05);
-    overflow: hidden;
+    overflow-x: auto;
 }
 
-.neo-tabla { margin: 0; font-size: .87rem; }
+.neo-tabla { margin: 0; font-size: .83rem; min-width: 700px; }
 
 .neo-tabla thead th {
     background: #0a1f2e;
     color: rgba(255,255,255,.85);
-    font-size: .75rem;
+    font-size: .72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .5px;
     border: none;
-    padding: 12px 14px;
+    padding: 9px 12px;
     white-space: nowrap;
 }
 
 .neo-tabla tbody td {
-    padding: 11px 14px;
+    padding: 8px 12px;
     border-color: #f0f4f6;
     vertical-align: middle;
 }
