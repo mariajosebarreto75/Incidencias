@@ -324,11 +324,10 @@ function calcularDuracion() {
     chip.textContent = formato;
     document.getElementById("duracion").value = formato;
 
-    const horasDecimal =
-        ((horas * 3600) + (minutos * 60) + segundos) / 3600;
+    const totalMinutos = horas * 60 + minutos + segundos / 60;
 
     const ha = document.getElementById("horas_afectadas");
-    if (ha) ha.value = horasDecimal.toFixed(6);
+    if (ha) ha.value = (totalMinutos / 60).toFixed(4);
 
     determinarImpacto();
 
@@ -394,14 +393,11 @@ function determinarImpacto() {
     if (impacto === "Medio") impactoEl.classList.add("impacto-medio");
     if (impacto === "Bajo")  impactoEl.classList.add("impacto-bajo");
 
-    // Afectación económica
-    const horas = parseFloat(
-        document.getElementById("horas_afectadas")?.value || 0
-    ) || 0;
-
-    const tarifas = { "Bajo": 20000, "Medio": 50000, "Alto": 100000 };
-    const afEl = document.getElementById("afectacion");
-    if (afEl) afEl.value = ((tarifas[impacto] || 0) * horas).toFixed(2);
+    // Afectación económica: Meta / 7 * duración_en_minutos
+    const meta        = parseFloat(document.getElementById("meta")?.value || 0) || 0;
+    const duracionMin = duracionAMinutos(document.getElementById("duracion").value);
+    const afEl        = document.getElementById("afectacion");
+    if (afEl) afEl.value = meta > 0 ? ((meta / 7) * duracionMin).toFixed(2) : "";
 
 }
 
