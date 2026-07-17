@@ -929,15 +929,22 @@
                                     ${adCampo("Fecha plan", a.plan_date || "—")}
                                     ${a.lat && a.lon
                                         ? `<div style="grid-column:1/-1;margin-top:4px">
-                                               <div style="font-size:.6rem;color:#7a97b0;text-transform:uppercase;font-weight:700;letter-spacing:.06em;margin-bottom:4px">Ubicación</div>
-                                               <iframe
-                                                   src="https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(a.lon)-0.003},${parseFloat(a.lat)-0.003},${parseFloat(a.lon)+0.003},${parseFloat(a.lat)+0.003}&layer=mapnik&marker=${a.lat},${a.lon}"
-                                                   style="width:100%;height:140px;border:none;border-radius:7px;display:block;"
-                                                   loading="lazy">
-                                               </iframe>
+                                               <div style="font-size:.6rem;color:#7a97b0;text-transform:uppercase;font-weight:700;letter-spacing:.06em;margin-bottom:6px">Ubicación</div>
+                                               <div style="font-size:.73rem;color:#c9d8e8;margin-bottom:6px;font-family:monospace">
+                                                   ${parseFloat(a.lat).toFixed(5)}, ${parseFloat(a.lon).toFixed(5)}
+                                               </div>
                                                <a href="https://maps.google.com/?q=${a.lat},${a.lon}" target="_blank"
-                                                  style="display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:.68rem;color:#00b8c9;text-decoration:none">
-                                                   <i class="bi bi-box-arrow-up-right"></i> Abrir en Google Maps
+                                                  style="display:flex;align-items:center;justify-content:center;gap:8px;
+                                                         background:linear-gradient(135deg,#1a3a55,#1e4a6e);
+                                                         border:1px solid #2a5a8a;border-radius:8px;
+                                                         padding:9px 12px;text-decoration:none;
+                                                         color:#4fc3f7;font-size:.78rem;font-weight:700;
+                                                         transition:background .15s"
+                                                  onmouseover="this.style.background='linear-gradient(135deg,#1e4a6e,#2563a8)'"
+                                                  onmouseout="this.style.background='linear-gradient(135deg,#1a3a55,#1e4a6e)'">
+                                                   <i class="bi bi-geo-alt-fill" style="font-size:1rem;color:#f5a623"></i>
+                                                   Ver en Google Maps
+                                                   <i class="bi bi-box-arrow-up-right" style="font-size:.7rem;opacity:.7"></i>
                                                </a>
                                            </div>`
                                         : adCampo("Ubicación", "—")}
