@@ -1067,6 +1067,7 @@ def badge_alertas():
 def alertas_datos():
     """Devuelve las alertas como JSON para el drawer del panel de reportes."""
     import json as _json
+    from datetime import date as _date, datetime as _dt
 
     filtro   = request.args.get("filtro",   "pendiente")
     placa    = request.args.get("placa",    "").strip().upper()
@@ -1074,6 +1075,8 @@ def alertas_datos():
     recurso  = request.args.get("recurso",  "").strip()
     orden    = request.args.get("orden",    "reciente")
     scope    = request.args.get("scope",    "todos")
+    # Por defecto muestra solo las de hoy; "todas" desactiva el filtro de fecha
+    fecha    = request.args.get("fecha",    "").strip()
 
     q = AlertaGPS.query
     if filtro != "todas":
@@ -1082,6 +1085,17 @@ def alertas_datos():
         q = q.filter(AlertaGPS.contract_code == None)
     elif scope == "con_contrato":
         q = q.filter(AlertaGPS.contract_code != None)
+
+    # Filtro de fecha: si viene vacío o es "hoy" usa la fecha actual
+    if fecha and fecha != "todas":
+        try:
+            f_date = _dt.strptime(fecha, "%Y-%m-%d").date()
+        except ValueError:
+            f_date = _date.today()
+    else:
+        f_date = _date.today()
+    q = q.filter(db.func.date(AlertaGPS.triggered_at) == f_date)
+
     if placa:
         q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
     if contrato:

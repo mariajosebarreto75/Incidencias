@@ -83,12 +83,28 @@ def create_app():
                 from app.services.sincronizar_alertas import sincronizar
                 sincronizar()
 
-        # Sincroniza el plan del día automáticamente cada 30 minutos
+        # Sincroniza el plan del día automáticamente cada 10 minutos
         @scheduler.task("interval", id="sync_plan_gps", minutes=10, misfire_grace_time=60)
         def job_sync_plan():
             with app.app_context():
                 from app.services.sincronizar_plan import sincronizar_plan
                 sincronizar_plan()  # sin args → hoy
+
+        # Purga mensual: el día 1 de cada mes elimina alertas del mes anterior
+        @scheduler.task("cron", id="purga_alertas_mes_anterior", day=1, hour=2, minute=0)
+        def job_purga_alertas():
+            with app.app_context():
+                from datetime import date as _date
+                from app.extensions import db as _db
+                from app.models.alerta_gps import AlertaGPS as _Alerta
+                hoy = _date.today()
+                # Primer día del mes actual → todo lo anterior se elimina
+                inicio_mes_actual = hoy.replace(day=1)
+                eliminadas = _Alerta.query.filter(
+                    _db.func.date(_Alerta.triggered_at) < inicio_mes_actual
+                ).delete(synchronize_session=False)
+                _db.session.commit()
+                print(f"[Purga GPS] {eliminadas} alertas del mes anterior eliminadas ({hoy})")
 
         # Evita doble arranque con el reloader de Flask en modo debug
         if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":

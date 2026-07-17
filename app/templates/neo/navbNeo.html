@@ -765,6 +765,11 @@
                            style="flex:1;background:#0d1b2a;border:1px solid #1e3a5f;border-radius:7px;
                                   color:#c9d8e8;font-size:.76rem;padding:5px 8px;outline:none;"
                            title="Filtrar por fecha">
+                    <button onclick="adFFechaHoy()" title="Hoy"
+                            style="background:#0e2d4a;border:1px solid #1e3a5f;border-radius:7px;
+                                   color:#7ab3d4;font-size:.72rem;padding:4px 7px;cursor:pointer;white-space:nowrap;">
+                        Hoy
+                    </button>
                 </div>
                 <div style="display:flex;gap:6px">
                     <select id="adFContrato" class="ad-sel"><option value="">Contrato…</option></select>
@@ -789,6 +794,19 @@
     let adScopeActual  = "todos";
     let adCargando     = false;
     let adContratos    = [];
+
+    // Inicializa el filtro de fecha con hoy al cargar la página
+    (function() {
+        const hoy = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local
+        const inp = document.getElementById("adFFecha");
+        if (inp) inp.value = hoy;
+    })();
+
+    function adFFechaHoy() {
+        const hoy = new Date().toLocaleDateString("en-CA");
+        document.getElementById("adFFecha").value = hoy;
+        adCargar();
+    }
 
     function fmtHoraAD(utcStr) {
         if (!utcStr) return "—";
@@ -828,7 +846,7 @@
         document.getElementById("adFRecurso").value  = "";
         document.getElementById("adFContrato").value = "";
         document.getElementById("adFOrden").value    = "reciente";
-        document.getElementById("adFFecha").value    = "";
+        document.getElementById("adFFecha").value    = new Date().toLocaleDateString("en-CA");
         adScopeActual = "todos";
         document.querySelectorAll(".ad-scope-btn").forEach(b => b.classList.remove("active"));
         document.querySelector(".ad-scope-btn[data-scope='todos']").classList.add("active");
