@@ -228,7 +228,7 @@
                     </td>
                     <td>{{ r.fecha_reporte.strftime('%d/%m/%Y') if r.fecha_reporte else '—' }}</td>
                     {% if lista_contratos|length > 1 and contrato_activo == 'todos' %}
-                    <td class="text-truncate" style="max-width:160px;" title="{{ r.contrato }}">
+                    <td style="white-space:nowrap;" title="{{ r.contrato }}">
                         {{ r.contrato }}
                     </td>
                     {% endif %}

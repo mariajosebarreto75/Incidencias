@@ -168,7 +168,7 @@
                         {{ r.fecha_creado.strftime('%d/%m/%Y') if r.fecha_creado else '—' }}
                     </td>
                     <td>{{ r.fecha_reporte.strftime('%d/%m/%Y') if r.fecha_reporte else '—' }}</td>
-                    <td class="text-truncate" style="max-width:130px;" title="{{ r.contrato }}">
+                    <td style="white-space:nowrap;" title="{{ r.contrato }}">
                         {{ r.contrato or '—' }}
                     </td>
                     <td>{{ r.recurso or '—' }}</td>
