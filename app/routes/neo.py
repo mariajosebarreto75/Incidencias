@@ -366,7 +366,7 @@ def eliminar_reportes():
 @login_required
 def detalle_neo(id):
     reporte = ReporteOperacional.query.get_or_404(id)
-    if reporte.reportado_por != current_user.username:
+    if current_user.rol.lower() == "neo" and reporte.reportado_por != current_user.username:
         abort(403)
     return render_template("neo/detalle_neo.html", reporte=reporte)
 

@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    volumes:
+      - uploads_data:/app/uploads
     networks:
       - backend-net
       - nginx-proxy
@@ -17,3 +19,6 @@ networks:
     external: true
   nginx-proxy:
     external: true
+
+volumes:
+  uploads_data:
