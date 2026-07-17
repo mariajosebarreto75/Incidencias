@@ -55,44 +55,56 @@ TIPOS_ALERTA = {
 
 RECURSOS_EXTRA_POR_CONTRATO = {
     "Norte Santander (CW356942) - Perdidas - Cucuta": [
-        "Centro Técnico Cúcuta",
-        "SEDE CÚCUTA",
+        "CENTRO TECNICO CUCUTA",
+        "SEDE CUCUTA",
+    ],
+    "Santander (CW368183) - Arboricultura - Bucaramanga": [
+        "CT BUCARAMANGA",
+        "SEDE BUCARAMANGA",
+    ],
+    "Santander (CW369121) - Arboricultura - Barrancabermeja": [
+        "CT BARRANCABERMEJA",
+        "SEDE BARRANCABERMEJA",
     ],
     "Tolima (021) - OyMM - Chaparral": [
-        "Centro Técnico Chaparral OYMM",
-        "SEDE CHAPARRAL",
+        "CENTRO TECNICO OYMM CHAPARRAL",
+        "SEDE OYMM CHAPARRAL",
     ],
     "Tolima (021) - OyMM - Espinal": [
-        "Centro Técnico Espinal OYMM",
-        "SEDE ESPINAL",
+        "CENTRO TECNICO OYMM ESPINAL",
+        "SEDE OYMM ESPINAL",
+    ],
+    "Tolima Mantenimiento (014) - MTTO - Chaparral": [
+        "CENTRO TECNICO MTTO CHAPARRAL",
+        "SEDE MTTO CHAPARRAL",
+    ],
+    "Tolima Mantenimiento (014) - MTTO - Espinal": [
+        "CENTRO TECNICO MTTO ESPINAL",
+        "SEDE MTTO ESPINAL",
     ],
     "Tolima Mantenimiento (2258) - MTTO - Chaparral": [
-        "Centro Técnico Chaparral MTTO",
-        "SEDE CHAPARRAL",
+        "CENTRO TECNICO MTTO CHAPARRAL",
+        "SEDE MTTO CHAPARRAL",
     ],
     "Tolima Mantenimiento (2258) - MTTO - Espinal": [
-        "Centro Técnico Espinal MTTO",
-        "SEDE ESPINAL",
+        "CENTRO TECNICO MTTO ESPINAL",
+        "SEDE MTTO ESPINAL",
     ],
     "Valle Norte Integral (2876) - OYMM - Buga": [
-        "Centro Técnico Buga",
+        "CENTRO TECNICO BUGA",
         "SEDE BUGA",
     ],
     "Valle Norte Integral (2876) - OYMM - Tulua": [
-        "Centro Técnico Tuluá",
-        "SEDE TULUÁ",
+        "CENTRO TECNICO TULUA",
+        "SEDE TULUA",
     ],
     "Valle Norte Integral (2876) - OYMM - Zarzal": [
-        "Centro Técnico Zarzal",
+        "CENTRO TECNICO ZARZAL",
         "SEDE ZARZAL",
     ],
     "Valle Sur Integral (1983) - OYMM - Jamundi": [
-        "Centro Técnico Jamundi",
-        "SEDE JAMUNDÍ",
-    ],
-    "Valle Sur Integral (1983) - OYMM - Palmira": [
-        "Centro Técnico Pradera",
-        "SEDE PALMIRA",
+        "CENTRO TECNICO JAMUNDI",
+        "SEDE JAMUNDI",
     ],
 }
 
@@ -609,8 +621,10 @@ def obtener_recursos():
         .filter_by(contrato=contrato)
         .filter(
             db.or_(
-                RecursoContrato.recurso.like("Centro Técnico%"),
-                RecursoContrato.recurso.like("SEDE %")
+                RecursoContrato.recurso.ilike("Centro Tecnico%"),
+                RecursoContrato.recurso.ilike("Centro Técnico%"),
+                RecursoContrato.recurso.ilike("CT %"),
+                RecursoContrato.recurso.ilike("SEDE %"),
             )
         )
         .all()
@@ -645,9 +659,12 @@ def datos_operativos():
     ).all()
 
     if not registros:
+        ru = recurso.upper()
         es_predefinido = (
-            recurso.startswith("Centro Técnico")
-            or recurso.upper().startswith("SEDE ")
+            ru.startswith("CENTRO TECNICO")
+            or ru.startswith("CENTRO TÉCNICO")
+            or ru.startswith("CT ")
+            or ru.startswith("SEDE ")
         )
         if es_predefinido:
             return jsonify({"success": True, "extra": True, "ordenes": []})
@@ -840,9 +857,12 @@ def guardar_reporte():
 
         recurso_val  = datos["recurso"]
         contrato_val = datos["contrato"]
+        rv = recurso_val.upper()
         es_predefinido = (
-            recurso_val.startswith("Centro Técnico")
-            or recurso_val.upper().startswith("SEDE ")
+            rv.startswith("CENTRO TECNICO")
+            or rv.startswith("CENTRO TÉCNICO")
+            or rv.startswith("CT ")
+            or rv.startswith("SEDE ")
         )
         if es_predefinido:
             existe_rc = RecursoContrato.query.filter_by(
