@@ -648,14 +648,18 @@
 
     <!-- ══ DRAWER ALERTAS GPS (global NEO) ══════════════════════════════════ -->
     <style>
-    #btnAlertasDrawer {
+    #adBtnWrap {
         position: fixed; bottom: 28px; right: 28px; z-index: 1040;
+        display: flex; align-items: center; gap: 6px;
+    }
+    #btnAlertasDrawer {
         background: #0d1b2a; color: #f5a623;
         border: 2px solid #f5a623; border-radius: 50px;
         padding: 10px 20px; font-size: .82rem; font-weight: 800;
         display: flex; align-items: center; gap: 8px;
         box-shadow: 0 4px 20px rgba(0,0,0,.35);
-        cursor: pointer; transition: background .15s, color .15s;
+        cursor: pointer; transition: background .15s, color .15s, max-width .25s, padding .25s, opacity .2s;
+        max-width: 200px; overflow: hidden; white-space: nowrap;
     }
     #btnAlertasDrawer:hover { background: #f5a623; color: #0d1b2a; }
     #btnAlertasDrawer .ad-badge {
@@ -664,6 +668,23 @@
         font-size: .7rem; font-weight: 900; display: none;
     }
     #btnAlertasDrawer:hover .ad-badge { background: #0d1b2a; color: #f5a623; }
+    /* Estado colapsado: solo ícono campana */
+    #adBtnWrap.collapsed #btnAlertasDrawer {
+        padding: 10px 13px; max-width: 52px; border-radius: 50%;
+    }
+    #adBtnWrap.collapsed #adBtnLabel { display: none; }
+    #adBtnWrap.collapsed #btnAlertasDrawer .ad-badge { border-radius: 50%; padding: 1px 6px; }
+    #adBtnToggle {
+        width: 22px; height: 22px; border-radius: 50%;
+        background: #1e3a52; border: 1px solid #f5a623;
+        color: #f5a623; font-size: .65rem; font-weight: 900;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,.4);
+        transition: background .15s;
+        position: absolute; top: -6px; left: -6px;
+        z-index: 2;
+    }
+    #adBtnToggle:hover { background: #f5a623; color: #0d1b2a; }
     #adOverlay {
         display: none; position: fixed; inset: 0; z-index: 1045;
         background: rgba(0,0,0,.45); backdrop-filter: blur(2px);
@@ -722,11 +743,14 @@
     @media (max-width: 520px) { #adDrawer { width: 100%; right: -100%; } }
     </style>
 
-    <button id="btnAlertasDrawer" onclick="adAbrir()">
-        <i class="bi bi-bell-fill"></i>
-        Alertas GPS
-        <span class="ad-badge" id="adBadge">0</span>
-    </button>
+    <div id="adBtnWrap" style="position:relative;">
+        <button id="adBtnToggle" onclick="adToggleBtn()" title="Minimizar / expandir">×</button>
+        <button id="btnAlertasDrawer" onclick="adAbrir()">
+            <i class="bi bi-bell-fill"></i>
+            <span id="adBtnLabel">Alertas GPS</span>
+            <span class="ad-badge" id="adBadge">0</span>
+        </button>
+    </div>
 
     <div id="adOverlay" onclick="adCerrar()"></div>
 
@@ -807,6 +831,24 @@
         document.getElementById("adFFecha").value = hoy;
         adCargar();
     }
+
+    function adToggleBtn() {
+        const wrap = document.getElementById("adBtnWrap");
+        const tog  = document.getElementById("adBtnToggle");
+        const collapsed = wrap.classList.toggle("collapsed");
+        tog.textContent = collapsed ? "▶" : "×";
+        tog.title = collapsed ? "Expandir" : "Minimizar";
+        localStorage.setItem("adBtnCollapsed", collapsed ? "1" : "0");
+    }
+
+    // Restaurar estado colapsado entre páginas
+    (function() {
+        if (localStorage.getItem("adBtnCollapsed") === "1") {
+            const wrap = document.getElementById("adBtnWrap");
+            const tog  = document.getElementById("adBtnToggle");
+            if (wrap) { wrap.classList.add("collapsed"); tog.textContent = "▶"; tog.title = "Expandir"; }
+        }
+    })();
 
     function fmtHoraAD(utcStr) {
         if (!utcStr) return "—";
