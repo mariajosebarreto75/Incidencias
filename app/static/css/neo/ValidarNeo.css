@@ -23,13 +23,7 @@
 .vr-stat-lbl     { font-size: .68rem; color: #007E92; font-weight: 700; text-transform: uppercase; }
 
 /* KPIs */
-.vr-kpis {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 18px;
-}
-.vr-kpi {
+.rpt-kpi-card {
     background: #fff;
     border-radius: 12px;
     padding: 24px 20px;
@@ -38,18 +32,20 @@
     border: 1px solid #dce5ea;
     transition: transform .2s, box-shadow .2s;
     cursor: default;
+    height: 100%;
 }
-.vr-kpi:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,184,201,.15); border-color: #00b8c9; }
-.vr-kpi-icon {
+.rpt-kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,184,201,.15);
+    border-color: #00b8c9;
+}
+.rpt-kpi-icon {
     width: 46px; height: 46px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     margin: 0 auto 12px; font-size: 1.25rem;
 }
-.vr-kpi h3  { font-weight: 700; font-size: 1.8rem; margin-bottom: 4px; letter-spacing: -.3px; }
-.vr-kpi span { color: #6c757d; font-size: .78rem; font-weight: 500; text-transform: uppercase; letter-spacing: .5px; }
-@media (max-width: 768px) {
-    .vr-kpis { grid-template-columns: repeat(2, 1fr); }
-}
+.rpt-kpi-card h3  { font-weight: 700; font-size: 1.8rem; margin-bottom: 4px; letter-spacing: -.3px; }
+.rpt-kpi-card span { color: #6c757d; font-size: .78rem; font-weight: 500; text-transform: uppercase; letter-spacing: .5px; }
 
 /* Filtros */
 .vr-filtros-panel {

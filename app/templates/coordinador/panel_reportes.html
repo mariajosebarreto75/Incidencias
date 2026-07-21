@@ -98,34 +98,34 @@
     </div>
 
     <!-- KPIs -->
-    <div class="vr-kpis">
-        <div class="vr-kpi">
-            <div class="vr-kpi-icon" style="background:linear-gradient(135deg,#e6f9fb,#cff3f7);color:#007d8a;">
-                <i class="bi bi-files"></i>
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+            <div class="rpt-kpi-card">
+                <div class="rpt-kpi-icon" style="background:linear-gradient(135deg,#e6f9fb,#cff3f7);color:#007d8a;"><i class="bi bi-files"></i></div>
+                <h3 style="color:#007d8a;">{{ kpis.total }}</h3>
+                <span>Total reportes</span>
             </div>
-            <h3 style="color:#007d8a;">{{ kpis.total }}</h3>
-            <span>Total reportes</span>
         </div>
-        <div class="vr-kpi">
-            <div class="vr-kpi-icon" style="background:#fffbeb;color:#d97706;">
-                <i class="bi bi-hourglass-split"></i>
+        <div class="col-6 col-md-3">
+            <div class="rpt-kpi-card">
+                <div class="rpt-kpi-icon" style="background:#fffbeb;color:#d97706;"><i class="bi bi-hourglass-split"></i></div>
+                <h3 style="color:#d97706;">{{ kpis.pendientes }}</h3>
+                <span>Pendientes de respuesta</span>
             </div>
-            <h3 style="color:#d97706;">{{ kpis.pendientes }}</h3>
-            <span>Pendientes de respuesta</span>
         </div>
-        <div class="vr-kpi">
-            <div class="vr-kpi-icon" style="background:#fef2f2;color:#dc2626;">
-                <i class="bi bi-x-circle-fill"></i>
+        <div class="col-6 col-md-3">
+            <div class="rpt-kpi-card">
+                <div class="rpt-kpi-icon" style="background:#fef2f2;color:#dc2626;"><i class="bi bi-x-circle-fill"></i></div>
+                <h3 style="color:#dc2626;">{{ kpis.no_conformes }}</h3>
+                <span>No conformes</span>
             </div>
-            <h3 style="color:#dc2626;">{{ kpis.no_conformes }}</h3>
-            <span>No conformes</span>
         </div>
-        <div class="vr-kpi">
-            <div class="vr-kpi-icon" style="background:#f0fdf4;color:#16a34a;">
-                <i class="bi bi-check-circle-fill"></i>
+        <div class="col-6 col-md-3">
+            <div class="rpt-kpi-card">
+                <div class="rpt-kpi-icon" style="background:#f0fdf4;color:#16a34a;"><i class="bi bi-check-circle-fill"></i></div>
+                <h3 style="color:#16a34a;">{{ kpis.conformes }}</h3>
+                <span>Conformes</span>
             </div>
-            <h3 style="color:#16a34a;">{{ kpis.conformes }}</h3>
-            <span>Conformes</span>
         </div>
     </div>
 
