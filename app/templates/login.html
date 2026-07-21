@@ -246,6 +246,91 @@
                 </button>
             </form>
 
+            <div style="text-align:center;margin-top:1.1rem;">
+                <button type="button" onclick="abrirModalCambio()" style="
+                    background:none;border:none;cursor:pointer;
+                    color:#94a3b8;font-size:.78rem;text-decoration:underline;
+                    text-underline-offset:3px;transition:color .2s;
+                " onmouseover="this.style.color='#00b8c9'" onmouseout="this.style.color='#94a3b8'">
+                    <i class="bi bi-key me-1"></i>Cambiar contraseña
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── MODAL CAMBIO DE CONTRASEÑA ── -->
+    <div id="modalCambio" style="
+        display:none;position:fixed;inset:0;z-index:9999;
+        background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+        align-items:center;justify-content:center;
+    ">
+        <div style="
+            background:#fff;border-radius:16px;padding:2rem 1.75rem;
+            width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.25);
+            position:relative;
+        ">
+            <button onclick="cerrarModalCambio()" style="
+                position:absolute;top:.8rem;right:.9rem;background:none;border:none;
+                font-size:1.2rem;cursor:pointer;color:#94a3b8;line-height:1;
+            ">×</button>
+
+            <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.25rem;">
+                <div style="
+                    width:36px;height:36px;border-radius:10px;flex-shrink:0;
+                    background:linear-gradient(135deg,#005f6b,#00b8c9);
+                    display:flex;align-items:center;justify-content:center;
+                ">
+                    <i class="bi bi-key-fill" style="color:#fff;font-size:.9rem;"></i>
+                </div>
+                <div>
+                    <div style="font-weight:800;font-size:1rem;color:#0f172a;">Cambiar contraseña</div>
+                    <div style="font-size:.75rem;color:#94a3b8;">Ingresa tu nuevo acceso</div>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.cambiar_password') }}" id="formCambio">
+                <div style="margin-bottom:.9rem;">
+                    <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Usuario</label>
+                    <input type="text" name="username" id="cpUsername" required
+                           style="width:100%;padding:.6rem .85rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.88rem;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s;"
+                           onfocus="this.style.borderColor='#00b8c9'" onblur="this.style.borderColor='#e2e8f0'"
+                           placeholder="Tu usuario">
+                </div>
+                <div style="margin-bottom:.9rem;">
+                    <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Nueva contraseña</label>
+                    <div style="position:relative;">
+                        <input type="password" name="nueva_password" id="cpNueva" required minlength="4"
+                               style="width:100%;padding:.6rem 2.4rem .6rem .85rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.88rem;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s;"
+                               onfocus="this.style.borderColor='#00b8c9'" onblur="this.style.borderColor='#e2e8f0'"
+                               placeholder="Mínimo 4 caracteres">
+                        <button type="button" onclick="toggleCpPwd('cpNueva','icoNueva')" style="position:absolute;right:.7rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.95rem;">
+                            <i class="bi bi-eye" id="icoNueva"></i>
+                        </button>
+                    </div>
+                </div>
+                <div style="margin-bottom:1.2rem;">
+                    <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Confirmar contraseña</label>
+                    <div style="position:relative;">
+                        <input type="password" name="confirmar_password" id="cpConfirmar" required
+                               style="width:100%;padding:.6rem 2.4rem .6rem .85rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.88rem;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s;"
+                               onfocus="this.style.borderColor='#00b8c9'" onblur="this.style.borderColor='#e2e8f0'"
+                               placeholder="Repite la nueva contraseña">
+                        <button type="button" onclick="toggleCpPwd('cpConfirmar','icoConf')" style="position:absolute;right:.7rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.95rem;">
+                            <i class="bi bi-eye" id="icoConf"></i>
+                        </button>
+                    </div>
+                    <div id="cpMismatch" style="display:none;font-size:.73rem;color:#dc2626;margin-top:.3rem;">Las contraseñas no coinciden</div>
+                </div>
+                <button type="submit" id="cpSubmit" style="
+                    width:100%;padding:.65rem;border:none;border-radius:9px;
+                    background:linear-gradient(135deg,#005f6b,#00b8c9);
+                    color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;
+                    box-shadow:0 4px 14px rgba(0,184,201,.3);transition:opacity .2s;
+                ">
+                    <i class="bi bi-check-circle me-1"></i> Guardar nueva contraseña
+                </button>
+            </form>
         </div>
     </div>
 
@@ -261,6 +346,50 @@
             icon.className = 'bi bi-eye';
         }
     }
+
+    function toggleCpPwd(inputId, iconId) {
+        const inp  = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (inp.type === 'password') { inp.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+        else { inp.type = 'password'; icon.className = 'bi bi-eye'; }
+    }
+
+    function abrirModalCambio(usuario) {
+        const m = document.getElementById('modalCambio');
+        m.style.display = 'flex';
+        if (usuario) document.getElementById('cpUsername').value = usuario;
+        document.getElementById('cpNueva').value = '';
+        document.getElementById('cpConfirmar').value = '';
+        document.getElementById('cpMismatch').style.display = 'none';
+    }
+
+    function cerrarModalCambio() {
+        document.getElementById('modalCambio').style.display = 'none';
+    }
+
+    document.getElementById('modalCambio').addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalCambio();
+    });
+
+    document.getElementById('formCambio').addEventListener('submit', function(e) {
+        const nueva = document.getElementById('cpNueva').value;
+        const conf  = document.getElementById('cpConfirmar').value;
+        if (nueva !== conf) {
+            e.preventDefault();
+            document.getElementById('cpMismatch').style.display = 'block';
+        }
+    });
+
+    document.getElementById('cpConfirmar').addEventListener('input', function() {
+        const ok = this.value === document.getElementById('cpNueva').value;
+        document.getElementById('cpMismatch').style.display = ok ? 'none' : 'block';
+    });
+
+    {% if show_cambio_pwd %}
+    window.addEventListener('DOMContentLoaded', function() {
+        abrirModalCambio('{{ username_bloqueado | default("") }}');
+    });
+    {% endif %}
     </script>
 </body>
 </html>

@@ -948,6 +948,23 @@ def api_eliminar_placa(id):
 
 # ============================================================
 
+@admin_bp.route("/api/usuarios/<int:id>/password", methods=["PUT"])
+@admin_required
+def api_cambiar_password_usuario(id):
+    u = db.session.get(User, id)
+    if not u:
+        return jsonify({"success": False, "mensaje": "Usuario no encontrado"}), 404
+    d = request.get_json() or {}
+    nueva = (d.get("password") or "").strip()
+    if not nueva:
+        return jsonify({"success": False, "mensaje": "La contraseña no puede estar vacía"}), 400
+    if len(nueva) < 4:
+        return jsonify({"success": False, "mensaje": "Mínimo 4 caracteres"}), 400
+    u.password_hash = nueva
+    db.session.commit()
+    return jsonify({"success": True})
+
+
 @admin_bp.route("/api/usuarios/<int:id>/contratos", methods=["GET"])
 @admin_required
 def api_get_contratos_usuario(id):

@@ -167,6 +167,11 @@
                 onclick="abrirEditar(this)">
                 <i class="bi bi-pencil me-1"></i>Editar
             </button>
+            <button class="nu-btn-edit" style="border-color:#7c3aed55;color:#c084fc;"
+                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}" data-user="{{ u.username | e }}"
+                onclick="abrirCambioPwd(this)">
+                <i class="bi bi-key me-1"></i>Cambiar pwd
+            </button>
             {% if u.activo %}
             <button class="nu-btn-deact"
                 data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
@@ -188,6 +193,18 @@
         </div>
     </div>
     <div class="nu-contratos-body">
+        <!-- Contraseña actual -->
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;padding:.5rem .75rem;background:#060f1e;border-radius:8px;border:1px solid #1e293b;">
+            <i class="bi bi-shield-lock" style="color:#7c3aed;font-size:.85rem;"></i>
+            <span style="font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:#475569;">Contraseña:</span>
+            <span id="pwd-mask-{{ u.id }}" style="font-family:monospace;color:#94a3b8;font-size:.82rem;letter-spacing:.1em;">••••••••</span>
+            <span id="pwd-txt-{{ u.id }}"  style="font-family:monospace;color:#c084fc;font-size:.82rem;display:none;">{{ u.password_hash }}</span>
+            <button onclick="togglePwdVer({{ u.id }})" id="btn-ver-pwd-{{ u.id }}"
+                style="margin-left:auto;background:none;border:none;cursor:pointer;color:#475569;font-size:.78rem;padding:2px 6px;border-radius:4px;transition:color .15s;"
+                title="Ver/ocultar contraseña">
+                <i class="bi bi-eye" id="ico-ver-pwd-{{ u.id }}"></i>
+            </button>
+        </div>
         <div class="nu-contratos-label">Contratos asignados</div>
         <div class="nu-checks-grid">
             {% for c in contratos %}
@@ -254,6 +271,41 @@
     <button class="nu-create-btn" onclick="crearUsuario()">
         <i class="bi bi-plus-lg me-1"></i>Crear usuario
     </button>
+</div>
+
+<!-- MODAL CAMBIAR CONTRASEÑA -->
+<div class="modal fade" id="modalPwd" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#0a1628;border-bottom:1px solid #1e293b;">
+        <h5 class="modal-title" style="color:#c084fc;font-size:.95rem;">
+            <i class="bi bi-key me-2"></i>Cambiar contraseña
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="background:#0f172a;">
+        <div id="alertaPwd" class="adm-alert"></div>
+        <input type="hidden" id="pwdUserId">
+        <p style="font-size:.78rem;color:#64748b;margin-bottom:.75rem;" id="pwdUserLabel"></p>
+        <div class="mb-3">
+            <label class="nu-form-label">Nueva contraseña *</label>
+            <input id="pwdNueva" type="password" class="nu-input" placeholder="Mínimo 4 caracteres" autocomplete="new-password">
+        </div>
+        <div>
+            <label class="nu-form-label">Confirmar contraseña *</label>
+            <input id="pwdConfirmar" type="password" class="nu-input" placeholder="Repite la contraseña">
+            <div id="pwdMismatch" style="display:none;font-size:.72rem;color:#f87171;margin-top:.3rem;">Las contraseñas no coinciden</div>
+        </div>
+      </div>
+      <div class="modal-footer" style="background:#0a1628;border-top:1px solid #1e293b;">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button style="padding:.4rem 1rem;border-radius:7px;border:none;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;"
+                onclick="guardarPwd()">
+            <i class="bi bi-check-lg me-1"></i>Guardar
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL EDITAR -->
@@ -346,6 +398,36 @@ async function guardarEdit() {
     const r = await apiFetch("/admin/api/usuarios/" + id, "PUT", data);
     if (r.success) location.reload();
     else mostrarAlerta("alertaEdit", r.mensaje, "danger");
+}
+
+function togglePwdVer(uid) {
+    const mask = document.getElementById('pwd-mask-' + uid);
+    const txt  = document.getElementById('pwd-txt-'  + uid);
+    const ico  = document.getElementById('ico-ver-pwd-' + uid);
+    const show = txt.style.display === 'none';
+    mask.style.display = show ? 'none' : '';
+    txt.style.display  = show ? ''     : 'none';
+    ico.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+}
+
+function abrirCambioPwd(btn) {
+    document.getElementById('pwdUserId').value   = btn.dataset.id;
+    document.getElementById('pwdUserLabel').textContent = 'Usuario: ' + btn.dataset.user + ' — ' + btn.dataset.nombre;
+    document.getElementById('pwdNueva').value    = '';
+    document.getElementById('pwdConfirmar').value = '';
+    document.getElementById('pwdMismatch').style.display = 'none';
+    abrirModal('modalPwd');
+}
+
+async function guardarPwd() {
+    const id   = document.getElementById('pwdUserId').value;
+    const pwd  = document.getElementById('pwdNueva').value.trim();
+    const conf = document.getElementById('pwdConfirmar').value.trim();
+    if (!pwd) { mostrarAlerta('alertaPwd', 'Ingresa la nueva contraseña.', 'danger'); return; }
+    if (pwd !== conf) { document.getElementById('pwdMismatch').style.display = ''; return; }
+    const r = await apiFetch('/admin/api/usuarios/' + id + '/password', 'PUT', { password: pwd });
+    if (r.success) { bootstrap.Modal.getInstance(document.getElementById('modalPwd'))?.hide(); location.reload(); }
+    else mostrarAlerta('alertaPwd', r.mensaje || 'Error al cambiar contraseña', 'danger');
 }
 
 async function crearUsuario() {
