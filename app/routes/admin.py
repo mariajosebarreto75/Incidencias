@@ -902,23 +902,59 @@ _IMPORT_COLS = [
 @admin_bp.route("/reportes")
 @admin_required
 def reportes():
-    page     = request.args.get("page", 1, type=int)
-    per_page = 50
-    q_obj    = ReporteOperacional.query.order_by(
+    total = ReporteOperacional.query.count()
+    return render_template("admin/reportes.html", total=total)
+
+
+@admin_bp.route("/api/reportes")
+@admin_required
+def api_reportes():
+    """Devuelve todos los reportes como JSON para Tabulator."""
+    items = ReporteOperacional.query.order_by(
         ReporteOperacional.fecha_reporte.desc(),
         ReporteOperacional.id.desc()
-    )
-    total    = q_obj.count()
-    items    = q_obj.offset((page - 1) * per_page).limit(per_page).all()
-    pages    = (total + per_page - 1) // per_page
-    return render_template(
-        "admin/reportes.html",
-        reportes=items,
-        total=total,
-        page=page,
-        pages=pages,
-        per_page=per_page,
-    )
+    ).all()
+
+    def fmt_date(d):
+        return d.strftime("%d/%m/%Y") if d else ""
+    def fmt_time(t):
+        return t.strftime("%H:%M") if t else ""
+    def fmt_dt(dt):
+        return dt.strftime("%d/%m/%Y %H:%M") if dt else ""
+
+    rows = []
+    for r in items:
+        rows.append({
+            "id":                    r.id,
+            "fecha_reporte":         fmt_date(r.fecha_reporte),
+            "contrato":              r.contrato or "",
+            "recurso":               r.recurso or "",
+            "placa":                 r.placa or "",
+            "tipo_cuadrilla":        r.tipo_cuadrilla or "",
+            "meta":                  r.meta,
+            "tipo_actividad":        r.tipo_actividad or "",
+            "orden_trabajo":         r.orden_trabajo or "",
+            "hora_inicio":           fmt_time(r.hora_inicio),
+            "hora_fin":              fmt_time(r.hora_fin),
+            "duracion":              r.duracion or "",
+            "tipo_incidencia":       r.tipo_incidencia or "",
+            "parametro_neo":         r.parametro_neo or "",
+            "observacion":           r.observacion or "",
+            "impacto":               r.impacto or "",
+            "horas_afectadas":       r.horas_afectadas,
+            "afectacion_economica":  r.afectacion_economica,
+            "reportado_por":         r.reportado_por or "",
+            "estado":                r.estado or "Abierto",
+            "respuesta":             r.respuesta or "",
+            "parametro_coordinador": r.parametro_coordinador or "",
+            "estado_conformidad":    r.estado_conformidad or "",
+            "accion_a_tomar":        r.accion_a_tomar or "",
+            "respondido_por":        r.respondido_por or "",
+            "fecha_respuesta":       fmt_dt(r.fecha_respuesta),
+            "conformidad_neo":       r.conformidad_neo or "",
+            "observacion_conformidad": r.observacion_conformidad or "",
+        })
+    return jsonify(rows)
 
 
 @admin_bp.route("/reportes/plantilla")

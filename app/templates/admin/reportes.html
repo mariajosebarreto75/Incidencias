@@ -2,76 +2,78 @@
 {% block title %}Reportes{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.0/dist/css/tabulator.min.css">
 <style>
-.rpt-page { padding: 28px 32px; }
+.rpt-page { padding: 24px 28px; }
 .rpt-header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 20px; gap: 16px; flex-wrap: wrap;
+    margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
 }
-.rpt-title { font-size: 1.25rem; font-weight: 800; color: #0a1f2e; }
+.rpt-title { font-size: 1.2rem; font-weight: 800; color: #0a1f2e; }
 .rpt-sub   { font-size: .78rem; color: #6c757d; margin-top: 2px; }
-.rpt-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.rpt-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-.rpt-table-wrap {
-    background: #fff; border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.06);
-    border: 1px solid #e5eaee; overflow: hidden;
+/* Tabulator overrides */
+#rptTabulator {
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    border: 1px solid #e0e7ee !important;
+    font-size: .78rem;
 }
-.rpt-search-bar {
-    padding: 14px 18px; border-bottom: 1px solid #f0f3f5;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+.tabulator .tabulator-header {
+    background: #006d77 !important;
+    border-bottom: 2px solid #004d55 !important;
 }
-.rpt-search-input {
-    border: 1px solid #d1d9e0; border-radius: 8px;
-    padding: 7px 12px; font-size: .85rem; width: 280px;
-    outline: none; transition: border-color .2s;
+.tabulator .tabulator-header .tabulator-col {
+    background: #006d77 !important;
+    border-right: 1px solid rgba(255,255,255,.15) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    font-size: .75rem !important;
+    letter-spacing: .3px;
 }
-.rpt-search-input:focus { border-color: #00b7c7; }
-.rpt-count { font-size: .8rem; color: #6c757d; margin-left: auto; }
+.tabulator .tabulator-header .tabulator-col .tabulator-col-title {
+    color: #fff !important;
+    white-space: normal !important;
+    line-height: 1.3;
+}
+/* Header filters row */
+.tabulator .tabulator-header .tabulator-col .tabulator-header-filter input,
+.tabulator .tabulator-header .tabulator-col .tabulator-header-filter select {
+    background: rgba(255,255,255,.12) !important;
+    border: 1px solid rgba(255,255,255,.3) !important;
+    color: #fff !important;
+    border-radius: 4px !important;
+    font-size: .72rem !important;
+    padding: 2px 6px !important;
+    width: 100% !important;
+}
+.tabulator .tabulator-header .tabulator-col .tabulator-header-filter input::placeholder { color: rgba(255,255,255,.55) !important; }
 
-.rpt-table-scroll { overflow-x: auto; max-height: 70vh; }
-table.rpt-table {
-    width: 100%; border-collapse: collapse; font-size: .78rem;
-    white-space: nowrap;
+.tabulator .tabulator-row { border-bottom: 1px solid #f0f4f7 !important; }
+.tabulator .tabulator-row:hover { background: #f0fdfe !important; }
+.tabulator .tabulator-row .tabulator-cell {
+    border-right: 1px solid #f0f4f7 !important;
+    padding: 7px 10px !important;
+    vertical-align: middle !important;
+    color: #374151 !important;
 }
-table.rpt-table thead th {
-    position: sticky; top: 0; z-index: 2;
-    background: #006d77; color: #fff; font-weight: 700;
-    padding: 10px 12px; text-align: left; letter-spacing: .3px;
-    border-right: 1px solid rgba(255,255,255,.15);
+.tabulator-col-resize-handle { background: rgba(255,255,255,.3) !important; }
+.tabulator .tabulator-footer { background: #f8fafb !important; border-top: 1px solid #e0e7ee !important; }
+.tabulator .tabulator-footer .tabulator-paginator { color: #374151 !important; font-size: .78rem !important; }
+.tabulator .tabulator-footer .tabulator-page {
+    border: 1px solid #d1d9e0 !important; border-radius: 5px !important;
+    color: #374151 !important; background: #fff !important;
 }
-table.rpt-table thead th:first-child { border-radius: 0; }
-table.rpt-table tbody tr { border-bottom: 1px solid #f0f3f5; transition: background .1s; }
-table.rpt-table tbody tr:hover { background: #f7fdfe; }
-table.rpt-table td {
-    padding: 8px 12px; color: #374151; vertical-align: middle;
-    max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+.tabulator .tabulator-footer .tabulator-page.active {
+    background: #006d77 !important; color: #fff !important; border-color: #006d77 !important;
 }
-table.rpt-table td.td-num { text-align: right; font-variant-numeric: tabular-nums; }
-.badge-estado {
-    display: inline-block; padding: 2px 8px; border-radius: 20px;
-    font-size: .7rem; font-weight: 700; text-transform: uppercase;
-}
-.badge-abierto    { background: #fef9ec; color: #d97706; }
-.badge-respondido { background: #f0fdf4; color: #16a34a; }
-.badge-conforme   { background: #e0f8fb; color: #007d8a; }
-.badge-no-conforme{ background: #fef2f2; color: #dc2626; }
 
-.rpt-pagination {
-    padding: 12px 18px; border-top: 1px solid #f0f3f5;
-    display: flex; align-items: center; justify-content: space-between;
-    font-size: .8rem; color: #6c757d;
-}
-.rpt-pages { display: flex; gap: 4px; }
-.rpt-pages a, .rpt-pages span {
-    padding: 4px 10px; border-radius: 6px; text-decoration: none;
-    border: 1px solid #e5eaee; color: #374151;
-}
-.rpt-pages a:hover { background: #f0f3f5; }
-.rpt-pages .active { background: #006d77; color: #fff; border-color: #006d77; }
-
-/* Import modal */
-#importProgress { display:none; }
+/* Badges */
+.badge-abierto     { background:#fef9ec;color:#d97706;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700; }
+.badge-respondido  { background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700; }
+.badge-conforme    { background:#e0f8fb;color:#007d8a;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700; }
+.badge-noconforme  { background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700; }
 </style>
 {% endblock %}
 
@@ -82,14 +84,17 @@ table.rpt-table td.td-num { text-align: right; font-variant-numeric: tabular-num
     <div class="rpt-header">
         <div>
             <div class="rpt-title"><i class="bi bi-clipboard2-data me-2" style="color:#00b7c7;"></i>Reportes Operacionales</div>
-            <div class="rpt-sub">{{ total }} registros en total</div>
+            <div class="rpt-sub" id="rptSub">{{ total }} registros en total</div>
         </div>
         <div class="rpt-actions">
+            <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" id="btnLimpiarFiltros">
+                <i class="bi bi-funnel-fill"></i> Limpiar filtros
+            </button>
             <a href="{{ url_for('admin_bp.reportes_plantilla') }}"
                class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
-                <i class="bi bi-file-earmark-arrow-down"></i> Descargar plantilla
+                <i class="bi bi-file-earmark-arrow-down"></i> Plantilla
             </a>
-            <button class="btn btn-sm d-flex align-items-center gap-1"
+            <button class="btn btn-sm d-flex align-items-center gap-1 fw-semibold"
                     style="background:#00b7c7;color:#fff;"
                     data-bs-toggle="modal" data-bs-target="#modalImportar">
                 <i class="bi bi-cloud-upload"></i> Importar Excel
@@ -97,160 +102,32 @@ table.rpt-table td.td-num { text-align: right; font-variant-numeric: tabular-num
         </div>
     </div>
 
-    <!-- TABLA -->
-    <div class="rpt-table-wrap">
-        <div class="rpt-search-bar">
-            <input id="rptBuscar" class="rpt-search-input" type="text"
-                   placeholder="Buscar en esta página…">
-            <span class="rpt-count">Mostrando <b id="rptVisible">{{ reportes|length }}</b> de {{ total }}</span>
-        </div>
-
-        <div class="rpt-table-scroll">
-            <table class="rpt-table" id="rptTable">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Fecha</th>
-                        <th>Contrato</th>
-                        <th>Recurso</th>
-                        <th>Placa</th>
-                        <th>Tipo Cuadrilla</th>
-                        <th>Meta</th>
-                        <th>Tipo Actividad</th>
-                        <th>Orden Trabajo</th>
-                        <th>H. Inicio</th>
-                        <th>H. Fin</th>
-                        <th>Duración</th>
-                        <th>Tipo Incidencia</th>
-                        <th>Parámetro NEO</th>
-                        <th>Observación</th>
-                        <th>Impacto</th>
-                        <th>Hrs Afectadas</th>
-                        <th>Afect. Económica</th>
-                        <th>Reportado Por</th>
-                        <th>Estado</th>
-                        <th>Respuesta Coordinador</th>
-                        <th>Parámetro Coor.</th>
-                        <th>Conformidad Coor.</th>
-                        <th>Acción a Tomar</th>
-                        <th>Respondido Por</th>
-                        <th>Fecha Respuesta</th>
-                        <th>Conformidad NEO</th>
-                        <th>Obs. Conformidad</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for r in reportes %}
-                <tr>
-                    <td>{{ r.id }}</td>
-                    <td>{{ r.fecha_reporte.strftime('%d/%m/%Y') if r.fecha_reporte else '' }}</td>
-                    <td title="{{ r.contrato }}">{{ r.contrato[:35] }}{% if r.contrato and r.contrato|length > 35 %}…{% endif %}</td>
-                    <td>{{ r.recurso }}</td>
-                    <td>{{ r.placa or '' }}</td>
-                    <td>{{ r.tipo_cuadrilla or '' }}</td>
-                    <td class="td-num">{{ r.meta if r.meta is not none else '' }}</td>
-                    <td>{{ r.tipo_actividad or '' }}</td>
-                    <td>{{ r.orden_trabajo or '' }}</td>
-                    <td>{{ r.hora_inicio.strftime('%H:%M') if r.hora_inicio else '' }}</td>
-                    <td>{{ r.hora_fin.strftime('%H:%M') if r.hora_fin else '' }}</td>
-                    <td>{{ r.duracion or '' }}</td>
-                    <td>{{ r.tipo_incidencia }}</td>
-                    <td>{{ r.parametro_neo }}</td>
-                    <td title="{{ r.observacion or '' }}">{{ (r.observacion or '')[:50] }}{% if r.observacion and r.observacion|length > 50 %}…{% endif %}</td>
-                    <td>{{ r.impacto or '' }}</td>
-                    <td class="td-num">{{ '%.2f'|format(r.horas_afectadas) if r.horas_afectadas is not none else '' }}</td>
-                    <td class="td-num">{{ '${:,.0f}'.format(r.afectacion_economica) if r.afectacion_economica is not none else '' }}</td>
-                    <td>{{ r.reportado_por or '' }}</td>
-                    <td>
-                        {% set est = (r.estado or 'Abierto').lower() %}
-                        {% if est == 'respondido' %}
-                            <span class="badge-estado badge-respondido">Respondido</span>
-                        {% else %}
-                            <span class="badge-estado badge-abierto">Abierto</span>
-                        {% endif %}
-                    </td>
-                    <td title="{{ r.respuesta or '' }}">{{ (r.respuesta or '')[:50] }}{% if r.respuesta and r.respuesta|length > 50 %}…{% endif %}</td>
-                    <td>{{ r.parametro_coordinador or '' }}</td>
-                    <td>
-                        {% if r.conformidad_neo == 'Conforme' %}
-                            <span class="badge-estado badge-conforme">Conforme</span>
-                        {% elif r.conformidad_neo == 'No conforme' %}
-                            <span class="badge-estado badge-no-conforme">No conforme</span>
-                        {% else %}
-                            {{ r.estado_conformidad or '' }}
-                        {% endif %}
-                    </td>
-                    <td>{{ r.accion_a_tomar or '' }}</td>
-                    <td>{{ r.respondido_por or '' }}</td>
-                    <td>{{ r.fecha_respuesta.strftime('%d/%m/%Y') if r.fecha_respuesta else '' }}</td>
-                    <td>
-                        {% if r.conformidad_neo == 'Conforme' %}
-                            <span class="badge-estado badge-conforme">Conforme</span>
-                        {% elif r.conformidad_neo == 'No conforme' %}
-                            <span class="badge-estado badge-no-conforme">No conforme</span>
-                        {% else %}
-                            {{ r.conformidad_neo or '' }}
-                        {% endif %}
-                    </td>
-                    <td title="{{ r.observacion_conformidad or '' }}">{{ (r.observacion_conformidad or '')[:50] }}{% if r.observacion_conformidad and r.observacion_conformidad|length > 50 %}…{% endif %}</td>
-                </tr>
-                {% else %}
-                <tr><td colspan="28" class="text-center py-4 text-muted">No hay reportes registrados</td></tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- PAGINACIÓN -->
-        <div class="rpt-pagination">
-            <span>Página {{ page }} de {{ pages }} ({{ total }} registros)</span>
-            <div class="rpt-pages">
-                {% if page > 1 %}
-                    <a href="?page=1"><i class="bi bi-chevron-double-left"></i></a>
-                    <a href="?page={{ page - 1 }}"><i class="bi bi-chevron-left"></i></a>
-                {% endif %}
-                {% for p in range([1, page-2]|max, [pages+1, page+3]|min) %}
-                    {% if p == page %}
-                        <span class="active">{{ p }}</span>
-                    {% else %}
-                        <a href="?page={{ p }}">{{ p }}</a>
-                    {% endif %}
-                {% endfor %}
-                {% if page < pages %}
-                    <a href="?page={{ page + 1 }}"><i class="bi bi-chevron-right"></i></a>
-                    <a href="?page={{ pages }}"><i class="bi bi-chevron-double-right"></i></a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+    <!-- TABULATOR -->
+    <div id="rptTabulator"></div>
 </div>
 
 <!-- MODAL IMPORTAR -->
 <div class="modal fade" id="modalImportar" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:14px; border:0;">
+        <div class="modal-content" style="border-radius:14px;border:0;">
             <div class="modal-header" style="background:linear-gradient(135deg,#006d77,#00b7c7);color:#fff;border-radius:14px 14px 0 0;">
                 <h5 class="modal-title fw-bold"><i class="bi bi-cloud-upload me-2"></i>Importar Reportes desde Excel</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="alert alert-info d-flex gap-2 py-2" style="font-size:.82rem;border-radius:8px;">
+                <div class="alert alert-info d-flex gap-2 py-2 mb-3" style="font-size:.82rem;border-radius:8px;">
                     <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
-                    <div>El archivo debe tener los encabezados exactos de la plantilla.
-                    <a href="{{ url_for('admin_bp.reportes_plantilla') }}" class="alert-link">Descarga la plantilla</a> y organiza tus datos con esos nombres de columna.</div>
+                    <div>El archivo debe usar los encabezados exactos de la plantilla.
+                    <a href="{{ url_for('admin_bp.reportes_plantilla') }}" class="alert-link fw-semibold">Descarga la plantilla aquí</a>.</div>
                 </div>
-
-                <label class="form-label fw-semibold mt-2">Archivo Excel (.xlsx)</label>
-                <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls"
-                       style="border-radius:8px;">
-
-                <div id="importProgress" class="mt-3">
+                <label class="form-label fw-semibold">Archivo Excel (.xlsx)</label>
+                <input type="file" id="importFile" class="form-control" accept=".xlsx,.xls" style="border-radius:8px;">
+                <div id="importProgress" class="mt-3" style="display:none;">
                     <div class="d-flex align-items-center gap-2 text-muted" style="font-size:.85rem;">
                         <div class="spinner-border spinner-border-sm" style="color:#00b7c7;"></div>
                         Importando, por favor espera…
                     </div>
                 </div>
-
                 <div id="importResult" class="mt-3" style="display:none;"></div>
             </div>
             <div class="modal-footer border-0 pt-0">
@@ -264,59 +141,154 @@ table.rpt-table td.td-num { text-align: right; font-variant-numeric: tabular-num
     </div>
 </div>
 
+<script src="https://unpkg.com/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
 <script>
-// Búsqueda en tabla (página actual)
-document.getElementById('rptBuscar').addEventListener('input', function() {
-    const q     = this.value.toLowerCase();
-    const rows  = document.querySelectorAll('#rptTable tbody tr');
-    let visible = 0;
-    rows.forEach(function(tr) {
-        const match = tr.textContent.toLowerCase().includes(q);
-        tr.style.display = match ? '' : 'none';
-        if (match) visible++;
-    });
-    document.getElementById('rptVisible').textContent = visible;
+// Formateadores
+function badgeEstado(cell) {
+    const v = (cell.getValue() || "Abierto").toLowerCase();
+    if (v === "respondido") return '<span class="badge-respondido">Respondido</span>';
+    return '<span class="badge-abierto">Abierto</span>';
+}
+function badgeConf(cell) {
+    const v = cell.getValue() || "";
+    if (v === "Conforme")    return '<span class="badge-conforme">Conforme</span>';
+    if (v === "No conforme") return '<span class="badge-noconforme">No conforme</span>';
+    return v;
+}
+function fmtMoney(cell) {
+    const v = cell.getValue();
+    if (v == null || v === "") return "";
+    return "$ " + Number(v).toLocaleString("es-CO", {maximumFractionDigits: 0});
+}
+
+// Filtro header: select con valores únicos para columnas categóricas
+function selectFilter(values, label) {
+    return function(headerValue, rowValue) {
+        return headerValue === "" || rowValue === headerValue;
+    };
+}
+function buildSelectHeader(field) {
+    return function(cell, onRendered, success, cancel, editorParams) {
+        const select = document.createElement("select");
+        select.style.cssText = "width:100%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:4px;font-size:.72rem;padding:2px 4px;";
+        const opt0 = document.createElement("option");
+        opt0.value = ""; opt0.text = "Todos";
+        select.appendChild(opt0);
+        const seen = new Set();
+        table.getData().forEach(function(row) {
+            const v = row[field];
+            if (v && !seen.has(v)) { seen.add(v); const o = document.createElement("option"); o.value = v; o.text = v; select.appendChild(o); }
+        });
+        select.addEventListener("change", function() { success(this.value); });
+        return select;
+    };
+}
+
+const colDef = function(field, title, opts) {
+    return Object.assign({
+        field: field, title: title,
+        resizable: true, headerFilter: "input",
+        headerFilterPlaceholder: "Filtrar…",
+        tooltip: true,
+    }, opts || {});
+};
+
+const table = new Tabulator("#rptTabulator", {
+    ajaxURL:         "{{ url_for('admin_bp.api_reportes') }}",
+    layout:          "fitDataFill",
+    height:          "calc(100vh - 160px)",
+    pagination:      true,
+    paginationSize:  100,
+    paginationSizeSelector: [50, 100, 250, 500],
+    movableColumns:  true,
+    resizableColumns: true,
+    tooltipsHeader:  false,
+    placeholder:     "No hay reportes",
+    initialSort:     [{column: "fecha_reporte", dir: "desc"}],
+    columns: [
+        colDef("id",                   "#",                    {width: 60,  headerFilter: "number", hozAlign: "right"}),
+        colDef("fecha_reporte",        "Fecha",                {width: 100}),
+        colDef("contrato",             "Contrato",             {width: 260, headerFilter: "input"}),
+        colDef("recurso",              "Recurso",              {width: 160}),
+        colDef("placa",                "Placa",                {width: 90}),
+        colDef("tipo_cuadrilla",       "Tipo Cuadrilla",       {width: 160}),
+        colDef("meta",                 "Meta",                 {width: 70,  hozAlign: "right", headerFilter: false}),
+        colDef("tipo_actividad",       "Tipo Actividad",       {width: 170}),
+        colDef("orden_trabajo",        "Orden Trabajo",        {width: 120}),
+        colDef("hora_inicio",          "H. Inicio",            {width: 85,  headerFilter: false}),
+        colDef("hora_fin",             "H. Fin",               {width: 85,  headerFilter: false}),
+        colDef("duracion",             "Duración",             {width: 85,  headerFilter: false}),
+        colDef("tipo_incidencia",      "Tipo Incidencia",      {width: 200}),
+        colDef("parametro_neo",        "Parámetro NEO",        {width: 200}),
+        colDef("observacion",          "Observación",          {width: 300, formatter: "textarea"}),
+        colDef("impacto",              "Impacto",              {width: 90}),
+        colDef("horas_afectadas",      "Hrs Afectadas",        {width: 110, hozAlign: "right", headerFilter: false}),
+        colDef("afectacion_economica", "Afect. Económica",     {width: 130, hozAlign: "right", formatter: fmtMoney, headerFilter: false}),
+        colDef("reportado_por",        "Reportado Por",        {width: 160}),
+        {field: "estado",              title: "Estado",        width: 110, resizable: true, formatter: badgeEstado,
+         headerFilter: "list", headerFilterParams: {values: {"": "Todos", "Abierto": "Abierto", "Respondido": "Respondido"}, clearable: true}},
+        colDef("respuesta",            "Respuesta Coor.",      {width: 280, formatter: "textarea"}),
+        colDef("parametro_coordinador","Parámetro Coor.",      {width: 200}),
+        colDef("estado_conformidad",   "Conform. Coor.",       {width: 130}),
+        colDef("accion_a_tomar",       "Acción a Tomar",       {width: 170}),
+        colDef("respondido_por",       "Respondido Por",       {width: 160}),
+        colDef("fecha_respuesta",      "Fecha Respuesta",      {width: 130, headerFilter: false}),
+        {field: "conformidad_neo",     title: "Conform. NEO",  width: 130, resizable: true, formatter: badgeConf,
+         headerFilter: "list", headerFilterParams: {values: {"": "Todos", "Conforme": "Conforme", "No conforme": "No conforme"}, clearable: true}},
+        colDef("observacion_conformidad", "Obs. Conformidad",  {width: 280, formatter: "textarea"}),
+    ],
 });
 
-// Importar
-document.getElementById('btnImportar').addEventListener('click', async function() {
-    const file = document.getElementById('importFile').files[0];
-    if (!file) { alert('Selecciona un archivo Excel'); return; }
+table.on("dataLoaded", function(data) {
+    document.getElementById("rptSub").textContent = data.length + " registros en total";
+});
+table.on("dataFiltered", function(filters, rows) {
+    document.getElementById("rptSub").textContent = rows.length + " registros (filtrados)";
+});
+
+document.getElementById("btnLimpiarFiltros").addEventListener("click", function() {
+    table.clearHeaderFilter();
+});
+
+// ─── Importar ───
+document.getElementById("btnImportar").addEventListener("click", async function() {
+    const file = document.getElementById("importFile").files[0];
+    if (!file) { alert("Selecciona un archivo Excel"); return; }
 
     this.disabled = true;
-    document.getElementById('importProgress').style.display = 'block';
-    document.getElementById('importResult').style.display   = 'none';
+    document.getElementById("importProgress").style.display = "block";
+    document.getElementById("importResult").style.display   = "none";
 
     const fd = new FormData();
-    fd.append('archivo', file);
+    fd.append("archivo", file);
 
     try {
-        const res  = await fetch('{{ url_for("admin_bp.reportes_importar") }}', { method: 'POST', body: fd });
+        const res  = await fetch("{{ url_for('admin_bp.reportes_importar') }}", {method: "POST", body: fd});
         const data = await res.json();
-        const div  = document.getElementById('importResult');
-        div.style.display = 'block';
+        const div  = document.getElementById("importResult");
+        div.style.display = "block";
 
         if (data.success) {
             let html = `<div class="alert alert-success py-2" style="border-radius:8px;font-size:.85rem;">
                 <strong><i class="bi bi-check-circle me-1"></i>${data.insertados} reportes importados correctamente.</strong>`;
             if (data.errores && data.errores.length) {
-                html += `<hr class="my-2"><small class="text-muted">Filas omitidas (${data.errores.length}):<br>${data.errores.join('<br>')}</small>`;
+                html += `<hr class="my-2"><small class="text-muted">Filas omitidas (${data.errores.length}):<br>${data.errores.join("<br>")}</small>`;
             }
-            html += '</div>';
+            html += "</div>";
             div.innerHTML = html;
-            setTimeout(() => location.reload(), 2500);
+            setTimeout(() => { bootstrap.Modal.getInstance(document.getElementById("modalImportar"))?.hide(); table.replaceData(); }, 2000);
         } else {
             div.innerHTML = `<div class="alert alert-danger py-2" style="border-radius:8px;font-size:.85rem;">
                 <i class="bi bi-exclamation-circle me-1"></i>${data.mensaje}</div>`;
         }
     } catch(e) {
-        document.getElementById('importResult').style.display = 'block';
-        document.getElementById('importResult').innerHTML =
+        document.getElementById("importResult").innerHTML =
             '<div class="alert alert-danger py-2" style="border-radius:8px;font-size:.85rem;">Error de conexión</div>';
+        document.getElementById("importResult").style.display = "block";
     }
 
     this.disabled = false;
-    document.getElementById('importProgress').style.display = 'none';
+    document.getElementById("importProgress").style.display = "none";
 });
 </script>
 {% endblock %}
