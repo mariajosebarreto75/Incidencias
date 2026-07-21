@@ -328,12 +328,20 @@ def validar_reportes():
         "contrato":      contrato_f,
     }
 
+    kpis = {
+        "total":        len(reportes),
+        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme") and r.estado != "Respondido"),
+        "no_conformes": sum(1 for r in reportes if r.conformidad_neo == "No conforme"),
+        "conformes":    sum(1 for r in reportes if r.conformidad_neo == "Conforme"),
+    }
+
     return render_template(
         "neo/validar_reportes.html",
         reportes=reportes,
         lista_contratos=lista_contratos,
         lista_recursos=lista_recursos,
         filtros=filtros,
+        kpis=kpis,
     )
 
 

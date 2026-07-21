@@ -97,6 +97,38 @@
         </div>
     </div>
 
+    <!-- KPIs -->
+    <div class="vr-kpis">
+        <div class="vr-kpi">
+            <div class="vr-kpi-icon" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8)">
+                <i class="bi bi-files"></i>
+            </div>
+            <div class="vr-kpi-num">{{ kpis.total }}</div>
+            <div class="vr-kpi-lbl">Total reportes</div>
+        </div>
+        <div class="vr-kpi">
+            <div class="vr-kpi-icon" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="vr-kpi-num" style="color:#d97706">{{ kpis.pendientes }}</div>
+            <div class="vr-kpi-lbl">Pendientes de respuesta</div>
+        </div>
+        <div class="vr-kpi">
+            <div class="vr-kpi-icon" style="background:linear-gradient(135deg,#ef4444,#f87171)">
+                <i class="bi bi-x-circle-fill"></i>
+            </div>
+            <div class="vr-kpi-num" style="color:#dc2626">{{ kpis.no_conformes }}</div>
+            <div class="vr-kpi-lbl">No conformes</div>
+        </div>
+        <div class="vr-kpi">
+            <div class="vr-kpi-icon" style="background:linear-gradient(135deg,#22c55e,#4ade80)">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div class="vr-kpi-num" style="color:#16a34a">{{ kpis.conformes }}</div>
+            <div class="vr-kpi-lbl">Conformes</div>
+        </div>
+    </div>
+
     <!-- FILTRO POR CONTRATO -->
     {% if lista_contratos|length > 1 %}
     <div class="coor-contratos-bar mb-3">

@@ -22,6 +22,37 @@
 .vr-stat-num     { display: block; font-size: 1.5rem; font-weight: 900; color: #005f6b; line-height:1; }
 .vr-stat-lbl     { font-size: .68rem; color: #007E92; font-weight: 700; text-transform: uppercase; }
 
+/* KPIs */
+.vr-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.vr-kpi {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    border: 1px solid #f1f5f9;
+    transition: box-shadow .2s, transform .15s;
+}
+.vr-kpi:hover { box-shadow: 0 6px 20px rgba(0,0,0,.1); transform: translateY(-2px); }
+.vr-kpi-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1rem; flex-shrink: 0;
+}
+.vr-kpi-num  { font-size: 1.8rem; font-weight: 900; color: #0f172a; line-height: 1; }
+.vr-kpi-lbl  { font-size: .72rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+@media (max-width: 768px) {
+    .vr-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* Filtros */
 .vr-filtros-panel {
     background: #fff; border-radius: 12px; padding: 12px 16px;

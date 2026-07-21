@@ -222,9 +222,17 @@ def panel_reportes():
 
     reportes = query.order_by(ReporteOperacional.fecha_creado.desc()).all()
 
+    kpis = {
+        "total":        len(reportes),
+        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme") and r.estado != "Respondido"),
+        "no_conformes": sum(1 for r in reportes if r.conformidad_neo == "No conforme"),
+        "conformes":    sum(1 for r in reportes if r.conformidad_neo == "Conforme"),
+    }
+
     return render_template(
         "coordinador/panel_reportes.html",
         reportes             = reportes,
+        kpis                 = kpis,
         lista_contratos      = lista_contratos,
         contrato_activo      = contrato_filtro or "todos",
         lista_recursos       = lista_recursos,
