@@ -1,14 +1,20 @@
 import io
+from datetime import datetime, date, time
 from functools import wraps
+
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 
 from flask import (
     Blueprint, render_template, request,
-    jsonify, redirect, url_for, send_file
+    jsonify, redirect, url_for, send_file, flash
 )
 from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.contrato import Contrato
+from app.models.reporte_operacional import ReporteOperacional
 from app.models.user import User
 from app.models.persona import Persona
 from app.models.meta_operativa import MetaOperativa
@@ -855,6 +861,220 @@ def api_crear_parametro_coor():
     db.session.add(ParametroCoor(parametro=parametro))
     db.session.commit()
     return jsonify({"success": True})
+
+
+# ============================================================
+# REPORTES — DASHBOARD Y GESTIÓN
+# ============================================================
+
+# Columnas del Excel de importación y su campo en el modelo
+_IMPORT_COLS = [
+    ("fecha_reporte",           "Fecha Reporte",           "date"),
+    ("contrato",                "Contrato",                 "str"),
+    ("recurso",                 "Recurso",                  "str"),
+    ("placa",                   "Placa",                    "str"),
+    ("tipo_cuadrilla",          "Tipo Cuadrilla",           "str"),
+    ("meta",                    "Meta",                     "float"),
+    ("tipo_actividad",          "Tipo Actividad",           "str"),
+    ("orden_trabajo",           "Orden de Trabajo",         "str"),
+    ("hora_inicio",             "Hora Inicio",              "time"),
+    ("hora_fin",                "Hora Fin",                 "time"),
+    ("tipo_incidencia",         "Tipo Incidencia",          "str"),
+    ("parametro_neo",           "Parámetro NEO",            "str"),
+    ("observacion",             "Observación",              "str"),
+    ("duracion",                "Duración",                 "str"),
+    ("impacto",                 "Impacto",                  "str"),
+    ("horas_afectadas",         "Horas Afectadas",          "float"),
+    ("afectacion_economica",    "Afectación Económica",     "float"),
+    ("reportado_por",           "Reportado Por",            "str"),
+    ("estado",                  "Estado",                   "str"),
+    ("respuesta",               "Respuesta Coordinador",    "str"),
+    ("parametro_coordinador",   "Parámetro Coordinador",    "str"),
+    ("estado_conformidad",      "Estado Conformidad",       "str"),
+    ("accion_a_tomar",          "Acción a Tomar",           "str"),
+    ("respondido_por",          "Respondido Por",           "str"),
+    ("fecha_respuesta",         "Fecha Respuesta",          "datetime"),
+    ("conformidad_neo",         "Conformidad NEO",          "str"),
+    ("observacion_conformidad", "Observación Conformidad",  "str"),
+]
+
+
+@admin_bp.route("/reportes")
+@admin_required
+def reportes():
+    page     = request.args.get("page", 1, type=int)
+    per_page = 50
+    q_obj    = ReporteOperacional.query.order_by(
+        ReporteOperacional.fecha_reporte.desc(),
+        ReporteOperacional.id.desc()
+    )
+    total    = q_obj.count()
+    items    = q_obj.offset((page - 1) * per_page).limit(per_page).all()
+    pages    = (total + per_page - 1) // per_page
+    return render_template(
+        "admin/reportes.html",
+        reportes=items,
+        total=total,
+        page=page,
+        pages=pages,
+        per_page=per_page,
+    )
+
+
+@admin_bp.route("/reportes/plantilla")
+@admin_required
+def reportes_plantilla():
+    """Descarga un Excel vacío con los encabezados correctos."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Reportes"
+
+    header_fill  = PatternFill("solid", fgColor="006d77")
+    header_font  = Font(bold=True, color="FFFFFF", size=11)
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    thin         = Side(style="thin", color="cccccc")
+    border       = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for col_idx, (_, label, tipo) in enumerate(_IMPORT_COLS, start=1):
+        cell = ws.cell(row=1, column=col_idx, value=label)
+        cell.fill   = header_fill
+        cell.font   = header_font
+        cell.alignment = header_align
+        cell.border = border
+        ws.column_dimensions[get_column_letter(col_idx)].width = max(len(label) + 4, 18)
+
+    ws.row_dimensions[1].height = 32
+
+    # Fila de ejemplo
+    ejemplo = [
+        "2024-01-15", "Tolima Mantenimiento (2258)", "Cuadrilla 01", "ABC-123",
+        "Cuadrilla Mantenimiento", 1.0, "Mantenimiento Correctivo", "OT-001",
+        "08:00", "09:30", "Incidencia Tipo 1", "Parámetro NEO 1",
+        "Observación de ejemplo", "01:30", "Medio", 1.5, 250000.0,
+        "Juan Pérez", "Abierto", "", "", "", "", "", "", "", "",
+    ]
+    ex_font  = Font(italic=True, color="888888")
+    ex_fill  = PatternFill("solid", fgColor="f0f8ff")
+    for col_idx, val in enumerate(ejemplo, start=1):
+        cell = ws.cell(row=2, column=col_idx, value=val)
+        cell.font   = ex_font
+        cell.fill   = ex_fill
+        cell.border = border
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="plantilla_importacion_reportes.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@admin_bp.route("/reportes/importar", methods=["POST"])
+@admin_required
+def reportes_importar():
+    """Importa reportes desde un archivo Excel."""
+    archivo = request.files.get("archivo")
+    if not archivo or not archivo.filename.endswith((".xlsx", ".xls")):
+        return jsonify({"success": False, "mensaje": "Sube un archivo .xlsx válido"}), 400
+
+    try:
+        wb = openpyxl.load_workbook(archivo, read_only=True, data_only=True)
+        ws = wb.active
+        rows = list(ws.iter_rows(values_only=True))
+    except Exception as e:
+        return jsonify({"success": False, "mensaje": f"No se pudo leer el archivo: {e}"}), 400
+
+    if len(rows) < 2:
+        return jsonify({"success": False, "mensaje": "El archivo no tiene datos"}), 400
+
+    # Mapear encabezados por posición
+    header_row = [str(c).strip() if c is not None else "" for c in rows[0]]
+    label_to_field = {label: field for field, label, _ in _IMPORT_COLS}
+    tipo_map       = {field: tipo for field, _, tipo in _IMPORT_COLS}
+
+    col_map = {}  # col_index -> field_name
+    for idx, h in enumerate(header_row):
+        if h in label_to_field:
+            col_map[idx] = label_to_field[h]
+
+    if not col_map:
+        return jsonify({"success": False, "mensaje": "No se reconocieron columnas. ¿Descargaste la plantilla?"}), 400
+
+    def _parse(val, tipo):
+        if val is None or str(val).strip() == "":
+            return None
+        s = str(val).strip()
+        if tipo == "str":
+            return s
+        if tipo == "float":
+            try:
+                return float(str(val).replace(",", "."))
+            except Exception:
+                return None
+        if tipo == "date":
+            if isinstance(val, (datetime, date)):
+                return val.date() if isinstance(val, datetime) else val
+            try:
+                return datetime.strptime(s[:10], "%Y-%m-%d").date()
+            except Exception:
+                try:
+                    return datetime.strptime(s[:10], "%d/%m/%Y").date()
+                except Exception:
+                    return None
+        if tipo == "datetime":
+            if isinstance(val, datetime):
+                return val
+            try:
+                return datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                return None
+        if tipo == "time":
+            if isinstance(val, time):
+                return val
+            if isinstance(val, datetime):
+                return val.time()
+            try:
+                parts = s.split(":")
+                return time(int(parts[0]), int(parts[1]))
+            except Exception:
+                return None
+        return s
+
+    insertados = 0
+    errores    = []
+    for row_num, row in enumerate(rows[1:], start=2):
+        try:
+            kwargs = {}
+            for col_idx, field in col_map.items():
+                raw  = row[col_idx] if col_idx < len(row) else None
+                kwargs[field] = _parse(raw, tipo_map[field])
+
+            # Campos obligatorios mínimos
+            if not kwargs.get("fecha_reporte") or not kwargs.get("contrato") \
+                    or not kwargs.get("recurso") or not kwargs.get("tipo_incidencia") \
+                    or not kwargs.get("parametro_neo"):
+                errores.append(f"Fila {row_num}: faltan campos obligatorios (omitida)")
+                continue
+
+            if not kwargs.get("hora_inicio"):
+                kwargs["hora_inicio"] = time(0, 0)
+            if not kwargs.get("hora_fin"):
+                kwargs["hora_fin"] = time(0, 0)
+
+            db.session.add(ReporteOperacional(**kwargs))
+            insertados += 1
+        except Exception as e:
+            errores.append(f"Fila {row_num}: {e}")
+
+    db.session.commit()
+    return jsonify({
+        "success":    True,
+        "insertados": insertados,
+        "errores":    errores[:20],
+    })
 
 
 @admin_bp.route("/api/parametros-coordinador/<int:id>", methods=["PUT"])
