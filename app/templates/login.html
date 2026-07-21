@@ -289,10 +289,10 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ url_for('auth.cambiar_password') }}" id="formCambio">
+            <div id="cpError" style="display:none;background:#fef2f2;border:1.5px solid #fecaca;color:#dc2626;border-radius:8px;padding:.6rem .85rem;font-size:.78rem;font-weight:600;margin-bottom:.85rem;"></div>
                 <div style="margin-bottom:.9rem;">
                     <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Usuario</label>
-                    <input type="text" name="username" id="cpUsername" required
+                    <input type="text" id="cpUsername"
                            style="width:100%;padding:.6rem .85rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.88rem;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s;"
                            onfocus="this.style.borderColor='#00b8c9'" onblur="this.style.borderColor='#e2e8f0'"
                            placeholder="Tu usuario">
@@ -300,7 +300,7 @@
                 <div style="margin-bottom:.9rem;">
                     <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Nueva contraseña</label>
                     <div style="position:relative;">
-                        <input type="password" name="nueva_password" id="cpNueva" required minlength="4"
+                        <input type="password" id="cpNueva"
                                style="width:100%;padding:.6rem 2.4rem .6rem .85rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.88rem;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s;"
                                onfocus="this.style.borderColor='#00b8c9'" onblur="this.style.borderColor='#e2e8f0'"
                                placeholder="Mínimo 4 caracteres">
@@ -312,7 +312,7 @@
                 <div style="margin-bottom:1.2rem;">
                     <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Confirmar contraseña</label>
                     <div style="position:relative;">
-                        <input type="password" name="confirmar_password" id="cpConfirmar" required
+                        <input type="password" id="cpConfirmar"
                                style="width:100%;padding:.6rem 2.4rem .6rem .85rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.88rem;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s;"
                                onfocus="this.style.borderColor='#00b8c9'" onblur="this.style.borderColor='#e2e8f0'"
                                placeholder="Repite la nueva contraseña">
@@ -322,7 +322,7 @@
                     </div>
                     <div id="cpMismatch" style="display:none;font-size:.73rem;color:#dc2626;margin-top:.3rem;">Las contraseñas no coinciden</div>
                 </div>
-                <button type="submit" id="cpSubmit" style="
+                <button type="button" id="cpSubmit" onclick="guardarNuevaPwd()" style="
                     width:100%;padding:.65rem;border:none;border-radius:9px;
                     background:linear-gradient(135deg,#005f6b,#00b8c9);
                     color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;
@@ -330,7 +330,6 @@
                 ">
                     <i class="bi bi-check-circle me-1"></i> Guardar nueva contraseña
                 </button>
-            </form>
         </div>
     </div>
 
@@ -371,19 +370,63 @@
         if (e.target === this) cerrarModalCambio();
     });
 
-    document.getElementById('formCambio').addEventListener('submit', function(e) {
-        const nueva = document.getElementById('cpNueva').value;
-        const conf  = document.getElementById('cpConfirmar').value;
-        if (nueva !== conf) {
-            e.preventDefault();
-            document.getElementById('cpMismatch').style.display = 'block';
-        }
-    });
-
     document.getElementById('cpConfirmar').addEventListener('input', function() {
         const ok = this.value === document.getElementById('cpNueva').value;
         document.getElementById('cpMismatch').style.display = ok ? 'none' : 'block';
     });
+
+    /* Enter en los campos del modal → guardar (sin form) */
+    ['cpUsername','cpNueva','cpConfirmar'].forEach(function(id) {
+        document.getElementById(id).addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); guardarNuevaPwd(); }
+        });
+    });
+
+    async function guardarNuevaPwd() {
+        const username  = document.getElementById('cpUsername').value.trim();
+        const nueva     = document.getElementById('cpNueva').value.trim();
+        const confirmar = document.getElementById('cpConfirmar').value.trim();
+        const errEl     = document.getElementById('cpError');
+        const mismatch  = document.getElementById('cpMismatch');
+
+        errEl.style.display = 'none';
+        mismatch.style.display = 'none';
+
+        if (!username || !nueva) { errEl.textContent = 'Completa todos los campos.'; errEl.style.display = ''; return; }
+        if (nueva !== confirmar) { mismatch.style.display = ''; return; }
+        if (nueva.length < 4)   { errEl.textContent = 'La contraseña debe tener al menos 4 caracteres.'; errEl.style.display = ''; return; }
+
+        const btn = document.getElementById('cpSubmit');
+        btn.disabled = true;
+        btn.textContent = 'Guardando…';
+
+        const fd = new FormData();
+        fd.append('username',           username);
+        fd.append('nueva_password',     nueva);
+        fd.append('confirmar_password', confirmar);
+
+        try {
+            const r = await fetch('{{ url_for("auth.cambiar_password") }}', { method: 'POST', body: fd });
+            if (r.redirected || r.ok) {
+                cerrarModalCambio();
+                /* Mostrar mensaje de éxito en el login */
+                const alertBox = document.createElement('div');
+                alertBox.className = 'alert-login alert-success-dark';
+                alertBox.innerHTML = '<i class="bi bi-check-circle-fill"></i> Contraseña actualizada. Ya puedes iniciar sesión.';
+                const form = document.querySelector('form');
+                form.parentNode.insertBefore(alertBox, form);
+            } else {
+                errEl.textContent = 'Error al guardar. Intenta de nuevo.';
+                errEl.style.display = '';
+            }
+        } catch(e) {
+            errEl.textContent = 'Error de conexión.';
+            errEl.style.display = '';
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Guardar nueva contraseña';
+    }
 
     {% if show_cambio_pwd %}
     window.addEventListener('DOMContentLoaded', function() {
