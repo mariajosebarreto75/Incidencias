@@ -115,12 +115,15 @@ body { background: var(--dn-bg); }
         <a href="{{ url_for('neo.distribucion_neo') }}" class="dn-btn dn-btn-clear">
             <i class="bi bi-x"></i> Hoy
         </a>
+        <a href="{{ url_for('neo.distribucion_neo') }}?todo=1" class="dn-btn dn-btn-clear" style="border-color:#0ea5e9;color:#0ea5e9;">
+            <i class="bi bi-infinity"></i> Todo
+        </a>
     </form>
 
     <!-- STATS -->
     <div class="dn-stats">
         <div class="dn-chip"><i class="bi bi-list-check"></i> <span id="totalRegistros">0</span> registro(s)</div>
-        <div class="dn-chip"><i class="bi bi-calendar3"></i> {{ fecha_desde }} → {{ fecha_hasta }}</div>
+        <div class="dn-chip"><i class="bi bi-calendar3"></i> {% if fecha_desde %}{{ fecha_desde }} → {{ fecha_hasta }}{% else %}Todos los registros{% endif %}</div>
         <div class="dn-chip" style="font-size:.72rem">
             <i class="bi bi-info-circle"></i> Solo lectura · arrastra columnas para redimensionar
         </div>
