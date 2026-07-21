@@ -100,31 +100,39 @@
     <!-- KPIs -->
     <div class="row g-3 mb-3">
         <div class="col-6 col-md-3">
-            <div class="rpt-kpi-card">
-                <div class="rpt-kpi-icon" style="background:linear-gradient(135deg,#e6f9fb,#cff3f7);color:#007d8a;"><i class="bi bi-files"></i></div>
-                <h3 style="color:#007d8a;">{{ kpis.total }}</h3>
-                <span>Total reportes</span>
+            <div class="card border-0 h-100 text-center" style="border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #dce5ea!important;">
+                <div class="card-body py-4 px-3">
+                    <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:46px;height:46px;border-radius:10px;background:linear-gradient(135deg,#e6f9fb,#cff3f7);font-size:1.3rem;color:#007d8a;"><i class="bi bi-files"></i></div>
+                    <div style="font-size:1.9rem;font-weight:800;color:#007d8a;line-height:1.1;">{{ kpis.total }}</div>
+                    <div style="font-size:.72rem;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;">Total reportes</div>
+                </div>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="rpt-kpi-card">
-                <div class="rpt-kpi-icon" style="background:#fffbeb;color:#d97706;"><i class="bi bi-hourglass-split"></i></div>
-                <h3 style="color:#d97706;">{{ kpis.pendientes }}</h3>
-                <span>Pendientes de respuesta</span>
+            <div class="card border-0 h-100 text-center" style="border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #dce5ea!important;">
+                <div class="card-body py-4 px-3">
+                    <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:46px;height:46px;border-radius:10px;background:#fffbeb;font-size:1.3rem;color:#d97706;"><i class="bi bi-hourglass-split"></i></div>
+                    <div style="font-size:1.9rem;font-weight:800;color:#d97706;line-height:1.1;">{{ kpis.pendientes }}</div>
+                    <div style="font-size:.72rem;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;">Pendientes de respuesta</div>
+                </div>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="rpt-kpi-card">
-                <div class="rpt-kpi-icon" style="background:#fef2f2;color:#dc2626;"><i class="bi bi-x-circle-fill"></i></div>
-                <h3 style="color:#dc2626;">{{ kpis.no_conformes }}</h3>
-                <span>No conformes</span>
+            <div class="card border-0 h-100 text-center" style="border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #dce5ea!important;">
+                <div class="card-body py-4 px-3">
+                    <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:46px;height:46px;border-radius:10px;background:#fef2f2;font-size:1.3rem;color:#dc2626;"><i class="bi bi-x-circle-fill"></i></div>
+                    <div style="font-size:1.9rem;font-weight:800;color:#dc2626;line-height:1.1;">{{ kpis.no_conformes }}</div>
+                    <div style="font-size:.72rem;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;">No conformes</div>
+                </div>
             </div>
         </div>
         <div class="col-6 col-md-3">
-            <div class="rpt-kpi-card">
-                <div class="rpt-kpi-icon" style="background:#f0fdf4;color:#16a34a;"><i class="bi bi-check-circle-fill"></i></div>
-                <h3 style="color:#16a34a;">{{ kpis.conformes }}</h3>
-                <span>Conformes</span>
+            <div class="card border-0 h-100 text-center" style="border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #dce5ea!important;">
+                <div class="card-body py-4 px-3">
+                    <div class="mx-auto mb-2 d-flex align-items-center justify-content-center" style="width:46px;height:46px;border-radius:10px;background:#f0fdf4;font-size:1.3rem;color:#16a34a;"><i class="bi bi-check-circle-fill"></i></div>
+                    <div style="font-size:1.9rem;font-weight:800;color:#16a34a;line-height:1.1;">{{ kpis.conformes }}</div>
+                    <div style="font-size:.72rem;color:#6c757d;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-top:4px;">Conformes</div>
+                </div>
             </div>
         </div>
     </div>
