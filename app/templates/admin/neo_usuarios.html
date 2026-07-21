@@ -198,6 +198,10 @@
         </h1>
         <p class="adm-page-sub">{{ usuarios|length }} usuario(s) — gestión de acceso y contratos visibles</p>
     </div>
+    <a href="{{ url_for('admin_bp.exportar_usuarios') }}"
+       class="btn btn-sm btn-outline-success d-flex align-items-center gap-1">
+        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </a>
 </div>
 
 <div id="alerta" class="adm-alert"></div>

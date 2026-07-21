@@ -88,9 +88,15 @@
             {{ contratos|selectattr('activo')|list|length }} activo(s)
         </p>
     </div>
-    <button class="btn-adm-primary" onclick="abrirModal('modalAdd')">
-        <i class="bi bi-plus-lg"></i> Nuevo contrato
-    </button>
+    <div style="display:flex;gap:8px;align-items:center;">
+        <a href="{{ url_for('admin_bp.exportar_contratos') }}"
+           class="btn btn-sm btn-outline-success d-flex align-items-center gap-1">
+            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+        </a>
+        <button class="btn-adm-primary" onclick="abrirModal('modalAdd')">
+            <i class="bi bi-plus-lg"></i> Nuevo contrato
+        </button>
+    </div>
 </div>
 
 <div id="alerta" class="adm-alert"></div>

@@ -864,6 +864,102 @@ def api_crear_parametro_coor():
 
 
 # ============================================================
+# EXPORTACIONES
+# ============================================================
+
+def _wb_styles():
+    """Devuelve estilos comunes para exportaciones."""
+    hdr_fill  = PatternFill("solid", fgColor="006d77")
+    hdr_font  = Font(bold=True, color="FFFFFF", size=11)
+    hdr_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    thin      = Side(style="thin", color="d1d9e0")
+    border    = Border(left=thin, right=thin, top=thin, bottom=thin)
+    return hdr_fill, hdr_font, hdr_align, border
+
+
+@admin_bp.route("/exportar/usuarios")
+@admin_required
+def exportar_usuarios():
+    hdr_fill, hdr_font, hdr_align, border = _wb_styles()
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Usuarios"
+
+    cols = ["ID", "Usuario", "Nombre Completo", "Rol", "Contrato Principal",
+            "Email", "Activo", "Contratos Asignados"]
+    for i, c in enumerate(cols, 1):
+        cell = ws.cell(row=1, column=i, value=c)
+        cell.fill = hdr_fill; cell.font = hdr_font
+        cell.alignment = hdr_align; cell.border = border
+    ws.row_dimensions[1].height = 28
+
+    usuarios = User.query.order_by(User.rol, User.nombre_completo).all()
+    contratos_por_usuario = {}
+    for uc in UserContrato.query.all():
+        contratos_por_usuario.setdefault(uc.user_id, []).append(uc.contrato)
+
+    row_font  = Font(size=10)
+    row_align = Alignment(vertical="center")
+    for r, u in enumerate(usuarios, 2):
+        vals = [
+            u.id, u.username, u.nombre_completo, u.rol,
+            u.contrato or "",
+            u.email or "",
+            "Sí" if u.activo else "No",
+            ", ".join(contratos_por_usuario.get(u.id, [])),
+        ]
+        for c, v in enumerate(vals, 1):
+            cell = ws.cell(row=r, column=c, value=v)
+            cell.font = row_font; cell.alignment = row_align; cell.border = border
+
+    widths = [6, 18, 26, 14, 30, 28, 8, 50]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    output = io.BytesIO()
+    wb.save(output); output.seek(0)
+    return send_file(output, as_attachment=True,
+                     download_name="usuarios.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+@admin_bp.route("/exportar/contratos")
+@admin_required
+def exportar_contratos():
+    hdr_fill, hdr_font, hdr_align, border = _wb_styles()
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Contratos"
+
+    cols = ["Código", "Contrato", "Sede", "Proceso", "Activo"]
+    for i, c in enumerate(cols, 1):
+        cell = ws.cell(row=1, column=i, value=c)
+        cell.fill = hdr_fill; cell.font = hdr_font
+        cell.alignment = hdr_align; cell.border = border
+    ws.row_dimensions[1].height = 28
+
+    contratos = Contrato.query.order_by(Contrato.contrato).all()
+    row_font  = Font(size=10)
+    row_align = Alignment(vertical="center")
+    for r, c in enumerate(contratos, 2):
+        vals = [c.codigo or "", c.contrato, c.sede or "", c.proceso or "",
+                "Sí" if c.activo else "No"]
+        for col, v in enumerate(vals, 1):
+            cell = ws.cell(row=r, column=col, value=v)
+            cell.font = row_font; cell.alignment = row_align; cell.border = border
+
+    widths = [12, 50, 24, 20, 8]
+    for i, w in enumerate(widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    output = io.BytesIO()
+    wb.save(output); output.seek(0)
+    return send_file(output, as_attachment=True,
+                     download_name="contratos.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+# ============================================================
 # REPORTES — DASHBOARD Y GESTIÓN
 # ============================================================
 
