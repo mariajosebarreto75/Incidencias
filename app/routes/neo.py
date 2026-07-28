@@ -447,7 +447,12 @@ def editar_reporte(id):
     from datetime import timedelta, date as _date
 
     reporte = ReporteOperacional.query.get_or_404(id)
-    if reporte.reportado_por != current_user.username:
+    asignados = UserContrato.query.filter_by(user_id=current_user.id).all()
+    if asignados:
+        contratos_visibles = [uc.contrato for uc in asignados]
+        if reporte.contrato not in contratos_visibles:
+            abort(403)
+    elif reporte.reportado_por != current_user.username:
         abort(403)
 
     if request.method == "POST":
@@ -513,6 +518,9 @@ def editar_reporte(id):
             reporte.evidencia_1 = d["evidencia_1"]
         if "evidencia_2" in d:
             reporte.evidencia_2 = d["evidencia_2"] or None
+
+        reporte.editado_por = current_user.username
+        reporte.fecha_edicion = datetime.now()
 
         db.session.commit()
         return jsonify({"ok": True})

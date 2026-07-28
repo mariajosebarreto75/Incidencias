@@ -47,6 +47,14 @@
                 <div class="det-card-header neo-color">
                     <i class="bi bi-clipboard2-pulse-fill me-2"></i>
                     Información reportada por NEO
+                    {% if reporte.editado_por %}
+                    <span class="det-respondido-by">
+                        <i class="bi bi-pencil-square me-1"></i>Editado por {{ reporte.editado_por }}
+                        {% if reporte.fecha_edicion %}
+                        · {{ reporte.fecha_edicion.strftime('%d/%m/%Y %H:%M') }}
+                        {% endif %}
+                    </span>
+                    {% endif %}
                 </div>
 
                 <div class="det-card-body">

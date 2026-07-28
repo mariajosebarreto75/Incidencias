@@ -182,6 +182,18 @@ class ReporteOperacional(db.Model):
         db.Text
     )
 
+    # =====================
+    # AUDITORÍA DE EDICIÓN
+    # =====================
+
+    editado_por = db.Column(
+        db.String(150)
+    )
+
+    fecha_edicion = db.Column(
+        db.DateTime
+    )
+
     def __repr__(self):
 
         return (
