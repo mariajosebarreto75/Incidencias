@@ -397,7 +397,12 @@ def detalle_neo(id):
 @login_required
 def validar_reporte(id):
     reporte = ReporteOperacional.query.get_or_404(id)
-    if reporte.reportado_por != current_user.username:
+    asignados = UserContrato.query.filter_by(user_id=current_user.id).all()
+    if asignados:
+        contratos_visibles = [uc.contrato for uc in asignados]
+        if reporte.contrato not in contratos_visibles:
+            abort(403)
+    elif reporte.reportado_por != current_user.username:
         abort(403)
     if reporte.estado != "Respondido":
         return jsonify({"ok": False, "error": "El coordinador aún no ha respondido"}), 400
