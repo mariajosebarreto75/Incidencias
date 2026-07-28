@@ -404,6 +404,33 @@ document.getElementById("hora_inicio")
     .addEventListener("input", calcularDuracion);
 document.getElementById("hora_fin")
     .addEventListener("input", calcularDuracion);
+
+// Permite pegar horas en formato HH:MM:SS o HH:MM desde plataformas externas
+function parsearHoraPegada(texto) {
+    const limpio = texto.trim();
+    // Acepta HH:MM:SS, HH:MM, H:MM, H:MM:SS
+    const m = limpio.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if (!m) return null;
+    const hh = m[1].padStart(2, "0");
+    const mm = m[2].padStart(2, "0");
+    const ss = (m[3] || "00").padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+}
+
+["hora_inicio", "hora_fin"].forEach(function(id) {
+    document.getElementById(id).addEventListener("paste", function(e) {
+        e.preventDefault();
+        const texto = (e.clipboardData || window.clipboardData).getData("text");
+        const hora  = parsearHoraPegada(texto);
+        if (hora) {
+            this.value = hora;
+            this.dispatchEvent(new Event("input"));
+        } else {
+            // Si el formato no es reconocido, dejar que el usuario vea qué pegó
+            this.value = "";
+        }
+    });
+});
 document.getElementById("tipo_incidencia")
     .addEventListener("change", determinarImpacto);
 

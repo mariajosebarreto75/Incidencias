@@ -222,9 +222,17 @@ def panel_reportes():
 
     reportes = query.order_by(ReporteOperacional.fecha_creado.desc()).all()
 
+    kpis = {
+        "total":        len(reportes),
+        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme") and r.estado != "Respondido"),
+        "no_conformes": sum(1 for r in reportes if r.conformidad_neo == "No conforme"),
+        "conformes":    sum(1 for r in reportes if r.conformidad_neo == "Conforme"),
+    }
+
     return render_template(
         "coordinador/panel_reportes.html",
         reportes             = reportes,
+        kpis                 = kpis,
         lista_contratos      = lista_contratos,
         contrato_activo      = contrato_filtro or "todos",
         lista_recursos       = lista_recursos,
@@ -271,7 +279,12 @@ def distribucion_operativa():
 
     hoy = _date.today()
 
-    if fecha_desde_str:
+    mostrar_todo = request.args.get("todo") == "1"
+
+    if mostrar_todo:
+        fecha_desde = fecha_hasta = None
+        fecha_desde_str = fecha_hasta_str = ""
+    elif fecha_desde_str:
         try:
             fecha_desde = datetime.strptime(fecha_desde_str, "%Y-%m-%d").date()
             fecha_hasta = datetime.strptime(fecha_hasta_str or fecha_desde_str, "%Y-%m-%d").date()
@@ -303,10 +316,14 @@ def distribucion_operativa():
     lista_valores   = list(set(lista_contratos + lista_codigos))
 
     # Consultar solo los registros del coordinador (por sus contratos asignados)
-    q = DistribucionOperativa.query.filter(
-        DistribucionOperativa.fecha.between(fecha_desde, fecha_hasta),
-        DistribucionOperativa.contrato.in_(lista_valores) if lista_valores else False
-    )
+    contrato_filter = DistribucionOperativa.contrato.in_(lista_valores) if lista_valores else False
+    if mostrar_todo:
+        q = DistribucionOperativa.query.filter(contrato_filter)
+    else:
+        q = DistribucionOperativa.query.filter(
+            DistribucionOperativa.fecha.between(fecha_desde, fecha_hasta),
+            contrato_filter
+        )
     registros = q.order_by(DistribucionOperativa.fecha.asc(), DistribucionOperativa.id.asc()).all()
 
     # Lookup personas

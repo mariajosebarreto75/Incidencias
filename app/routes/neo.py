@@ -167,8 +167,12 @@ def distribucion_neo():
 
     fecha_desde_str = request.args.get("fecha_desde") or ""
     fecha_hasta_str = request.args.get("fecha_hasta") or ""
+    mostrar_todo    = request.args.get("todo") == "1"
 
-    if fecha_desde_str:
+    if mostrar_todo:
+        fecha_desde = fecha_hasta = None
+        fecha_desde_str = fecha_hasta_str = ""
+    elif fecha_desde_str:
         try:
             fecha_desde = datetime.strptime(fecha_desde_str, "%Y-%m-%d").date()
             fecha_hasta = datetime.strptime(fecha_hasta_str or fecha_desde_str, "%Y-%m-%d").date()
@@ -186,12 +190,10 @@ def distribucion_neo():
         c.contrato for c in Contrato.query.filter_by(activo=True).all()
     )
 
-    registros = (
-        DistribucionOperativa.query
-        .filter(DistribucionOperativa.fecha.between(fecha_desde, fecha_hasta))
-        .order_by(DistribucionOperativa.fecha.asc(), DistribucionOperativa.id.asc())
-        .all()
-    )
+    q = DistribucionOperativa.query
+    if not mostrar_todo:
+        q = q.filter(DistribucionOperativa.fecha.between(fecha_desde, fecha_hasta))
+    registros = q.order_by(DistribucionOperativa.fecha.asc(), DistribucionOperativa.id.asc()).all()
 
     cedulas = {r.cedula_1 for r in registros if r.cedula_1}
     personas_map = {
@@ -326,12 +328,20 @@ def validar_reportes():
         "contrato":      contrato_f,
     }
 
+    kpis = {
+        "total":        len(reportes),
+        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme") and r.estado != "Respondido"),
+        "no_conformes": sum(1 for r in reportes if r.conformidad_neo == "No conforme"),
+        "conformes":    sum(1 for r in reportes if r.conformidad_neo == "Conforme"),
+    }
+
     return render_template(
         "neo/validar_reportes.html",
         reportes=reportes,
         lista_contratos=lista_contratos,
         lista_recursos=lista_recursos,
         filtros=filtros,
+        kpis=kpis,
     )
 
 

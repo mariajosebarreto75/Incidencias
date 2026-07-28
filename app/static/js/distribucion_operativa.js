@@ -18,9 +18,9 @@ function origenBadge(cell) {
 let tabla = new Tabulator("#tablaDistribucion", {
     data: datosDistribucion,
     layout: "fitDataStretch",
-    height: "72vh",
-    pagination: true,
-    paginationSize: 50,
+    height: false,
+    maxHeight: "80vh",
+    pagination: false,
     resizableColumns: true,
     movableColumns: true,
     clipboard: true,

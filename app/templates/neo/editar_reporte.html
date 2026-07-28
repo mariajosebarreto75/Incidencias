@@ -227,6 +227,19 @@
     hiEl.addEventListener("input", calcDuracion);
     hfEl.addEventListener("input", calcDuracion);
 
+    function parsearHoraPegada(texto) {
+        const m = texto.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+        if (!m) return null;
+        return m[1].padStart(2,"0") + ":" + m[2].padStart(2,"0") + ":" + (m[3]||"00").padStart(2,"0");
+    }
+    [hiEl, hfEl].forEach(function(el) {
+        el.addEventListener("paste", function(e) {
+            e.preventDefault();
+            const hora = parsearHoraPegada((e.clipboardData||window.clipboardData).getData("text"));
+            if (hora) { this.value = hora; this.dispatchEvent(new Event("input")); }
+        });
+    });
+
     /* ---- Subir evidencias ---- */
     function subirEv(num) {
         const file = document.getElementById("ev" + num).files[0];
