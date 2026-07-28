@@ -635,6 +635,29 @@
     box-shadow: 0 0 0 3px rgba(0,183,199,.12);
 }
 
+/* ===== COPIAR HORA ===== */
+.rpt-hora-group .edit-input {
+    border-radius: 9px 0 0 9px;
+}
+.rpt-hora-group .rpt-copy-btn {
+    border: 1.5px solid #dce5ea;
+    border-left: none;
+    border-radius: 0 9px 9px 0;
+    background: #f4f8f9;
+    color: #5c6b72;
+    padding: 0 12px;
+    transition: background .15s, color .15s;
+}
+.rpt-hora-group .rpt-copy-btn:hover {
+    background: #e0f8fb;
+    color: #00B7C7;
+}
+.rpt-hora-group .rpt-copy-btn.copiado {
+    background: #d7f7e4;
+    color: #1a9d5c;
+    border-color: #a9ecc4;
+}
+
 textarea.edit-input { resize: vertical; }
 
 .edit-readonly {

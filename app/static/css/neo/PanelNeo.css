@@ -191,6 +191,29 @@
 }
 .upload-preview.visible { display: block; }
 
+/* ===== COPIAR HORA ===== */
+.rpt-hora-group .rpt-copy-btn {
+    border: 1.5px solid var(--neo-border);
+    border-left: none;
+    border-radius: 0 9px 9px 0;
+    background: var(--neo-bg);
+    color: #5c6b72;
+    padding: 0 12px;
+    transition: background .15s, color .15s;
+}
+.rpt-hora-group .rpt-copy-btn:hover {
+    background: #e0f8fb;
+    color: var(--neo-teal);
+}
+.rpt-hora-group .rpt-copy-btn.copiado {
+    background: #d7f7e4;
+    color: #1a9d5c;
+    border-color: #a9ecc4;
+}
+.rpt-hora-group .form-control {
+    border-radius: 9px 0 0 9px;
+}
+
 /* ===== DURACIÓN CHIP ===== */
 .duracion-chip {
     background: linear-gradient(135deg, #e0f8fb, #b5eef4);

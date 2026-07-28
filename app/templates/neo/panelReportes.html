@@ -249,7 +249,13 @@
                         Hora Inicio
                         <span class="badge-req ms-1">Requerido</span>
                     </label>
-                    <input type="time" id="hora_inicio" class="form-control" step="1">
+                    <div class="input-group rpt-hora-group">
+                        <input type="time" id="hora_inicio" class="form-control" step="1">
+                        <button type="button" class="btn rpt-copy-btn" id="btnCopyHoraInicio"
+                                title="Copiar hora inicio">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="col-md-3 rpt-field">
@@ -258,7 +264,13 @@
                         Hora Fin
                         <span class="badge-req ms-1">Requerido</span>
                     </label>
-                    <input type="time" id="hora_fin" class="form-control" step="1">
+                    <div class="input-group rpt-hora-group">
+                        <input type="time" id="hora_fin" class="form-control" step="1">
+                        <button type="button" class="btn rpt-copy-btn" id="btnCopyHoraFin"
+                                title="Copiar hora fin">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- CHIP DURACIÓN -->

@@ -434,6 +434,42 @@ function parsearHoraPegada(texto) {
 document.getElementById("tipo_incidencia")
     .addEventListener("change", determinarImpacto);
 
+// ---- Copiar hora al portapapeles (input type="time" no permite seleccionar texto) ----
+function copiarTexto(texto) {
+    if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(texto);
+    }
+    const temp = document.createElement("textarea");
+    temp.value = texto;
+    temp.style.position = "fixed";
+    temp.style.opacity = "0";
+    document.body.appendChild(temp);
+    temp.focus();
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+    return Promise.resolve();
+}
+
+[["btnCopyHoraInicio", "hora_inicio"], ["btnCopyHoraFin", "hora_fin"]].forEach(function ([btnId, inputId]) {
+    const btn   = document.getElementById(btnId);
+    const input = document.getElementById(inputId);
+    if (!btn || !input) return;
+
+    btn.addEventListener("click", function () {
+        if (!input.value) return;
+        copiarTexto(input.value).then(function () {
+            const icono = btn.querySelector("i");
+            btn.classList.add("copiado");
+            icono.className = "bi bi-clipboard-check";
+            setTimeout(function () {
+                btn.classList.remove("copiado");
+                icono.className = "bi bi-clipboard";
+            }, 1200);
+        });
+    });
+});
+
 // =====================================
 // SUBIR EVIDENCIA AL SERVIDOR
 // =====================================

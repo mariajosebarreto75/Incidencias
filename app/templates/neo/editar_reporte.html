@@ -84,13 +84,25 @@
                 <!-- HORAS -->
                 <div class="col-md-3">
                     <label class="edit-label" for="hora_inicio">Hora inicio</label>
-                    <input type="time" id="hora_inicio" class="edit-input"
-                           value="{{ reporte.hora_inicio.strftime('%H:%M') if reporte.hora_inicio else '' }}">
+                    <div class="input-group rpt-hora-group">
+                        <input type="time" id="hora_inicio" class="edit-input"
+                               value="{{ reporte.hora_inicio.strftime('%H:%M') if reporte.hora_inicio else '' }}">
+                        <button type="button" class="btn rpt-copy-btn" id="btnCopyHoraInicio"
+                                title="Copiar hora inicio">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-md-3">
                     <label class="edit-label" for="hora_fin">Hora fin</label>
-                    <input type="time" id="hora_fin" class="edit-input"
-                           value="{{ reporte.hora_fin.strftime('%H:%M') if reporte.hora_fin else '' }}">
+                    <div class="input-group rpt-hora-group">
+                        <input type="time" id="hora_fin" class="edit-input"
+                               value="{{ reporte.hora_fin.strftime('%H:%M') if reporte.hora_fin else '' }}">
+                        <button type="button" class="btn rpt-copy-btn" id="btnCopyHoraFin"
+                                title="Copiar hora fin">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-md-3">
                     <label class="edit-label">Duración (auto)</label>
@@ -237,6 +249,40 @@
             e.preventDefault();
             const hora = parsearHoraPegada((e.clipboardData||window.clipboardData).getData("text"));
             if (hora) { this.value = hora; this.dispatchEvent(new Event("input")); }
+        });
+    });
+
+    /* ---- Copiar hora al portapapeles ---- */
+    function copiarTexto(texto) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(texto);
+        }
+        const temp = document.createElement("textarea");
+        temp.value = texto;
+        temp.style.position = "fixed";
+        temp.style.opacity = "0";
+        document.body.appendChild(temp);
+        temp.focus();
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        return Promise.resolve();
+    }
+
+    [["btnCopyHoraInicio", hiEl], ["btnCopyHoraFin", hfEl]].forEach(function ([btnId, input]) {
+        const btn = document.getElementById(btnId);
+        if (!btn || !input) return;
+        btn.addEventListener("click", function () {
+            if (!input.value) return;
+            copiarTexto(input.value).then(function () {
+                const icono = btn.querySelector("i");
+                btn.classList.add("copiado");
+                icono.className = "bi bi-clipboard-check";
+                setTimeout(function () {
+                    btn.classList.remove("copiado");
+                    icono.className = "bi bi-clipboard";
+                }, 1200);
+            });
         });
     });
 
