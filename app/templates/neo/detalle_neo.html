@@ -14,10 +14,12 @@
            class="btn btn-sm btn-outline-secondary rounded-pill px-3">
             <i class="bi bi-arrow-left me-1"></i> Volver
         </a>
+        {% if reporte.estado != 'Cerrado' %}
         <a href="{{ url_for('neo.editar_reporte', id=reporte.id) }}"
            class="btn btn-sm btn-outline-primary rounded-pill px-3">
             <i class="bi bi-pencil me-1"></i> Editar
         </a>
+        {% endif %}
         <div>
             <h2 class="mb-0 fw-bold" style="color:#0a1f2e; font-size:1.25rem;">
                 Reporte #{{ reporte.id }} — {{ reporte.tipo_incidencia }}
@@ -27,7 +29,11 @@
             </small>
         </div>
         <div class="ms-auto">
-            {% if reporte.estado == 'Respondido' %}
+            {% if reporte.estado == 'Cerrado' %}
+            <span class="badge-estado cerrado" style="font-size:.82rem; padding:6px 14px;">
+                <i class="bi bi-lock-fill me-1"></i>Cerrado
+            </span>
+            {% elif reporte.estado == 'Respondido' %}
             <span class="badge-estado respondido" style="font-size:.82rem; padding:6px 14px;">
                 <i class="bi bi-check-circle-fill me-1"></i>Respondido
             </span>
@@ -355,15 +361,38 @@
                                 </div>
                             </div>
                             <div class="col-md-2 d-flex align-items-center justify-content-end">
+                                {% if reporte.estado != 'Cerrado' %}
                                 <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
                                         id="btnCorregirConf">
                                     <i class="bi bi-pencil me-1"></i>Corregir
                                 </button>
+                                {% endif %}
                             </div>
                         </div>
+
+                        {% if reporte.apelacion_no_conformidad %}
+                        <div class="row g-2 mt-2">
+                            <div class="col-12">
+                                <hr class="my-2">
+                                <div class="det-field">
+                                    <span class="det-label">
+                                        <i class="bi bi-shield-exclamation me-1"></i>Apelación del coordinador
+                                    </span>
+                                    <span class="det-value det-obs">{{ reporte.apelacion_no_conformidad }}</span>
+                                    <span class="det-respondido-by d-block mt-1" style="margin-left:0;">
+                                        {{ reporte.apelado_por }}
+                                        {% if reporte.fecha_apelacion %}
+                                        · {{ reporte.fecha_apelacion.strftime('%d/%m/%Y %H:%M') }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
 
                     <!-- FORMULARIO CORRECCIÓN (oculto por defecto) -->
+                    {% if reporte.estado != 'Cerrado' %}
                     <div id="confFormCorrec" style="display:none;">
                         <p class="text-muted small mb-3">
                             Corrija su validación de conformidad.
@@ -408,6 +437,7 @@
                         </div>
                         <div id="confAlerta" class="mt-2"></div>
                     </div>
+                    {% endif %}
 
                     {% else %}
                     <!-- FORMULARIO PRIMERA VEZ -->

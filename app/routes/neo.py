@@ -414,6 +414,11 @@ def validar_reporte(id):
             abort(403)
     elif reporte.reportado_por != current_user.username:
         abort(403)
+    if reporte.estado == "Cerrado":
+        return jsonify({
+            "ok": False,
+            "error": "Este reporte fue cerrado tras la apelación del coordinador y ya no admite cambios."
+        }), 400
     if reporte.estado != "Respondido":
         return jsonify({"ok": False, "error": "El coordinador aún no ha respondido"}), 400
 
@@ -456,6 +461,12 @@ def editar_reporte(id):
         abort(403)
 
     if request.method == "POST":
+        if reporte.estado == "Cerrado":
+            return jsonify({
+                "ok": False,
+                "error": "Este reporte fue cerrado tras la apelación del coordinador y ya no admite cambios."
+            }), 400
+
         d = request.get_json(silent=True) or {}
 
         # Fecha reporte

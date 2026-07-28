@@ -286,9 +286,9 @@
         JSON.parse(localStorage.getItem("notif_neo_vistos") || "[]")
     );
 
-    const NOTIF_ICONOS  = { "nuevo_reporte":"bi-file-earmark-text", "reporte_respondido":"bi-chat-left-text-fill", "no_conforme":"bi-x-circle-fill" };
-    const NOTIF_COLORES = { "nuevo_reporte":"#f5a623", "reporte_respondido":"#4fc3f7", "no_conforme":"#e53935" };
-    const NOTIF_LABELS  = { "nuevo_reporte":"Nuevo reporte", "reporte_respondido":"Respondido", "no_conforme":"No conforme" };
+    const NOTIF_ICONOS  = { "nuevo_reporte":"bi-file-earmark-text", "reporte_respondido":"bi-chat-left-text-fill", "no_conforme":"bi-x-circle-fill", "apelacion":"bi-shield-exclamation" };
+    const NOTIF_COLORES = { "nuevo_reporte":"#f5a623", "reporte_respondido":"#4fc3f7", "no_conforme":"#e53935", "apelacion":"#8e44ad" };
+    const NOTIF_LABELS  = { "nuevo_reporte":"Nuevo reporte", "reporte_respondido":"Respondido", "no_conforme":"No conforme", "apelacion":"Apelación" };
 
     // ── Sonido (Web Audio API) ────────────────────────────────────────────────
     function notifSonido() {

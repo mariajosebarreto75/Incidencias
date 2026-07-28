@@ -24,7 +24,11 @@
             </small>
         </div>
         <div class="ms-auto">
-            {% if reporte.estado == 'Respondido' %}
+            {% if reporte.estado == 'Cerrado' %}
+            <span class="badge-estado cerrado fs-6">
+                <i class="bi bi-lock-fill me-1"></i>Cerrado
+            </span>
+            {% elif reporte.estado == 'Respondido' %}
             <span class="badge-estado respondido fs-6">
                 <i class="bi bi-check-circle-fill me-1"></i>Respondido
             </span>
@@ -35,6 +39,15 @@
             {% endif %}
         </div>
     </div>
+
+    {% if reporte.estado == 'Cerrado' %}
+    <div class="alert alert-secondary d-flex align-items-center mb-3" style="border-radius:10px;">
+        <i class="bi bi-lock-fill me-2"></i>
+        Este reporte fue cerrado tras la apelación del coordinador el
+        {{ reporte.fecha_apelacion.strftime('%d/%m/%Y %H:%M') if reporte.fecha_apelacion else '' }}.
+        No admite más cambios.
+    </div>
+    {% endif %}
 
     <div id="rptAlerta" class="mb-3"></div>
 
@@ -228,13 +241,27 @@
                         {% endif %}
                     </span>
                     {% endif %}
+                    {% if reporte.respuesta_editada %}
+                    <span class="det-respondido-by w-100 text-end" style="margin-left:0;">
+                        <i class="bi bi-pencil-square me-1"></i>Editado por {{ reporte.respuesta_editada_por }}
+                        {% if reporte.fecha_edicion_respuesta %}
+                        · {{ reporte.fecha_edicion_respuesta.strftime('%d/%m/%Y %H:%M') }}
+                        {% endif %}
+                    </span>
+                    {% endif %}
                 </div>
 
                 <div class="det-card-body">
 
-                    {% if reporte.estado == 'Respondido' %}
+                    {% set puede_editar_respuesta = (
+                        reporte.estado == 'Respondido' and
+                        not reporte.respuesta_editada and
+                        current_user.nombre_completo == reporte.respondido_por
+                    ) %}
+
+                    {% if reporte.estado in ('Respondido', 'Cerrado') %}
                     <!-- SOLO LECTURA -->
-                    <div class="row g-2">
+                    <div class="row g-2" id="viewRespuestaLectura">
 
                         <div class="col-12">
                             <div class="det-field">
@@ -288,7 +315,132 @@
                             </div>
                         </div>
 
+                        {% if puede_editar_respuesta %}
+                        <div class="col-12 pt-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnMostrarEditarRespuesta">
+                                <i class="bi bi-pencil-square me-1"></i>Editar respuesta (solo una vez)
+                            </button>
+                        </div>
+                        {% endif %}
+
                     </div>
+
+                    {% if puede_editar_respuesta %}
+                    <!-- FORMULARIO DE EDICIÓN (una sola vez) -->
+                    <div class="row g-3 d-none" id="formEditarRespuesta">
+
+                        <div class="col-12">
+                            <div class="alert alert-warning py-2 px-3 mb-0" style="border-radius:8px; font-size:.82rem;">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                Solo puedes corregir esta respuesta una vez. Después de guardar no podrás editarla de nuevo.
+                            </div>
+                        </div>
+
+                        <div class="col-12 rpt-field">
+                            <label class="det-form-label">
+                                <i class="bi bi-chat-left-text text-info me-1"></i>
+                                Respuesta <span class="badge-req ms-1">Requerido</span>
+                            </label>
+                            <textarea id="edit_respuesta" rows="4" class="form-control">{{ reporte.respuesta or '' }}</textarea>
+                        </div>
+
+                        <div class="col-12 rpt-field">
+                            <label class="det-form-label">
+                                <i class="bi bi-sliders text-info me-1"></i>
+                                Parámetro
+                            </label>
+                            <select id="edit_parametro_coor" class="form-select">
+                                <option value="">— Seleccione —</option>
+                                {% for p in parametros_coor %}
+                                <option value="{{ p }}" {% if p == reporte.parametro_coordinador %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-6 rpt-field">
+                            <label class="det-form-label">
+                                <i class="bi bi-ui-checks text-info me-1"></i>
+                                Estado de conformidad <span class="badge-req ms-1">Requerido</span>
+                            </label>
+                            <select id="edit_estado_conformidad" class="form-select">
+                                <option value="">— Seleccione —</option>
+                                {% for e in estados_conformidad %}
+                                <option value="{{ e }}" {% if e == reporte.estado_conformidad %}selected{% endif %}>{{ e }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-6 rpt-field">
+                            <label class="det-form-label">
+                                <i class="bi bi-arrow-right-circle text-info me-1"></i>
+                                Acción a tomar <span class="badge-req ms-1">Requerido</span>
+                            </label>
+                            <select id="edit_accion_a_tomar" class="form-select">
+                                <option value="">— Seleccione —</option>
+                                {% for a in acciones_tomar %}
+                                <option value="{{ a }}" {% if a == reporte.accion_a_tomar %}selected{% endif %}>{{ a }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="det-form-label">
+                                <i class="bi bi-camera text-info me-1"></i>
+                                Evidencia 1 <span class="badge-req ms-1">Requerido</span>
+                            </label>
+                            <div class="upload-area-coor" id="edit_area_coor1">
+                                <input type="file" id="edit_ev_coor_1" accept="image/*">
+                                <input type="hidden" id="edit_ruta_ev_coor_1" value="{{ reporte.evidencia_coor_1 or '' }}">
+                                <img id="edit_prev_coor1" class="upload-prev-coor{% if reporte.evidencia_coor_1 %} visible{% endif %}"
+                                     src="{% if reporte.evidencia_coor_1 %}/coordinador/evidencia-coor/{{ reporte.evidencia_coor_1 }}{% endif %}" alt="">
+                                <div id="edit_ph_coor1" class="upload-ph-coor" {% if reporte.evidencia_coor_1 %}style="display:none;"{% endif %}>
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                    <span>Clic o arrastre</span>
+                                    <small>JPG · PNG · WEBP · máx 10 MB</small>
+                                </div>
+                                <div id="edit_spin_coor1" class="upload-spin-coor d-none">
+                                    <div class="spinner-border spinner-border-sm text-info me-2"></div>
+                                    Subiendo…
+                                </div>
+                            </div>
+                            <div id="edit_est_coor1" class="upload-estado mt-1"></div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="det-form-label">
+                                <i class="bi bi-camera text-secondary me-1"></i>
+                                Evidencia 2
+                                <span class="ms-1" style="font-size:.68rem;color:#888;font-weight:600;">Opcional</span>
+                            </label>
+                            <div class="upload-area-coor" id="edit_area_coor2">
+                                <input type="file" id="edit_ev_coor_2" accept="image/*">
+                                <input type="hidden" id="edit_ruta_ev_coor_2" value="{{ reporte.evidencia_coor_2 or '' }}">
+                                <img id="edit_prev_coor2" class="upload-prev-coor{% if reporte.evidencia_coor_2 %} visible{% endif %}"
+                                     src="{% if reporte.evidencia_coor_2 %}/coordinador/evidencia-coor/{{ reporte.evidencia_coor_2 }}{% endif %}" alt="">
+                                <div id="edit_ph_coor2" class="upload-ph-coor" {% if reporte.evidencia_coor_2 %}style="display:none;"{% endif %}>
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                    <span>Clic o arrastre</span>
+                                    <small>JPG · PNG · WEBP · máx 10 MB</small>
+                                </div>
+                                <div id="edit_spin_coor2" class="upload-spin-coor d-none">
+                                    <div class="spinner-border spinner-border-sm text-info me-2"></div>
+                                    Subiendo…
+                                </div>
+                            </div>
+                            <div id="edit_est_coor2" class="upload-estado mt-1"></div>
+                        </div>
+
+                        <div class="col-12 d-flex gap-2 pt-2">
+                            <button class="btn-coor-guardar flex-grow-1" id="btnGuardarEdicionRespuesta">
+                                <i class="bi bi-save-fill me-2"></i>Guardar corrección
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btnCancelarEdicionRespuesta">
+                                Cancelar
+                            </button>
+                        </div>
+
+                    </div>
+                    {% endif %}
 
                     {% else %}
                     <!-- FORMULARIO -->
@@ -452,6 +604,49 @@
                             </div>
                         </div>
                     </div>
+
+                    {% if reporte.conformidad_neo == 'No conforme' %}
+                    <div class="row g-2 mt-1">
+                        <div class="col-12">
+                            <hr class="my-2">
+                        </div>
+
+                        {% if reporte.apelacion_no_conformidad %}
+                        <div class="col-12">
+                            <div class="det-field">
+                                <span class="det-label">
+                                    <i class="bi bi-shield-exclamation me-1"></i>Apelación del coordinador
+                                </span>
+                                <span class="det-value det-obs">{{ reporte.apelacion_no_conformidad }}</span>
+                                <span class="det-respondido-by d-block mt-1" style="margin-left:0;">
+                                    {{ reporte.apelado_por }}
+                                    {% if reporte.fecha_apelacion %}
+                                    · {{ reporte.fecha_apelacion.strftime('%d/%m/%Y %H:%M') }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% elif current_user.nombre_completo == reporte.respondido_por and reporte.estado != 'Cerrado' %}
+                        <div class="col-12">
+                            <button type="button" class="btn btn-outline-danger btn-sm" id="btnMostrarApelar">
+                                <i class="bi bi-shield-exclamation me-1"></i>Apelar No Conformidad
+                            </button>
+                        </div>
+                        <div class="col-12 d-none" id="formApelar">
+                            <div class="alert alert-warning py-2 px-3" style="border-radius:8px; font-size:.82rem;">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                Al enviar la apelación, el reporte quedará <strong>cerrado</strong> y no admitirá más cambios.
+                            </div>
+                            <textarea id="apelacion_texto" rows="3" class="form-control mb-2"
+                                placeholder="Explique por qué no está de acuerdo con la calificación de No Conforme…"></textarea>
+                            <button class="btn btn-danger btn-sm" id="btnEnviarApelar">
+                                <i class="bi bi-send-fill me-1"></i>Enviar apelación y cerrar reporte
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
                 </div>
             </div>
         </div>

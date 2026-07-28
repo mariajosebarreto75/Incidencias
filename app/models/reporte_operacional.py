@@ -194,6 +194,40 @@ class ReporteOperacional(db.Model):
         db.DateTime
     )
 
+    # =====================
+    # EDICIÓN DE RESPUESTA (COORDINADOR)
+    # =====================
+
+    respuesta_editada = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False
+    )
+
+    respuesta_editada_por = db.Column(
+        db.String(150)
+    )
+
+    fecha_edicion_respuesta = db.Column(
+        db.DateTime
+    )
+
+    # =====================
+    # APELACIÓN NO CONFORMIDAD
+    # =====================
+
+    apelacion_no_conformidad = db.Column(
+        db.Text
+    )
+
+    apelado_por = db.Column(
+        db.String(150)
+    )
+
+    fecha_apelacion = db.Column(
+        db.DateTime
+    )
+
     def __repr__(self):
 
         return (

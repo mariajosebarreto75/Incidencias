@@ -27,6 +27,9 @@ def crear_notificacion(usuario_destino, tipo, reporte):
             f"{tipo_inc}, respondida por {respondido}.",
         "no_conforme":
             f"Su respuesta del {recurso}, del día {fecha} ha sido inconforme, validala.",
+        "apelacion":
+            f"El coordinador apeló la no conformidad de {recurso}, del día {fecha}. "
+            f"El reporte quedó cerrado.",
     }
     n = Notificacion(
         usuario_destino = usuario_destino,

@@ -208,6 +208,8 @@
 .badge-conf.conforme    { background: #e8f5ee; color: #2e7d32; }
 .badge-conf.no-conforme { background: #fff0f0; color: #c0392b; }
 
+.badge-estado.cerrado   { background: #e9ecef; color: #495057; }
+
 /* ===== BADGE-REQ ===== */
 .badge-req {
     font-size: .68rem;

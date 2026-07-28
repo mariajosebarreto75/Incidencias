@@ -457,6 +457,7 @@
 .badge-estado.con-respuesta { background: #e0f7f8; color: #00737e; }
 .badge-estado.conforme     { background: #e8f5ee;  color: #2e7d32; }
 .badge-estado.no-conforme  { background: #fff0f0;  color: #c0392b; }
+.badge-estado.cerrado      { background: #e9ecef;  color: #495057; }
 
 /* BTN VER */
 .btn-neo-ver {

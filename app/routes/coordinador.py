@@ -13,7 +13,8 @@ from flask import (
     url_for,
     jsonify,
     send_from_directory,
-    current_app
+    current_app,
+    abort
 )
 from werkzeug.utils import secure_filename
 
@@ -617,6 +618,131 @@ def responder_reporte(id):
         return jsonify({
             "success": True,
             "mensaje": f"Reporte #{reporte.id} respondido correctamente."
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "mensaje": str(e)}), 500
+
+
+# =====================================
+# EDITAR RESPUESTA (una sola vez)
+# =====================================
+
+@coordinador.route("/coordinador/reporte/<int:id>/editar-respuesta", methods=["POST"])
+@login_required
+def editar_respuesta(id):
+
+    reporte = ReporteOperacional.query.get_or_404(id)
+
+    if reporte.respondido_por != current_user.nombre_completo:
+        abort(403)
+
+    if reporte.estado == "Cerrado":
+        return jsonify({
+            "success": False,
+            "mensaje": "Este reporte fue cerrado tras la apelación y ya no admite cambios."
+        }), 400
+
+    if reporte.estado != "Respondido":
+        return jsonify({
+            "success": False,
+            "mensaje": "El reporte aún no tiene una respuesta guardada."
+        }), 400
+
+    if reporte.respuesta_editada:
+        return jsonify({
+            "success": False,
+            "mensaje": "La respuesta ya fue editada una vez y no admite una segunda edición."
+        }), 400
+
+    datos = request.get_json()
+
+    requeridos = {
+        "respuesta":          "Respuesta",
+        "estado_conformidad": "Estado de conformidad",
+        "accion_a_tomar":     "AcciÃ³n a tomar",
+        "evidencia_coor_1":   "Evidencia 1 del coordinador",
+    }
+
+    faltantes = [
+        label for campo, label in requeridos.items()
+        if not datos.get(campo)
+    ]
+
+    if faltantes:
+        return jsonify({
+            "success": False,
+            "mensaje": "Campos requeridos: " + ", ".join(faltantes)
+        }), 400
+
+    reporte.respuesta             = datos["respuesta"]
+    reporte.parametro_coordinador = datos.get("parametro_coordinador") or None
+    reporte.evidencia_coor_1      = datos["evidencia_coor_1"]
+    reporte.evidencia_coor_2      = datos.get("evidencia_coor_2") or None
+    reporte.estado_conformidad    = datos["estado_conformidad"]
+    reporte.accion_a_tomar        = datos["accion_a_tomar"]
+
+    reporte.respuesta_editada       = True
+    reporte.respuesta_editada_por   = current_user.nombre_completo
+    reporte.fecha_edicion_respuesta = datetime.now()
+
+    try:
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "mensaje": f"Respuesta del reporte #{reporte.id} corregida correctamente."
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "mensaje": str(e)}), 500
+
+
+# =====================================
+# APELAR NO CONFORMIDAD (cierra el reporte)
+# =====================================
+
+@coordinador.route("/coordinador/reporte/<int:id>/apelar", methods=["POST"])
+@login_required
+def apelar_no_conformidad(id):
+
+    reporte = ReporteOperacional.query.get_or_404(id)
+
+    if reporte.respondido_por != current_user.nombre_completo:
+        abort(403)
+
+    if reporte.estado == "Cerrado":
+        return jsonify({
+            "success": False,
+            "mensaje": "Este reporte ya fue cerrado."
+        }), 400
+
+    if reporte.conformidad_neo != "No conforme":
+        return jsonify({
+            "success": False,
+            "mensaje": "Solo se puede apelar cuando NEO calificó el reporte como No conforme."
+        }), 400
+
+    datos = request.get_json(silent=True) or {}
+    texto = (datos.get("apelacion") or "").strip()
+
+    if not texto:
+        return jsonify({
+            "success": False,
+            "mensaje": "Escriba el motivo de la apelación."
+        }), 400
+
+    reporte.apelacion_no_conformidad = texto
+    reporte.apelado_por              = current_user.nombre_completo
+    reporte.fecha_apelacion          = datetime.now()
+    reporte.estado                   = "Cerrado"
+
+    try:
+        db.session.commit()
+        crear_notificacion(reporte.reportado_por, "apelacion", reporte)
+        db.session.commit()
+        return jsonify({
+            "success": True,
+            "mensaje": f"Apelación registrada. El reporte #{reporte.id} ha sido cerrado."
         })
     except Exception as e:
         db.session.rollback()
