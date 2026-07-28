@@ -94,7 +94,7 @@ def login():
         elif user.rol.lower() == "neo":
             return redirect(url_for("neo.home_neo"))
         elif user.rol.lower() == "director":
-            return redirect(url_for("dashboard.director"))
+            return redirect(url_for("dashboard.indicadores"))
 
         return redirect("/")
 

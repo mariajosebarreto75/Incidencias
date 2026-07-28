@@ -50,6 +50,12 @@ class User(
         default=True
     )
 
+    acceso_dashboard = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False
+    )
+
     # ======================
     # PASSWORD
     # ======================

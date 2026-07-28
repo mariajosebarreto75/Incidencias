@@ -239,6 +239,7 @@ def api_editar_usuario(id):
     u.rol      = (d.get("rol") or u.rol).strip()
     u.contrato = d.get("contrato") or None
     u.activo   = bool(d.get("activo", u.activo))
+    u.acceso_dashboard = bool(d.get("acceso_dashboard", u.acceso_dashboard))
     if d.get("password"):
         u.password_hash = d["password"].strip()
     db.session.commit()

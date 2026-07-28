@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Gerencial — Incidencias</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_gerencial.css') }}">
+</head>
+<body>
+
+<div class="dg-topbar">
+    <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+    <div>
+        <h1>Dashboard Gerencial</h1>
+        <span class="dg-sub">Indicadores de reportes operacionales — {{ current_user.nombre_completo }}</span>
+    </div>
+    <div class="dg-topbar-actions">
+        {% if home_endpoint %}
+        <a href="{{ url_for(home_endpoint) }}" class="dg-btn-top">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="dg-btn-top">
+            <i class="bi bi-box-arrow-right me-1"></i>Salir
+        </a>
+    </div>
+</div>
+
+<div class="dg-container">
+
+    <!-- FILTRO -->
+    <form class="dg-filtro" method="get">
+        <label><i class="bi bi-funnel me-1"></i>Contrato</label>
+        <select name="contrato" onchange="this.form.submit()">
+            <option value="">— Todos los contratos —</option>
+            {% for c in lista_contratos %}
+            <option value="{{ c }}" {% if c == contrato_filtro %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+        {% if contrato_filtro %}
+        <a href="{{ url_for('dashboard.indicadores') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-x-lg me-1"></i>Quitar filtro
+        </a>
+        {% endif %}
+    </form>
+
+    <!-- KPIs -->
+    <div class="dg-kpi-row">
+        <div class="dg-kpi">
+            <div class="dg-kpi-label">Total reportes</div>
+            <div class="dg-kpi-value">{{ kpis.total_reportes }}</div>
+        </div>
+        <div class="dg-kpi dg-kpi-warn">
+            <div class="dg-kpi-label">Pendientes de respuesta</div>
+            <div class="dg-kpi-value">{{ kpis.total_pendientes }}</div>
+        </div>
+        <div class="dg-kpi dg-kpi-good">
+            <div class="dg-kpi-label">Conformes</div>
+            <div class="dg-kpi-value">{{ kpis.total_conformes }}</div>
+        </div>
+        <div class="dg-kpi dg-kpi-bad">
+            <div class="dg-kpi-label">No conformes</div>
+            <div class="dg-kpi-value">{{ kpis.total_no_conformes }}</div>
+        </div>
+        <div class="dg-kpi dg-kpi-accent">
+            <div class="dg-kpi-label">Cerrados (apelados)</div>
+            <div class="dg-kpi-value">{{ kpis.total_cerrados }}</div>
+        </div>
+    </div>
+
+    <!-- GRAFICOS -->
+    <div class="dg-charts-grid">
+
+        {% macro bar_chart(titulo, icono, serie) %}
+        <div class="dg-card">
+            <div class="dg-card-header"><i class="bi {{ icono }} me-2"></i>{{ titulo }}</div>
+            <div class="dg-card-body">
+                {% if serie.datos %}
+                <div class="dg-bars">
+                    {% for etiqueta, cantidad in serie.datos %}
+                    <div class="dg-bar-row">
+                        <span class="dg-bar-label" title="{{ etiqueta }}">{{ etiqueta }}</span>
+                        <div class="dg-bar-track">
+                            <div class="dg-bar-fill"
+                                 style="width: {{ ((cantidad / serie.maximo * 100) if serie.maximo else 0) | round(1) }}%;"></div>
+                        </div>
+                        <span class="dg-bar-value">{{ cantidad }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <details class="dg-table-toggle">
+                    <summary>Ver tabla</summary>
+                    <table class="dg-table">
+                        <thead><tr><th>Categoría</th><th>Cantidad</th></tr></thead>
+                        <tbody>
+                            {% for etiqueta, cantidad in serie.datos %}
+                            <tr><td>{{ etiqueta }}</td><td>{{ cantidad }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </details>
+                {% else %}
+                <p class="text-muted small mb-0">Sin datos para este filtro.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endmacro %}
+
+        {{ bar_chart("Reportes por contrato", "bi-building", reportes_por_contrato) }}
+        {{ bar_chart("Pendientes por respuesta por contrato", "bi-hourglass-split", pendientes_por_contrato) }}
+        {{ bar_chart("Reportes por recurso", "bi-truck", reportes_por_recurso) }}
+        {{ bar_chart("Tipos de incidencia", "bi-exclamation-triangle", reportes_por_tipo) }}
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

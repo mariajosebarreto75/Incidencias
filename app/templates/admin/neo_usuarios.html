@@ -68,6 +68,16 @@
     transition: all .2s;
 }
 .nu-btn-act:hover { background:#0a3d1f; }
+.nu-btn-dash-on {
+    padding: .3rem .75rem; border-radius: 6px; font-size: .72rem; font-weight: 600;
+    cursor: pointer; border: 1px solid #14b8a655; background: #042f2e; color: #2dd4bf; transition: all .2s;
+}
+.nu-btn-dash-on:hover { background: #083f3d; }
+.nu-btn-dash-off {
+    padding: .3rem .75rem; border-radius: 6px; font-size: .72rem; font-weight: 600;
+    cursor: pointer; border: 1px solid #334155; background: #1e293b; color: #64748b; transition: all .2s;
+}
+.nu-btn-dash-off:hover { background: #334155; color: #94a3b8; }
 .nu-btn-del {
     padding: .3rem .6rem;
     border-radius: 6px;
@@ -261,6 +271,19 @@
                 <i class="bi bi-check-circle me-1"></i>Activar
             </button>
             {% endif %}
+            {% if u.acceso_dashboard %}
+            <button class="nu-btn-dash-on"
+                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
+                onclick="toggleDashboard(this, false)" title="Quitar acceso al Dashboard gerencial">
+                <i class="bi bi-graph-up-arrow me-1"></i>Dashboard: Sí
+            </button>
+            {% else %}
+            <button class="nu-btn-dash-off"
+                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
+                onclick="toggleDashboard(this, true)" title="Dar acceso al Dashboard gerencial">
+                <i class="bi bi-graph-up me-1"></i>Dashboard: No
+            </button>
+            {% endif %}
             <button class="nu-btn-del"
                 data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
                 onclick="eliminarUsuario(this)" title="Eliminar usuario">
@@ -449,6 +472,14 @@ async function toggleActivo(btn, activar) {
     const texto  = activar ? "¿Activar al usuario «" + nombre + "»?" : "¿Desactivar al usuario «" + nombre + "»?";
     if (!confirm(texto)) return;
     const r = await apiFetch("/admin/api/usuarios/" + id, "PUT", { activo: activar });
+    if (r.success) location.reload();
+    else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+}
+
+async function toggleDashboard(btn, dar) {
+    const nombre = btn.dataset.nombre;
+    if (!confirm((dar ? "¿Dar acceso al Dashboard gerencial a" : "¿Quitar el acceso al Dashboard gerencial a") + " «" + nombre + "»?")) return;
+    const r = await apiFetch("/admin/api/usuarios/" + btn.dataset.id, "PUT", { acceso_dashboard: dar });
     if (r.success) location.reload();
     else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
 }
