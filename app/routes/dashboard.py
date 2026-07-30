@@ -2,6 +2,7 @@ from flask import (
     Blueprint,
     render_template,
     request,
+    url_for,
     abort
 )
 
@@ -11,6 +12,7 @@ from flask_login import (
 )
 
 from sqlalchemy import func
+from urllib.parse import urlencode
 
 from app.extensions import db
 from app.models.contrato import Contrato
@@ -50,27 +52,26 @@ def director():
 
 _TOP_N = 12
 
+# Dimensiones filtrables por clic (estilo "cross-filter" de Power BI)
+_DIMENSIONES = ("contrato", "recurso", "tipo", "accion", "conformidad")
+
+_COLUMNA_POR_DIMENSION = {
+    "contrato":     ReporteOperacional.contrato,
+    "recurso":      ReporteOperacional.recurso,
+    "tipo":         ReporteOperacional.tipo_incidencia,
+    "accion":       ReporteOperacional.accion_a_tomar,
+    "conformidad":  ReporteOperacional.conformidad_neo,
+}
+
 
 def _formato_dias_horas(total_horas):
-    """Convierte un total de horas (float) a un texto compacto 'Xd Yh Zm'."""
+    """Convierte un total de horas (float) a un texto compacto 'Xd Yh'/'Xh Ym'."""
     total_minutos = round((total_horas or 0) * 60)
     dias, resto = divmod(total_minutos, 24 * 60)
     horas, minutos = divmod(resto, 60)
     if dias > 0:
         return f"{dias}d {horas}h"
     return f"{horas}h {minutos}m"
-
-
-def _top_n_con_otros(pares, n=_TOP_N):
-    """Recibe [(etiqueta, cantidad), ...], devuelve el top-n ordenado desc.
-    y agrupa el resto en 'Otros' para no saturar el gráfico."""
-    limpio = [(etq if etq else "Sin dato", cnt) for etq, cnt in pares]
-    limpio.sort(key=lambda p: p[1], reverse=True)
-    top = limpio[:n]
-    resto = limpio[n:]
-    if resto:
-        top.append(("Otros", sum(c for _, c in resto)))
-    return top
 
 
 @dashboard.route("/dashboard-gerencial")
@@ -80,7 +81,7 @@ def indicadores():
     if not (current_user.rol.lower() in ("admin", "director") or current_user.acceso_dashboard):
         abort(403)
 
-    # Contratos visibles para este usuario (si no tiene asignados, ve todos)
+    # ---- Contratos visibles para este usuario (si no tiene asignados, ve todos) ----
     asignados = UserContrato.query.filter_by(user_id=current_user.id).all()
     contratos_restringidos = [uc.contrato for uc in asignados] if asignados else None
 
@@ -91,29 +92,82 @@ def indicadores():
             c.contrato for c in Contrato.query.order_by(Contrato.contrato).all()
         ]
 
-    contrato_filtro = request.args.get("contrato", "").strip()
-    if contrato_filtro not in lista_contratos:
-        contrato_filtro = ""
+    # Abreviación para mostrar en los gráficos: nombre corto > código > nombre completo.
+    # Se ajusta desde Admin → Contratos (campos "Nombre corto" y "Código").
+    abrev_por_contrato = {
+        c.contrato: (c.nombre or c.codigo or c.contrato)
+        for c in Contrato.query.all()
+    }
 
-    filtros_sql = []
-    if contratos_restringidos is not None:
-        filtros_sql.append(ReporteOperacional.contrato.in_(contratos_restringidos))
-    if contrato_filtro:
-        filtros_sql.append(ReporteOperacional.contrato == contrato_filtro)
+    # ---- Filtros activos (cross-filter estilo Power BI) ----
+    activos = {}
+    for dim in _DIMENSIONES:
+        valor = request.args.get(dim, "").strip()
+        if dim == "contrato" and valor not in lista_contratos:
+            valor = ""
+        activos[dim] = valor
 
-    def _query():
+    def _url_toggle(dimension, valor):
+        """Construye la URL con el filtro invertido (clic = aplicar, clic de nuevo = quitar),
+        conservando el resto de filtros activos."""
+        nuevos = dict(activos)
+        nuevos[dimension] = "" if activos.get(dimension) == valor else valor
+        params = {k: v for k, v in nuevos.items() if v}
+        base = url_for("dashboard.indicadores")
+        return base + ("?" + urlencode(params) if params else "")
+
+    def _url_quitar(dimension):
+        nuevos = dict(activos)
+        nuevos[dimension] = ""
+        params = {k: v for k, v in nuevos.items() if v}
+        base = url_for("dashboard.indicadores")
+        return base + ("?" + urlencode(params) if params else "")
+
+    def _filtros_sql(excluir=None):
+        filtros = []
+        if contratos_restringidos is not None:
+            filtros.append(ReporteOperacional.contrato.in_(contratos_restringidos))
+        for dim, valor in activos.items():
+            if valor and dim != excluir:
+                filtros.append(_COLUMNA_POR_DIMENSION[dim] == valor)
+        return filtros
+
+    def _query(excluir=None):
         q = db.session.query(ReporteOperacional)
-        for f in filtros_sql:
+        for f in _filtros_sql(excluir):
             q = q.filter(f)
         return q
 
-    def _contar(*group_cols):
-        q = db.session.query(*group_cols, func.count(ReporteOperacional.id))
-        for f in filtros_sql:
+    def _contar(columna, excluir=None):
+        q = db.session.query(columna, func.count(ReporteOperacional.id))
+        for f in _filtros_sql(excluir):
             q = q.filter(f)
-        return q.group_by(*group_cols).all()
+        return q.group_by(columna).all()
 
-    # ---- KPIs ----
+    def _serie(pares, dimension, etiquetas=None):
+        """pares: [(valor, cantidad), ...]. `etiquetas` opcional: valor -> texto a mostrar."""
+        etiquetas = etiquetas or {}
+        limpio = [(v, (etiquetas.get(v, v) if v else "Sin dato"), c) for v, c in pares]
+        limpio.sort(key=lambda p: p[2], reverse=True)
+        top = limpio[:_TOP_N]
+        resto = limpio[_TOP_N:]
+        filas = []
+        for valor, etiqueta, cantidad in top:
+            filas.append({
+                "etiqueta": etiqueta,
+                "cantidad": cantidad,
+                "url": _url_toggle(dimension, valor) if valor else None,
+                "activo": bool(valor) and activos.get(dimension) == valor,
+            })
+        if resto:
+            filas.append({
+                "etiqueta": "Otros", "cantidad": sum(c for _, _, c in resto),
+                "url": None, "activo": False,
+            })
+        maximo = max((f["cantidad"] for f in filas), default=0)
+        return {"datos": filas, "maximo": maximo}
+
+    # ---- KPIs (aplican TODOS los filtros activos) ----
     total_reportes = _query().count()
     total_pendientes = _query().filter(ReporteOperacional.estado == "Abierto").count()
     total_conformes = _query().filter(ReporteOperacional.conformidad_neo == "Conforme").count()
@@ -122,40 +176,42 @@ def indicadores():
 
     suma_horas = (
         db.session.query(func.sum(ReporteOperacional.horas_afectadas))
-        .filter(*filtros_sql).scalar()
+        .filter(*_filtros_sql()).scalar()
     ) or 0
     tiempo_desviacion_txt = _formato_dias_horas(suma_horas)
 
     suma_afectacion = (
         db.session.query(func.sum(ReporteOperacional.afectacion_economica))
-        .filter(*filtros_sql).scalar()
+        .filter(*_filtros_sql()).scalar()
     ) or 0
 
-    # ---- Series para gráficos ----
-    def _serie(pares):
-        datos = _top_n_con_otros(pares)
-        maximo = max((c for _, c in datos), default=0)
-        return {"datos": datos, "maximo": maximo}
-
-    reportes_por_contrato = _serie(_contar(ReporteOperacional.contrato))
-    reportes_por_recurso = _serie(_contar(ReporteOperacional.recurso))
-    reportes_por_tipo = _serie(_contar(ReporteOperacional.tipo_incidencia))
-    reportes_por_accion = _serie(_contar(ReporteOperacional.accion_a_tomar))
+    # ---- Series (cada una excluye su propia dimensión para poder cambiar la selección) ----
+    reportes_por_contrato = _serie(
+        _contar(ReporteOperacional.contrato, excluir="contrato"), "contrato", abrev_por_contrato
+    )
+    reportes_por_recurso = _serie(_contar(ReporteOperacional.recurso, excluir="recurso"), "recurso")
+    reportes_por_tipo = _serie(_contar(ReporteOperacional.tipo_incidencia, excluir="tipo"), "tipo")
+    reportes_por_accion = _serie(_contar(ReporteOperacional.accion_a_tomar, excluir="accion"), "accion")
 
     pendientes_por_contrato = _serie(
         db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
         .filter(ReporteOperacional.estado == "Abierto")
-        .filter(*filtros_sql)
+        .filter(*_filtros_sql(excluir="contrato"))
         .group_by(ReporteOperacional.contrato)
-        .all()
+        .all(),
+        "contrato", abrev_por_contrato
     )
 
-    # ---- % de respuesta por contrato ----
-    total_por_contrato = dict(_contar(ReporteOperacional.contrato))
+    # ---- % de respuesta por contrato (excluye el filtro de contrato) ----
+    filtros_sin_contrato = _filtros_sql(excluir="contrato")
+    total_por_contrato = dict(
+        db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
+        .filter(*filtros_sin_contrato).group_by(ReporteOperacional.contrato).all()
+    )
     respondido_por_contrato = dict(
         db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
         .filter(ReporteOperacional.estado != "Abierto")
-        .filter(*filtros_sql)
+        .filter(*filtros_sin_contrato)
         .group_by(ReporteOperacional.contrato)
         .all()
     )
@@ -163,26 +219,46 @@ def indicadores():
     for contrato, total in total_por_contrato.items():
         respondidos = respondido_por_contrato.get(contrato, 0)
         pct = round((respondidos / total * 100), 1) if total else 0
-        pct_respuesta_datos.append((contrato if contrato else "Sin dato", pct))
-    pct_respuesta_datos.sort(key=lambda p: p[1], reverse=True)
+        pct_respuesta_datos.append({
+            "etiqueta": abrev_por_contrato.get(contrato, contrato) if contrato else "Sin dato",
+            "valor": pct,
+            "url": _url_toggle("contrato", contrato) if contrato else None,
+            "activo": bool(contrato) and activos.get("contrato") == contrato,
+        })
+    pct_respuesta_datos.sort(key=lambda p: p["valor"], reverse=True)
     pct_respuesta_por_contrato = {"datos": pct_respuesta_datos}
 
-    # ---- % Conformidad NEO (torta) ----
-    total_calificados = total_conformes + total_no_conformes
-    pct_conforme = round(total_conformes / total_calificados * 100, 1) if total_calificados else 0
+    # ---- % Conformidad NEO (torta — excluye su propio filtro) ----
+    filtros_sin_conf = _filtros_sql(excluir="conformidad")
+    conf_conformes = (
+        db.session.query(func.count(ReporteOperacional.id))
+        .filter(ReporteOperacional.conformidad_neo == "Conforme")
+        .filter(*filtros_sin_conf).scalar()
+    ) or 0
+    conf_no_conformes = (
+        db.session.query(func.count(ReporteOperacional.id))
+        .filter(ReporteOperacional.conformidad_neo == "No conforme")
+        .filter(*filtros_sin_conf).scalar()
+    ) or 0
+    total_calificados = conf_conformes + conf_no_conformes
+    pct_conforme = round(conf_conformes / total_calificados * 100, 1) if total_calificados else 0
     pct_no_conforme = round(100 - pct_conforme, 1) if total_calificados else 0
     conformidad_pie = {
         "pct_conforme": pct_conforme,
         "pct_no_conforme": pct_no_conforme,
         "grados_conforme": round(pct_conforme * 3.6, 1),
-        "total_conformes": total_conformes,
-        "total_no_conformes": total_no_conformes,
+        "total_conformes": conf_conformes,
+        "total_no_conformes": conf_no_conformes,
+        "url_conforme": _url_toggle("conformidad", "Conforme"),
+        "url_no_conforme": _url_toggle("conformidad", "No conforme"),
+        "activo_conforme": activos.get("conformidad") == "Conforme",
+        "activo_no_conforme": activos.get("conformidad") == "No conforme",
     }
 
-    # ---- Reportes por día (últimos 30 días con datos) ----
+    # ---- Reportes por día (últimos 30 días con datos; aplica todos los filtros) ----
     por_dia_raw = (
         db.session.query(ReporteOperacional.fecha_reporte, func.count(ReporteOperacional.id))
-        .filter(*filtros_sql)
+        .filter(*_filtros_sql())
         .group_by(ReporteOperacional.fecha_reporte)
         .order_by(ReporteOperacional.fecha_reporte)
         .all()
@@ -192,6 +268,21 @@ def indicadores():
         "datos": [(f.strftime("%d/%m") if f else "Sin fecha", c) for f, c in por_dia_raw],
         "maximo": maximo_dia,
     }
+
+    # ---- Chips de filtros activos ----
+    etiquetas_dimension = {
+        "contrato": "Contrato", "recurso": "Recurso", "tipo": "Tipo de incidencia",
+        "accion": "Acción a tomar", "conformidad": "Conformidad NEO",
+    }
+    filtros_activos = []
+    for dim, valor in activos.items():
+        if valor:
+            texto = abrev_por_contrato.get(valor, valor) if dim == "contrato" else valor
+            filtros_activos.append({
+                "dimension": etiquetas_dimension[dim],
+                "texto": texto,
+                "url_quitar": _url_quitar(dim),
+            })
 
     # Nombre completo + rol para el encabezado / link de "volver"
     rol = current_user.rol.lower()
@@ -205,7 +296,10 @@ def indicadores():
     return render_template(
         "dashboard/indicadores.html",
         lista_contratos=lista_contratos,
-        contrato_filtro=contrato_filtro,
+        abrev_por_contrato=abrev_por_contrato,
+        contrato_filtro=activos["contrato"],
+        filtros_activos=filtros_activos,
+        url_limpiar_todo=url_for("dashboard.indicadores"),
         kpis={
             "total_reportes":       total_reportes,
             "total_pendientes":     total_pendientes,

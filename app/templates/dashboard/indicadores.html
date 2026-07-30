@@ -14,7 +14,7 @@
     <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
     <div>
         <h1>Dashboard Gerencial</h1>
-        <span class="dg-sub">Indicadores de reportes operacionales — {{ current_user.nombre_completo }}</span>
+        <span class="dg-sub">Indicadores de reportes operacionales · {{ current_user.nombre_completo }}</span>
     </div>
     <div class="dg-topbar-actions">
         {% if home_endpoint %}
@@ -36,62 +36,86 @@
         <select name="contrato" onchange="this.form.submit()">
             <option value="">— Todos los contratos —</option>
             {% for c in lista_contratos %}
-            <option value="{{ c }}" {% if c == contrato_filtro %}selected{% endif %}>{{ c }}</option>
+            <option value="{{ c }}" {% if c == contrato_filtro %}selected{% endif %}>
+                {{ abrev_por_contrato.get(c, c) }}
+            </option>
             {% endfor %}
         </select>
-        {% if contrato_filtro %}
-        <a href="{{ url_for('dashboard.indicadores') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-x-lg me-1"></i>Quitar filtro
-        </a>
-        {% endif %}
+        <span class="dg-filtro-hint">
+            <i class="bi bi-info-circle me-1"></i>Clic en cualquier barra o el gráfico circular para filtrar todo el tablero por esa categoría
+        </span>
     </form>
 
+    <!-- CHIPS DE FILTROS ACTIVOS -->
+    {% if filtros_activos %}
+    <div class="dg-chips">
+        <span class="dg-chips-label">Filtros activos:</span>
+        {% for f in filtros_activos %}
+        <a href="{{ f.url_quitar }}" class="dg-chip">
+            <strong>{{ f.dimension }}:</strong> {{ f.texto }} <i class="bi bi-x-lg"></i>
+        </a>
+        {% endfor %}
+        <a href="{{ url_limpiar_todo }}" class="dg-chip dg-chip-clear">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar todos
+        </a>
+    </div>
+    {% endif %}
+
     <!-- KPIs -->
+    <div class="dg-section-title">Resumen general</div>
     <div class="dg-kpi-row">
-        <div class="dg-kpi">
-            <div class="dg-kpi-label">Total reportes</div>
+        <div class="dg-kpi dg-kpi-hero">
+            <div class="dg-kpi-label"><i class="bi bi-clipboard-data me-1"></i>Total reportes</div>
             <div class="dg-kpi-value">{{ kpis.total_reportes }}</div>
         </div>
         <div class="dg-kpi dg-kpi-warn">
-            <div class="dg-kpi-label">Pendientes de respuesta</div>
+            <div class="dg-kpi-label"><i class="bi bi-hourglass-split me-1"></i>Pendientes de respuesta</div>
             <div class="dg-kpi-value">{{ kpis.total_pendientes }}</div>
         </div>
         <div class="dg-kpi dg-kpi-good">
-            <div class="dg-kpi-label">Conformes</div>
+            <div class="dg-kpi-label"><i class="bi bi-check-circle me-1"></i>Conformes</div>
             <div class="dg-kpi-value">{{ kpis.total_conformes }}</div>
         </div>
         <div class="dg-kpi dg-kpi-bad">
-            <div class="dg-kpi-label">No conformes</div>
+            <div class="dg-kpi-label"><i class="bi bi-x-circle me-1"></i>No conformes</div>
             <div class="dg-kpi-value">{{ kpis.total_no_conformes }}</div>
         </div>
         <div class="dg-kpi dg-kpi-accent">
-            <div class="dg-kpi-label">Cerrados (apelados)</div>
+            <div class="dg-kpi-label"><i class="bi bi-lock me-1"></i>Cerrados (apelados)</div>
             <div class="dg-kpi-value">{{ kpis.total_cerrados }}</div>
         </div>
         <div class="dg-kpi">
-            <div class="dg-kpi-label">Tiempo total en desviaciones</div>
+            <div class="dg-kpi-label"><i class="bi bi-clock-history me-1"></i>Tiempo total en desviaciones</div>
             <div class="dg-kpi-value dg-kpi-value-sm">{{ kpis.tiempo_desviacion }}</div>
         </div>
         <div class="dg-kpi">
-            <div class="dg-kpi-label">$ en desviaciones</div>
+            <div class="dg-kpi-label"><i class="bi bi-cash-coin me-1"></i>$ en desviaciones</div>
             <div class="dg-kpi-value dg-kpi-value-sm">${{ "{:,.0f}".format(kpis.afectacion_economica) }}</div>
         </div>
     </div>
 
-    {% macro bar_chart(titulo, icono, serie) %}
+    {% macro bar_chart(titulo, icono, serie, unidad="") %}
     <div class="dg-card">
         <div class="dg-card-header"><i class="bi {{ icono }} me-2"></i>{{ titulo }}</div>
         <div class="dg-card-body">
             {% if serie.datos %}
             <div class="dg-bars">
-                {% for etiqueta, cantidad in serie.datos %}
-                <div class="dg-bar-row">
-                    <span class="dg-bar-label" title="{{ etiqueta }}">{{ etiqueta }}</span>
-                    <div class="dg-bar-track">
-                        <div class="dg-bar-fill"
-                             style="width: {{ ((cantidad / serie.maximo * 100) if serie.maximo else 0) | round(1) }}%;"></div>
-                    </div>
-                    <span class="dg-bar-value">{{ cantidad }}</span>
+                {% for fila in serie.datos %}
+                <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
+                    {% if fila.url %}
+                    <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="Filtrar por «{{ fila.etiqueta }}»">
+                        {% if fila.activo %}<i class="bi bi-check-circle-fill me-1"></i>{% endif %}{{ fila.etiqueta }}
+                    </a>
+                    {% else %}
+                    <span class="dg-bar-label" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</span>
+                    {% endif %}
+                    <a href="{{ fila.url }}" class="dg-bar-track-link {% if not fila.url %}dg-bar-track-link-disabled{% endif %}">
+                        <div class="dg-bar-track">
+                            <div class="dg-bar-fill"
+                                 style="width: {{ ((fila.cantidad / serie.maximo * 100) if serie.maximo else 0) | round(1) }}%;"></div>
+                        </div>
+                    </a>
+                    <span class="dg-bar-value">{{ fila.cantidad }}{{ unidad }}</span>
                 </div>
                 {% endfor %}
             </div>
@@ -100,8 +124,8 @@
                 <table class="dg-table">
                     <thead><tr><th>Categoría</th><th>Cantidad</th></tr></thead>
                     <tbody>
-                        {% for etiqueta, cantidad in serie.datos %}
-                        <tr><td>{{ etiqueta }}</td><td>{{ cantidad }}</td></tr>
+                        {% for fila in serie.datos %}
+                        <tr><td>{{ fila.etiqueta }}</td><td>{{ fila.cantidad }}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -119,13 +143,21 @@
         <div class="dg-card-body">
             {% if serie.datos %}
             <div class="dg-bars">
-                {% for etiqueta, pct in serie.datos %}
-                <div class="dg-bar-row">
-                    <span class="dg-bar-label" title="{{ etiqueta }}">{{ etiqueta }}</span>
-                    <div class="dg-bar-track">
-                        <div class="dg-bar-fill" style="width: {{ pct }}%;"></div>
-                    </div>
-                    <span class="dg-bar-value">{{ pct }}%</span>
+                {% for fila in serie.datos %}
+                <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
+                    {% if fila.url %}
+                    <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="Filtrar por «{{ fila.etiqueta }}»">
+                        {% if fila.activo %}<i class="bi bi-check-circle-fill me-1"></i>{% endif %}{{ fila.etiqueta }}
+                    </a>
+                    {% else %}
+                    <span class="dg-bar-label" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</span>
+                    {% endif %}
+                    <a href="{{ fila.url }}" class="dg-bar-track-link {% if not fila.url %}dg-bar-track-link-disabled{% endif %}">
+                        <div class="dg-bar-track">
+                            <div class="dg-bar-fill" style="width: {{ fila.valor }}%;"></div>
+                        </div>
+                    </a>
+                    <span class="dg-bar-value">{{ fila.valor }}%</span>
                 </div>
                 {% endfor %}
             </div>
@@ -134,8 +166,8 @@
                 <table class="dg-table">
                     <thead><tr><th>Contrato</th><th>% respondido</th></tr></thead>
                     <tbody>
-                        {% for etiqueta, pct in serie.datos %}
-                        <tr><td>{{ etiqueta }}</td><td>{{ pct }}%</td></tr>
+                        {% for fila in serie.datos %}
+                        <tr><td>{{ fila.etiqueta }}</td><td>{{ fila.valor }}%</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -148,6 +180,7 @@
     {% endmacro %}
 
     <!-- REPORTES POR DIA -->
+    <div class="dg-section-title">Tendencia</div>
     <div class="dg-card mb-3">
         <div class="dg-card-header"><i class="bi bi-calendar3 me-2"></i>Cantidad de reportes por día
             <span class="dg-card-header-sub">últimos {{ reportes_por_dia.datos|length }} días con reportes</span>
@@ -173,7 +206,8 @@
     </div>
 
     <!-- % RESPUESTA POR CONTRATO + TORTA CONFORMIDAD -->
-    <div class="dg-charts-grid mb-0">
+    <div class="dg-section-title">Conformidad y cumplimiento</div>
+    <div class="dg-charts-grid mb-3">
         {{ pct_bar_chart("% de respuesta por contrato", "bi-reply-fill", pct_respuesta_por_contrato) }}
 
         <div class="dg-card">
@@ -189,14 +223,19 @@
                     </div>
                 </div>
                 <div class="dg-pie-legend">
-                    <div class="dg-legend-item">
+                    <span class="dg-pie-legend-hint">Clic para filtrar</span>
+                    <a href="{{ conformidad_pie.url_conforme }}"
+                       class="dg-legend-item {% if conformidad_pie.activo_conforme %}dg-legend-item-activo{% endif %}">
                         <span class="dg-legend-dot" style="background:#0ca30c"></span>
                         Conforme — {{ conformidad_pie.total_conformes }} ({{ conformidad_pie.pct_conforme }}%)
-                    </div>
-                    <div class="dg-legend-item">
+                        {% if conformidad_pie.activo_conforme %}<i class="bi bi-check-circle-fill ms-1"></i>{% endif %}
+                    </a>
+                    <a href="{{ conformidad_pie.url_no_conforme }}"
+                       class="dg-legend-item {% if conformidad_pie.activo_no_conforme %}dg-legend-item-activo{% endif %}">
                         <span class="dg-legend-dot" style="background:#d03b3b"></span>
                         No conforme — {{ conformidad_pie.total_no_conformes }} ({{ conformidad_pie.pct_no_conforme }}%)
-                    </div>
+                        {% if conformidad_pie.activo_no_conforme %}<i class="bi bi-check-circle-fill ms-1"></i>{% endif %}
+                    </a>
                 </div>
                 {% else %}
                 <p class="text-muted small mb-0">Aún no hay reportes validados por NEO para este filtro.</p>
@@ -206,6 +245,7 @@
     </div>
 
     <!-- GRAFICOS -->
+    <div class="dg-section-title">Distribución</div>
     <div class="dg-charts-grid">
         {{ bar_chart("Reportes por contrato", "bi-building", reportes_por_contrato) }}
         {{ bar_chart("Pendientes por respuesta por contrato", "bi-hourglass-split", pendientes_por_contrato) }}
