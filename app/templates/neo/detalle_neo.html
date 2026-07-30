@@ -232,7 +232,7 @@
 
                 <div class="det-card-body">
 
-                    {% if reporte.estado == 'Respondido' %}
+                    {% if reporte.estado in ('Respondido', 'Cerrado') %}
                     <div class="row g-2">
 
                         <div class="col-12">
@@ -315,7 +315,7 @@
     </div>
 
     <!-- ===== SECCIÓN CONFORMIDAD NEO ===== -->
-    {% if reporte.estado == 'Respondido' %}
+    {% if reporte.estado in ('Respondido', 'Cerrado') %}
     <div class="row mt-4" id="seccionConformidad">
         <div class="col-12">
             <div class="det-card">
