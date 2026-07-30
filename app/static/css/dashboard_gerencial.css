@@ -87,12 +87,9 @@ body {
 /* KPI */
 .dg-kpi-row {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 16px;
     margin-bottom: 24px;
-}
-@media (max-width: 992px) {
-    .dg-kpi-row { grid-template-columns: repeat(2, 1fr); }
 }
 .dg-kpi {
     background: #fff;
@@ -114,6 +111,7 @@ body {
     color: var(--dg-dark);
     line-height: 1;
 }
+.dg-kpi-value-sm { font-size: 1.3rem; }
 .dg-kpi.dg-kpi-accent .dg-kpi-value { color: var(--dg-teal); }
 .dg-kpi.dg-kpi-warn .dg-kpi-value { color: #c9820b; }
 .dg-kpi.dg-kpi-bad .dg-kpi-value { color: #c0392b; }
@@ -145,6 +143,14 @@ body {
     align-items: center;
 }
 .dg-card-header i { color: var(--dg-teal); }
+.dg-card-header-sub {
+    margin-left: auto;
+    font-size: .72rem;
+    font-weight: 500;
+    color: #8a9aa2;
+    text-transform: none;
+    letter-spacing: normal;
+}
 .dg-card-body { padding: 16px 18px; }
 
 /* BARS */
@@ -203,3 +209,106 @@ body {
     text-align: left;
 }
 .dg-table th:last-child, .dg-table td:last-child { text-align: right; }
+
+/* COLUMNS (reportes por día) */
+.dg-cols {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 180px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+.dg-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 26px;
+    height: 100%;
+    flex-shrink: 0;
+}
+.dg-col-value {
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--dg-dark);
+    margin-bottom: 3px;
+}
+.dg-col-track {
+    width: 18px;
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    background: var(--dg-blue-track);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.dg-col-fill {
+    width: 100%;
+    background: var(--dg-blue);
+    border-radius: 4px 4px 0 0;
+    min-height: 3px;
+    transition: background .15s;
+}
+.dg-col:hover .dg-col-fill { background: #1c5cab; }
+.dg-col-label {
+    margin-top: 6px;
+    font-size: .64rem;
+    color: #8a9aa2;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    max-height: 60px;
+}
+
+/* PIE / TORTA */
+.dg-pie-body {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.dg-pie {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.dg-pie-hole {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.dg-pie-hole-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--dg-dark);
+    line-height: 1.1;
+}
+.dg-pie-hole-label {
+    font-size: .68rem;
+    color: #8a9aa2;
+    font-weight: 600;
+}
+.dg-pie-legend { display: flex; flex-direction: column; gap: 10px; }
+.dg-legend-item {
+    font-size: .82rem;
+    color: #3a4d55;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dg-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
