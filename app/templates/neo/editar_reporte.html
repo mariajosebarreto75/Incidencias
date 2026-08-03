@@ -45,15 +45,22 @@
 
         <div class="edit-card-body">
 
-            <!-- CONTEXTO NO EDITABLE -->
+            <!-- CONTEXTO: contrato fijo, recurso editable -->
             <div class="row g-2 mb-4 pb-3 edit-separador">
                 <div class="col-md-6">
                     <span class="edit-label">Contrato</span>
                     <div class="edit-readonly">{{ reporte.contrato }}</div>
                 </div>
                 <div class="col-md-6">
-                    <span class="edit-label">Recurso</span>
-                    <div class="edit-readonly">{{ reporte.recurso }}</div>
+                    <label class="edit-label" for="recurso">
+                        Recurso <span style="color:#00b7c7;font-size:.7rem;font-weight:600;">(editable)</span>
+                    </label>
+                    <select id="recurso" class="edit-input">
+                        <option value="{{ reporte.recurso }}">{{ reporte.recurso }}</option>
+                    </select>
+                    <div id="recursoLoading" style="font-size:.72rem;color:#6c757d;margin-top:3px;display:none;">
+                        <i class="bi bi-arrow-repeat"></i> Cargando recursos…
+                    </div>
                 </div>
             </div>
 
@@ -220,6 +227,36 @@
 
     const REPORTE_ID = Number("{{ reporte.id }}");
 
+    /* ---- Cargar recursos del contrato para el select ---- */
+    (function cargarRecursos() {
+        const sel     = document.getElementById("recurso");
+        const loading = document.getElementById("recursoLoading");
+        const fecha   = "{{ reporte.fecha_reporte.strftime('%Y-%m-%d') if reporte.fecha_reporte else '' }}";
+        const contrato = encodeURIComponent("{{ reporte.contrato }}");
+        const actual  = sel.value;
+
+        loading.style.display = "block";
+        fetch("/neo/recursos?fecha=" + fecha + "&contrato=" + contrato)
+            .then(r => r.json())
+            .then(function(lista) {
+                loading.style.display = "none";
+                sel.innerHTML = "";
+                // Asegurar que el recurso actual siempre esté
+                const set = new Set(lista);
+                if (actual && !set.has(actual)) lista.unshift(actual);
+                lista.forEach(function(r) {
+                    const o = document.createElement("option");
+                    o.value = r; o.textContent = r;
+                    if (r === actual) o.selected = true;
+                    sel.appendChild(o);
+                });
+            })
+            .catch(function() {
+                loading.style.display = "none";
+                // Si falla, deja la opción actual que ya estaba
+            });
+    })();
+
     /* ---- Duración automática ---- */
     const hiEl = document.getElementById("hora_inicio");
     const hfEl = document.getElementById("hora_fin");
@@ -347,6 +384,7 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 fecha_reporte:   document.getElementById("fecha_reporte").value,
+                recurso:         document.getElementById("recurso").value,
                 placa:           document.getElementById("placa").value,
                 tipo_actividad:  document.getElementById("tipo_actividad").value,
                 tipo_cuadrilla:  document.getElementById("tipo_cuadrilla").value,

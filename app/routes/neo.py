@@ -496,7 +496,8 @@ def editar_reporte(id):
 
         # Campos texto
         for campo in ("placa", "tipo_actividad", "tipo_cuadrilla",
-                      "tipo_incidencia", "parametro_neo", "observacion"):
+                      "tipo_incidencia", "parametro_neo", "observacion",
+                      "recurso"):
             if campo in d:
                 setattr(reporte, campo, d[campo] or None)
 
