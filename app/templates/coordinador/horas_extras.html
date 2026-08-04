@@ -288,7 +288,8 @@ function onContratoChange() {
 
 // ── Agregar filas ─────────────────────────────────────────────────────────────
 function agregarFilas(n) {
-    for (let i = 0; i < n; i++) grid.insertRow();
+    const lastRow = grid.getData().length - 1;
+    grid.insertRow(n, lastRow, false);
 }
 
 function limpiarGrid() {
