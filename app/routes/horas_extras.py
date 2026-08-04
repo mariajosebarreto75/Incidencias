@@ -8,6 +8,7 @@ from app.models.hora_extra import HoraExtra, CONCEPTOS_HE, FACTOR_HE
 from app.models.contrato import Contrato
 from app.models.persona import Persona
 from app.models.user_contrato import UserContrato
+from app.models.supervisor import Supervisor
 
 he_bp = Blueprint("he_bp", __name__)
 
@@ -38,6 +39,20 @@ def _ids_contratos_usuario():
     """Devuelve set de contrato_id permitidos para el usuario actual (coordinadores)."""
     nombres = [uc.contrato for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
     return {c.id for c in Contrato.query.filter(Contrato.contrato.in_(nombres)).all()}
+
+
+# ── API: supervisores por contrato ───────────────────────────────────────────
+@he_bp.route("/api/he/supervisores")
+@login_required
+def api_he_supervisores():
+    contrato_id = request.args.get("contrato_id", type=int)
+    q = Supervisor.query.filter_by(activo=True)
+    if contrato_id:
+        q = q.filter(
+            db.or_(Supervisor.contrato_id == contrato_id, Supervisor.contrato_id == None)
+        )
+    supervisores = q.order_by(Supervisor.nombre).all()
+    return jsonify([s.nombre for s in supervisores])
 
 
 # ── API: buscar persona por cédula ────────────────────────────────────────────
@@ -126,12 +141,12 @@ def api_he_guardar():
             tipo_he           = CONCEPTOS_HE.get(concepto, ""),
             horas_reportadas  = int(float(f.get("horas_reportadas") or 0)),
             horas_compensadas = int(float(f.get("horas_compensadas") or 0)),
+            placa             = f.get("placa", "").strip(),
+            hora_inicio       = f.get("hora_inicio", "").strip(),
+            hora_fin          = f.get("hora_fin", "").strip(),
             supervisor        = f.get("supervisor", "").strip(),
             justificacion     = f.get("justificacion", "").strip(),
             observacion       = f.get("observacion", "").strip(),
-            valor_hora        = f.get("valor_hora"),
-            valor_extra_nomina= f.get("valor_extra_nomina"),
-            valor_extra       = f.get("valor_extra"),
             estado            = "PENDIENTE",
             reportado_por_id  = current_user.id,
             fecha_reporte     = datetime.utcnow(),

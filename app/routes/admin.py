@@ -26,6 +26,7 @@ from app.models.parametro_coor import ParametroCoor
 from app.models.recurso_contrato import RecursoContrato
 from app.models.placa_contrato import PlacaContrato
 from app.models.user_contrato import UserContrato
+from app.models.supervisor import Supervisor
 
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
@@ -1105,6 +1106,116 @@ def reportes_plantilla():
         download_name="plantilla_importacion_reportes.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+# ============================================================
+# SUPERVISORES
+# ============================================================
+
+_SUPERVISORES_SEED = [
+    "ALVAREZ BUSTAMANTE PEDRO ANTONIO", "ARANAGA QUINTERO JULIAN ANDRES",
+    "BOLANOS PAZ PEDRO LUIS", "ARAUJO CALERO JAIME ANDRES",
+    "MARULANDA ROMERO BRAHIAM DANIEL", "OSPINA CORTES NICOLAS",
+    "TORRES RUBIO YERLEY", "CANIZALES RAMIREZ JULIAN ANDRES",
+    "CARMONA SANCHEZ JONNIER ALBERTO", "CASTILLO MEDINA LUISA FERNANDA",
+    "LOSADA REINOSO DANIEL ALEJANDRO", "RODRIGUEZ GODOY ANDREA",
+    "SALAZAR MENDOZA SAMANTA", "DELGADO RODRIGUEZ ANDRES CAMILO",
+    "DONOSO PAVA CAMILO ANDRES", "ECHEVERRY LEAL EDER",
+    "ASCENCIO LEYTON DIEGO ALEJANDRO", "FABIAN ROGELES ARIAS",
+    "FRANCO AVALO MICHAEL CRISTHIAN", "GALEANO FRANCO ALEJANDRO",
+    "BARENO FERRO BRAYAN JOAQUIN", "GUSTAVO ADOLFO FORERO GONZALEZ",
+    "GUZMAN WHILINTONG", "HERNANDEZ ORTIZ FRANCISCO JAVIER",
+    "HERNANDEZ TUTA HAMILTON RICARDO", "LEAL DUCUARA SANIL",
+    "LLANOS LASSO DIEGO RAUL", "LOPEZ MORALES CRISTHIAN ANDRES",
+    "CASTRO SOTELO YUDY PAOLA", "MARIN ESTRADA FERNAN",
+    "CONDE CARRENO CRISTIAN CAMILO", "MAZUERA CORREA CAMILO",
+    "MENDEZ CARTAGENA JESSIKA PAOLA", "MENDEZ HERNANDEZ VICTOR AUGUSTO",
+    "MOLINA CASTRO JULIAN ANDRES", "MORALES BURITICA PEDRO ALEJANDRO",
+    "NORENA MANZANO STHEFANY", "CONDE CERQUERA DIEGO FERNANDO",
+    "ORTIZ ORTEGA EUDIS JESUS", "ORTIZ RIVAS NEDERLAN",
+    "OSPINA REINOSA OSCAR DANILO", "ESCOBAR BARCO BRIGGIT",
+    "OVALLE SANTOS JHON EDINSON FERNANDO", "PALMA GOMEZ YEISSON ANDRES",
+    "GOMEZ HERRERA CLAUDIA JAZMIN", "RETAMOZO MAGREGO DANNA VANESSA",
+    "NUNEZ NUSTES LUIS MIGUEL", "RODRIGUEZ GALVIS HUGO ARMANDO",
+    "RINCON ALAPE JOSE ALIRIO", "ROLON REDONDO JORGE HUMBERTO",
+    "ROMERO LIZARRALDE DIEGO ARMANDO", "ROPERO CANIZARES DIEGO ARMANDO",
+    "SAENZ PRIETO CARLOS ARMANDO", "AMORTEGUI AGUIRRE WILLIAM STID",
+    "SALDANA OREJUELA CARMEN INES", "SANCHEZ MOYA ERIKA PATRICIA",
+    "SANTANDER ORTIZ JUAN SEBASTIAN", "TORRES ARENAS CRISTOBAL",
+    "TORRES ARIAS ALEXANDER", "PEDROZA ANAZCO LAURA LIZETH",
+    "TOVAR MIRA LEONARDO", "VANEGAS AREVALO RODRIGO ALBEIRO",
+    "VIDAL CASTANEDA KAREN JULIETH", "VILLEGAS OLMOS CRISTHIAN DAVID",
+    "ZAPATA ARANGO JOSE BERTULIO", "ALVARADO LEANDRO",
+    "PICON AGUILAR JOHANA MARCELA", "PEREZ VASQUEZ JARED DAVID",
+    "CASTRO LUIS FERNANDO",
+]
+
+
+@admin_bp.route("/supervisores")
+@admin_required
+def supervisores():
+    lista = Supervisor.query.order_by(Supervisor.nombre).all()
+    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    return render_template("admin/supervisores.html", supervisores=lista, contratos=contratos)
+
+
+@admin_bp.route("/api/supervisores/seed", methods=["POST"])
+@admin_required
+def api_seed_supervisores():
+    insertados = 0
+    for nombre in _SUPERVISORES_SEED:
+        if not Supervisor.query.filter_by(nombre=nombre).first():
+            db.session.add(Supervisor(nombre=nombre))
+            insertados += 1
+    db.session.commit()
+    return jsonify({"success": True, "insertados": insertados})
+
+
+@admin_bp.route("/api/supervisores", methods=["POST"])
+@admin_required
+def api_crear_supervisor():
+    d = request.get_json() or {}
+    nombre = (d.get("nombre") or "").strip().upper()
+    if not nombre:
+        return jsonify({"success": False, "mensaje": "El nombre es requerido"}), 400
+    if Supervisor.query.filter_by(nombre=nombre).first():
+        return jsonify({"success": False, "mensaje": "Ese supervisor ya existe"}), 409
+    contrato_id = d.get("contrato_id") or None
+    s = Supervisor(nombre=nombre, contrato_id=contrato_id)
+    db.session.add(s)
+    db.session.commit()
+    return jsonify({"success": True, "supervisor": s.to_dict()})
+
+
+@admin_bp.route("/api/supervisores/<int:id>", methods=["PUT"])
+@admin_required
+def api_editar_supervisor(id):
+    s = db.session.get(Supervisor, id)
+    if not s:
+        return jsonify({"success": False}), 404
+    d = request.get_json() or {}
+    nombre = (d.get("nombre") or "").strip().upper()
+    if not nombre:
+        return jsonify({"success": False, "mensaje": "El nombre es requerido"}), 400
+    dup = Supervisor.query.filter_by(nombre=nombre).first()
+    if dup and dup.id != id:
+        return jsonify({"success": False, "mensaje": "Ese nombre ya existe"}), 409
+    s.nombre = nombre
+    s.contrato_id = d.get("contrato_id") or None
+    s.activo = bool(d.get("activo", True))
+    db.session.commit()
+    return jsonify({"success": True, "supervisor": s.to_dict()})
+
+
+@admin_bp.route("/api/supervisores/<int:id>", methods=["DELETE"])
+@admin_required
+def api_eliminar_supervisor(id):
+    s = db.session.get(Supervisor, id)
+    if not s:
+        return jsonify({"success": False}), 404
+    db.session.delete(s)
+    db.session.commit()
+    return jsonify({"success": True})
 
 
 @admin_bp.route("/reportes/importar", methods=["POST"])

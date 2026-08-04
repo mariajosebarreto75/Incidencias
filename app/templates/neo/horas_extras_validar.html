@@ -257,7 +257,7 @@ function cargarTabla() {
     const cols = [
         { title:"#", formatter:"rownum", width:45, hozAlign:"center", headerFilter:false },
         { title:"Fecha Lab.",     field:"fecha_labor",        width:105, headerFilter:"input" },
-        { title:"Reportado",      field:"fecha_reporte",      width:125, headerFilter:"input" },
+        { title:"Fecha y Hora Reporte", field:"fecha_reporte", width:155, headerFilter:"input" },
         { title:"Contrato",       field:"contrato",           minWidth:160, headerFilter:"input" },
         { title:"Coordinador",    field:"reportado_por",      minWidth:130, headerFilter:"input" },
         { title:"Cédula",         field:"cedula",             width:110, headerFilter:"input" },
@@ -314,7 +314,7 @@ function abrirVal(reg) {
     <div class="row g-0">
         <div class="col-6 col-md-3"><div class="lbl">Contrato</div><div class="val">${reg.contrato}</div></div>
         <div class="col-6 col-md-3"><div class="lbl">Fecha Labor</div><div class="val">${reg.fecha_labor}</div></div>
-        <div class="col-6 col-md-3"><div class="lbl">Reportado</div><div class="val">${reg.fecha_reporte}</div></div>
+        <div class="col-6 col-md-3"><div class="lbl">Fecha y Hora Reporte</div><div class="val">${reg.fecha_reporte}</div></div>
         <div class="col-6 col-md-3"><div class="lbl">Coordinador</div><div class="val">${reg.reportado_por}</div></div>
         <div class="col-6 col-md-3 mt-2"><div class="lbl">Cédula</div><div class="val">${reg.cedula}</div></div>
         <div class="col-6 col-md-5 mt-2"><div class="lbl">Nombre</div><div class="val">${reg.nombre}</div></div>

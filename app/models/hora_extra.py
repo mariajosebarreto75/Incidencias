@@ -35,12 +35,15 @@ class HoraExtra(db.Model):
     tipo_he             = db.Column(db.String(200))
     horas_reportadas    = db.Column(db.Integer, nullable=False, default=0)
     horas_compensadas   = db.Column(db.Integer, default=0)
-    supervisor          = db.Column(db.String(200))   # nombre del supervisor
+    placa               = db.Column(db.String(20))
+    hora_inicio         = db.Column(db.String(10))
+    hora_fin            = db.Column(db.String(10))
+    supervisor          = db.Column(db.String(200))
     justificacion       = db.Column(db.Text)
     observacion         = db.Column(db.Text)
-    valor_hora          = db.Column(db.Numeric(14, 2))   # valor de la hora según salario
-    valor_extra_nomina  = db.Column(db.Numeric(14, 2))   # valor total a pagar en nómina
-    valor_extra         = db.Column(db.Numeric(14, 2))   # valor extra calculado
+    valor_hora          = db.Column(db.Numeric(14, 2))
+    valor_extra_nomina  = db.Column(db.Numeric(14, 2))
+    valor_extra         = db.Column(db.Numeric(14, 2))
 
     # Validación NEO
     autorizacion_neo    = db.Column(db.String(30))   # CONFORME / NO CONFORME / DESCONTADA
@@ -71,6 +74,9 @@ class HoraExtra(db.Model):
             "tipo_he":            self.tipo_he or "",
             "horas_reportadas":   int(self.horas_reportadas or 0),
             "horas_compensadas":  int(self.horas_compensadas or 0),
+            "placa":              self.placa or "",
+            "hora_inicio":        self.hora_inicio or "",
+            "hora_fin":           self.hora_fin or "",
             "supervisor":         self.supervisor or "",
             "justificacion":      self.justificacion or "",
             "observacion":        self.observacion or "",

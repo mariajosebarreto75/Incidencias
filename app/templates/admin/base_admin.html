@@ -70,6 +70,11 @@
 
         <div class="adm-nav-section">Catálogos Coordinador</div>
 
+        <a href="{{ url_for('admin_bp.supervisores') }}"
+           class="adm-nav-link {% if request.endpoint == 'admin_bp.supervisores' %}active{% endif %}">
+            <i class="bi bi-person-check"></i> Supervisores
+        </a>
+
         <a href="{{ url_for('admin_bp.actividades') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.actividades' %}active{% endif %}">
             <i class="bi bi-list-task"></i> Tipos de Actividad
