@@ -970,6 +970,14 @@ def alertas_gps():
     scope    = request.args.get("scope",    "todos")
 
     q = AlertaGPS.query
+
+    # Solo alertas del mes en curso — al cambiar de mes las del anterior desaparecen
+    hoy = datetime.utcnow()
+    q = q.filter(
+        db.extract("year",  AlertaGPS.triggered_at) == hoy.year,
+        db.extract("month", AlertaGPS.triggered_at) == hoy.month,
+    )
+
     # Filtro de estado (pendiente / resuelta / todas)
     if filtro != "todas":
         q = q.filter(AlertaGPS.estado_local == filtro)
@@ -1093,7 +1101,12 @@ def responder_alerta_gps(id):
 @neo.route("/neo/alertas/badge")
 @login_required
 def badge_alertas():
-    count = AlertaGPS.query.filter_by(estado_local="pendiente").count()
+    hoy   = datetime.utcnow()
+    count = AlertaGPS.query.filter(
+        AlertaGPS.estado_local == "pendiente",
+        db.extract("year",  AlertaGPS.triggered_at) == hoy.year,
+        db.extract("month", AlertaGPS.triggered_at) == hoy.month,
+    ).count()
     return jsonify({"pendientes": count})
 
 
