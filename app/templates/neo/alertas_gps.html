@@ -232,6 +232,57 @@ body { background: var(--ag-bg); }
     border: 1px solid var(--ag-border);
 }
 .ag-btn-liberar:hover { color: var(--ag-text); }
+.ag-btn-depurar {
+    background: linear-gradient(135deg,#7f1d1d,#991b1b);
+    color: #fca5a5; border: 1px solid #991b1b;
+}
+.ag-btn-depurar:hover { background: #991b1b; color: #fff; }
+
+/* Modo selección */
+.ag-item.sel-mode { cursor: default; }
+.ag-item.sel-mode:hover { background: var(--ag-surface2); }
+.ag-item.selected { background: rgba(229,62,62,.12) !important; border-left: 3px solid #e53e3e; }
+
+.ag-check {
+    display: none; width: 17px; height: 17px; flex-shrink: 0;
+    accent-color: #e53e3e; cursor: pointer; margin-right: 8px;
+}
+.sel-mode .ag-check { display: inline-block; }
+
+/* Barra flotante de selección */
+.ag-sel-bar {
+    display: none; position: sticky; bottom: 0; left: 0; right: 0;
+    background: #1a0a0a; border-top: 2px solid #e53e3e;
+    padding: 10px 14px; z-index: 10;
+    flex-direction: column; gap: 8px;
+}
+.ag-sel-bar.visible { display: flex; }
+.ag-sel-info {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: .78rem; color: #fca5a5; font-weight: 700;
+}
+.ag-sel-actions { display: flex; gap: 6px; }
+.ag-sel-btn {
+    flex: 1; padding: 7px 0; border: none; border-radius: 7px;
+    font-size: .75rem; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.ag-sel-btn-all  { background: var(--ag-surface2); color: var(--ag-muted); border: 1px solid var(--ag-border); }
+.ag-sel-btn-all:hover { color: var(--ag-text); }
+.ag-sel-btn-del  { background: #991b1b; color: #fff; }
+.ag-sel-btn-del:hover { background: #b91c1c; }
+.ag-sel-btn-cancel { background: transparent; color: var(--ag-muted); border: 1px solid var(--ag-border); }
+
+/* Botón depurar individual en detalle */
+.ag-btn-depurar-ind {
+    background: rgba(153,27,27,.2); color: #fca5a5;
+    border: 1px solid rgba(153,27,27,.5);
+    border-radius: 8px; padding: 7px 14px;
+    font-size: .78rem; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background .15s;
+}
+.ag-btn-depurar-ind:hover { background: rgba(153,27,27,.4); }
 
 .ag-atendida {
     background: rgba(56,161,105,.1); color: #68d391;
@@ -273,7 +324,15 @@ body { background: var(--ag-bg); }
         <div class="ag-panel-header">
             <div class="ag-panel-title">
                 <h2><i class="bi bi-bell-fill" style="color:var(--ag-yellow)"></i> Alertas GPS</h2>
-                <span class="ag-badge-total">{{ total_alertas }}</span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <button id="btnSeleccionar"
+                            onclick="toggleModoSeleccion()"
+                            style="background:rgba(229,62,62,.15);color:#fca5a5;border:1px solid rgba(229,62,62,.3);
+                                   border-radius:7px;padding:3px 10px;font-size:.72rem;font-weight:700;cursor:pointer;">
+                        <i class="bi bi-ui-checks me-1"></i>Seleccionar
+                    </button>
+                    <span class="ag-badge-total">{{ total_alertas }}</span>
+                </div>
             </div>
 
             <!-- Tabs estado -->
@@ -397,7 +456,7 @@ body { background: var(--ag-bg); }
                     {% set a = alertas_placa[0] %}
                     {% set cnt = alertas_placa|length %}
                     {% set ex = extras.get(a.id, {}) %}
-                    <div class="ag-item" onclick="mostrarDetalle({{ a.id }})"
+                    <div class="ag-item" onclick="itemClick(event, {{ a.id }})"
                          id="item-{{ a.id }}"
                          data-id="{{ a.id }}"
                          data-plate="{{ a.vehicle_plate or '' }}"
@@ -423,7 +482,9 @@ body { background: var(--ag-bg); }
                          data-count="{{ cnt }}">
 
                         <div class="ag-item-top">
-                            <span class="ag-plate">
+                            <span class="ag-plate" style="display:flex;align-items:center;">
+                                <input type="checkbox" class="ag-check" data-id="{{ a.id }}"
+                                       onclick="toggleCheck(event, {{ a.id }})">
                                 <span class="ag-status-dot {{ a.estado_local }}"></span>
                                 {{ a.vehicle_plate or '—' }}
                             </span>
@@ -467,6 +528,24 @@ body { background: var(--ag-bg); }
             </div>
             {% endif %}
 
+        </div>
+
+        <!-- BARRA FLOTANTE SELECCIÓN -->
+        <div class="ag-sel-bar" id="agSelBar">
+            <div class="ag-sel-info">
+                <span><i class="bi bi-check2-square me-1"></i><span id="selCount">0</span> seleccionada(s)</span>
+                <button class="ag-sel-btn-cancel ag-sel-btn" style="flex:0;padding:3px 10px;" onclick="toggleModoSeleccion()">
+                    <i class="bi bi-x-lg"></i> Cancelar
+                </button>
+            </div>
+            <div class="ag-sel-actions">
+                <button class="ag-sel-btn ag-sel-btn-all" id="btnSelAll" onclick="seleccionarTodo()">
+                    <i class="bi bi-check-all"></i> Seleccionar todo
+                </button>
+                <button class="ag-sel-btn ag-sel-btn-del" id="btnDepurarSel" onclick="depurarSeleccionadas()" disabled>
+                    <i class="bi bi-trash3-fill"></i> Depurar (<span id="selCountBtn">0</span>)
+                </button>
+            </div>
         </div>
     </div>
 
@@ -546,6 +625,13 @@ body { background: var(--ag-bg); }
 
                     <!-- Acciones -->
                     <div id="dActions" class="ag-actions"></div>
+
+                    <!-- Depurar individual -->
+                    <div style="margin-top:10px;border-top:1px solid var(--ag-border);padding-top:10px;">
+                        <button class="ag-btn-depurar-ind" onclick="depurarUna()">
+                            <i class="bi bi-trash3"></i> Depurar esta alerta (falsa positiva)
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -596,7 +682,143 @@ body { background: var(--ag-bg); }
 
 {% block scripts %}
 <script>
-let alertaActiva = null;
+let alertaActiva  = null;
+let modoSeleccion = false;
+let seleccionadas = new Set();
+
+// ── Modo selección ────────────────────────────────────────
+function toggleModoSeleccion() {
+    modoSeleccion = !modoSeleccion;
+    seleccionadas.clear();
+
+    const items  = document.querySelectorAll(".ag-item");
+    const bar    = document.getElementById("agSelBar");
+    const btnSel = document.getElementById("btnSeleccionar");
+
+    items.forEach(function(el) {
+        el.classList.toggle("sel-mode", modoSeleccion);
+        el.classList.remove("selected");
+        const cb = el.querySelector(".ag-check");
+        if (cb) cb.checked = false;
+    });
+
+    bar.classList.toggle("visible", modoSeleccion);
+    btnSel.style.background    = modoSeleccion ? "rgba(229,62,62,.35)"  : "rgba(229,62,62,.15)";
+    btnSel.innerHTML           = modoSeleccion
+        ? '<i class="bi bi-x-circle me-1"></i>Cancelar'
+        : '<i class="bi bi-ui-checks me-1"></i>Seleccionar';
+
+    // Si entramos en modo selección, ocultar detalle
+    if (modoSeleccion) {
+        document.getElementById("agCard").style.display  = "none";
+        document.getElementById("agEmpty").style.display = "flex";
+        alertaActiva = null;
+    }
+    actualizarContador();
+}
+
+function itemClick(event, id) {
+    if (modoSeleccion) {
+        // No propagar al checkbox (él tiene su propio handler)
+        if (event.target.classList.contains("ag-check")) return;
+        const item = document.getElementById("item-" + id);
+        const cb   = item.querySelector(".ag-check");
+        cb.checked = !cb.checked;
+        toggleCheck(null, id, cb.checked);
+    } else {
+        mostrarDetalle(id);
+    }
+}
+
+function toggleCheck(event, id, forceVal) {
+    if (event) event.stopPropagation();
+    const item = document.getElementById("item-" + id);
+    const cb   = item.querySelector(".ag-check");
+    const checked = forceVal !== undefined ? forceVal : cb.checked;
+    cb.checked = checked;
+    if (checked) {
+        seleccionadas.add(id);
+        item.classList.add("selected");
+    } else {
+        seleccionadas.delete(id);
+        item.classList.remove("selected");
+    }
+    actualizarContador();
+}
+
+function seleccionarTodo() {
+    const items = document.querySelectorAll(".ag-item");
+    const todosSeleccionados = seleccionadas.size === items.length;
+
+    items.forEach(function(item) {
+        const id = Number(item.dataset.id);
+        const cb = item.querySelector(".ag-check");
+        if (!cb) return;
+        if (todosSeleccionados) {
+            cb.checked = false;
+            seleccionadas.delete(id);
+            item.classList.remove("selected");
+        } else {
+            cb.checked = true;
+            seleccionadas.add(id);
+            item.classList.add("selected");
+        }
+    });
+
+    document.getElementById("btnSelAll").innerHTML = todosSeleccionados
+        ? '<i class="bi bi-check-all"></i> Seleccionar todo'
+        : '<i class="bi bi-x-square me-1"></i> Deseleccionar todo';
+    actualizarContador();
+}
+
+function actualizarContador() {
+    const n = seleccionadas.size;
+    document.getElementById("selCount").textContent    = n;
+    document.getElementById("selCountBtn").textContent = n;
+    const btn = document.getElementById("btnDepurarSel");
+    btn.disabled = n === 0;
+}
+
+async function depurarSeleccionadas() {
+    if (!seleccionadas.size) return;
+    const n = seleccionadas.size;
+    if (!confirm(`¿Eliminar ${n} alerta(s)? Esta acción no se puede deshacer.`)) return;
+    await _depurar([...seleccionadas]);
+    toggleModoSeleccion(); // salir del modo selección
+}
+
+async function depurarUna() {
+    if (!alertaActiva) return;
+    if (!confirm("¿Eliminar esta alerta? Esta acción no se puede deshacer.")) return;
+    await _depurar([alertaActiva]);
+    document.getElementById("agCard").style.display  = "none";
+    document.getElementById("agEmpty").style.display = "flex";
+    alertaActiva = null;
+}
+
+async function _depurar(ids) {
+    try {
+        const r = await fetch("/neo/alertas/depurar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            ids.forEach(function(id) {
+                const el = document.getElementById("item-" + id);
+                if (el) el.remove();
+                seleccionadas.delete(id);
+            });
+            actualizarBadge();
+            actualizarContador();
+        } else {
+            alert("Error: " + (data.error || "No se pudo depurar"));
+        }
+    } catch(e) {
+        alert("Error de conexión");
+    }
+}
 
 // Convierte string UTC a hora Colombia (UTC-5)
 function fmtHora(utcStr) {

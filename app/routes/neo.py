@@ -1097,6 +1097,19 @@ def badge_alertas():
     return jsonify({"pendientes": count})
 
 
+@neo.route("/neo/alertas/depurar", methods=["POST"])
+@login_required
+def depurar_alertas():
+    """Elimina definitivamente una o varias alertas GPS (depuración de falsas positivas)."""
+    d   = request.get_json(silent=True) or {}
+    ids = d.get("ids", [])
+    if not ids:
+        return jsonify({"ok": False, "error": "No se enviaron IDs"}), 400
+    eliminados = AlertaGPS.query.filter(AlertaGPS.id.in_(ids)).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({"ok": True, "eliminados": eliminados})
+
+
 @neo.route("/neo/alertas/datos")
 @login_required
 def alertas_datos():
