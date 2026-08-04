@@ -486,6 +486,23 @@ async function subirEvidencia(numero) {
     const archivo = inputEl.files[0];
     if (!archivo) return;
 
+    // Validación cliente: tamaño y tipo antes de subir
+    const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
+    const TIPOS_OK  = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!TIPOS_OK.includes(archivo.type)) {
+        estadoEl.className = "upload-estado mt-1 err";
+        estadoEl.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Solo se permiten imágenes JPG, PNG o WEBP.';
+        inputEl.value = "";
+        return;
+    }
+    if (archivo.size > MAX_BYTES) {
+        const mb = (archivo.size / 1024 / 1024).toFixed(1);
+        estadoEl.className = "upload-estado mt-1 err";
+        estadoEl.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>La imagen pesa ${mb} MB — el máximo es 20 MB.`;
+        inputEl.value = "";
+        return;
+    }
+
     // Mostrar spinner
     spinEl.classList.remove("d-none");
     estadoEl.className = "upload-estado mt-1";
@@ -496,10 +513,19 @@ async function subirEvidencia(numero) {
 
     try {
 
-        const resp     = await fetch("/neo/subir-evidencia", {
+        const resp = await fetch("/neo/subir-evidencia", {
             method: "POST",
             body:   formData
         });
+
+        // nginx puede devolver 413 como HTML — manejar antes de parsear JSON
+        if (resp.status === 413) {
+            throw new Error("La imagen es demasiado grande para el servidor (máx 20 MB).");
+        }
+        if (!resp.ok && resp.status !== 400) {
+            throw new Error(`Error del servidor (${resp.status}).`);
+        }
+
         const resultado = await resp.json();
 
         if (resultado.success) {
@@ -528,7 +554,7 @@ async function subirEvidencia(numero) {
 
         rutaEl.value = "";
         estadoEl.className   = "upload-estado mt-1 err";
-        estadoEl.textContent = "Error de conexión al subir la imagen.";
+        estadoEl.innerHTML   = `<i class="bi bi-exclamation-circle-fill me-1"></i>${err.message || "Error al subir la imagen."}`;
 
     } finally {
 

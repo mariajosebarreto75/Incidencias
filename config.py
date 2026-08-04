@@ -29,3 +29,6 @@ class Config:
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Máximo 20 MB por request (cubre imágenes grandes de evidencias)
+    MAX_CONTENT_LENGTH = 20 * 1024 * 1024

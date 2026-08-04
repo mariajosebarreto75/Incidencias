@@ -324,6 +324,9 @@
     });
 
     /* ---- Subir evidencias ---- */
+    const MAX_BYTES_EV = 20 * 1024 * 1024;
+    const TIPOS_OK_EV  = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
     function subirEv(num) {
         const file = document.getElementById("ev" + num).files[0];
         if (!file) return;
@@ -331,6 +334,19 @@
         const est  = document.getElementById("est_ev" + num);
         const ruta = document.getElementById("ruta_ev" + num);
         const ph   = document.getElementById("ph_ev" + num);
+
+        // Validación cliente
+        if (!TIPOS_OK_EV.includes(file.type)) {
+            est.className = "upload-estado err";
+            est.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>Solo se permiten JPG, PNG o WEBP.';
+            return;
+        }
+        if (file.size > MAX_BYTES_EV) {
+            const mb = (file.size / 1024 / 1024).toFixed(1);
+            est.className = "upload-estado err";
+            est.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>La imagen pesa ${mb} MB — máx 20 MB.`;
+            return;
+        }
 
         spin.classList.remove("d-none");
         est.textContent = "";
@@ -341,7 +357,11 @@
         fd.append("numero", num);
 
         fetch("/neo/subir-evidencia", { method: "POST", body: fd })
-            .then(r => r.json())
+            .then(function(r) {
+                if (r.status === 413) throw new Error("Imagen demasiado grande para el servidor (máx 20 MB).");
+                if (!r.ok && r.status !== 400) throw new Error("Error del servidor (" + r.status + ").");
+                return r.json();
+            })
             .then(function (data) {
                 spin.classList.add("d-none");
                 if (data.success) {
@@ -357,16 +377,16 @@
                     img.src = data.url;
                     if (ph) ph.style.display = "none";
                     est.className = "upload-estado ok";
-                    est.textContent = "Imagen cargada correctamente";
+                    est.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Imagen cargada correctamente';
                 } else {
                     est.className = "upload-estado err";
-                    est.textContent = data.mensaje || "Error al subir";
+                    est.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>' + (data.mensaje || "Error al subir");
                 }
             })
-            .catch(function () {
+            .catch(function (err) {
                 spin.classList.add("d-none");
                 est.className = "upload-estado err";
-                est.textContent = "Error de conexión";
+                est.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1"></i>' + (err.message || "Error de conexión");
             });
     }
 

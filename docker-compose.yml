@@ -7,6 +7,7 @@ services:
       - .env
     volumes:
       - uploads_data:/app/uploads
+      - ./nginx/neohesego.com:/etc/nginx/vhost.d/neohesego.com:ro
     networks:
       - backend-net
       - nginx-proxy
