@@ -30,9 +30,14 @@ def permiso_requerido(permiso):
 def _contratos_del_usuario():
     if current_user.rol.lower() in ("admin", "neo"):
         return Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
-    uc = UserContrato.query.filter_by(user_id=current_user.id).all()
-    ids = [u.contrato_id for u in uc]
-    return Contrato.query.filter(Contrato.id.in_(ids), Contrato.activo == True).order_by(Contrato.contrato).all()
+    nombres = [uc.contrato for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
+    return Contrato.query.filter(Contrato.contrato.in_(nombres), Contrato.activo == True).order_by(Contrato.contrato).all()
+
+
+def _ids_contratos_usuario():
+    """Devuelve set de contrato_id permitidos para el usuario actual (coordinadores)."""
+    nombres = [uc.contrato for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
+    return {c.id for c in Contrato.query.filter(Contrato.contrato.in_(nombres)).all()}
 
 
 # ── API: buscar persona por cédula ────────────────────────────────────────────
@@ -54,8 +59,7 @@ def api_persona_he():
 def api_he_registros():
     q = HoraExtra.query
     if current_user.rol.lower() == "coordinador":
-        uc = UserContrato.query.filter_by(user_id=current_user.id).all()
-        ids = [u.contrato_id for u in uc]
+        ids = _ids_contratos_usuario()
         q = q.filter(HoraExtra.contrato_id.in_(ids))
 
     contrato_id = request.args.get("contrato_id", type=int)
@@ -102,11 +106,15 @@ def api_he_guardar():
     if not filas:
         return jsonify({"ok": False, "msg": "Sin filas"}), 400
 
+    ids_permitidos = _ids_contratos_usuario() if current_user.rol.lower() == "coordinador" else None
+
     guardados = []
     for f in filas:
         contrato_id = f.get("contrato_id")
         if not contrato_id:
             continue
+        if ids_permitidos is not None and int(contrato_id) not in ids_permitidos:
+            return jsonify({"ok": False, "msg": "Contrato no asignado a su usuario"}), 403
         concepto = f.get("id_concepto", "")
         he = HoraExtra(
             contrato_id        = contrato_id,
@@ -137,8 +145,11 @@ def api_he_guardar():
 @login_required
 def api_he_actualizar(id):
     he = HoraExtra.query.get_or_404(id)
-    if current_user.rol.lower() == "coordinador" and he.estado != "PENDIENTE":
-        return jsonify({"ok": False, "msg": "Solo se pueden editar registros pendientes"}), 403
+    if current_user.rol.lower() == "coordinador":
+        if he.estado != "PENDIENTE":
+            return jsonify({"ok": False, "msg": "Solo se pueden editar registros pendientes"}), 403
+        if he.contrato_id not in _ids_contratos_usuario():
+            return jsonify({"ok": False, "msg": "No autorizado"}), 403
     f = request.get_json(silent=True) or {}
     concepto = f.get("id_concepto", he.id_concepto)
     he.fecha_labor        = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else he.fecha_labor
@@ -161,8 +172,11 @@ def api_he_actualizar(id):
 @login_required
 def api_he_eliminar(id):
     he = HoraExtra.query.get_or_404(id)
-    if current_user.rol.lower() == "coordinador" and he.estado != "PENDIENTE":
-        return jsonify({"ok": False, "msg": "Solo se pueden eliminar registros pendientes"}), 403
+    if current_user.rol.lower() == "coordinador":
+        if he.estado != "PENDIENTE":
+            return jsonify({"ok": False, "msg": "Solo se pueden eliminar registros pendientes"}), 403
+        if he.contrato_id not in _ids_contratos_usuario():
+            return jsonify({"ok": False, "msg": "No autorizado"}), 403
     db.session.delete(he)
     db.session.commit()
     return jsonify({"ok": True})
