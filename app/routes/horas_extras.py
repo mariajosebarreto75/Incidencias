@@ -45,12 +45,16 @@ def _ids_contratos_usuario():
 @he_bp.route("/api/he/supervisores")
 @login_required
 def api_he_supervisores():
+    from app.models.supervisor import supervisor_contrato
     contrato_id = request.args.get("contrato_id", type=int)
     q = Supervisor.query.filter_by(activo=True)
     if contrato_id:
-        q = q.filter(
-            db.or_(Supervisor.contrato_id == contrato_id, Supervisor.contrato_id == None)
-        )
+        # Supervisores asignados a ese contrato O sin contrato asignado
+        asignados = db.session.query(supervisor_contrato.c.supervisor_id)\
+            .filter(supervisor_contrato.c.contrato_id == contrato_id).subquery()
+        sin_contrato = ~db.session.query(supervisor_contrato.c.supervisor_id)\
+            .filter(supervisor_contrato.c.supervisor_id == Supervisor.id).exists()
+        q = q.filter(db.or_(Supervisor.id.in_(asignados), sin_contrato))
     supervisores = q.order_by(Supervisor.nombre).all()
     return jsonify([s.nombre for s in supervisores])
 

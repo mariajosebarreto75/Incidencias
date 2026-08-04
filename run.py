@@ -46,6 +46,8 @@ _MIGRACIONES = [
     "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS valor_hora NUMERIC(14,2)",
     "ALTER TABLE horas_extras ALTER COLUMN estado TYPE VARCHAR(30)",
     "ALTER TABLE horas_extras ALTER COLUMN autorizacion_neo TYPE VARCHAR(30)",
+    # Migrar supervisores a relación M2M (eliminar columna vieja si existe)
+    "ALTER TABLE supervisores DROP COLUMN IF EXISTS contrato_id",
     "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS placa VARCHAR(20)",
     "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS hora_inicio VARCHAR(10)",
     "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS hora_fin VARCHAR(10)",

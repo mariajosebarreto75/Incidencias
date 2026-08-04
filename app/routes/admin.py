@@ -1180,8 +1180,10 @@ def api_crear_supervisor():
         return jsonify({"success": False, "mensaje": "El nombre es requerido"}), 400
     if Supervisor.query.filter_by(nombre=nombre).first():
         return jsonify({"success": False, "mensaje": "Ese supervisor ya existe"}), 409
-    contrato_id = d.get("contrato_id") or None
-    s = Supervisor(nombre=nombre, contrato_id=contrato_id)
+    s = Supervisor(nombre=nombre)
+    ids = [int(x) for x in (d.get("contrato_ids") or []) if x]
+    if ids:
+        s.contratos = Contrato.query.filter(Contrato.id.in_(ids)).all()
     db.session.add(s)
     db.session.commit()
     return jsonify({"success": True, "supervisor": s.to_dict()})
@@ -1201,8 +1203,9 @@ def api_editar_supervisor(id):
     if dup and dup.id != id:
         return jsonify({"success": False, "mensaje": "Ese nombre ya existe"}), 409
     s.nombre = nombre
-    s.contrato_id = d.get("contrato_id") or None
     s.activo = bool(d.get("activo", True))
+    ids = [int(x) for x in (d.get("contrato_ids") or []) if x]
+    s.contratos = Contrato.query.filter(Contrato.id.in_(ids)).all() if ids else []
     db.session.commit()
     return jsonify({"success": True, "supervisor": s.to_dict()})
 

@@ -35,7 +35,7 @@
                 <tr>
                     <th>#</th>
                     <th>Nombre</th>
-                    <th>Contrato asignado</th>
+                    <th>Contratos asignados</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -45,7 +45,15 @@
             <tr>
                 <td style="color:#94a3b8">{{ loop.index }}</td>
                 <td><strong>{{ s.nombre }}</strong></td>
-                <td>{{ s.contrato.contrato if s.contrato else '<span style="color:#94a3b8">— Sin contrato —</span>' | safe }}</td>
+                <td>
+                    {% if s.contratos %}
+                        {% for c in s.contratos %}
+                        <span style="display:inline-block;background:#e8f0fe;color:#1a56db;border-radius:12px;padding:1px 8px;font-size:.72rem;margin:1px;">{{ c.contrato }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <span style="color:#94a3b8;font-size:.8rem;">— Sin contrato —</span>
+                    {% endif %}
+                </td>
                 <td>
                     {% if s.activo %}
                     <span class="badge bg-success">Activo</span>
@@ -57,7 +65,7 @@
                     <button class="btn-edit"
                         data-id="{{ s.id }}"
                         data-nombre="{{ s.nombre | e }}"
-                        data-contrato-id="{{ s.contrato_id or '' }}"
+                        data-contrato-ids="{{ s.contratos | map(attribute='id') | list | tojson | e }}"
                         data-activo="{{ '1' if s.activo else '0' }}"
                         onclick="abrirEditar(this)">
                         <i class="bi bi-pencil"></i> Editar
@@ -95,9 +103,8 @@
             <input id="addNombre" class="form-control" placeholder="Ej: PEREZ GARCIA JUAN">
         </div>
         <div class="mb-3">
-            <label class="form-label">Contrato asignado</label>
-            <select id="addContrato" class="form-select">
-                <option value="">— Sin contrato —</option>
+            <label class="form-label">Contratos asignados <small class="text-muted">(puede seleccionar varios con Ctrl+clic)</small></label>
+            <select id="addContratos" class="form-select" multiple size="6">
                 {% for c in contratos %}
                 <option value="{{ c.id }}">{{ c.contrato }}</option>
                 {% endfor %}
@@ -128,9 +135,8 @@
             <input id="editNombre" class="form-control">
         </div>
         <div class="mb-3">
-            <label class="form-label">Contrato asignado</label>
-            <select id="editContrato" class="form-select">
-                <option value="">— Sin contrato —</option>
+            <label class="form-label">Contratos asignados <small class="text-muted">(Ctrl+clic para varios)</small></label>
+            <select id="editContratos" class="form-select" multiple size="6">
                 {% for c in contratos %}
                 <option value="{{ c.id }}">{{ c.contrato }}</option>
                 {% endfor %}
@@ -154,13 +160,23 @@
 
 {% block scripts %}
 <script>
+function getSelected(selectEl) {
+    return Array.from(selectEl.selectedOptions).map(o => parseInt(o.value));
+}
+
 function abrirEditar(btn) {
     document.getElementById("editId").value = btn.dataset.id;
     document.getElementById("editNombre").value = btn.dataset.nombre;
-    document.getElementById("editContrato").value = btn.dataset.contratoId || "";
     document.getElementById("editActivo").checked = btn.dataset.activo === "1";
+
+    const ids = JSON.parse(btn.dataset.contratoIds || "[]");
+    const sel = document.getElementById("editContratos");
+    Array.from(sel.options).forEach(o => {
+        o.selected = ids.includes(parseInt(o.value));
+    });
     abrirModal("modalEdit");
 }
+
 function eliminar(btn) {
     if (!confirm("¿Eliminar este supervisor?")) return;
     apiFetch("/admin/api/supervisores/" + btn.dataset.id, "DELETE").then(function(r) {
@@ -168,23 +184,26 @@ function eliminar(btn) {
         else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
     });
 }
+
 async function guardarAdd() {
     const r = await apiFetch("/admin/api/supervisores", "POST", {
-        nombre: document.getElementById("addNombre").value.trim(),
-        contrato_id: document.getElementById("addContrato").value || null,
+        nombre:       document.getElementById("addNombre").value.trim(),
+        contrato_ids: getSelected(document.getElementById("addContratos")),
     });
     if (r.success) location.reload();
     else mostrarAlerta("alertaAdd", r.mensaje, "danger");
 }
+
 async function guardarEdit() {
     const r = await apiFetch("/admin/api/supervisores/" + document.getElementById("editId").value, "PUT", {
-        nombre: document.getElementById("editNombre").value.trim(),
-        contrato_id: document.getElementById("editContrato").value || null,
-        activo: document.getElementById("editActivo").checked,
+        nombre:       document.getElementById("editNombre").value.trim(),
+        contrato_ids: getSelected(document.getElementById("editContratos")),
+        activo:       document.getElementById("editActivo").checked,
     });
     if (r.success) location.reload();
     else mostrarAlerta("alertaEdit", r.mensaje, "danger");
 }
+
 async function cargarPredefinidos() {
     const r = await apiFetch("/admin/api/supervisores/seed", "POST");
     if (r.success) {
