@@ -228,7 +228,7 @@ function iniciarGrid() {
             { type:"text",         readOnly:true },                                 // 8 tipo_he
             { type:"numeric" },                                                     // 9 horas
             { type:"numeric" },                                                     // 10 comp
-            { type:"autocomplete", source:[], strict:false },                       // 11 supervisor
+            { type:"autocomplete", source: function(q, cb){ cb(supervisoresActuales); }, strict:false, allowInvalid:true }, // 11 supervisor
             { type:"text" },                                                        // 12 just
             { type:"text" },                                                        // 13 obs
             { type:"numeric",      readOnly:true },                                 // 14 hrs auth (NEO)
@@ -296,14 +296,7 @@ async function autoFillNombre(row, cedula) {
 
 // ── Botones ───────────────────────────────────────────────────────────────────
 function agregarFilas(n) {
-    const desde = hot.countRows();
-    hot.alter("insert_row", desde, n);
-    if (supervisoresActuales.length) {
-        for (let row = desde; row < desde + n; row++) {
-            hot.setCellMeta(row, C_SUP, "source", supervisoresActuales);
-        }
-        hot.render();
-    }
+    hot.alter("insert_row", hot.countRows(), n);
 }
 
 function limpiarGrid() {
@@ -330,15 +323,11 @@ async function onContratoChange() {
     const cid = document.getElementById("gridContrato").value;
     document.getElementById("fContrato").value = cid;
     cargarHistorial();
-    // Cargar supervisores del contrato y actualizar source de la columna
+    // Cargar supervisores del contrato
     try {
         const url = cid ? `/api/he/supervisores?contrato_id=${cid}` : "/api/he/supervisores";
         const r = await fetch(url);
         supervisoresActuales = await r.json();
-        for (let row = 0; row < hot.countRows(); row++) {
-            hot.setCellMeta(row, C_SUP, "source", supervisoresActuales);
-        }
-        hot.render();
     } catch(e) {}
 }
 

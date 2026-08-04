@@ -47,16 +47,23 @@ def _ids_contratos_usuario():
 def api_he_supervisores():
     from app.models.supervisor import supervisor_contrato
     contrato_id = request.args.get("contrato_id", type=int)
-    q = Supervisor.query.filter_by(activo=True)
-    if contrato_id:
-        # Supervisores asignados a ese contrato O sin contrato asignado
-        asignados = db.session.query(supervisor_contrato.c.supervisor_id)\
-            .filter(supervisor_contrato.c.contrato_id == contrato_id).subquery()
-        sin_contrato = ~db.session.query(supervisor_contrato.c.supervisor_id)\
-            .filter(supervisor_contrato.c.supervisor_id == Supervisor.id).exists()
-        q = q.filter(db.or_(Supervisor.id.in_(asignados), sin_contrato))
-    supervisores = q.order_by(Supervisor.nombre).all()
-    return jsonify([s.nombre for s in supervisores])
+    todos = Supervisor.query.filter_by(activo=True).order_by(Supervisor.nombre).all()
+    if not contrato_id:
+        return jsonify([s.nombre for s in todos])
+    # IDs con al menos un contrato asignado
+    con_contrato_ids = {
+        row[0] for row in db.session.query(supervisor_contrato.c.supervisor_id).all()
+    }
+    # IDs asignados específicamente a este contrato
+    asignados_ids = {
+        row[0] for row in db.session.query(supervisor_contrato.c.supervisor_id)
+        .filter(supervisor_contrato.c.contrato_id == contrato_id).all()
+    }
+    resultado = [
+        s.nombre for s in todos
+        if s.id in asignados_ids or s.id not in con_contrato_ids
+    ]
+    return jsonify(resultado)
 
 
 # ── API: buscar persona por cédula ────────────────────────────────────────────
