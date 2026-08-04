@@ -41,7 +41,10 @@ _scheduler_lock_conn = None
 _MIGRACIONES = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS acceso_dashboard BOOLEAN NOT NULL DEFAULT FALSE",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS permisos TEXT NOT NULL DEFAULT '[]'",
-    "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS contrato_id INTEGER",
+    "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS supervisor VARCHAR(200)",
+    "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS valor_hora NUMERIC(14,2)",
+    "ALTER TABLE horas_extras ALTER COLUMN estado TYPE VARCHAR(30)",
+    "ALTER TABLE horas_extras ALTER COLUMN autorizacion_neo TYPE VARCHAR(30)",
 ]
 
 def _auto_migrar():

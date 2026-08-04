@@ -32,10 +32,10 @@ body { background:var(--c-bg); }
 .he-table-header h6 { margin:0; font-weight:700; color:#007d8a; font-size:.9rem; }
 
 /* Estado badges */
-.badge-PENDIENTE  { background:#fff3cd; color:#856404; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
-.badge-APROBADA   { background:#d1e7dd; color:#0a3622; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
-.badge-PARCIAL    { background:#cfe2ff; color:#084298; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
-.badge-RECHAZADA  { background:#f8d7da; color:#842029; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-PENDIENTE   { background:#fff3cd; color:#856404; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-CONFORME    { background:#d1e7dd; color:#0a3622; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-NO\ CONFORME{ background:#f8d7da; color:#842029; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-DESCONTADA  { background:#ede9fe; color:#5b21b6; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
 
 /* Modal validación */
 .he-val-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1060; align-items:center; justify-content:center; }
@@ -57,9 +57,9 @@ body { background:var(--c-bg); }
 .auth-btn { flex:1; padding:10px; border-radius:8px; border:2px solid #dee2e6; background:#fff;
             font-size:.8rem; font-weight:700; cursor:pointer; text-align:center; transition:.15s; }
 .auth-btn:hover { border-color:#007d8a; }
-.auth-btn.sel-APROBADA  { border-color:#22c55e; background:#d1e7dd; color:#0a3622; }
-.auth-btn.sel-PARCIAL   { border-color:#3b82f6; background:#cfe2ff; color:#084298; }
-.auth-btn.sel-RECHAZADA { border-color:#ef4444; background:#f8d7da; color:#842029; }
+.auth-btn.sel-CONFORME     { border-color:#22c55e; background:#d1e7dd; color:#0a3622; }
+.auth-btn.sel-NO-CONFORME  { border-color:#ef4444; background:#f8d7da; color:#842029; }
+.auth-btn.sel-DESCONTADA   { border-color:#7c3aed; background:#ede9fe; color:#5b21b6; }
 
 label.fl { font-size:.71rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; }
 
@@ -141,9 +141,9 @@ label.fl { font-size:.71rem; font-weight:600; color:#495057; text-transform:uppe
             <select id="fEstado" onchange="cargarTabla()">
                 <option value="">Todos</option>
                 <option>PENDIENTE</option>
-                <option>APROBADA</option>
-                <option>PARCIAL</option>
-                <option>RECHAZADA</option>
+                <option>CONFORME</option>
+                <option>NO CONFORME</option>
+                <option>DESCONTADA</option>
             </select>
         </div>
         <button class="btn btn-sm btn-outline-secondary" onclick="cargarTabla()" style="border-radius:7px;">
@@ -177,14 +177,14 @@ label.fl { font-size:.71rem; font-weight:600; color:#495057; text-transform:uppe
         <div class="mb-3">
             <label class="fl mb-2 d-block">Autorización NEO</label>
             <div class="auth-opts">
-                <button class="auth-btn" id="btn-APROBADA"  onclick="selAuth('APROBADA')">
-                    <i class="bi bi-check-circle me-1"></i>Aprobada
+                <button class="auth-btn" id="btn-CONFORME"    onclick="selAuth('CONFORME')">
+                    <i class="bi bi-check-circle me-1"></i>Conforme
                 </button>
-                <button class="auth-btn" id="btn-PARCIAL"   onclick="selAuth('PARCIAL')">
-                    <i class="bi bi-slash-circle me-1"></i>Parcial
+                <button class="auth-btn" id="btn-NO-CONFORME" onclick="selAuth('NO CONFORME')">
+                    <i class="bi bi-x-circle me-1"></i>No Conforme
                 </button>
-                <button class="auth-btn" id="btn-RECHAZADA" onclick="selAuth('RECHAZADA')">
-                    <i class="bi bi-x-circle me-1"></i>Rechazada
+                <button class="auth-btn" id="btn-DESCONTADA"  onclick="selAuth('DESCONTADA')">
+                    <i class="bi bi-dash-circle me-1"></i>Descontada
                 </button>
             </div>
         </div>
@@ -276,7 +276,7 @@ function cargarTabla() {
         { title:"Observación",    field:"observacion",        minWidth:150, headerFilter:"input", formatter:"textarea" },
         { title:"Estado",         field:"estado",             width:110, formatter: estadoBadge,
           headerFilter:"list",
-          headerFilterParams:{values:{"":"Todos","PENDIENTE":"PENDIENTE","APROBADA":"APROBADA","PARCIAL":"PARCIAL","RECHAZADA":"RECHAZADA"}} },
+          headerFilterParams:{values:{"":"Todos","PENDIENTE":"PENDIENTE","CONFORME":"CONFORME","NO CONFORME":"NO CONFORME","DESCONTADA":"DESCONTADA"}} },
         { title:"Hrs Autorizadas",field:"horas_autorizadas",  width:115, hozAlign:"right", headerFilter:"input" },
         { title:"Auth. NEO",      field:"autorizacion_neo",   width:110, headerFilter:"input" },
         { title:"Obs NEO",        field:"obs_neo",            minWidth:150, headerFilter:"input", formatter:"textarea" },
@@ -341,9 +341,10 @@ function cerrarVal(e) {
 
 function selAuth(tipo) {
     authSel = tipo;
-    ["APROBADA","PARCIAL","RECHAZADA"].forEach(t => {
-        const b = document.getElementById(`btn-${t}`);
-        b.className = "auth-btn" + (t === tipo ? ` sel-${t}` : "");
+    ["CONFORME","NO CONFORME","DESCONTADA"].forEach(t => {
+        const key = t.replace(" ","-");
+        const b = document.getElementById(`btn-${key}`);
+        if (b) b.className = "auth-btn" + (t === tipo ? ` sel-${key}` : "");
     });
 }
 
@@ -361,7 +362,7 @@ async function guardarVal() {
     if (d.ok) {
         cerrarVal();
         cargarTabla();
-        mostrarToast(`Registro ${d.estado.toLowerCase()} correctamente`, d.estado === "RECHAZADA" ? "danger" : "success");
+        mostrarToast(`Registro marcado como ${d.estado}`, d.estado === "NO CONFORME" ? "danger" : d.estado === "DESCONTADA" ? "warning" : "success");
     } else {
         alert(d.msg || "Error al guardar");
     }

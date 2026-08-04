@@ -33,19 +33,20 @@ class HoraExtra(db.Model):
     recurso             = db.Column(db.String(200))
     id_concepto         = db.Column(db.String(10), nullable=False)
     tipo_he             = db.Column(db.String(200))
-    horas_reportadas    = db.Column(db.Numeric(8, 2), nullable=False, default=0)
-    horas_compensadas   = db.Column(db.Numeric(8, 2), default=0)
-    autorizacion_coord  = db.Column(db.String(20))   # SI / NO
+    horas_reportadas    = db.Column(db.Integer, nullable=False, default=0)
+    horas_compensadas   = db.Column(db.Integer, default=0)
+    supervisor          = db.Column(db.String(200))   # nombre del supervisor
     justificacion       = db.Column(db.Text)
     observacion         = db.Column(db.Text)
-    valor_extra_nomina  = db.Column(db.Numeric(14, 2))
-    valor_extra         = db.Column(db.Numeric(14, 2))
+    valor_hora          = db.Column(db.Numeric(14, 2))   # valor de la hora según salario
+    valor_extra_nomina  = db.Column(db.Numeric(14, 2))   # valor total a pagar en nómina
+    valor_extra         = db.Column(db.Numeric(14, 2))   # valor extra calculado
 
     # Validación NEO
-    autorizacion_neo    = db.Column(db.String(20))   # APROBADA / PARCIAL / RECHAZADA
-    horas_autorizadas   = db.Column(db.Numeric(8, 2))
+    autorizacion_neo    = db.Column(db.String(30))   # CONFORME / NO CONFORME / DESCONTADA
+    horas_autorizadas   = db.Column(db.Integer)
     obs_neo             = db.Column(db.Text)
-    estado              = db.Column(db.String(20), default="PENDIENTE")  # PENDIENTE / APROBADA / PARCIAL / RECHAZADA
+    estado              = db.Column(db.String(30), default="PENDIENTE")  # PENDIENTE / CONFORME / NO CONFORME / DESCONTADA
 
     # Metadatos
     reportado_por_id    = db.Column(db.Integer, db.ForeignKey("users.id"))
@@ -68,15 +69,16 @@ class HoraExtra(db.Model):
             "recurso":            self.recurso or "",
             "id_concepto":        self.id_concepto,
             "tipo_he":            self.tipo_he or "",
-            "horas_reportadas":   float(self.horas_reportadas or 0),
-            "horas_compensadas":  float(self.horas_compensadas or 0),
-            "autorizacion_coord": self.autorizacion_coord or "",
+            "horas_reportadas":   int(self.horas_reportadas or 0),
+            "horas_compensadas":  int(self.horas_compensadas or 0),
+            "supervisor":         self.supervisor or "",
             "justificacion":      self.justificacion or "",
             "observacion":        self.observacion or "",
+            "valor_hora":         float(self.valor_hora) if self.valor_hora else None,
             "valor_extra_nomina": float(self.valor_extra_nomina) if self.valor_extra_nomina else None,
             "valor_extra":        float(self.valor_extra) if self.valor_extra else None,
             "autorizacion_neo":   self.autorizacion_neo or "",
-            "horas_autorizadas":  float(self.horas_autorizadas) if self.horas_autorizadas else None,
+            "horas_autorizadas":  int(self.horas_autorizadas) if self.horas_autorizadas else None,
             "obs_neo":            self.obs_neo or "",
             "estado":             self.estado or "PENDIENTE",
             "reportado_por":      self.reportado_por.nombre_completo if self.reportado_por else "",

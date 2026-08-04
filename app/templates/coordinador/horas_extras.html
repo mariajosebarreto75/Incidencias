@@ -6,20 +6,18 @@
 <style>
 :root { --c-primary:#0d3b66; --c-bg:#f4f6fb; }
 body { background:var(--c-bg); }
-.he-page { max-width:1500px; margin:0 auto; padding:20px 14px 80px; }
+.he-page { max-width:1600px; margin:0 auto; padding:20px 14px 80px; }
 
-/* KPIs */
 .he-kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:18px; }
 .he-kpi { background:#fff; border-radius:10px; padding:12px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07); border-left:3px solid #ccc; }
 .he-kpi .kv { font-size:1.6rem; font-weight:800; line-height:1; }
 .he-kpi .kl { font-size:.63rem; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
 .he-kpi.total { border-color:#0d3b66; } .he-kpi.total .kv { color:#0d3b66; }
 .he-kpi.pend  { border-color:#f59e0b; } .he-kpi.pend  .kv { color:#f59e0b; }
-.he-kpi.apro  { border-color:#22c55e; } .he-kpi.apro  .kv { color:#22c55e; }
-.he-kpi.parc  { border-color:#3b82f6; } .he-kpi.parc  .kv { color:#3b82f6; }
-.he-kpi.rech  { border-color:#ef4444; } .he-kpi.rech  .kv { color:#ef4444; }
+.he-kpi.conf  { border-color:#22c55e; } .he-kpi.conf  .kv { color:#22c55e; }
+.he-kpi.noconf{ border-color:#ef4444; } .he-kpi.noconf .kv{ color:#ef4444; }
+.he-kpi.desc  { border-color:#8b5cf6; } .he-kpi.desc  .kv { color:#8b5cf6; }
 
-/* Panel entrada */
 .he-entry-panel { background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08); margin-bottom:20px; overflow:hidden; }
 .he-entry-head { background:#0d3b66; color:#fff; padding:12px 18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .he-entry-head h6 { margin:0; font-weight:700; font-size:.9rem; flex:1; }
@@ -29,15 +27,13 @@ body { background:var(--c-bg); }
 .he-toolbar { padding:8px 14px; background:#f0f4fb; border-bottom:1px solid #dde3ee;
     display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
-/* Handsontable custom */
-#gridHE { width:100%; overflow:hidden; }
-.handsontable th { background:#e8f0fe !important; color:#0d3b66 !important;
-    font-weight:700 !important; font-size:.71rem !important; text-transform:uppercase; letter-spacing:.3px; }
-.handsontable td { font-size:.8rem !important; }
-.handsontable td.htDimmed { color:#aaa !important; }
-.handsontable .htCore tr:nth-child(even) td { background:#f8faff; }
+/* Columnas de NEO en el grid — fondo distinto */
+.handsontable th { font-weight:700 !important; font-size:.69rem !important; text-transform:uppercase; letter-spacing:.3px; }
+.handsontable td { font-size:.78rem !important; }
+.handsontable .htDimmed { color:#777 !important; }
+/* Las columnas readonly de NEO las diferenciamos con un leve fondo */
+.ht-neo-col { background:#f0f7ff !important; }
 
-/* Historial */
 .he-hist-wrap { background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08); overflow:hidden; }
 .he-hist-head { padding:12px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; }
 .he-hist-head h6 { margin:0; font-weight:700; color:#0d3b66; font-size:.88rem; }
@@ -45,14 +41,22 @@ body { background:var(--c-bg); }
     margin-bottom:12px; display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
 .he-filtros label { font-size:.7rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; display:block; margin-bottom:2px; }
 .he-filtros select, .he-filtros input { font-size:.8rem; border-radius:7px; border:1px solid #dee2e6; padding:5px 9px; }
-.badge-PENDIENTE { background:#fff3cd; color:#856404; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
-.badge-APROBADA  { background:#d1e7dd; color:#0a3622; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
-.badge-PARCIAL   { background:#cfe2ff; color:#084298; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
-.badge-RECHAZADA { background:#f8d7da; color:#842029; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
+
+.badge-PENDIENTE   { background:#fff3cd; color:#856404; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
+.badge-CONFORME    { background:#d1e7dd; color:#0a3622; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
+.badge-NO\ CONFORME{ background:#f8d7da; color:#842029; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
+.badge-DESCONTADA  { background:#ede9fe; color:#5b21b6; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
+
 .tabulator { border:none !important; }
 .tabulator-header { background:#f0f4f8 !important; }
 .tabulator-col-title { font-size:.7rem !important; font-weight:700 !important; color:#0d3b66 !important; text-transform:uppercase; }
 .tabulator-cell { font-size:.78rem !important; }
+
+/* Leyenda secciones grid */
+.grid-legend { display:flex; gap:12px; padding:6px 14px; background:#fafbfc; border-top:1px solid #eee;
+    font-size:.68rem; color:#6c757d; flex-wrap:wrap; }
+.grid-legend span { display:flex; align-items:center; gap:5px; }
+.lg-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
 </style>
 {% endblock %}
 
@@ -71,11 +75,11 @@ body { background:var(--c-bg); }
 
     <!-- KPIs -->
     <div class="he-kpi-row">
-        <div class="he-kpi total"><div class="kv" id="k-total">—</div><div class="kl">Total</div></div>
-        <div class="he-kpi pend"> <div class="kv" id="k-pend">—</div><div class="kl">Pendientes</div></div>
-        <div class="he-kpi apro"> <div class="kv" id="k-apro">—</div><div class="kl">Aprobadas</div></div>
-        <div class="he-kpi parc"> <div class="kv" id="k-parc">—</div><div class="kl">Parciales</div></div>
-        <div class="he-kpi rech"> <div class="kv" id="k-rech">—</div><div class="kl">Rechazadas</div></div>
+        <div class="he-kpi total"> <div class="kv" id="k-total">—</div><div class="kl">Total</div></div>
+        <div class="he-kpi pend">  <div class="kv" id="k-pend">—</div> <div class="kl">Pendientes</div></div>
+        <div class="he-kpi conf">  <div class="kv" id="k-conf">—</div> <div class="kl">Conformes</div></div>
+        <div class="he-kpi noconf"><div class="kv" id="k-noconf">—</div><div class="kl">No Conformes</div></div>
+        <div class="he-kpi desc">  <div class="kv" id="k-desc">—</div> <div class="kl">Descontadas</div></div>
     </div>
 
     <!-- PANEL EXCEL -->
@@ -102,7 +106,7 @@ body { background:var(--c-bg); }
                 <i class="bi bi-eraser me-1"></i>Limpiar
             </button>
             <span style="font-size:.71rem;color:#6c757d;margin-left:4px;">
-                <i class="bi bi-info-circle me-1"></i>Ctrl+C / Ctrl+V para copiar y pegar desde Excel · Arrastra para llenar
+                <i class="bi bi-info-circle me-1"></i>Ctrl+C / Ctrl+V para pegar desde Excel · Arrastra el cuadrito para llenar
             </span>
             <div class="ms-auto">
                 <button onclick="guardarGrid()" id="btnGuardar"
@@ -112,15 +116,17 @@ body { background:var(--c-bg); }
             </div>
         </div>
 
-        <div style="padding:0;">
+        <div style="overflow:auto;">
             <div id="gridHE"></div>
         </div>
-        <div style="padding:7px 14px;font-size:.7rem;color:#9ca3af;background:#fafbfc;border-top:1px solid #eee;">
-            💡 <strong>Nombre</strong> y <strong>Tipo HE</strong> se completan automáticamente. Filas sin fecha, cédula o horas se ignoran al guardar.
+
+        <div class="grid-legend">
+            <span><div class="lg-dot" style="background:#e8f0fe;border:1px solid #c5d3e8;"></div> Campos que tú ingresas</span>
+            <span><div class="lg-dot" style="background:#f0f7ff;border:1px solid #c0d9f0;"></div> Columnas calculadas / validación NEO (solo lectura)</span>
         </div>
     </div>
 
-    <!-- FILTROS -->
+    <!-- FILTROS HISTORIAL -->
     <div class="he-filtros">
         <div><label>Contrato</label>
             <select id="fContrato" onchange="cargarHistorial()" style="min-width:220px;">
@@ -132,7 +138,8 @@ body { background:var(--c-bg); }
         <div><label>Estado</label>
             <select id="fEstado" onchange="cargarHistorial()">
                 <option value="">Todos</option>
-                <option>PENDIENTE</option><option>APROBADA</option><option>PARCIAL</option><option>RECHAZADA</option>
+                <option>PENDIENTE</option><option>CONFORME</option>
+                <option>NO CONFORME</option><option>DESCONTADA</option>
             </select>
         </div>
         <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;"><i class="bi bi-arrow-clockwise"></i></button>
@@ -154,16 +161,21 @@ body { background:var(--c-bg); }
 <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-const CONCEPTOS = {{ conceptos | tojson }};
+const CONCEPTOS   = {{ conceptos | tojson }};
+const FACTOR_HE   = { "03":1.25,"04":1.75,"05":2.05,"06":2.55,"07":0.80,"17":0.35,"19":1.15 };
 const CONCEPTO_KEYS = Object.keys(CONCEPTOS);
-const COL_FECHA=0, COL_CEDULA=1, COL_NOMBRE=2, COL_RECURSO=3,
-      COL_COD=4, COL_TIPO=5, COL_HRS=6, COL_COMP=7,
-      COL_AUTH=8, COL_JUST=9, COL_OBS=10;
-const FILAS = 40;
+// Columnas editables por el coordinador
+const C_FECHA=0,C_CED=1,C_NOM=2,C_REC=3,C_COD=4,C_TIPO=5,
+      C_HRS=6,C_COMP=7,C_SUP=8,C_JUST=9,C_OBS=10,
+      // Calculadas / readonly
+      C_VHORA=11,C_VNOM=12,C_VEXT=13,
+      // NEO (readonly)
+      C_HAUTH=14,C_NEO=15,C_OBSNEO=16;
 
-let hot = null;
-let tabla = null;
+const FILAS = 40;
+let hot = null, tabla = null;
 let cedulaTimers = {};
+let salariosPorFila = {};  // { row: salario }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
@@ -174,90 +186,140 @@ let cedulaTimers = {};
     cargarHistorial();
 })();
 
+function fmt(n) {
+    if (n == null || n === "" || isNaN(n)) return "";
+    return new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(n);
+}
+
 // ── Handsontable ──────────────────────────────────────────────────────────────
 function iniciarGrid() {
-    const datos = Array.from({length: FILAS}, () => Array(11).fill(""));
+    const datos = Array.from({length: FILAS}, () => Array(17).fill(""));
 
     hot = new Handsontable(document.getElementById("gridHE"), {
         data: datos,
         rowHeaders: true,
-        colHeaders: ["Fecha Labor","Cédula","Nombre","Recurso",
-                     "Id Concepto","Tipo HE","Hrs Reportadas","Hrs Comp.",
-                     "Autorización","Justificación","Observación"],
-        columns: [
-            { type:"date",    dateFormat:"YYYY-MM-DD", correctFormat:true },
-            { type:"text" },
-            { type:"text",    readOnly:true },
-            { type:"text" },
-            { type:"dropdown", source: CONCEPTO_KEYS },
-            { type:"text",    readOnly:true },
-            { type:"numeric", numericFormat:{ pattern:"0,0.00" } },
-            { type:"numeric", numericFormat:{ pattern:"0,0.00" } },
-            { type:"dropdown", source:["SI","NO"] },
-            { type:"text" },
-            { type:"text" },
+        colHeaders: [
+            "Fecha Labor","Cédula","Nombre","Recurso",
+            "Id Concepto","Tipo HE","Hrs Reportadas","Hrs Comp.",
+            "Supervisor","Justificación","Observación",
+            "Valor Hora","Valor Extra Nómina","$ Valor Extra",
+            "Hrs Autorizadas","Validación NEO","Obs NEO"
         ],
-        colWidths: [115,110,190,140,130,230,115,100,105,180,180],
-        height: 460,
+        columns: [
+            { type:"date",    dateFormat:"YYYY-MM-DD", correctFormat:true },  // 0 fecha
+            { type:"text" },                                                   // 1 cedula
+            { type:"text",    readOnly:true },                                 // 2 nombre
+            { type:"text" },                                                   // 3 recurso
+            { type:"dropdown", source: CONCEPTO_KEYS },                       // 4 concepto
+            { type:"text",    readOnly:true },                                 // 5 tipo_he
+            { type:"numeric" },                                                // 6 horas
+            { type:"numeric" },                                                // 7 comp
+            { type:"text" },                                                   // 8 supervisor
+            { type:"text" },                                                   // 9 just
+            { type:"text" },                                                   // 10 obs
+            { type:"text",    readOnly:true },                                 // 11 valor hora
+            { type:"text",    readOnly:true },                                 // 12 valor nom
+            { type:"text",    readOnly:true },                                 // 13 valor extra
+            { type:"numeric", readOnly:true },                                 // 14 hrs auth (NEO)
+            { type:"text",    readOnly:true },                                 // 15 validacion NEO
+            { type:"text",    readOnly:true },                                 // 16 obs NEO
+        ],
+        colWidths: [115,105,185,140,120,200,110,90,170,175,175,
+                    110,135,120, 105,130,175],
+        height: 480,
         stretchH: "none",
         manualColumnResize: true,
-        manualRowResize: false,
         contextMenu: true,
         fillHandle: true,
         copyPaste: true,
         undo: true,
         licenseKey: "non-commercial-and-evaluation",
+        cells: function(row, col) {
+            // Columnas calculadas y NEO con fondo azul claro
+            if (col >= C_VHORA) return { className: "ht-neo-col" };
+            return {};
+        },
         afterChange: function(changes, source) {
-            if (!changes || source === "loadData") return;
-            changes.forEach(([row, col, oldVal, newVal]) => {
-                if (col === COL_CEDULA) {
-                    clearTimeout(cedulaTimers[row]);
-                    const ced = (newVal || "").trim();
-                    if (ced.length >= 5) {
-                        cedulaTimers[row] = setTimeout(() => autoFillNombre(row, ced), 500);
-                    } else {
-                        hot.setDataAtCell(row, COL_NOMBRE, "", "auto");
-                    }
-                }
-                if (col === COL_COD) {
-                    const codigo = (newVal || "").trim();
-                    hot.setDataAtCell(row, COL_TIPO, CONCEPTOS[codigo] || "", "auto");
-                }
+            if (!changes || source === "loadData" || source === "auto") return;
+            changes.forEach(([row, col, , newVal]) => {
+                if (col === C_CED) onCedulaCambia(row, newVal);
+                if (col === C_COD) onConceptoCambia(row, newVal);
+                if (col === C_HRS || col === C_COD) recalcular(row);
             });
         },
         afterPaste: function(data, coords) {
-            // Tras pegar, procesar cédulas y conceptos del rango pegado
             setTimeout(() => {
-                const startRow = coords[0].startRow;
-                const endRow   = coords[0].endRow;
-                for (let r = startRow; r <= endRow; r++) {
-                    const ced = (hot.getDataAtCell(r, COL_CEDULA) || "").trim();
-                    const cod = (hot.getDataAtCell(r, COL_COD)    || "").trim();
-                    if (ced.length >= 5) autoFillNombre(r, ced);
-                    if (cod && CONCEPTOS[cod]) hot.setDataAtCell(r, COL_TIPO, CONCEPTOS[cod], "auto");
+                for (let r = coords[0].startRow; r <= coords[0].endRow; r++) {
+                    const ced = (hot.getDataAtCell(r, C_CED) || "").trim();
+                    const cod = (hot.getDataAtCell(r, C_COD) || "").trim();
+                    if (ced.length >= 5) onCedulaCambia(r, ced);
+                    if (cod) onConceptoCambia(r, cod);
+                    recalcular(r);
                 }
             }, 200);
         },
     });
 }
 
+function onCedulaCambia(row, val) {
+    clearTimeout(cedulaTimers[row]);
+    const ced = (val || "").trim();
+    if (ced.length >= 5) {
+        cedulaTimers[row] = setTimeout(() => autoFillNombre(row, ced), 500);
+    } else {
+        hot.setDataAtCell(row, C_NOM, "", "auto");
+        delete salariosPorFila[row];
+        recalcular(row);
+    }
+}
+
+function onConceptoCambia(row, val) {
+    const codigo = (val || "").trim();
+    hot.setDataAtCell(row, C_TIPO, CONCEPTOS[codigo] || "", "auto");
+    recalcular(row);
+}
+
 async function autoFillNombre(row, cedula) {
     try {
         const r = await fetch(`/api/he/persona?cedula=${encodeURIComponent(cedula)}`);
         const d = await r.json();
-        hot.setDataAtCell(row, COL_NOMBRE, d.ok ? d.nombre : "", "auto");
+        hot.setDataAtCell(row, C_NOM, d.ok ? d.nombre : "", "auto");
+        if (d.ok && d.salario) {
+            salariosPorFila[row] = parseFloat(d.salario);
+            recalcular(row);
+        }
     } catch(e) {}
 }
 
-// ── Botones grid ──────────────────────────────────────────────────────────────
+function recalcular(row) {
+    const cod  = (hot.getDataAtCell(row, C_COD) || "").trim();
+    const hrs  = parseInt(hot.getDataAtCell(row, C_HRS)) || 0;
+    const sal  = salariosPorFila[row];
+    const factor = FACTOR_HE[cod] || 0;
+
+    if (!sal || !factor || !hrs) {
+        hot.setDataAtCell(row, C_VHORA, "", "auto");
+        hot.setDataAtCell(row, C_VNOM,  "", "auto");
+        hot.setDataAtCell(row, C_VEXT,  "", "auto");
+        return;
+    }
+    // Fórmula provisional: salario mensual / 240 horas = valor hora base
+    const vHora = sal / 240;
+    const vExtra = vHora * factor * hrs;
+    hot.setDataAtCell(row, C_VHORA, fmt(vHora),  "auto");
+    hot.setDataAtCell(row, C_VNOM,  fmt(vExtra), "auto");
+    hot.setDataAtCell(row, C_VEXT,  fmt(vExtra), "auto");
+}
+
+// ── Botones ───────────────────────────────────────────────────────────────────
 function agregarFilas(n) {
     hot.alter("insert_row", hot.countRows(), n);
 }
 
 function limpiarGrid() {
     if (!confirm("¿Limpiar todas las filas?")) return;
-    const empty = Array.from({length: hot.countRows()}, () => Array(11).fill(""));
-    hot.loadData(empty);
+    hot.loadData(Array.from({length: hot.countRows()}, () => Array(17).fill("")));
+    salariosPorFila = {};
 }
 
 function onContratoChange() {
@@ -269,55 +331,56 @@ function onContratoChange() {
 // ── Guardar ───────────────────────────────────────────────────────────────────
 async function guardarGrid() {
     const contratoId = document.getElementById("gridContrato").value;
-    if (!contratoId) { mostrarToast("Seleccione un contrato primero", "warning"); return; }
+    if (!contratoId) { mostrarToast("Seleccione un contrato primero","warning"); return; }
 
-    const rows = hot.getData();
+    const rows  = hot.getData();
     const filas = [];
-    for (const row of rows) {
-        const fecha  = row[COL_FECHA];
-        const cedula = (row[COL_CEDULA] || "").trim();
-        const hrs    = parseFloat(row[COL_HRS]) || 0;
-        if (!fecha || !cedula || hrs <= 0) continue;
+    for (let i = 0; i < rows.length; i++) {
+        const row   = rows[i];
+        const fecha = row[C_FECHA];
+        const ced   = (row[C_CED] || "").trim();
+        const hrs   = parseInt(row[C_HRS]) || 0;
+        if (!fecha || !ced || hrs <= 0) continue;
+        const cod = (row[C_COD] || "").trim();
+        const sal = salariosPorFila[i];
+        const fac = FACTOR_HE[cod] || 0;
+        const vHora  = sal && fac ? sal / 240 : null;
+        const vExtra = vHora ? vHora * fac * hrs : null;
         filas.push({
             contrato_id:        contratoId,
             fecha_labor:        fecha,
-            cedula,
-            nombre:             (row[COL_NOMBRE]  || "").trim(),
-            recurso:            (row[COL_RECURSO] || "").trim(),
-            id_concepto:        (row[COL_COD]     || "").trim(),
+            cedula:             ced,
+            nombre:             (row[C_NOM]  || "").trim(),
+            recurso:            (row[C_REC]  || "").trim(),
+            id_concepto:        cod,
             horas_reportadas:   hrs,
-            horas_compensadas:  parseFloat(row[COL_COMP]) || 0,
-            autorizacion_coord: row[COL_AUTH] || "",
-            justificacion:      (row[COL_JUST] || "").trim(),
-            observacion:        (row[COL_OBS]  || "").trim(),
+            horas_compensadas:  parseInt(row[C_COMP]) || 0,
+            supervisor:         (row[C_SUP]  || "").trim(),
+            justificacion:      (row[C_JUST] || "").trim(),
+            observacion:        (row[C_OBS]  || "").trim(),
+            valor_hora:         vHora  ? Math.round(vHora)  : null,
+            valor_extra_nomina: vExtra ? Math.round(vExtra) : null,
+            valor_extra:        vExtra ? Math.round(vExtra) : null,
         });
     }
 
-    if (!filas.length) {
-        mostrarToast("No hay filas con fecha, cédula y horas > 0", "warning");
-        return;
-    }
+    if (!filas.length) { mostrarToast("No hay filas con fecha, cédula y horas > 0","warning"); return; }
 
     const btn = document.getElementById("btnGuardar");
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando…';
-
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando…';
     const r = await fetch("/api/he/guardar", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ filas })
     });
     const d = await r.json();
-    btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-save me-1"></i>Guardar horas';
-
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-save me-1"></i>Guardar horas';
     if (d.ok) {
-        mostrarToast(`✓ ${d.guardados} registro(s) guardados`, "success");
-        const empty = Array.from({length: hot.countRows()}, () => Array(11).fill(""));
-        hot.loadData(empty);
-        cargarHistorial();
-        cargarKpis();
+        mostrarToast(`✓ ${d.guardados} registro(s) guardados`,"success");
+        hot.loadData(Array.from({length: hot.countRows()}, () => Array(17).fill("")));
+        salariosPorFila = {};
+        cargarHistorial(); cargarKpis();
     } else {
-        mostrarToast(d.msg || "Error al guardar", "danger");
+        mostrarToast(d.msg || "Error al guardar","danger");
     }
 }
 
@@ -327,11 +390,11 @@ async function cargarKpis() {
     const mes = document.getElementById("fMes").value;
     const r = await fetch(`/api/he/kpis?contrato_id=${cid}&mes=${mes}`);
     const d = await r.json();
-    document.getElementById("k-total").textContent = d.total;
-    document.getElementById("k-pend").textContent  = d.pendientes;
-    document.getElementById("k-apro").textContent  = d.aprobadas;
-    document.getElementById("k-parc").textContent  = d.parciales;
-    document.getElementById("k-rech").textContent  = d.rechazadas;
+    document.getElementById("k-total").textContent  = d.total;
+    document.getElementById("k-pend").textContent   = d.pendientes;
+    document.getElementById("k-conf").textContent   = d.aprobadas;
+    document.getElementById("k-noconf").textContent = d.parciales;
+    document.getElementById("k-desc").textContent   = d.rechazadas;
 }
 
 // ── Historial ─────────────────────────────────────────────────────────────────
@@ -342,22 +405,31 @@ function cargarHistorial() {
     const url    = `/api/he/registros?contrato_id=${cid}&mes=${mes}&estado=${estado}`;
     cargarKpis();
 
+    const fmtCol = c => {
+        const v = c.getValue();
+        return v ? new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(v) : "—";
+    };
+
     const cols = [
-        { title:"Fecha Lab.",      field:"fecha_labor",        width:105, headerFilter:"input" },
-        { title:"Cédula",          field:"cedula",             width:105, headerFilter:"input" },
-        { title:"Nombre",          field:"nombre",             minWidth:150, headerFilter:"input" },
-        { title:"Recurso",         field:"recurso",            minWidth:120, headerFilter:"input" },
-        { title:"Concepto",        field:"id_concepto",        width:80 },
-        { title:"Tipo HE",         field:"tipo_he",            minWidth:180, headerFilter:"input" },
-        { title:"Hrs Rep.",        field:"horas_reportadas",   width:88, hozAlign:"right" },
-        { title:"Hrs Comp.",       field:"horas_compensadas",  width:88, hozAlign:"right" },
-        { title:"Auth. Coord.",    field:"autorizacion_coord", width:95 },
-        { title:"Estado",          field:"estado",             width:105,
+        { title:"Fecha",          field:"fecha_labor",        width:100, headerFilter:"input" },
+        { title:"Cédula",         field:"cedula",             width:100, headerFilter:"input" },
+        { title:"Nombre",         field:"nombre",             minWidth:145, headerFilter:"input" },
+        { title:"Recurso",        field:"recurso",            minWidth:110, headerFilter:"input" },
+        { title:"Cód.",           field:"id_concepto",        width:65 },
+        { title:"Tipo HE",        field:"tipo_he",            minWidth:175, headerFilter:"input" },
+        { title:"Hrs Rep.",       field:"horas_reportadas",   width:80, hozAlign:"right" },
+        { title:"Hrs Comp.",      field:"horas_compensadas",  width:80, hozAlign:"right" },
+        { title:"Supervisor",     field:"supervisor",         minWidth:140, headerFilter:"input" },
+        { title:"Valor Hora",     field:"valor_hora",         width:105, hozAlign:"right", formatter:fmtCol },
+        { title:"Vlr Extra Nom.", field:"valor_extra_nomina", width:120, hozAlign:"right", formatter:fmtCol },
+        { title:"$ Valor Extra",  field:"valor_extra",        width:110, hozAlign:"right", formatter:fmtCol },
+        { title:"Estado",         field:"estado",             width:115,
           formatter: c => `<span class="badge-${c.getValue()}">${c.getValue()}</span>` },
-        { title:"Hrs Autorizadas", field:"horas_autorizadas",  width:115, hozAlign:"right" },
-        { title:"Obs NEO",         field:"obs_neo",            minWidth:150, formatter:"textarea" },
-        { title:"Reportado",       field:"fecha_reporte",      width:125 },
-        { title:"Acciones", formatter: accionesCoor, width:85, hozAlign:"center", headerSort:false },
+        { title:"Hrs Auth.",      field:"horas_autorizadas",  width:80, hozAlign:"right" },
+        { title:"Valid. NEO",     field:"autorizacion_neo",   width:115 },
+        { title:"Obs NEO",        field:"obs_neo",            minWidth:150, formatter:"textarea" },
+        { title:"Reportado",      field:"fecha_reporte",      width:120 },
+        { title:"Acc.", formatter: accionesCoor, width:70, hozAlign:"center", headerSort:false },
     ];
 
     if (tabla) { tabla.setData(url); return; }
@@ -387,13 +459,12 @@ function exportarExcel() {
     if (tabla) tabla.download("xlsx","horas_extras.xlsx",{sheetName:"Horas Extras"});
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
 function mostrarToast(msg, tipo="success") {
     const c = {success:"#198754", danger:"#dc3545", warning:"#d97706"};
     const t = document.createElement("div");
     t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${c[tipo]||"#0d3b66"};
         color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;
-        box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:340px;`;
+        box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:360px;`;
     t.textContent = msg;
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 4000);

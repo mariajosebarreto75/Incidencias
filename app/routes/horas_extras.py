@@ -117,21 +117,24 @@ def api_he_guardar():
             return jsonify({"ok": False, "msg": "Contrato no asignado a su usuario"}), 403
         concepto = f.get("id_concepto", "")
         he = HoraExtra(
-            contrato_id        = contrato_id,
-            fecha_labor        = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else date.today(),
-            cedula             = f.get("cedula", "").strip(),
-            nombre             = f.get("nombre", "").strip(),
-            recurso            = f.get("recurso", "").strip(),
-            id_concepto        = concepto,
-            tipo_he            = CONCEPTOS_HE.get(concepto, ""),
-            horas_reportadas   = float(f.get("horas_reportadas") or 0),
-            horas_compensadas  = float(f.get("horas_compensadas") or 0),
-            autorizacion_coord = f.get("autorizacion_coord", ""),
-            justificacion      = f.get("justificacion", "").strip(),
-            observacion        = f.get("observacion", "").strip(),
-            estado             = "PENDIENTE",
-            reportado_por_id   = current_user.id,
-            fecha_reporte      = datetime.utcnow(),
+            contrato_id       = contrato_id,
+            fecha_labor       = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else date.today(),
+            cedula            = f.get("cedula", "").strip(),
+            nombre            = f.get("nombre", "").strip(),
+            recurso           = f.get("recurso", "").strip(),
+            id_concepto       = concepto,
+            tipo_he           = CONCEPTOS_HE.get(concepto, ""),
+            horas_reportadas  = int(float(f.get("horas_reportadas") or 0)),
+            horas_compensadas = int(float(f.get("horas_compensadas") or 0)),
+            supervisor        = f.get("supervisor", "").strip(),
+            justificacion     = f.get("justificacion", "").strip(),
+            observacion       = f.get("observacion", "").strip(),
+            valor_hora        = f.get("valor_hora"),
+            valor_extra_nomina= f.get("valor_extra_nomina"),
+            valor_extra       = f.get("valor_extra"),
+            estado            = "PENDIENTE",
+            reportado_por_id  = current_user.id,
+            fecha_reporte     = datetime.utcnow(),
         )
         db.session.add(he)
         guardados.append(he)
@@ -158,11 +161,14 @@ def api_he_actualizar(id):
     he.recurso            = f.get("recurso", he.recurso)
     he.id_concepto        = concepto
     he.tipo_he            = CONCEPTOS_HE.get(concepto, he.tipo_he)
-    he.horas_reportadas   = float(f.get("horas_reportadas") or he.horas_reportadas)
-    he.horas_compensadas  = float(f.get("horas_compensadas") or 0)
-    he.autorizacion_coord = f.get("autorizacion_coord", he.autorizacion_coord)
+    he.horas_reportadas   = int(float(f.get("horas_reportadas") or he.horas_reportadas))
+    he.horas_compensadas  = int(float(f.get("horas_compensadas") or 0))
+    he.supervisor         = f.get("supervisor", he.supervisor)
     he.justificacion      = f.get("justificacion", he.justificacion)
     he.observacion        = f.get("observacion", he.observacion)
+    if f.get("valor_hora")         is not None: he.valor_hora         = f["valor_hora"]
+    if f.get("valor_extra_nomina") is not None: he.valor_extra_nomina = f["valor_extra_nomina"]
+    if f.get("valor_extra")        is not None: he.valor_extra        = f["valor_extra"]
     db.session.commit()
     return jsonify({"ok": True})
 
@@ -208,11 +214,11 @@ def api_he_validar(id):
     horas_auth   = d.get("horas_autorizadas")
     obs          = d.get("obs_neo", "").strip()
 
-    if autorizacion not in ("APROBADA", "PARCIAL", "RECHAZADA"):
+    if autorizacion not in ("CONFORME", "NO CONFORME", "DESCONTADA"):
         return jsonify({"ok": False, "msg": "Autorización inválida"}), 400
 
     he.autorizacion_neo  = autorizacion
-    he.horas_autorizadas = float(horas_auth) if horas_auth is not None else float(he.horas_reportadas)
+    he.horas_autorizadas = int(float(horas_auth)) if horas_auth is not None else he.horas_reportadas
     he.obs_neo           = obs
     he.estado            = autorizacion
     he.validado_por_id   = current_user.id
