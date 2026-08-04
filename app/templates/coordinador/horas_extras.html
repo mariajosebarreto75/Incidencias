@@ -222,8 +222,8 @@ function iniciarGrid() {
             { type:"text",         readOnly:true },                                 // 2 nombre
             { type:"text" },                                                        // 3 recurso
             { type:"text" },                                                        // 4 placa
-            { type:"text" },                                                        // 5 hora inicio
-            { type:"text" },                                                        // 6 hora fin
+            { type:"time", timeFormat:"HH:mm", correctFormat:true },                  // 5 hora inicio
+            { type:"time", timeFormat:"HH:mm", correctFormat:true },                  // 6 hora fin
             { type:"dropdown",     source: CONCEPTO_KEYS },                        // 7 concepto
             { type:"text",         readOnly:true },                                 // 8 tipo_he
             { type:"numeric" },                                                     // 9 horas
