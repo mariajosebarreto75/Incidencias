@@ -196,7 +196,7 @@ function iniciarGrid() {
     const datos = [];
     for (let i = 0; i < FILAS_INICIALES; i++) datos.push(Array(11).fill(""));
 
-    grid = jspreadsheet(document.getElementById("gridHE"), {
+    grid = jexcel(document.getElementById("gridHE"), {
         data: datos,
         minDimensions: [11, FILAS_INICIALES],
         tableOverflow: true,
@@ -288,8 +288,9 @@ function onContratoChange() {
 
 // ── Agregar filas ─────────────────────────────────────────────────────────────
 function agregarFilas(n) {
-    const lastRow = grid.getData().length - 1;
-    grid.insertRow(n, lastRow, false);
+    for (let i = 0; i < n; i++) {
+        grid.insertRow(Array(11).fill(""));
+    }
 }
 
 function limpiarGrid() {
