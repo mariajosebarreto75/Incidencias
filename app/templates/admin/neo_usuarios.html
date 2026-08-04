@@ -320,6 +320,29 @@
             <i class="bi bi-floppy me-1"></i>Guardar contratos
         </button>
         <span class="nu-save-msg" id="msg-{{ u.id }}">✓ Guardado</span>
+
+        <!-- MÓDULOS ADICIONALES -->
+        <div style="margin-top:1rem;padding-top:.85rem;border-top:1px solid #1e293b;">
+            <div class="nu-contratos-label" style="color:#7c3aed;">
+                <i class="bi bi-puzzle me-1"></i>Módulos adicionales
+                <span style="font-size:.62rem;color:#475569;font-weight:400;margin-left:.4rem;">
+                    — acceso especial independiente del rol
+                </span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.4rem;">
+                {% set perms = u.get_permisos() %}
+                <label class="nu-check-label" style="border-color:{% if 'horas_extras' in perms %}#7c3aed{% else %}#1e293b{% endif %};"
+                       title="Ver y validar el módulo de Horas Extras">
+                    <input type="checkbox"
+                           class="perm-ck"
+                           data-uid="{{ u.id }}"
+                           data-permiso="horas_extras"
+                           {% if 'horas_extras' in perms %}checked{% endif %}
+                           onchange="togglePermiso(this)">
+                    <span><i class="bi bi-clock-history me-1" style="color:#a78bfa;"></i>Horas Extras</span>
+                </label>
+            </div>
+        </div>
     </div>
 </div>
 {% else %}
@@ -489,6 +512,22 @@ async function eliminarUsuario(btn) {
     const r = await apiFetch("/admin/api/usuarios/" + btn.dataset.id, "DELETE");
     if (r.success) location.reload();
     else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+}
+
+async function togglePermiso(cb) {
+    const uid     = cb.dataset.uid;
+    const permiso = cb.dataset.permiso;
+    const valor   = cb.checked;
+    const r = await apiFetch("/admin/api/usuarios/" + uid, "PUT", { permiso, valor });
+    if (r.success) {
+        cb.parentElement.style.borderColor = valor ? "#7c3aed" : "#1e293b";
+        mostrarAlerta("alerta",
+            (valor ? "✓ Permiso «" + permiso + "» otorgado" : "Permiso «" + permiso + "» removido"),
+            valor ? "success" : "warning");
+    } else {
+        cb.checked = !valor;
+        mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+    }
 }
 
 async function crearUsuario() {

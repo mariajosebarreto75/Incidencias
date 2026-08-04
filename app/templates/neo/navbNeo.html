@@ -89,13 +89,15 @@
                         </ul>
                     </li>
 
-                    <!-- HORAS EXTRAS -->
+                    <!-- HORAS EXTRAS (solo si tiene permiso) -->
+                    {% if current_user.tiene_permiso('horas_extras') %}
                     <li class="nav-item">
                         <a class="nav-link neo-nav-link"
                            href="/neo/horas-extras">
                             <i class="bi bi-clock-history me-1"></i>Horas Extras
                         </a>
                     </li>
+                    {% endif %}
 
                     <!-- GPS dropdown -->
                     <li class="nav-item dropdown">

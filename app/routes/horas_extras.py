@@ -1,4 +1,5 @@
 from datetime import datetime, date
+from functools import wraps
 from flask import Blueprint, render_template, request, jsonify, abort
 from flask_login import login_required, current_user
 
@@ -9,6 +10,21 @@ from app.models.persona import Persona
 from app.models.user_contrato import UserContrato
 
 he_bp = Blueprint("he_bp", __name__)
+
+MODULOS = {
+    "horas_extras": "Horas Extras",
+}
+
+
+def permiso_requerido(permiso):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if not current_user.tiene_permiso(permiso):
+                abort(403)
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def _contratos_del_usuario():
@@ -155,6 +171,7 @@ def api_he_eliminar(id):
 # ── NEO: página de validación ─────────────────────────────────────────────────
 @he_bp.route("/neo/horas-extras")
 @login_required
+@permiso_requerido("horas_extras")
 def he_neo():
     contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     return render_template(
@@ -168,9 +185,8 @@ def he_neo():
 # ── API: validar registro (NEO/admin) ─────────────────────────────────────────
 @he_bp.route("/api/he/<int:id>/validar", methods=["POST"])
 @login_required
+@permiso_requerido("horas_extras")
 def api_he_validar(id):
-    if current_user.rol.lower() not in ("neo", "admin"):
-        abort(403)
     he = HoraExtra.query.get_or_404(id)
     d = request.get_json(silent=True) or {}
 
