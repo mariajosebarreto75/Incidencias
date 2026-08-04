@@ -988,8 +988,8 @@ def alertas_gps():
     if fecha:
         try:
             from datetime import datetime as _dt
-            f_date = _dt.strptime(fecha, "%Y-%m-%d").date()
-            q = q.filter(db.func.date(AlertaGPS.triggered_at) == f_date)
+            _dt.strptime(fecha, "%Y-%m-%d")  # valida formato
+            q = q.filter(AlertaGPS.triggered_at.like(f"{fecha}%"))
         except ValueError:
             pass
     # Filtros adicionales
@@ -1152,7 +1152,7 @@ def alertas_datos():
             f_date = _date.today()
     else:
         f_date = _date.today()
-    q = q.filter(db.func.date(AlertaGPS.triggered_at) == f_date)
+    q = q.filter(AlertaGPS.triggered_at.like(f"{f_date}%"))
 
     if placa:
         q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
