@@ -1,0 +1,487 @@
+{% extends 'coordinador/navbarcoor.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator_bootstrap5.min.css">
+<style>
+:root { --c-primary:#0d3b66; --c-accent:#e53935; --c-bg:#f4f6fb; }
+body { background:var(--c-bg); }
+
+.he-page { max-width:1400px; margin:0 auto; padding:24px 16px 80px; }
+
+/* KPI cards */
+.he-kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+.he-kpi { background:#fff; border-radius:10px; padding:14px 16px; box-shadow:0 1px 6px rgba(0,0,0,.07);
+          border-left:3px solid #ccc; display:flex; flex-direction:column; }
+.he-kpi .kv { font-size:1.7rem; font-weight:800; line-height:1; }
+.he-kpi .kl { font-size:.65rem; font-weight:600; color:#6c757d; text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
+.he-kpi.total  { border-color:#0d3b66; } .he-kpi.total  .kv { color:#0d3b66; }
+.he-kpi.pend   { border-color:#f59e0b; } .he-kpi.pend   .kv { color:#f59e0b; }
+.he-kpi.apro   { border-color:#22c55e; } .he-kpi.apro   .kv { color:#22c55e; }
+.he-kpi.parc   { border-color:#3b82f6; } .he-kpi.parc   .kv { color:#3b82f6; }
+.he-kpi.rech   { border-color:#ef4444; } .he-kpi.rech   .kv { color:#ef4444; }
+
+/* Filtros */
+.he-filtros { background:#fff; border-radius:10px; padding:14px 18px; box-shadow:0 1px 6px rgba(0,0,0,.07); margin-bottom:16px; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+.he-filtros select, .he-filtros input { font-size:.82rem; border-radius:7px; border:1px solid #dee2e6; padding:6px 10px; }
+.he-filtros label { font-size:.72rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; }
+
+/* Tabla */
+.he-table-wrap { background:#fff; border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,.07); overflow:hidden; }
+.he-table-header { padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; }
+.he-table-header h6 { margin:0; font-weight:700; color:#0d3b66; font-size:.9rem; }
+
+/* Estado badges */
+.badge-PENDIENTE  { background:#fff3cd; color:#856404; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-APROBADA   { background:#d1e7dd; color:#0a3622; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-PARCIAL    { background:#cfe2ff; color:#084298; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-RECHAZADA  { background:#f8d7da; color:#842029; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+
+/* Modal */
+.he-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1050; align-items:center; justify-content:center; }
+.he-modal-bg.open { display:flex; }
+.he-modal { background:#fff; border-radius:12px; width:min(98vw,900px); max-height:90vh; display:flex; flex-direction:column; box-shadow:0 16px 48px rgba(0,0,0,.2); }
+.he-modal-head { padding:16px 20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center; }
+.he-modal-head h5 { margin:0; font-weight:700; color:#0d3b66; }
+.he-modal-body { padding:16px 20px; overflow-y:auto; flex:1; }
+.he-modal-foot { padding:12px 20px; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:8px; }
+
+/* Fila de formulario en el modal */
+.he-fila { background:#f8f9fa; border-radius:8px; padding:12px; margin-bottom:10px; position:relative; border:1px solid #e9ecef; }
+.he-fila .fila-num { position:absolute; top:10px; left:12px; font-size:.7rem; font-weight:700; color:#6c757d; }
+.he-fila .btn-rm { position:absolute; top:8px; right:10px; background:none; border:none; color:#dc3545; font-size:1rem; cursor:pointer; }
+.he-fila .row { padding-top:4px; }
+label.fl { font-size:.71rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; }
+.form-control, .form-select { font-size:.82rem; border-radius:6px; }
+
+/* Tabla Tabulator ajustes */
+.tabulator { border:none !important; }
+.tabulator-header { background:#f0f4f8 !important; }
+.tabulator-col-title { font-size:.72rem !important; font-weight:700 !important; color:#0d3b66 !important; text-transform:uppercase; }
+.tabulator-cell { font-size:.8rem !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="he-page">
+
+    <!-- TÍTULO -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div style="width:44px;height:44px;border-radius:10px;background:#0d3b66;display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-clock-history" style="color:#fff;font-size:1.2rem;"></i>
+        </div>
+        <div>
+            <h4 class="mb-0 fw-bold" style="color:#0d3b66;">Horas Extras</h4>
+            <div style="font-size:.77rem;color:#6c757d;">Registro y seguimiento de horas extras por contrato</div>
+        </div>
+        <div class="ms-auto">
+            <button class="btn btn-sm btn-primary fw-bold" onclick="abrirModal()" style="border-radius:8px;padding:7px 16px;">
+                <i class="bi bi-plus-lg me-1"></i>Registrar Horas
+            </button>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="he-kpi-row" id="kpiRow">
+        <div class="he-kpi total"><div class="kv" id="k-total">—</div><div class="kl">Total</div></div>
+        <div class="he-kpi pend"><div class="kv" id="k-pend">—</div><div class="kl">Pendientes</div></div>
+        <div class="he-kpi apro"><div class="kv" id="k-apro">—</div><div class="kl">Aprobadas</div></div>
+        <div class="he-kpi parc"><div class="kv" id="k-parc">—</div><div class="kl">Parciales</div></div>
+        <div class="he-kpi rech"><div class="kv" id="k-rech">—</div><div class="kl">Rechazadas</div></div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="he-filtros">
+        <div>
+            <label>Contrato</label><br>
+            <select id="fContrato" onchange="cargarTabla()" style="min-width:220px;">
+                <option value="">Todos mis contratos</option>
+                {% for c in contratos %}
+                <option value="{{ c.id }}">{{ c.contrato }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Mes</label><br>
+            <input type="month" id="fMes" onchange="cargarTabla()" value="{{ ''|default('') }}">
+        </div>
+        <div>
+            <label>Estado</label><br>
+            <select id="fEstado" onchange="cargarTabla()">
+                <option value="">Todos</option>
+                <option>PENDIENTE</option>
+                <option>APROBADA</option>
+                <option>PARCIAL</option>
+                <option>RECHAZADA</option>
+            </select>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" onclick="cargarTabla()" style="border-radius:7px;">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+    </div>
+
+    <!-- TABLA -->
+    <div class="he-table-wrap">
+        <div class="he-table-header">
+            <h6><i class="bi bi-table me-2"></i>Mis Reportes de Horas Extras</h6>
+            <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()" style="border-radius:7px;font-size:.78rem;">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+            </button>
+        </div>
+        <div id="heTabla" style="min-height:200px;"></div>
+    </div>
+</div>
+
+<!-- ═══ MODAL REGISTRAR ═══════════════════════════════════════════════════ -->
+<div class="he-modal-bg" id="heModalBg" onclick="cerrarModal(event)">
+<div class="he-modal" onclick="event.stopPropagation()">
+    <div class="he-modal-head">
+        <h5><i class="bi bi-plus-circle me-2"></i>Registrar Horas Extras</h5>
+        <button onclick="cerrarModal()" style="background:none;border:none;font-size:1.3rem;color:#6c757d;cursor:pointer;">&times;</button>
+    </div>
+    <div class="he-modal-body">
+        <div class="mb-3 d-flex gap-2 align-items-center flex-wrap">
+            <div>
+                <label class="fl">Contrato</label>
+                <select id="mContrato" class="form-select form-select-sm" style="min-width:220px;">
+                    <option value="">— Seleccione —</option>
+                    {% for c in contratos %}
+                    <option value="{{ c.id }}">{{ c.contrato }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="ms-auto">
+                <button class="btn btn-sm btn-outline-primary" onclick="agregarFila()" style="border-radius:7px;">
+                    <i class="bi bi-plus me-1"></i>Agregar fila
+                </button>
+            </div>
+        </div>
+        <div id="filasContainer"></div>
+    </div>
+    <div class="he-modal-foot">
+        <button class="btn btn-secondary btn-sm" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn btn-primary btn-sm fw-bold" onclick="guardarHoras()">
+            <i class="bi bi-save me-1"></i>Guardar
+        </button>
+    </div>
+</div>
+</div>
+
+<!-- ═══ MODAL EDITAR ══════════════════════════════════════════════════════ -->
+<div class="he-modal-bg" id="heEditBg" onclick="cerrarEdit(event)">
+<div class="he-modal" onclick="event.stopPropagation()" style="width:min(98vw,620px)">
+    <div class="he-modal-head">
+        <h5><i class="bi bi-pencil me-2"></i>Editar Registro</h5>
+        <button onclick="cerrarEdit()" style="background:none;border:none;font-size:1.3rem;color:#6c757d;cursor:pointer;">&times;</button>
+    </div>
+    <div class="he-modal-body" id="editBody"></div>
+    <div class="he-modal-foot">
+        <button class="btn btn-secondary btn-sm" onclick="cerrarEdit()">Cancelar</button>
+        <button class="btn btn-primary btn-sm fw-bold" onclick="guardarEdit()">
+            <i class="bi bi-save me-1"></i>Guardar cambios
+        </button>
+    </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const CONCEPTOS = {{ conceptos | tojson }};
+let tabla = null;
+let editId = null;
+
+// ── Utilidades ──────────────────────────────────────────────────────────────
+function mesActual() {
+    const h = new Date();
+    return `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,"0")}`;
+}
+
+document.getElementById("fMes").value = mesActual();
+
+function estadoBadge(cell) {
+    const v = cell.getValue() || "PENDIENTE";
+    return `<span class="badge-${v}">${v}</span>`;
+}
+
+// ── KPIs ─────────────────────────────────────────────────────────────────────
+async function cargarKpis() {
+    const cid = document.getElementById("fContrato").value;
+    const mes = document.getElementById("fMes").value;
+    const r = await fetch(`/api/he/kpis?contrato_id=${cid}&mes=${mes}`);
+    const d = await r.json();
+    document.getElementById("k-total").textContent = d.total;
+    document.getElementById("k-pend").textContent  = d.pendientes;
+    document.getElementById("k-apro").textContent  = d.aprobadas;
+    document.getElementById("k-parc").textContent  = d.parciales;
+    document.getElementById("k-rech").textContent  = d.rechazadas;
+}
+
+// ── Tabla ─────────────────────────────────────────────────────────────────────
+function cargarTabla() {
+    cargarKpis();
+    const cid    = document.getElementById("fContrato").value;
+    const mes    = document.getElementById("fMes").value;
+    const estado = document.getElementById("fEstado").value;
+
+    const cols = [
+        { title:"#", formatter:"rownum", width:45, hozAlign:"center", headerFilter:false },
+        { title:"Fecha Labor",     field:"fecha_labor",        width:110, headerFilter:"input" },
+        { title:"Contrato",        field:"contrato",           minWidth:160, headerFilter:"input" },
+        { title:"Cédula",          field:"cedula",             width:110, headerFilter:"input" },
+        { title:"Nombre",          field:"nombre",             minWidth:150, headerFilter:"input" },
+        { title:"Recurso",         field:"recurso",            minWidth:130, headerFilter:"input" },
+        { title:"Concepto",        field:"id_concepto",        width:90, headerFilter:"input" },
+        { title:"Tipo HE",         field:"tipo_he",            minWidth:200, headerFilter:"input" },
+        { title:"Hrs Reportadas",  field:"horas_reportadas",   width:120, hozAlign:"right", headerFilter:"input" },
+        { title:"Hrs Compens.",    field:"horas_compensadas",  width:110, hozAlign:"right", headerFilter:"input" },
+        { title:"Autorización",    field:"autorizacion_coord", width:110, headerFilter:"list",
+          headerFilterParams:{values:{"":"Todos","SI":"SI","NO":"NO"}},
+          formatter: c => c.getValue() === "SI"
+            ? `<span style="color:#22c55e;font-weight:700;">✔ SI</span>`
+            : c.getValue() === "NO"
+            ? `<span style="color:#ef4444;font-weight:700;">✖ NO</span>` : c.getValue() },
+        { title:"Justificación",   field:"justificacion",      minWidth:150, headerFilter:"input", formatter:"textarea" },
+        { title:"Observación",     field:"observacion",        minWidth:150, headerFilter:"input", formatter:"textarea" },
+        { title:"Estado",          field:"estado",             width:110,
+          formatter: estadoBadge,
+          headerFilter:"list",
+          headerFilterParams:{values:{"":"Todos","PENDIENTE":"PENDIENTE","APROBADA":"APROBADA","PARCIAL":"PARCIAL","RECHAZADA":"RECHAZADA"}} },
+        { title:"Hrs Autorizadas", field:"horas_autorizadas",  width:120, hozAlign:"right", headerFilter:"input" },
+        { title:"Obs NEO",         field:"obs_neo",            minWidth:150, headerFilter:"input", formatter:"textarea" },
+        { title:"Reportado",       field:"fecha_reporte",      width:130, headerFilter:"input" },
+        { title:"Acciones",        formatter: accionesCoor, width:90, hozAlign:"center", headerSort:false, headerFilter:false },
+    ];
+
+    if (tabla) {
+        tabla.setData(`/api/he/registros?contrato_id=${cid}&mes=${mes}&estado=${estado}`);
+        return;
+    }
+    tabla = new Tabulator("#heTabla", {
+        ajaxURL: `/api/he/registros?contrato_id=${cid}&mes=${mes}&estado=${estado}`,
+        layout: "fitDataStretch",
+        resizableColumns: true,
+        movableColumns: true,
+        height: "520px",
+        locale: true,
+        langs: { default: { pagination: { first:"«", prev:"‹", next:"›", last:"»" } } },
+        columns: cols,
+    });
+}
+
+function accionesCoor(cell) {
+    const r = cell.getRow().getData();
+    if (r.estado !== "PENDIENTE") return `<span style="color:#adb5bd;font-size:.7rem;">—</span>`;
+    return `<div style="display:flex;gap:4px;justify-content:center;">
+        <button onclick="abrirEdit(${r.id})" style="background:#0d3b66;color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:.72rem;cursor:pointer;" title="Editar"><i class="bi bi-pencil"></i></button>
+        <button onclick="eliminarHe(${r.id})" style="background:#dc3545;color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:.72rem;cursor:pointer;" title="Eliminar"><i class="bi bi-trash"></i></button>
+    </div>`;
+}
+
+function exportarExcel() {
+    if (tabla) tabla.download("xlsx", "horas_extras.xlsx", { sheetName:"Horas Extras" });
+}
+
+// ── Modal registrar ─────────────────────────────────────────────────────────
+let filaCount = 0;
+
+function abrirModal() {
+    filaCount = 0;
+    document.getElementById("filasContainer").innerHTML = "";
+    document.getElementById("heModalBg").classList.add("open");
+    agregarFila();
+}
+
+function cerrarModal(e) {
+    if (!e || e.target === document.getElementById("heModalBg"))
+        document.getElementById("heModalBg").classList.remove("open");
+}
+
+function agregarFila() {
+    filaCount++;
+    const n = filaCount;
+    const opts = Object.entries(CONCEPTOS).map(([k,v]) =>
+        `<option value="${k}">${k} — ${v}</option>`).join("");
+    const div = document.createElement("div");
+    div.className = "he-fila";
+    div.id = `fila-${n}`;
+    div.innerHTML = `
+    <span class="fila-num">#${n}</span>
+    <button class="btn-rm" onclick="quitarFila(${n})" title="Quitar"><i class="bi bi-x-lg"></i></button>
+    <div class="row g-2" style="padding-top:20px;">
+        <div class="col-md-2"><label class="fl">Fecha Labor</label>
+            <input type="date" class="form-control form-control-sm" id="fl-fecha-${n}" value="${new Date().toISOString().split('T')[0]}"></div>
+        <div class="col-md-2"><label class="fl">Cédula</label>
+            <input type="text" class="form-control form-control-sm" id="fl-cedula-${n}" placeholder="Nº documento"
+                oninput="buscarPersona(${n})"></div>
+        <div class="col-md-3"><label class="fl">Nombre</label>
+            <input type="text" class="form-control form-control-sm" id="fl-nombre-${n}" placeholder="Auto" readonly></div>
+        <div class="col-md-3"><label class="fl">Recurso</label>
+            <input type="text" class="form-control form-control-sm" id="fl-recurso-${n}" placeholder="Nombre del recurso"></div>
+        <div class="col-md-2"><label class="fl">Hrs Reportadas</label>
+            <input type="number" class="form-control form-control-sm" id="fl-hrs-${n}" min="0" step="0.5" value="0"></div>
+        <div class="col-md-4"><label class="fl">Id Concepto</label>
+            <select class="form-select form-select-sm" id="fl-concepto-${n}">
+                <option value="">— Seleccione —</option>${opts}
+            </select></div>
+        <div class="col-md-2"><label class="fl">Hrs Compens.</label>
+            <input type="number" class="form-control form-control-sm" id="fl-comp-${n}" min="0" step="0.5" value="0"></div>
+        <div class="col-md-2"><label class="fl">Autorización</label>
+            <select class="form-select form-select-sm" id="fl-auth-${n}">
+                <option value="">—</option><option>SI</option><option>NO</option>
+            </select></div>
+        <div class="col-md-4"><label class="fl">Justificación</label>
+            <input type="text" class="form-control form-control-sm" id="fl-just-${n}" placeholder="Motivo de las horas"></div>
+        <div class="col-md-12"><label class="fl">Observación</label>
+            <input type="text" class="form-control form-control-sm" id="fl-obs-${n}" placeholder="Observación adicional"></div>
+    </div>`;
+    document.getElementById("filasContainer").appendChild(div);
+}
+
+function quitarFila(n) {
+    const el = document.getElementById(`fila-${n}`);
+    if (el) el.remove();
+}
+
+async function buscarPersona(n) {
+    const cedula = document.getElementById(`fl-cedula-${n}`).value.trim();
+    if (cedula.length < 5) { document.getElementById(`fl-nombre-${n}`).value = ""; return; }
+    const r = await fetch(`/api/he/persona?cedula=${encodeURIComponent(cedula)}`);
+    const d = await r.json();
+    document.getElementById(`fl-nombre-${n}`).value = d.ok ? d.nombre : "No encontrado";
+}
+
+async function guardarHoras() {
+    const contrato_id = document.getElementById("mContrato").value;
+    if (!contrato_id) { alert("Seleccione un contrato"); return; }
+
+    const filas = [];
+    document.querySelectorAll(".he-fila").forEach(el => {
+        const n = el.id.replace("fila-","");
+        const concepto = document.getElementById(`fl-concepto-${n}`)?.value;
+        filas.push({
+            contrato_id,
+            fecha_labor:       document.getElementById(`fl-fecha-${n}`)?.value,
+            cedula:            document.getElementById(`fl-cedula-${n}`)?.value,
+            nombre:            document.getElementById(`fl-nombre-${n}`)?.value,
+            recurso:           document.getElementById(`fl-recurso-${n}`)?.value,
+            id_concepto:       concepto,
+            horas_reportadas:  document.getElementById(`fl-hrs-${n}`)?.value,
+            horas_compensadas: document.getElementById(`fl-comp-${n}`)?.value,
+            autorizacion_coord:document.getElementById(`fl-auth-${n}`)?.value,
+            justificacion:     document.getElementById(`fl-just-${n}`)?.value,
+            observacion:       document.getElementById(`fl-obs-${n}`)?.value,
+        });
+    });
+
+    if (!filas.length) { alert("Agregue al menos una fila"); return; }
+
+    const r = await fetch("/api/he/guardar", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ filas })
+    });
+    const d = await r.json();
+    if (d.ok) {
+        cerrarModal();
+        cargarTabla();
+        mostrarToast(`${d.guardados} registro(s) guardado(s)`, "success");
+    } else {
+        alert(d.msg || "Error al guardar");
+    }
+}
+
+// ── Modal editar ──────────────────────────────────────────────────────────────
+async function abrirEdit(id) {
+    editId = id;
+    const r = await fetch(`/api/he/registros`);
+    const lista = await r.json();
+    const reg = lista.find(x => x.id === id);
+    if (!reg) return;
+    const opts = Object.entries(CONCEPTOS).map(([k,v]) =>
+        `<option value="${k}" ${reg.id_concepto===k?"selected":""}>${k} — ${v}</option>`).join("");
+    document.getElementById("editBody").innerHTML = `
+    <div class="row g-2">
+        <div class="col-md-3"><label class="fl">Fecha Labor</label>
+            <input type="date" class="form-control form-control-sm" id="e-fecha" value="${reg.fecha_labor}"></div>
+        <div class="col-md-3"><label class="fl">Cédula</label>
+            <input type="text" class="form-control form-control-sm" id="e-cedula" value="${reg.cedula}" oninput="buscarPersonaEdit()"></div>
+        <div class="col-md-6"><label class="fl">Nombre</label>
+            <input type="text" class="form-control form-control-sm" id="e-nombre" value="${reg.nombre}" readonly></div>
+        <div class="col-md-6"><label class="fl">Recurso</label>
+            <input type="text" class="form-control form-control-sm" id="e-recurso" value="${reg.recurso}"></div>
+        <div class="col-md-6"><label class="fl">Id Concepto</label>
+            <select class="form-select form-select-sm" id="e-concepto">
+                <option value="">— Seleccione —</option>${opts}
+            </select></div>
+        <div class="col-md-3"><label class="fl">Hrs Reportadas</label>
+            <input type="number" class="form-control form-control-sm" id="e-hrs" value="${reg.horas_reportadas}" step="0.5"></div>
+        <div class="col-md-3"><label class="fl">Hrs Compensadas</label>
+            <input type="number" class="form-control form-control-sm" id="e-comp" value="${reg.horas_compensadas}" step="0.5"></div>
+        <div class="col-md-3"><label class="fl">Autorización</label>
+            <select class="form-select form-select-sm" id="e-auth">
+                <option value="" ${!reg.autorizacion_coord?"selected":""}>—</option>
+                <option ${reg.autorizacion_coord==="SI"?"selected":""}>SI</option>
+                <option ${reg.autorizacion_coord==="NO"?"selected":""}>NO</option>
+            </select></div>
+        <div class="col-md-9"><label class="fl">Justificación</label>
+            <input type="text" class="form-control form-control-sm" id="e-just" value="${reg.justificacion}"></div>
+        <div class="col-md-12"><label class="fl">Observación</label>
+            <input type="text" class="form-control form-control-sm" id="e-obs" value="${reg.observacion}"></div>
+    </div>`;
+    document.getElementById("heEditBg").classList.add("open");
+}
+
+async function buscarPersonaEdit() {
+    const cedula = document.getElementById("e-cedula").value.trim();
+    if (cedula.length < 5) return;
+    const r = await fetch(`/api/he/persona?cedula=${encodeURIComponent(cedula)}`);
+    const d = await r.json();
+    if (d.ok) document.getElementById("e-nombre").value = d.nombre;
+}
+
+function cerrarEdit(e) {
+    if (!e || e.target === document.getElementById("heEditBg"))
+        document.getElementById("heEditBg").classList.remove("open");
+}
+
+async function guardarEdit() {
+    const body = {
+        fecha_labor:        document.getElementById("e-fecha").value,
+        cedula:             document.getElementById("e-cedula").value,
+        nombre:             document.getElementById("e-nombre").value,
+        recurso:            document.getElementById("e-recurso").value,
+        id_concepto:        document.getElementById("e-concepto").value,
+        horas_reportadas:   document.getElementById("e-hrs").value,
+        horas_compensadas:  document.getElementById("e-comp").value,
+        autorizacion_coord: document.getElementById("e-auth").value,
+        justificacion:      document.getElementById("e-just").value,
+        observacion:        document.getElementById("e-obs").value,
+    };
+    const r = await fetch(`/api/he/${editId}`, {
+        method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.ok) { cerrarEdit(); cargarTabla(); mostrarToast("Registro actualizado","success"); }
+    else alert(d.msg || "Error");
+}
+
+async function eliminarHe(id) {
+    if (!confirm("¿Eliminar este registro? Solo es posible si está PENDIENTE.")) return;
+    const r = await fetch(`/api/he/${id}`, { method:"DELETE" });
+    const d = await r.json();
+    if (d.ok) { cargarTabla(); mostrarToast("Registro eliminado","danger"); }
+    else alert(d.msg || "Error");
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function mostrarToast(msg, tipo="success") {
+    const t = document.createElement("div");
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${tipo==="success"?"#198754":tipo==="danger"?"#dc3545":"#0d3b66"};color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+cargarTabla();
+</script>
+{% endblock %}

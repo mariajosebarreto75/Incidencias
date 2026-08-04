@@ -20,6 +20,7 @@ from app.models.accion_tomar import AccionTomar
 from app.models.parametro_coor import ParametroCoor
 from app.models.alerta_gps import AlertaGPS
 from app.models.notificacion import Notificacion
+from app.models.hora_extra import HoraExtra
 
 from app.routes.auth import auth
 from app.routes.dashboard import dashboard
@@ -27,6 +28,7 @@ from app.routes.coordinador import coordinador
 from app.routes.neo import neo
 from app.routes.admin import admin_bp
 from app.routes.notificaciones import notif_bp
+from app.routes.horas_extras import he_bp
 
 
 # Lock de Postgres para que, con gunicorn -w N, solo un worker arranque el
@@ -125,6 +127,7 @@ def create_app():
     app.register_blueprint(neo)
     app.register_blueprint(admin_bp)
     app.register_blueprint(notif_bp)
+    app.register_blueprint(he_bp)
 
     # Login manager
     login_manager.login_view = "auth.login"

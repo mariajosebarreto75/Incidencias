@@ -1,0 +1,382 @@
+{% extends 'neo/navbNeo.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator_bootstrap5.min.css">
+<style>
+:root { --c-neo:#007d8a; --c-bg:#f4f6fb; }
+body { background:var(--c-bg); }
+
+.he-page { max-width:1500px; margin:0 auto; padding:24px 16px 80px; }
+
+/* KPI cards */
+.he-kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px; }
+.he-kpi { background:#fff; border-radius:10px; padding:14px 16px; box-shadow:0 1px 6px rgba(0,0,0,.07); border-left:3px solid #ccc; }
+.he-kpi .kv { font-size:1.7rem; font-weight:800; line-height:1; }
+.he-kpi .ks { font-size:.82rem; color:#6c757d; }
+.he-kpi .kl { font-size:.63rem; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
+.he-kpi.total  { border-color:#007d8a; } .he-kpi.total  .kv { color:#007d8a; }
+.he-kpi.pend   { border-color:#f59e0b; } .he-kpi.pend   .kv { color:#f59e0b; }
+.he-kpi.apro   { border-color:#22c55e; } .he-kpi.apro   .kv { color:#22c55e; }
+.he-kpi.parc   { border-color:#3b82f6; } .he-kpi.parc   .kv { color:#3b82f6; }
+.he-kpi.rech   { border-color:#ef4444; } .he-kpi.rech   .kv { color:#ef4444; }
+.he-kpi.hrs    { border-color:#8b5cf6; } .he-kpi.hrs    .kv { color:#8b5cf6; font-size:1.3rem; }
+
+/* Filtros */
+.he-filtros { background:#fff; border-radius:10px; padding:14px 18px; box-shadow:0 1px 6px rgba(0,0,0,.07); margin-bottom:16px; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+.he-filtros select, .he-filtros input { font-size:.82rem; border-radius:7px; border:1px solid #dee2e6; padding:6px 10px; }
+.he-filtros label { font-size:.72rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; }
+
+/* Tabla */
+.he-table-wrap { background:#fff; border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,.07); overflow:hidden; }
+.he-table-header { padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; }
+.he-table-header h6 { margin:0; font-weight:700; color:#007d8a; font-size:.9rem; }
+
+/* Estado badges */
+.badge-PENDIENTE  { background:#fff3cd; color:#856404; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-APROBADA   { background:#d1e7dd; color:#0a3622; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-PARCIAL    { background:#cfe2ff; color:#084298; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.badge-RECHAZADA  { background:#f8d7da; color:#842029; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+
+/* Modal validación */
+.he-val-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1060; align-items:center; justify-content:center; }
+.he-val-bg.open { display:flex; }
+.he-val-modal { background:#fff; border-radius:14px; width:min(98vw,560px); box-shadow:0 16px 48px rgba(0,0,0,.25); overflow:hidden; }
+.he-val-head { background:#007d8a; color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
+.he-val-head h5 { margin:0; font-weight:700; font-size:.95rem; }
+.he-val-body { padding:20px; }
+.he-val-foot { padding:12px 20px; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:8px; }
+
+/* Ficha de datos del registro */
+.he-ficha { background:#f8f9fa; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:.82rem; }
+.he-ficha .row > div { margin-bottom:6px; }
+.he-ficha .lbl { font-size:.67rem; font-weight:700; color:#6c757d; text-transform:uppercase; letter-spacing:.3px; }
+.he-ficha .val { font-weight:600; color:#212529; }
+
+/* Opciones de autorización */
+.auth-opts { display:flex; gap:8px; margin-bottom:14px; }
+.auth-btn { flex:1; padding:10px; border-radius:8px; border:2px solid #dee2e6; background:#fff;
+            font-size:.8rem; font-weight:700; cursor:pointer; text-align:center; transition:.15s; }
+.auth-btn:hover { border-color:#007d8a; }
+.auth-btn.sel-APROBADA  { border-color:#22c55e; background:#d1e7dd; color:#0a3622; }
+.auth-btn.sel-PARCIAL   { border-color:#3b82f6; background:#cfe2ff; color:#084298; }
+.auth-btn.sel-RECHAZADA { border-color:#ef4444; background:#f8d7da; color:#842029; }
+
+label.fl { font-size:.71rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; }
+
+.tabulator { border:none !important; }
+.tabulator-header { background:#f0f4f8 !important; }
+.tabulator-col-title { font-size:.72rem !important; font-weight:700 !important; color:#007d8a !important; text-transform:uppercase; }
+.tabulator-cell { font-size:.8rem !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="he-page">
+
+    <!-- TÍTULO -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#007d8a,#00b7c7);display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-patch-check-fill" style="color:#fff;font-size:1.2rem;"></i>
+        </div>
+        <div>
+            <h4 class="mb-0 fw-bold" style="color:#007d8a;">Validación de Horas Extras</h4>
+            <div style="font-size:.77rem;color:#6c757d;">Revisión y autorización de horas extras reportadas por los coordinadores</div>
+        </div>
+        <div class="ms-auto">
+            <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()" style="border-radius:8px;padding:7px 14px;font-size:.8rem;">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="he-kpi-row">
+        <div class="he-kpi total">
+            <div class="kv" id="k-total">—</div>
+            <div class="kl">Total registros</div>
+        </div>
+        <div class="he-kpi pend">
+            <div class="kv" id="k-pend">—</div>
+            <div class="kl">Pendientes</div>
+        </div>
+        <div class="he-kpi apro">
+            <div class="kv" id="k-apro">—</div>
+            <div class="kl">Aprobadas</div>
+        </div>
+        <div class="he-kpi parc">
+            <div class="kv" id="k-parc">—</div>
+            <div class="kl">Parciales</div>
+        </div>
+        <div class="he-kpi rech">
+            <div class="kv" id="k-rech">—</div>
+            <div class="kl">Rechazadas</div>
+        </div>
+        <div class="he-kpi hrs">
+            <div class="kv" id="k-hrs-rep">—</div>
+            <div class="kl">Hrs reportadas</div>
+        </div>
+        <div class="he-kpi hrs" style="border-color:#22c55e;">
+            <div class="kv" id="k-hrs-auth" style="color:#22c55e;">—</div>
+            <div class="kl">Hrs autorizadas</div>
+        </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="he-filtros">
+        <div>
+            <label>Contrato</label><br>
+            <select id="fContrato" onchange="cargarTabla()" style="min-width:240px;">
+                <option value="">Todos los contratos</option>
+                {% for c in contratos %}
+                <option value="{{ c.id }}">{{ c.contrato }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Mes</label><br>
+            <input type="month" id="fMes" onchange="cargarTabla()">
+        </div>
+        <div>
+            <label>Estado</label><br>
+            <select id="fEstado" onchange="cargarTabla()">
+                <option value="">Todos</option>
+                <option>PENDIENTE</option>
+                <option>APROBADA</option>
+                <option>PARCIAL</option>
+                <option>RECHAZADA</option>
+            </select>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary" onclick="cargarTabla()" style="border-radius:7px;">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+    </div>
+
+    <!-- TABLA -->
+    <div class="he-table-wrap">
+        <div class="he-table-header">
+            <h6><i class="bi bi-table me-2"></i>Horas Extras — Todos los Contratos</h6>
+            <span style="font-size:.75rem;color:#6c757d;">Haz clic en una fila para validar</span>
+        </div>
+        <div id="heTabla" style="min-height:300px;"></div>
+    </div>
+</div>
+
+<!-- ═══ MODAL VALIDACIÓN ══════════════════════════════════════════════════ -->
+<div class="he-val-bg" id="heValBg" onclick="cerrarVal(event)">
+<div class="he-val-modal" onclick="event.stopPropagation()">
+    <div class="he-val-head">
+        <h5><i class="bi bi-patch-check me-2"></i>Validar Registro</h5>
+        <button onclick="cerrarVal()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">&times;</button>
+    </div>
+    <div class="he-val-body">
+
+        <!-- Ficha del registro -->
+        <div class="he-ficha" id="valFicha"></div>
+
+        <!-- Autorización -->
+        <div class="mb-3">
+            <label class="fl mb-2 d-block">Autorización NEO</label>
+            <div class="auth-opts">
+                <button class="auth-btn" id="btn-APROBADA"  onclick="selAuth('APROBADA')">
+                    <i class="bi bi-check-circle me-1"></i>Aprobada
+                </button>
+                <button class="auth-btn" id="btn-PARCIAL"   onclick="selAuth('PARCIAL')">
+                    <i class="bi bi-slash-circle me-1"></i>Parcial
+                </button>
+                <button class="auth-btn" id="btn-RECHAZADA" onclick="selAuth('RECHAZADA')">
+                    <i class="bi bi-x-circle me-1"></i>Rechazada
+                </button>
+            </div>
+        </div>
+
+        <!-- Horas autorizadas -->
+        <div class="mb-3" id="wrapHrsAuth">
+            <label class="fl">Horas Autorizadas</label>
+            <input type="number" id="valHrsAuth" class="form-control form-control-sm mt-1" min="0" step="0.5" placeholder="0">
+            <small class="text-muted" style="font-size:.72rem;">Dejar en 0 si se rechaza totalmente</small>
+        </div>
+
+        <!-- Observación NEO -->
+        <div>
+            <label class="fl">Observación NEO</label>
+            <textarea id="valObs" class="form-control form-control-sm mt-1" rows="3"
+                      placeholder="Justificación de la decisión…"></textarea>
+        </div>
+    </div>
+    <div class="he-val-foot">
+        <button class="btn btn-secondary btn-sm" onclick="cerrarVal()">Cancelar</button>
+        <button class="btn btn-sm fw-bold" id="btnGuardarVal" onclick="guardarVal()"
+                style="background:#007d8a;color:#fff;border-radius:7px;">
+            <i class="bi bi-save me-1"></i>Guardar validación
+        </button>
+    </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+let tabla = null;
+let valId = null;
+let authSel = null;
+
+// ── Init mes ──────────────────────────────────────────────────────────────────
+(function() {
+    const h = new Date();
+    document.getElementById("fMes").value = `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,"0")}`;
+})();
+
+// ── KPIs ──────────────────────────────────────────────────────────────────────
+async function cargarKpis() {
+    const cid = document.getElementById("fContrato").value;
+    const mes = document.getElementById("fMes").value;
+    const r = await fetch(`/api/he/kpis?contrato_id=${cid}&mes=${mes}`);
+    const d = await r.json();
+    document.getElementById("k-total").textContent    = d.total;
+    document.getElementById("k-pend").textContent     = d.pendientes;
+    document.getElementById("k-apro").textContent     = d.aprobadas;
+    document.getElementById("k-parc").textContent     = d.parciales;
+    document.getElementById("k-rech").textContent     = d.rechazadas;
+    document.getElementById("k-hrs-rep").textContent  = (+d.hrs_reportadas).toFixed(1);
+    document.getElementById("k-hrs-auth").textContent = (+d.hrs_autorizadas).toFixed(1);
+}
+
+// ── Tabla ─────────────────────────────────────────────────────────────────────
+function estadoBadge(cell) {
+    const v = cell.getValue() || "PENDIENTE";
+    return `<span class="badge-${v}">${v}</span>`;
+}
+
+function cargarTabla() {
+    cargarKpis();
+    const cid    = document.getElementById("fContrato").value;
+    const mes    = document.getElementById("fMes").value;
+    const estado = document.getElementById("fEstado").value;
+    const url    = `/api/he/registros?contrato_id=${cid}&mes=${mes}&estado=${estado}`;
+
+    const cols = [
+        { title:"#", formatter:"rownum", width:45, hozAlign:"center", headerFilter:false },
+        { title:"Fecha Lab.",     field:"fecha_labor",        width:105, headerFilter:"input" },
+        { title:"Reportado",      field:"fecha_reporte",      width:125, headerFilter:"input" },
+        { title:"Contrato",       field:"contrato",           minWidth:160, headerFilter:"input" },
+        { title:"Coordinador",    field:"reportado_por",      minWidth:130, headerFilter:"input" },
+        { title:"Cédula",         field:"cedula",             width:110, headerFilter:"input" },
+        { title:"Nombre",         field:"nombre",             minWidth:150, headerFilter:"input" },
+        { title:"Recurso",        field:"recurso",            minWidth:130, headerFilter:"input" },
+        { title:"Cód.",           field:"id_concepto",        width:70, headerFilter:"input" },
+        { title:"Tipo HE",        field:"tipo_he",            minWidth:190, headerFilter:"input" },
+        { title:"Hrs Rep.",       field:"horas_reportadas",   width:90, hozAlign:"right", headerFilter:"input" },
+        { title:"Hrs Comp.",      field:"horas_compensadas",  width:90, hozAlign:"right", headerFilter:"input" },
+        { title:"Auth. Coord.",   field:"autorizacion_coord", width:100,
+          formatter: c => c.getValue() === "SI"
+            ? `<span style="color:#22c55e;font-weight:700;">✔ SI</span>`
+            : c.getValue() === "NO"
+            ? `<span style="color:#ef4444;font-weight:700;">✖ NO</span>` : "—" },
+        { title:"Justificación",  field:"justificacion",      minWidth:150, headerFilter:"input", formatter:"textarea" },
+        { title:"Observación",    field:"observacion",        minWidth:150, headerFilter:"input", formatter:"textarea" },
+        { title:"Estado",         field:"estado",             width:110, formatter: estadoBadge,
+          headerFilter:"list",
+          headerFilterParams:{values:{"":"Todos","PENDIENTE":"PENDIENTE","APROBADA":"APROBADA","PARCIAL":"PARCIAL","RECHAZADA":"RECHAZADA"}} },
+        { title:"Hrs Autorizadas",field:"horas_autorizadas",  width:115, hozAlign:"right", headerFilter:"input" },
+        { title:"Auth. NEO",      field:"autorizacion_neo",   width:110, headerFilter:"input" },
+        { title:"Obs NEO",        field:"obs_neo",            minWidth:150, headerFilter:"input", formatter:"textarea" },
+        { title:"Validado por",   field:"validado_por",       minWidth:130, headerFilter:"input" },
+    ];
+
+    if (tabla) {
+        tabla.setData(url);
+        return;
+    }
+    tabla = new Tabulator("#heTabla", {
+        ajaxURL: url,
+        layout: "fitDataStretch",
+        resizableColumns: true,
+        movableColumns: true,
+        height: "560px",
+        columns: cols,
+        rowClick: function(e, row) {
+            abrirVal(row.getData());
+        },
+    });
+}
+
+function exportarExcel() {
+    if (tabla) tabla.download("xlsx", "he_validacion.xlsx", { sheetName:"Horas Extras" });
+}
+
+// ── Modal validación ──────────────────────────────────────────────────────────
+function abrirVal(reg) {
+    valId   = reg.id;
+    authSel = reg.autorizacion_neo || null;
+
+    // Ficha
+    document.getElementById("valFicha").innerHTML = `
+    <div class="row g-0">
+        <div class="col-6 col-md-3"><div class="lbl">Contrato</div><div class="val">${reg.contrato}</div></div>
+        <div class="col-6 col-md-3"><div class="lbl">Fecha Labor</div><div class="val">${reg.fecha_labor}</div></div>
+        <div class="col-6 col-md-3"><div class="lbl">Reportado</div><div class="val">${reg.fecha_reporte}</div></div>
+        <div class="col-6 col-md-3"><div class="lbl">Coordinador</div><div class="val">${reg.reportado_por}</div></div>
+        <div class="col-6 col-md-3 mt-2"><div class="lbl">Cédula</div><div class="val">${reg.cedula}</div></div>
+        <div class="col-6 col-md-5 mt-2"><div class="lbl">Nombre</div><div class="val">${reg.nombre}</div></div>
+        <div class="col-12 col-md-4 mt-2"><div class="lbl">Recurso</div><div class="val">${reg.recurso}</div></div>
+        <div class="col-6 col-md-3 mt-2"><div class="lbl">Tipo HE</div><div class="val">${reg.id_concepto} — ${reg.tipo_he}</div></div>
+        <div class="col-4 col-md-2 mt-2"><div class="lbl">Hrs Reportadas</div><div class="val" style="color:#0d3b66;font-size:1.05rem;">${reg.horas_reportadas}</div></div>
+        <div class="col-4 col-md-2 mt-2"><div class="lbl">Hrs Compens.</div><div class="val">${reg.horas_compensadas}</div></div>
+        <div class="col-4 col-md-2 mt-2"><div class="lbl">Auth. Coord.</div><div class="val">${reg.autorizacion_coord || "—"}</div></div>
+        <div class="col-12 mt-2"><div class="lbl">Justificación coordinador</div><div class="val">${reg.justificacion || "—"}</div></div>
+    </div>`;
+
+    // Prellenar si ya fue validado
+    document.getElementById("valHrsAuth").value = reg.horas_autorizadas || reg.horas_reportadas || "";
+    document.getElementById("valObs").value      = reg.obs_neo || "";
+    selAuth(authSel);
+
+    document.getElementById("heValBg").classList.add("open");
+}
+
+function cerrarVal(e) {
+    if (!e || e.target === document.getElementById("heValBg"))
+        document.getElementById("heValBg").classList.remove("open");
+}
+
+function selAuth(tipo) {
+    authSel = tipo;
+    ["APROBADA","PARCIAL","RECHAZADA"].forEach(t => {
+        const b = document.getElementById(`btn-${t}`);
+        b.className = "auth-btn" + (t === tipo ? ` sel-${t}` : "");
+    });
+}
+
+async function guardarVal() {
+    if (!authSel) { alert("Seleccione una autorización"); return; }
+    const body = {
+        autorizacion_neo:  authSel,
+        horas_autorizadas: parseFloat(document.getElementById("valHrsAuth").value) || 0,
+        obs_neo:           document.getElementById("valObs").value.trim(),
+    };
+    const r = await fetch(`/api/he/${valId}/validar`, {
+        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (d.ok) {
+        cerrarVal();
+        cargarTabla();
+        mostrarToast(`Registro ${d.estado.toLowerCase()} correctamente`, d.estado === "RECHAZADA" ? "danger" : "success");
+    } else {
+        alert(d.msg || "Error al guardar");
+    }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function mostrarToast(msg, tipo="success") {
+    const t = document.createElement("div");
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${tipo==="success"?"#007d8a":tipo==="danger"?"#dc3545":"#0d3b66"};color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+cargarTabla();
+</script>
+{% endblock %}
