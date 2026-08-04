@@ -38,6 +38,21 @@ from app.routes.horas_extras import he_bp
 _SCHEDULER_LOCK_ID = 727100501
 _scheduler_lock_conn = None
 
+_MIGRACIONES = [
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS acceso_dashboard BOOLEAN NOT NULL DEFAULT FALSE",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS permisos TEXT NOT NULL DEFAULT '[]'",
+    "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS contrato_id INTEGER",
+]
+
+def _auto_migrar():
+    try:
+        for sql in _MIGRACIONES:
+            db.session.execute(text(sql))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"[Migración] Error: {e}")
+
 
 def _tiene_lock_scheduler(app):
     global _scheduler_lock_conn
@@ -72,6 +87,11 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+
+    # Crea tablas nuevas y aplica migraciones de columnas (seguro con IF NOT EXISTS)
+    with app.app_context():
+        db.create_all()
+        _auto_migrar()
 
     # Scheduler — sincroniza alertas GPS cada 5 minutos
     import os
