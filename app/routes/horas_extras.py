@@ -89,16 +89,29 @@ def api_he_registros():
         ids = _ids_contratos_usuario()
         q = q.filter(HoraExtra.contrato_id.in_(ids))
 
-    contrato_id = request.args.get("contrato_id", type=int)
-    mes         = request.args.get("mes", "")
-    estado      = request.args.get("estado", "")
-    corte_id    = request.args.get("corte_id", type=int)
+    contrato_id  = request.args.get("contrato_id", type=int)
+    mes          = request.args.get("mes", "")
+    estado       = request.args.get("estado", "")
+    corte_id     = request.args.get("corte_id", type=int)
+    fecha_desde  = request.args.get("fecha_desde", "")
+    fecha_hasta  = request.args.get("fecha_hasta", "")
 
     if corte_id:
         q = q.filter(HoraExtra.corte_id == corte_id)
     elif contrato_id:
         q = q.filter(HoraExtra.contrato_id == contrato_id)
-    if mes:
+
+    if fecha_desde:
+        try:
+            q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde))
+        except Exception:
+            pass
+    if fecha_hasta:
+        try:
+            q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
+        except Exception:
+            pass
+    if mes and not fecha_desde and not fecha_hasta:
         try:
             year, month = mes.split("-")
             q = q.filter(
@@ -366,10 +379,27 @@ def api_he_kpis():
         q = q.filter(HoraExtra.contrato_id.in_(_ids_contratos_usuario()))
 
     contrato_id = request.args.get("contrato_id", type=int)
-    mes = request.args.get("mes", "")
-    if contrato_id:
+    mes         = request.args.get("mes", "")
+    corte_id    = request.args.get("corte_id", type=int)
+    fecha_desde = request.args.get("fecha_desde", "")
+    fecha_hasta = request.args.get("fecha_hasta", "")
+
+    if corte_id:
+        q = q.filter(HoraExtra.corte_id == corte_id)
+    elif contrato_id:
         q = q.filter(HoraExtra.contrato_id == contrato_id)
-    if mes:
+
+    if fecha_desde:
+        try:
+            q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde))
+        except Exception:
+            pass
+    if fecha_hasta:
+        try:
+            q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
+        except Exception:
+            pass
+    if mes and not fecha_desde and not fecha_hasta:
         try:
             year, month = mes.split("-")
             q = q.filter(

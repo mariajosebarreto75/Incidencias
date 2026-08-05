@@ -219,14 +219,24 @@ body { background:var(--c-bg); }
         <div class="he-filtros">
             <div>
                 <label>Contrato</label>
-                <select id="fContrato" onchange="recargar()" style="min-width:240px;">
+                <select id="fContrato" onchange="actualizarCortes();recargar()" style="min-width:220px;">
                     <option value="">Todos los contratos</option>
                     {% for c in contratos %}
                     <option value="{{ c.id }}">{{ c.contrato }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div><label>Mes</label><input type="month" id="fMes" onchange="recargar()"></div>
+            <div>
+                <label>Corte</label>
+                <select id="fCorte" onchange="sincronizarFechasCorte();sincronizarBtnCerrar();recargar()" style="min-width:200px;">
+                    <option value="">Todos los cortes</option>
+                </select>
+            </div>
+            <div><label>Desde</label><input type="date" id="fDesde" onchange="document.getElementById('fCorte').value='';sincronizarBtnCerrar();recargar()"></div>
+            <div><label>Hasta</label><input type="date" id="fHasta" onchange="document.getElementById('fCorte').value='';recargar()"></div>
+            <button id="btnCerrarCorteActual" onclick="cerrarCorteActual()" class="btn btn-sm btn-outline-danger fw-semibold" style="border-radius:7px;display:none;">
+                <i class="bi bi-lock me-1"></i>Cerrar corte
+            </button>
             <div>
                 <label>Estado</label>
                 <select id="fEstado" onchange="sincronizarChip(this.value);recargar()">
@@ -282,7 +292,7 @@ body { background:var(--c-bg); }
             <div class="he-toolbar">
                 <div>
                     <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Contrato:</label>
-                    <select id="hContrato" onchange="cargarHistorial()"
+                    <select id="hContrato" onchange="actualizarCortesHistorial();cargarHistorial()"
                             style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;min-width:220px;">
                         <option value="">Todos</option>
                         {% for c in contratos %}
@@ -291,10 +301,23 @@ body { background:var(--c-bg); }
                     </select>
                 </div>
                 <div>
-                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Mes:</label>
-                    <input type="month" id="hMes" onchange="cargarHistorial()"
+                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Corte:</label>
+                    <select id="hCorte" onchange="sincronizarFechasHistorial();cargarHistorial()"
+                            style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;min-width:180px;">
+                        <option value="">Todos los cortes</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Desde:</label>
+                    <input type="date" id="hDesde" onchange="document.getElementById('hCorte').value='';cargarHistorial()"
                            style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;">
                 </div>
+                <div>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Hasta:</label>
+                    <input type="date" id="hHasta" onchange="document.getElementById('hCorte').value='';cargarHistorial()"
+                           style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;">
+                </div>
+                <input type="hidden" id="hMes">
                 <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
@@ -470,12 +493,18 @@ function sincronizarChip(estado) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
-    const h = new Date();
-    const mes = `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,"0")}`;
-    document.getElementById("fMes").value = mes;
-    document.getElementById("hMes").value = mes;
     iniciarGrid();
-    recargar();
+    actualizarCortes().then(() => {
+        // Auto-seleccionar el corte ABIERTO más reciente
+        const abierto = _cortesCache.find(c => c.estado === "ABIERTO");
+        if (abierto) {
+            document.getElementById("fCorte").value = String(abierto.id);
+            sincronizarFechasCorte();
+            sincronizarBtnCerrar();
+        }
+        recargar();
+    });
+    actualizarCortesHistorial();
 })();
 
 // ── Grid principal ────────────────────────────────────────────────────────────
@@ -534,13 +563,108 @@ function iniciarGrid() {
     });
 }
 
+// ── Filtro por corte ─────────────────────────────────────────────────────────
+let _cortesCache = [];
+async function actualizarCortes() {
+    const cid = document.getElementById("fContrato").value;
+    const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
+    try {
+        const r = await fetch(url);
+        _cortesCache = await r.json();
+    } catch(e) { _cortesCache = []; }
+    const sel = document.getElementById("fCorte");
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Todos los cortes</option>' +
+        _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+    if (_cortesCache.find(c => String(c.id) === val)) sel.value = val;
+    // Sincronizar también el selector de historial si es el mismo contrato
+    if (document.getElementById("hContrato").value === document.getElementById("fContrato").value) {
+        _cortesCacheHistorial = _cortesCache;
+        const hSel = document.getElementById("hCorte");
+        if (hSel) {
+            const hVal = hSel.value;
+            hSel.innerHTML = '<option value="">Todos los cortes</option>' +
+                _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+            if (_cortesCache.find(c => String(c.id) === hVal)) hSel.value = hVal;
+        }
+    }
+}
+
+function sincronizarFechasCorte() {
+    const cid = document.getElementById("fCorte").value;
+    const c = _cortesCache.find(x => String(x.id) === cid);
+    if (c) {
+        document.getElementById("fDesde").value = c.fecha_inicio;
+        document.getElementById("fHasta").value = c.fecha_fin;
+    }
+}
+
+function sincronizarBtnCerrar() {
+    const cid = document.getElementById("fCorte").value;
+    const c = _cortesCache.find(x => String(x.id) === cid);
+    const btn = document.getElementById("btnCerrarCorteActual");
+    btn.style.display = (c && c.estado === "ABIERTO") ? "inline-flex" : "none";
+}
+
+async function cerrarCorteActual() {
+    const cid = document.getElementById("fCorte").value;
+    const c = _cortesCache.find(x => String(x.id) === cid);
+    if (!c || c.estado !== "ABIERTO") return;
+    if (!confirm(`¿Cerrar el corte "${c.nombre}"?\nLos registros quedarán en el historial y no se podrán agregar más.`)) return;
+    const r = await fetch(`/api/he/cortes/${cid}/cerrar`, { method:"POST", headers:{"Content-Type":"application/json"}, body:"{}" });
+    const d = await r.json();
+    if (d.ok) {
+        // Recargar cortes del selector y limpiar selección
+        await actualizarCortes();
+        document.getElementById("fCorte").value = "";
+        document.getElementById("fDesde").value = "";
+        document.getElementById("fHasta").value = "";
+        sincronizarBtnCerrar();
+        recargar();
+        cortesCargadosNeo = false; // forzar recarga si abre tab cortes
+        const t = document.createElement("div");
+        t.style.cssText = "position:fixed;bottom:24px;right:24px;z-index:9999;background:#0d6b73;color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);";
+        t.textContent = `Corte "${c.nombre}" cerrado correctamente`;
+        document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
+    } else { alert(d.msg || "Error al cerrar"); }
+}
+
+let _cortesCacheHistorial = [];
+async function actualizarCortesHistorial() {
+    const cid = document.getElementById("hContrato").value;
+    const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
+    try {
+        const r = await fetch(url);
+        _cortesCacheHistorial = await r.json();
+    } catch(e) { _cortesCacheHistorial = []; }
+    const sel = document.getElementById("hCorte");
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Todos los cortes</option>' +
+        _cortesCacheHistorial.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+    if (_cortesCacheHistorial.find(c => String(c.id) === val)) sel.value = val;
+}
+
+function sincronizarFechasHistorial() {
+    const cid = document.getElementById("hCorte").value;
+    const c = _cortesCacheHistorial.find(x => String(x.id) === cid);
+    if (c) {
+        document.getElementById("hDesde").value = c.fecha_inicio;
+        document.getElementById("hHasta").value = c.fecha_fin;
+    }
+}
+
 // ── Cargar datos validación ───────────────────────────────────────────────────
 async function recargar() {
     cargarKpis();
     const cid    = document.getElementById("fContrato").value;
-    const mes    = document.getElementById("fMes").value;
+    const corte  = document.getElementById("fCorte").value;
+    const desde  = document.getElementById("fDesde").value;
+    const hasta  = document.getElementById("fHasta").value;
     const estado = document.getElementById("fEstado").value;
-    const r = await fetch(`/api/he/registros?contrato_id=${cid}&mes=${mes}&estado=${estado}`);
+    let url = `/api/he/registros?contrato_id=${cid}&estado=${estado}`;
+    if (corte)       url += `&corte_id=${corte}`;
+    else if (desde)  url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    const r = await fetch(url);
     const registros = await r.json();
 
     registrosIds = registros.map(reg => reg.id);
@@ -572,9 +696,14 @@ async function recargar() {
 
 // ── Grid historial ────────────────────────────────────────────────────────────
 async function cargarHistorial() {
-    const cid = document.getElementById("hContrato").value;
-    const mes = document.getElementById("hMes").value;
-    const r = await fetch(`/api/he/registros?contrato_id=${cid}&mes=${mes}`);
+    const cid   = document.getElementById("hContrato").value;
+    const corte = document.getElementById("hCorte").value;
+    const desde = document.getElementById("hDesde").value;
+    const hasta = document.getElementById("hHasta").value;
+    let url = `/api/he/registros?contrato_id=${cid}`;
+    if (corte)      url += `&corte_id=${corte}`;
+    else if (desde) url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    const r = await fetch(url);
     const registros = await r.json();
 
     const filas = registros.map(reg => [
@@ -660,9 +789,14 @@ function autoGuardar(row) {
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 async function cargarKpis() {
     try {
-        const cid = document.getElementById("fContrato").value;
-        const mes = document.getElementById("fMes").value;
-        const r = await fetch(`/api/he/kpis?contrato_id=${cid}&mes=${mes}`);
+        const cid   = document.getElementById("fContrato").value;
+        const corte = document.getElementById("fCorte").value;
+        const desde = document.getElementById("fDesde").value;
+        const hasta = document.getElementById("fHasta").value;
+        let url = `/api/he/kpis?contrato_id=${cid}`;
+        if (corte)       url += `&corte_id=${corte}`;
+        else if (desde)  url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
+        const r = await fetch(url);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const d = await r.json();
         if (d.error) throw new Error(d.error);
