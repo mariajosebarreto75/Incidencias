@@ -1084,25 +1084,49 @@ async function verCorte(id, nombre) {
 
 async function confirmarImport() {
     if (!_importFilas.length) return;
-    const cid = document.getElementById("importContrato").value; // puede ser "" → usa contrato de cada fila
-
+    const cid = document.getElementById("importContrato").value;
     const btn = document.getElementById("btnConfirmarImport");
-    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Importando…';
+    const LOTE = 300;
+    const total = _importFilas.length;
+    let guardados = 0, omitidos = 0;
 
-    const filas = _importFilas.map(f => ({ ...f, contrato_id: cid }));
-    const r = await fetch("/api/he/guardar", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ filas })
-    });
-    const d = await r.json();
-    btn.disabled = false; btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
-    if (d.ok) {
-        cerrarModal("modalImportar");
-        cargarHistorial(); cargarKpis();
-        mostrarToast(`✓ ${d.guardados} registro(s) importados correctamente`,"success");
-    } else {
-        mostrarToast(d.msg || "Error al importar","danger");
+    btn.disabled = true;
+
+    for (let i = 0; i < total; i += LOTE) {
+        const lote = _importFilas.slice(i, i + LOTE).map(f => ({ ...f, contrato_id: cid || undefined }));
+        const pct  = Math.round(((i + lote.length) / total) * 100);
+        btn.innerHTML = `<i class="bi bi-hourglass-split me-1"></i>Importando… ${pct}% (${i + lote.length}/${total})`;
+
+        try {
+            const r = await fetch("/api/he/guardar", {
+                method:"POST", headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({ filas: lote })
+            });
+            const d = await r.json();
+            if (!d.ok) {
+                mostrarToast(d.msg || "Error al importar lote","danger");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
+                return;
+            }
+            guardados += d.guardados || 0;
+            omitidos  += d.omitidos  || 0;
+        } catch(e) {
+            mostrarToast("Error de red al importar","danger");
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
+            return;
+        }
     }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
+    cerrarModal("modalImportar");
+    cargarHistorial(); cargarKpis();
+    const msg = omitidos > 0
+        ? `✓ ${guardados} importados · ${omitidos} omitidos (contrato no encontrado)`
+        : `✓ ${guardados} registro(s) importados correctamente`;
+    mostrarToast(msg, "success");
 }
 
 function exportarExcel() {

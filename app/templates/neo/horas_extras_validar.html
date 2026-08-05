@@ -814,29 +814,55 @@ function neoFmtFechaImport(val) {
 
 async function confirmarImportNeo() {
     if (!_neoImportFilas.length) return;
-    const cid = document.getElementById("neoImportContrato").value; // puede ser "" → usa contrato de cada fila
+    const cid  = document.getElementById("neoImportContrato").value;
+    const btn  = document.getElementById("btnNeoConfirmarImport");
+    const LOTE = 300;
+    const total = _neoImportFilas.length;
+    let guardados = 0, omitidos = 0;
 
-    const btn = document.getElementById("btnNeoConfirmarImport");
-    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Importando…';
+    btn.disabled = true;
 
-    const filas = _neoImportFilas.map(f => ({ ...f, contrato_id: cid }));
-    const r = await fetch("/api/he/guardar", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ filas })
-    });
-    const d = await r.json();
-    btn.disabled = false; btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
-    if (d.ok) {
-        document.getElementById("modalImportarNeo").classList.remove("open");
-        recargar(); cargarKpis();
-        // Toast simple
+    const toast = (msg, color) => {
         const t = document.createElement("div");
-        t.style.cssText = "position:fixed;bottom:24px;right:24px;z-index:9999;background:#198754;color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);";
-        t.textContent = `✓ ${d.guardados} registro(s) importados correctamente`;
-        document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
-    } else {
-        alert(d.msg || "Error al importar");
+        t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${color};color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:380px;`;
+        t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 5000);
+    };
+
+    for (let i = 0; i < total; i += LOTE) {
+        const lote = _neoImportFilas.slice(i, i + LOTE).map(f => ({ ...f, contrato_id: cid || undefined }));
+        const pct  = Math.round(((i + lote.length) / total) * 100);
+        btn.innerHTML = `<i class="bi bi-hourglass-split me-1"></i>Importando… ${pct}% (${i + lote.length}/${total})`;
+
+        try {
+            const r = await fetch("/api/he/guardar", {
+                method:"POST", headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({ filas: lote })
+            });
+            const d = await r.json();
+            if (!d.ok) {
+                toast(d.msg || "Error al importar lote", "#dc3545");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
+                return;
+            }
+            guardados += d.guardados || 0;
+            omitidos  += d.omitidos  || 0;
+        } catch(e) {
+            toast("Error de red al importar", "#dc3545");
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
+            return;
+        }
     }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
+    document.getElementById("modalImportarNeo").classList.remove("open");
+    recargar(); cargarKpis();
+    const msg = omitidos > 0
+        ? `✓ ${guardados} importados · ${omitidos} omitidos (contrato no encontrado)`
+        : `✓ ${guardados} registro(s) importados correctamente`;
+    toast(msg, "#198754");
 }
 
 document.addEventListener("click", e => {
