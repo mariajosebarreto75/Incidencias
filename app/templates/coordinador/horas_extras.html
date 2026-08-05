@@ -2,7 +2,7 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/handsontable.min.css') }}">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator_bootstrap5.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/tabulator_bootstrap5.min.css') }}">
 <style>
 :root { --c-primary:#0d3b66; --c-bg:#f0f4fb; }
 body { background:var(--c-bg); }
@@ -287,8 +287,8 @@ body { background:var(--c-bg); }
 </div>
 
 <script src="{{ url_for('static', filename='vendor/handsontable.min.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/tabulator.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/xlsx.full.min.js') }}"></script>
 <script>
 const CONCEPTOS   = {{ conceptos | tojson }};
 const FACTOR_HE   = { "03":1.25,"04":1.75,"05":2.05,"06":2.55,"07":0.80,"17":0.35,"19":1.15 };

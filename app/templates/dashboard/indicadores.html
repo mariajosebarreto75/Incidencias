@@ -1,11 +1,11 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard Gerencial — Incidencias</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<title>Dashboard Gerencial â€” Incidencias</title>
+<link href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_gerencial.css') }}">
 </head>
 <body>
@@ -14,7 +14,7 @@
     <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
     <div>
         <h1>Dashboard Gerencial</h1>
-        <span class="dg-sub">Indicadores de reportes operacionales · {{ current_user.nombre_completo }}</span>
+        <span class="dg-sub">Indicadores de reportes operacionales Â· {{ current_user.nombre_completo }}</span>
     </div>
     <div class="dg-topbar-actions">
         {% if home_endpoint %}
@@ -34,7 +34,7 @@
     <form class="dg-filtro" method="get">
         <label><i class="bi bi-funnel me-1"></i>Contrato</label>
         <select name="contrato" onchange="this.form.submit()">
-            <option value="">— Todos los contratos —</option>
+            <option value="">â€” Todos los contratos â€”</option>
             {% for c in lista_contratos %}
             <option value="{{ c }}" {% if c == contrato_filtro %}selected{% endif %}>
                 {{ abrev_por_contrato.get(c, c) }}
@@ -42,7 +42,7 @@
             {% endfor %}
         </select>
         <span class="dg-filtro-hint">
-            <i class="bi bi-info-circle me-1"></i>Clic en cualquier barra o el gráfico circular para filtrar todo el tablero por esa categoría
+            <i class="bi bi-info-circle me-1"></i>Clic en cualquier barra o el grÃ¡fico circular para filtrar todo el tablero por esa categorÃ­a
         </span>
     </form>
 
@@ -103,7 +103,7 @@
                 {% for fila in serie.datos %}
                 <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
                     {% if fila.url %}
-                    <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="Filtrar por «{{ fila.etiqueta }}»">
+                    <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="Filtrar por Â«{{ fila.etiqueta }}Â»">
                         {% if fila.activo %}<i class="bi bi-check-circle-fill me-1"></i>{% endif %}{{ fila.etiqueta }}
                     </a>
                     {% else %}
@@ -122,7 +122,7 @@
             <details class="dg-table-toggle">
                 <summary>Ver tabla</summary>
                 <table class="dg-table">
-                    <thead><tr><th>Categoría</th><th>Cantidad</th></tr></thead>
+                    <thead><tr><th>CategorÃ­a</th><th>Cantidad</th></tr></thead>
                     <tbody>
                         {% for fila in serie.datos %}
                         <tr><td>{{ fila.etiqueta }}</td><td>{{ fila.cantidad }}</td></tr>
@@ -146,7 +146,7 @@
                 {% for fila in serie.datos %}
                 <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
                     {% if fila.url %}
-                    <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="Filtrar por «{{ fila.etiqueta }}»">
+                    <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="Filtrar por Â«{{ fila.etiqueta }}Â»">
                         {% if fila.activo %}<i class="bi bi-check-circle-fill me-1"></i>{% endif %}{{ fila.etiqueta }}
                     </a>
                     {% else %}
@@ -182,8 +182,8 @@
     <!-- REPORTES POR DIA -->
     <div class="dg-section-title">Tendencia</div>
     <div class="dg-card mb-3">
-        <div class="dg-card-header"><i class="bi bi-calendar3 me-2"></i>Cantidad de reportes por día
-            <span class="dg-card-header-sub">últimos {{ reportes_por_dia.datos|length }} días con reportes</span>
+        <div class="dg-card-header"><i class="bi bi-calendar3 me-2"></i>Cantidad de reportes por dÃ­a
+            <span class="dg-card-header-sub">Ãºltimos {{ reportes_por_dia.datos|length }} dÃ­as con reportes</span>
         </div>
         <div class="dg-card-body">
             {% if reportes_por_dia.datos %}
@@ -227,25 +227,25 @@
                     <a href="{{ conformidad_pie.url_conforme }}"
                        class="dg-legend-item {% if conformidad_pie.activo_conforme %}dg-legend-item-activo{% endif %}">
                         <span class="dg-legend-dot" style="background:#0ca30c"></span>
-                        Conforme — {{ conformidad_pie.total_conformes }} ({{ conformidad_pie.pct_conforme }}%)
+                        Conforme â€” {{ conformidad_pie.total_conformes }} ({{ conformidad_pie.pct_conforme }}%)
                         {% if conformidad_pie.activo_conforme %}<i class="bi bi-check-circle-fill ms-1"></i>{% endif %}
                     </a>
                     <a href="{{ conformidad_pie.url_no_conforme }}"
                        class="dg-legend-item {% if conformidad_pie.activo_no_conforme %}dg-legend-item-activo{% endif %}">
                         <span class="dg-legend-dot" style="background:#d03b3b"></span>
-                        No conforme — {{ conformidad_pie.total_no_conformes }} ({{ conformidad_pie.pct_no_conforme }}%)
+                        No conforme â€” {{ conformidad_pie.total_no_conformes }} ({{ conformidad_pie.pct_no_conforme }}%)
                         {% if conformidad_pie.activo_no_conforme %}<i class="bi bi-check-circle-fill ms-1"></i>{% endif %}
                     </a>
                 </div>
                 {% else %}
-                <p class="text-muted small mb-0">Aún no hay reportes validados por NEO para este filtro.</p>
+                <p class="text-muted small mb-0">AÃºn no hay reportes validados por NEO para este filtro.</p>
                 {% endif %}
             </div>
         </div>
     </div>
 
     <!-- GRAFICOS -->
-    <div class="dg-section-title">Distribución</div>
+    <div class="dg-section-title">DistribuciÃ³n</div>
     <div class="dg-charts-grid">
         {{ bar_chart("Reportes por contrato", "bi-building", reportes_por_contrato) }}
         {{ bar_chart("Pendientes por respuesta por contrato", "bi-hourglass-split", pendientes_por_contrato) }}
@@ -256,6 +256,7 @@
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
 </body>
 </html>
+
