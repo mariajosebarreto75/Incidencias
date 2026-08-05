@@ -4,10 +4,77 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/handsontable.min.css') }}">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator_bootstrap5.min.css">
 <style>
-:root { --c-primary:#0d3b66; --c-bg:#f4f6fb; }
+:root { --c-primary:#0d3b66; --c-bg:#f0f4fb; }
 body { background:var(--c-bg); }
-.he-page { max-width:1600px; margin:0 auto; padding:20px 14px 80px; }
+.he-page { max-width:1600px; margin:0 auto; padding:0 14px 80px; }
 
+/* ── Cabecera ── */
+.he-header {
+    background:linear-gradient(135deg,#0d3b66 0%,#1565c0 100%);
+    border-radius:0 0 18px 18px;
+    padding:22px 28px 0;
+    margin: 0 -14px 24px;
+    box-shadow:0 4px 20px rgba(13,59,102,.2);
+}
+.he-header-top { display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+.he-header-icon { width:46px;height:46px;background:rgba(255,255,255,.15);border-radius:12px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.he-header-icon i { font-size:1.3rem;color:#fff; }
+.he-header-title { font-size:1.25rem;font-weight:800;color:#fff;margin:0; }
+.he-header-sub { font-size:.75rem;color:rgba(255,255,255,.65);margin:0; }
+.he-header-right { margin-left:auto;display:flex;align-items:center;gap:10px; }
+
+/* ── Tabs ── */
+.he-tabs { display:flex; gap:2px; }
+.he-tab {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:11px 22px 13px;
+    font-size:.82rem; font-weight:600; color:rgba(255,255,255,.6);
+    cursor:pointer; border-radius:10px 10px 0 0;
+    border:none; background:transparent;
+    transition:all .18s; white-space:nowrap;
+    position:relative;
+}
+.he-tab i { font-size:.95rem; }
+.he-tab:hover { color:rgba(255,255,255,.9); background:rgba(255,255,255,.08); }
+.he-tab.active {
+    color:#0d3b66; background:#f0f4fb; font-weight:700;
+}
+.he-tab .tab-badge {
+    background:rgba(255,255,255,.2); color:rgba(255,255,255,.9);
+    font-size:.62rem; font-weight:800; padding:1px 6px; border-radius:10px;
+    min-width:18px; text-align:center;
+}
+.he-tab.active .tab-badge {
+    background:#0d3b66; color:#fff;
+}
+
+/* ── Paneles ── */
+.he-panel { display:none; animation:panelIn .22s ease; }
+.he-panel.active { display:block; }
+@keyframes panelIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* ── Panel Registro ── */
+.he-entry-panel { background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08); margin-bottom:20px; overflow:hidden; }
+.he-entry-head { background:#0d3b66; color:#fff; padding:12px 18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.he-entry-head h6 { margin:0; font-weight:700; font-size:.9rem; flex:1; }
+.he-entry-head select { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3);
+    border-radius:7px; padding:5px 10px; font-size:.82rem; outline:none; min-width:260px; }
+.he-entry-head select option { background:#0d3b66; color:#fff; }
+.he-toolbar { padding:8px 14px; background:#f0f4fb; border-bottom:1px solid #dde3ee;
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.grid-legend { display:flex; gap:12px; padding:6px 14px; background:#fafbfc; border-top:1px solid #eee;
+    font-size:.68rem; color:#6c757d; flex-wrap:wrap; }
+.grid-legend span { display:flex; align-items:center; gap:5px; }
+.lg-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+
+/* Handsontable */
+.handsontable th { font-weight:700 !important; font-size:.69rem !important; text-transform:uppercase; letter-spacing:.3px; }
+.handsontable td { font-size:.78rem !important; }
+.handsontable .htDimmed { color:#777 !important; }
+.ht-neo-col { background:#f0f7ff !important; }
+
+/* ── Panel Validación ── */
 /* chips de estado */
 .he-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; }
 .he-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px;
@@ -26,28 +93,11 @@ body { background:var(--c-bg); }
 .he-chip.ch-noconf.active{ background:#ef4444; color:#fff; }
 .he-chip.ch-desc   { background:#ede9fe; color:#5b21b6; }
 .he-chip.ch-desc.active { background:#8b5cf6; color:#fff; }
-/* fila de métricas de horas */
 .he-hrs-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
 .he-hrs-card { background:#fff; border-radius:9px; padding:8px 14px; box-shadow:0 1px 5px rgba(0,0,0,.07);
     display:flex; flex-direction:column; align-items:center; min-width:110px; }
 .he-hrs-card .hv { font-size:1.4rem; font-weight:800; line-height:1; }
 .he-hrs-card .hl { font-size:.6rem; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:.4px; margin-top:2px; text-align:center; }
-
-.he-entry-panel { background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08); margin-bottom:20px; overflow:hidden; }
-.he-entry-head { background:#0d3b66; color:#fff; padding:12px 18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-.he-entry-head h6 { margin:0; font-weight:700; font-size:.9rem; flex:1; }
-.he-entry-head select { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3);
-    border-radius:7px; padding:5px 10px; font-size:.82rem; outline:none; min-width:260px; }
-.he-entry-head select option { background:#0d3b66; color:#fff; }
-.he-toolbar { padding:8px 14px; background:#f0f4fb; border-bottom:1px solid #dde3ee;
-    display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-
-/* Columnas de NEO en el grid — fondo distinto */
-.handsontable th { font-weight:700 !important; font-size:.69rem !important; text-transform:uppercase; letter-spacing:.3px; }
-.handsontable td { font-size:.78rem !important; }
-.handsontable .htDimmed { color:#777 !important; }
-/* Las columnas readonly de NEO las diferenciamos con un leve fondo */
-.ht-neo-col { background:#f0f7ff !important; }
 
 .he-hist-wrap { background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08); overflow:hidden; }
 .he-hist-head { padding:12px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; }
@@ -61,145 +111,179 @@ body { background:var(--c-bg); }
 .badge-CONFORME    { background:#d1e7dd; color:#0a3622; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
 .badge-NO\ CONFORME{ background:#f8d7da; color:#842029; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
 .badge-DESCONTADA  { background:#ede9fe; color:#5b21b6; padding:2px 8px; border-radius:20px; font-size:.68rem; font-weight:700; }
-
 .tabulator { border:none !important; }
 .tabulator-header { background:#f0f4f8 !important; }
 .tabulator-col-title { font-size:.7rem !important; font-weight:700 !important; color:#0d3b66 !important; text-transform:uppercase; }
 .tabulator-cell { font-size:.78rem !important; }
 
-/* Leyenda secciones grid */
-.grid-legend { display:flex; gap:12px; padding:6px 14px; background:#fafbfc; border-top:1px solid #eee;
-    font-size:.68rem; color:#6c757d; flex-wrap:wrap; }
-.grid-legend span { display:flex; align-items:center; gap:5px; }
-.lg-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+/* ── Panel Cortes ── */
+.he-cortes-empty {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:340px; gap:16px; color:#94a3b8;
+    background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.06);
+}
+.he-cortes-empty i { font-size:3.5rem; opacity:.35; }
+.he-cortes-empty h5 { margin:0; font-size:1rem; font-weight:700; color:#64748b; }
+.he-cortes-empty p { margin:0; font-size:.82rem; text-align:center; max-width:320px; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="he-page">
 
-    <div class="d-flex align-items-center gap-3 mb-3">
-        <div style="width:42px;height:42px;border-radius:10px;background:#0d3b66;display:flex;align-items:center;justify-content:center;">
-            <i class="bi bi-clock-history" style="color:#fff;font-size:1.1rem;"></i>
-        </div>
-        <div>
-            <h4 class="mb-0 fw-bold" style="color:#0d3b66;">Horas Extras</h4>
-            <div style="font-size:.75rem;color:#6c757d;">Ingresa las horas como en Excel — pega, arrastra, edita en cantidad</div>
-        </div>
-    </div>
-
-    <!-- Chips de filtro por estado -->
-    <div class="he-chips">
-        <div class="he-chip ch-all active" onclick="filtrarChip('',this)">
-            <i class="bi bi-list-ul"></i> Todos <span class="cnt" id="k-total">—</span>
-        </div>
-        <div class="he-chip ch-pend" onclick="filtrarChip('PENDIENTE',this)">
-            <i class="bi bi-hourglass-split"></i> Sin validar <span class="cnt" id="k-pend">—</span>
-        </div>
-        <div class="he-chip ch-conf" onclick="filtrarChip('CONFORME',this)">
-            <i class="bi bi-check-circle"></i> Conformes <span class="cnt" id="k-conf">—</span>
-        </div>
-        <div class="he-chip ch-noconf" onclick="filtrarChip('NO CONFORME',this)">
-            <i class="bi bi-x-circle"></i> No conformes <span class="cnt" id="k-noconf">—</span>
-        </div>
-        <div class="he-chip ch-desc" onclick="filtrarChip('DESCONTADA',this)">
-            <i class="bi bi-dash-circle"></i> Descontadas <span class="cnt" id="k-desc">—</span>
-        </div>
-    </div>
-    <!-- Métricas de horas -->
-    <div class="he-hrs-row">
-        <div class="he-hrs-card"><div class="hv" id="k-hrs-rep" style="color:#0d3b66;">—</div><div class="hl">Hrs Reportadas</div></div>
-        <div class="he-hrs-card"><div class="hv" id="k-hrs-conf" style="color:#22c55e;">—</div><div class="hl">Hrs Conformes</div></div>
-        <div class="he-hrs-card"><div class="hv" id="k-hrs-noconf" style="color:#ef4444;">—</div><div class="hl">Hrs No Conformes</div></div>
-        <div class="he-hrs-card"><div class="hv" id="k-hrs-desc" style="color:#8b5cf6;">—</div><div class="hl">Hrs Descontadas</div></div>
-    </div>
-
-    <!-- PANEL EXCEL -->
-    <div class="he-entry-panel">
-        <div class="he-entry-head">
-            <i class="bi bi-table" style="font-size:1.1rem;opacity:.8;"></i>
-            <h6>Registro de Horas Extras</h6>
+    <!-- ── Cabecera con tabs integrados ── -->
+    <div class="he-header">
+        <div class="he-header-top">
+            <div class="he-header-icon"><i class="bi bi-clock-history"></i></div>
             <div>
-                <label style="font-size:.7rem;opacity:.8;margin-bottom:2px;display:block;">Contrato</label>
-                <select id="gridContrato" onchange="onContratoChange()">
-                    <option value="">— Seleccione un contrato —</option>
-                    {% for c in contratos %}
-                    <option value="{{ c.id }}">{{ c.contrato }}</option>
-                    {% endfor %}
-                </select>
+                <h4 class="he-header-title">Horas Extras</h4>
+                <p class="he-header-sub">Gestión y seguimiento de horas extras por contrato</p>
+            </div>
+            <div class="he-header-right">
+                <div>
+                    <label style="font-size:.65rem;color:rgba(255,255,255,.6);font-weight:600;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px;">Contrato</label>
+                    <select id="gridContrato" onchange="onContratoChange()"
+                        style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);
+                               border-radius:8px;padding:6px 12px;font-size:.82rem;outline:none;min-width:280px;">
+                        <option value="" style="background:#0d3b66;">— Seleccione un contrato —</option>
+                        {% for c in contratos %}
+                        <option value="{{ c.id }}" style="background:#0d3b66;">{{ c.contrato }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div class="he-toolbar">
-            <button onclick="agregarFilas(10)" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.75rem;">
-                <i class="bi bi-plus-lg me-1"></i>+10 filas
+        <!-- Pestañas -->
+        <div class="he-tabs">
+            <button class="he-tab active" onclick="cambiarTab('registro',this)">
+                <i class="bi bi-pencil-square"></i> Registro de Horas
             </button>
-            <button onclick="limpiarGrid()" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;font-size:.75rem;">
-                <i class="bi bi-eraser me-1"></i>Limpiar
+            <button class="he-tab" onclick="cambiarTab('validacion',this)">
+                <i class="bi bi-clipboard2-check"></i> Validación
+                <span class="tab-badge" id="tb-pend">—</span>
             </button>
-            <div style="display:flex;align-items:center;gap:5px;margin-left:6px;">
-                <i class="bi bi-layout-three-columns" style="font-size:.8rem;color:#6c757d;"></i>
-                <label style="font-size:.7rem;color:#6c757d;margin:0;">Fijar columnas:</label>
-                <select id="selFreeze" onchange="fijarColumnas(this.value)"
-                        style="font-size:.72rem;border-radius:5px;border:1px solid #dee2e6;padding:3px 6px;">
-                    <option value="0">Sin fijar</option>
-                    <option value="1">1 col</option>
-                    <option value="2">2 cols</option>
-                    <option value="3">3 cols</option>
-                    <option value="4">4 cols</option>
-                    <option value="5">5 cols</option>
+            <button class="he-tab" onclick="cambiarTab('cortes',this)">
+                <i class="bi bi-archive"></i> Cortes
+            </button>
+        </div>
+    </div>
+
+    <!-- ══════════════════ PANEL 1: REGISTRO ══════════════════ -->
+    <div class="he-panel active" id="panel-registro">
+        <div class="he-entry-panel">
+            <div class="he-entry-head">
+                <i class="bi bi-table" style="font-size:1.1rem;opacity:.8;"></i>
+                <h6>Ingreso de Horas Extras</h6>
+            </div>
+            <div class="he-toolbar">
+                <button onclick="agregarFilas(10)" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.75rem;">
+                    <i class="bi bi-plus-lg me-1"></i>+10 filas
+                </button>
+                <button onclick="limpiarGrid()" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;font-size:.75rem;">
+                    <i class="bi bi-eraser me-1"></i>Limpiar
+                </button>
+                <div style="display:flex;align-items:center;gap:5px;margin-left:6px;">
+                    <i class="bi bi-layout-three-columns" style="font-size:.8rem;color:#6c757d;"></i>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0;">Fijar columnas:</label>
+                    <select id="selFreeze" onchange="fijarColumnas(this.value)"
+                            style="font-size:.72rem;border-radius:5px;border:1px solid #dee2e6;padding:3px 6px;">
+                        <option value="0">Sin fijar</option>
+                        <option value="1">1 col</option>
+                        <option value="2">2 cols</option>
+                        <option value="3">3 cols</option>
+                        <option value="4">4 cols</option>
+                        <option value="5">5 cols</option>
+                    </select>
+                </div>
+                <span style="font-size:.71rem;color:#6c757d;margin-left:4px;">
+                    <i class="bi bi-info-circle me-1"></i>Ctrl+C / Ctrl+V · Arrastra para llenar
+                </span>
+                <div class="ms-auto">
+                    <button onclick="guardarGrid()" id="btnGuardar"
+                            class="btn btn-primary btn-sm fw-bold" style="border-radius:7px;padding:6px 18px;">
+                        <i class="bi bi-save me-1"></i>Guardar horas
+                    </button>
+                </div>
+            </div>
+            <div style="overflow:auto;"><div id="gridHE"></div></div>
+            <div class="grid-legend">
+                <span><div class="lg-dot" style="background:#e8f0fe;border:1px solid #c5d3e8;"></div> Campos que tú ingresas</span>
+                <span><div class="lg-dot" style="background:#f0f7ff;border:1px solid #c0d9f0;"></div> Columnas calculadas / validación NEO (solo lectura)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════ PANEL 2: VALIDACIÓN ══════════════════ -->
+    <div class="he-panel" id="panel-validacion">
+
+        <!-- Chips de filtro -->
+        <div class="he-chips">
+            <div class="he-chip ch-all active" onclick="filtrarChip('',this)">
+                <i class="bi bi-list-ul"></i> Todos <span class="cnt" id="k-total">—</span>
+            </div>
+            <div class="he-chip ch-pend" onclick="filtrarChip('PENDIENTE',this)">
+                <i class="bi bi-hourglass-split"></i> Sin validar <span class="cnt" id="k-pend">—</span>
+            </div>
+            <div class="he-chip ch-conf" onclick="filtrarChip('CONFORME',this)">
+                <i class="bi bi-check-circle"></i> Conformes <span class="cnt" id="k-conf">—</span>
+            </div>
+            <div class="he-chip ch-noconf" onclick="filtrarChip('NO CONFORME',this)">
+                <i class="bi bi-x-circle"></i> No conformes <span class="cnt" id="k-noconf">—</span>
+            </div>
+            <div class="he-chip ch-desc" onclick="filtrarChip('DESCONTADA',this)">
+                <i class="bi bi-dash-circle"></i> Descontadas <span class="cnt" id="k-desc">—</span>
+            </div>
+        </div>
+
+        <!-- Métricas de horas -->
+        <div class="he-hrs-row">
+            <div class="he-hrs-card"><div class="hv" id="k-hrs-rep" style="color:#0d3b66;">—</div><div class="hl">Hrs Reportadas</div></div>
+            <div class="he-hrs-card"><div class="hv" id="k-hrs-conf" style="color:#22c55e;">—</div><div class="hl">Hrs Conformes</div></div>
+            <div class="he-hrs-card"><div class="hv" id="k-hrs-noconf" style="color:#ef4444;">—</div><div class="hl">Hrs No Conformes</div></div>
+            <div class="he-hrs-card"><div class="hv" id="k-hrs-desc" style="color:#8b5cf6;">—</div><div class="hl">Hrs Descontadas</div></div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="he-filtros">
+            <div><label>Contrato</label>
+                <select id="fContrato" onchange="cargarHistorial()" style="min-width:220px;">
+                    <option value="">Todos mis contratos</option>
+                    {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
                 </select>
             </div>
-            <span style="font-size:.71rem;color:#6c757d;margin-left:4px;">
-                <i class="bi bi-info-circle me-1"></i>Ctrl+C / Ctrl+V · Arrastra para llenar
-            </span>
-            <div class="ms-auto">
-                <button onclick="guardarGrid()" id="btnGuardar"
-                        class="btn btn-primary btn-sm fw-bold" style="border-radius:7px;padding:6px 18px;">
-                    <i class="bi bi-save me-1"></i>Guardar horas
+            <div><label>Mes</label><input type="month" id="fMes" onchange="cargarHistorial()"></div>
+            <div><label>Estado</label>
+                <select id="fEstado" onchange="sincronizarChip(this.value);cargarHistorial()">
+                    <option value="">Todos</option>
+                    <option>PENDIENTE</option><option>CONFORME</option>
+                    <option>NO CONFORME</option><option>DESCONTADA</option>
+                </select>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+
+        <!-- Tabla registros -->
+        <div class="he-hist-wrap">
+            <div class="he-hist-head">
+                <h6><i class="bi bi-table me-2"></i>Mis horas enviadas</h6>
+                <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()" style="border-radius:7px;font-size:.76rem;">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar
                 </button>
             </div>
-        </div>
-
-        <div style="overflow:auto;">
-            <div id="gridHE"></div>
-        </div>
-
-        <div class="grid-legend">
-            <span><div class="lg-dot" style="background:#e8f0fe;border:1px solid #c5d3e8;"></div> Campos que tú ingresas</span>
-            <span><div class="lg-dot" style="background:#f0f7ff;border:1px solid #c0d9f0;"></div> Columnas calculadas / validación NEO (solo lectura)</span>
+            <div id="heTabla" style="min-height:160px;"></div>
         </div>
     </div>
 
-    <!-- FILTROS HISTORIAL -->
-    <div class="he-filtros">
-        <div><label>Contrato</label>
-            <select id="fContrato" onchange="cargarHistorial()" style="min-width:220px;">
-                <option value="">Todos mis contratos</option>
-                {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
-            </select>
+    <!-- ══════════════════ PANEL 3: CORTES ══════════════════ -->
+    <div class="he-panel" id="panel-cortes">
+        <div class="he-cortes-empty">
+            <i class="bi bi-archive"></i>
+            <h5>Cortes de nómina</h5>
+            <p>Esta sección estará disponible próximamente. Aquí podrás consultar y validar registros de períodos de nómina cerrados.</p>
         </div>
-        <div><label>Mes</label><input type="month" id="fMes" onchange="cargarHistorial()"></div>
-        <div><label>Estado</label>
-            <select id="fEstado" onchange="sincronizarChip(this.value);cargarHistorial()">
-                <option value="">Todos</option>
-                <option>PENDIENTE</option><option>CONFORME</option>
-                <option>NO CONFORME</option><option>DESCONTADA</option>
-            </select>
-        </div>
-        <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;"><i class="bi bi-arrow-clockwise"></i></button>
     </div>
 
-    <!-- HISTORIAL -->
-    <div class="he-hist-wrap">
-        <div class="he-hist-head">
-            <h6><i class="bi bi-clock-history me-2"></i>Mis registros enviados</h6>
-            <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()" style="border-radius:7px;font-size:.76rem;">
-                <i class="bi bi-file-earmark-excel me-1"></i>Exportar
-            </button>
-        </div>
-        <div id="heTabla" style="min-height:160px;"></div>
-    </div>
 </div>
 
 <script src="{{ url_for('static', filename='vendor/handsontable.min.js') }}"></script>
@@ -222,13 +306,26 @@ let cedulaTimers = {};
 let salariosPorFila = {};  // { row: salario }
 let supervisoresActuales = [];  // lista actual para aplicar a filas nuevas
 
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+let validacionCargada = false;
+function cambiarTab(nombre, btn) {
+    document.querySelectorAll(".he-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".he-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + nombre).classList.add("active");
+    if (nombre === "validacion" && !validacionCargada) {
+        validacionCargada = true;
+        cargarHistorial();
+    }
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
     const h = new Date();
     document.getElementById("fMes").value =
         `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,"0")}`;
     iniciarGrid();
-    cargarHistorial();
+    cargarKpis();   // solo KPIs para los badges de las tabs
     // Si ya hay contrato seleccionado (coordinador con 1 contrato), cargar supervisores
     const cid = document.getElementById("gridContrato").value;
     if (cid) onContratoChange();
@@ -352,9 +449,14 @@ function fechaParaBackend(val) {
 
 async function onContratoChange() {
     cargarKpis();
+    validacionCargada = false;
     const cid = document.getElementById("gridContrato").value;
     document.getElementById("fContrato").value = cid;
-    cargarHistorial();
+    // Solo recargar historial si la tab de validación está activa
+    if (document.getElementById("panel-validacion").classList.contains("active")) {
+        validacionCargada = true;
+        cargarHistorial();
+    }
     // Cargar supervisores del contrato
     try {
         const url = cid ? `/api/he/supervisores?contrato_id=${cid}` : "/api/he/supervisores";
@@ -431,6 +533,8 @@ async function cargarKpis() {
     document.getElementById("k-hrs-conf").textContent   = (+d.hrs_conformes    || 0).toFixed(0);
     document.getElementById("k-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
     document.getElementById("k-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
+    // Badge en la tab de Validación
+    document.getElementById("tb-pend").textContent      = d.pendientes;
 }
 
 function filtrarChip(estado, el) {
