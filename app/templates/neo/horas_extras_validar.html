@@ -380,7 +380,7 @@ body { background:var(--c-bg); }
     <div class="he-modal-body">
       <div class="he-import-info">
         <strong>Columnas esperadas (en orden):</strong><br>
-        Fecha Labor · Cédula · Nombre · Recurso · Placa · Hora Inicio · Hora Fin · Id Concepto · #Hrs Reportadas · #Hrs Compensadas · Autorización(supervisor) · Justificación · Observación
+        Contrato · Fecha Labor · Cédula · Nombre · Recurso · Placa · Id Concepto · #Hrs Reportadas · #Hrs Compensadas · Autorización · Justificación · Observación · Tipo He · Valor Extra Nomina · $ Valor Extra · Autorización NEO · #Hrs Autorizadas
         <br><small style="opacity:.7">La primera fila puede ser encabezado — se detecta automáticamente.</small>
       </div>
       <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
@@ -749,28 +749,34 @@ function procesarImportNeo(input) {
         _neoImportFilas = dataRows
             .filter(r => r.some(v => v !== ""))
             .map(r => ({
-                fecha_labor:       neoFmtFechaImport(r[0]),
-                cedula:            String(r[1] || "").trim(),
-                nombre:            String(r[2] || "").trim(),
-                recurso:           String(r[3] || "").trim(),
-                placa:             String(r[4] || "").trim(),
-                hora_inicio:       String(r[5] || "").trim(),
-                hora_fin:          String(r[6] || "").trim(),
-                id_concepto:       String(r[7] || "").trim(),
-                horas_reportadas:  parseInt(r[8]) || 0,
-                horas_compensadas: parseInt(r[9]) || 0,
-                autorizacion_sup:  String(r[10] || "").trim(),
-                justificacion:     String(r[11] || "").trim(),
-                observacion:       String(r[12] || "").trim(),
+                contrato:          String(r[0]  || "").trim(),
+                fecha_labor:       neoFmtFechaImport(r[1]),
+                cedula:            String(r[2]  || "").trim(),
+                nombre:            String(r[3]  || "").trim(),
+                recurso:           String(r[4]  || "").trim(),
+                placa:             String(r[5]  || "").trim(),
+                id_concepto:       String(r[6]  || "").trim(),
+                horas_reportadas:  parseFloat(r[7])  || 0,
+                horas_compensadas: parseFloat(r[8])  || 0,
+                autorizacion_sup:  String(r[9]  || "").trim(),
+                justificacion:     String(r[10] || "").trim(),
+                observacion:       String(r[11] || "").trim(),
+                tipo_he:           String(r[12] || "").trim(),
+                valor_extra_nomina:String(r[13] || "").trim(),
+                valor_extra:       String(r[14] || "").trim(),
+                autorizacion_neo:  String(r[15] || "").trim(),
+                horas_autorizadas: r[16] !== "" && r[16] != null ? parseFloat(r[16]) : "",
             }))
-            .filter(f => f.fecha_labor || f.cedula || f.recurso || f.horas_reportadas > 0); // validación relajada — se reactivará luego
+            .filter(f => f.fecha_labor || f.cedula || f.recurso || f.horas_reportadas > 0); // validación relajada
 
-        const headers = ["Fecha Labor","Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
-                         "Id Concepto","Hrs Rep.","Hrs Comp.","Supervisor","Justificación","Observación"];
+        const headers = ["Contrato","Fecha Labor","Cédula","Nombre","Recurso","Placa",
+                         "Id Concepto","Hrs Rep.","Hrs Comp.","Autorización","Justificación","Observación",
+                         "Tipo He","Vlr Extra Nom.","$ Vlr Extra","Auth NEO","Hrs Auth."];
         const preview = _neoImportFilas.slice(0, 8);
         const tbody = preview.map(f =>
-            `<tr>${[f.fecha_labor,f.cedula,f.nombre,f.recurso,f.placa,f.hora_inicio,f.hora_fin,
-                    f.id_concepto,f.horas_reportadas,f.horas_compensadas,f.autorizacion_sup,f.justificacion,f.observacion]
+            `<tr>${[f.contrato,f.fecha_labor,f.cedula,f.nombre,f.recurso,f.placa,
+                    f.id_concepto,f.horas_reportadas,f.horas_compensadas,f.autorizacion_sup,f.justificacion,f.observacion,
+                    f.tipo_he,f.valor_extra_nomina,f.valor_extra,f.autorizacion_neo,f.horas_autorizadas]
                 .map(v => `<td>${v}</td>`).join("")}</tr>`
         ).join("");
         document.getElementById("neoImportPreviewTable").innerHTML =

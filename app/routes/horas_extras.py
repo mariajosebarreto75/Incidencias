@@ -161,30 +161,60 @@ def api_he_guardar():
     ids_permitidos = _ids_contratos_usuario() if current_user.rol.lower() == "coordinador" else None
 
     guardados = []
+    # Cache de contratos por nombre para no repetir queries
+    _contrato_cache = {}
+
     for f in filas:
         contrato_id = f.get("contrato_id")
+
+        # Si no viene contrato_id, intentar resolver por nombre
+        if not contrato_id and f.get("contrato"):
+            nombre_c = str(f["contrato"]).strip()
+            if nombre_c not in _contrato_cache:
+                c = Contrato.query.filter_by(contrato=nombre_c).first()
+                _contrato_cache[nombre_c] = c.id if c else None
+            contrato_id = _contrato_cache[nombre_c]
+
         if not contrato_id:
             continue
-        if ids_permitidos is not None and int(contrato_id) not in ids_permitidos:
+        contrato_id = int(contrato_id)
+        if ids_permitidos is not None and contrato_id not in ids_permitidos:
             return jsonify({"ok": False, "msg": "Contrato no asignado a su usuario"}), 403
-        concepto = f.get("id_concepto", "")
+
+        concepto   = str(f.get("id_concepto") or "").strip()
+        # tipo_he: usar el del archivo si viene, si no calcular del concepto
+        tipo_he    = str(f.get("tipo_he") or CONCEPTOS_HE.get(concepto, "")).strip()
+        # autorizacion_neo puede venir pre-cargada del archivo
+        auth_neo   = str(f.get("autorizacion_neo") or "").strip().upper()
+        hrs_auth   = f.get("horas_autorizadas")
+        # estado basado en autorizacion_neo si viene
+        if auth_neo in ("CONFORME", "NO CONFORME", "DESCONTADA"):
+            estado = auth_neo
+        else:
+            estado = "PENDIENTE"
+            auth_neo = ""
+
         he = HoraExtra(
             contrato_id       = contrato_id,
             fecha_labor       = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else date.today(),
-            cedula            = f.get("cedula", "").strip(),
-            nombre            = f.get("nombre", "").strip(),
-            recurso           = f.get("recurso", "").strip(),
+            cedula            = str(f.get("cedula") or "").strip(),
+            nombre            = str(f.get("nombre") or "").strip(),
+            recurso           = str(f.get("recurso") or "").strip(),
             id_concepto       = concepto,
-            tipo_he           = CONCEPTOS_HE.get(concepto, ""),
+            tipo_he           = tipo_he,
             horas_reportadas  = int(float(f.get("horas_reportadas") or 0)),
             horas_compensadas = int(float(f.get("horas_compensadas") or 0)),
-            placa             = f.get("placa", "").strip(),
-            hora_inicio       = f.get("hora_inicio", "").strip(),
-            hora_fin          = f.get("hora_fin", "").strip(),
-            autorizacion_sup  = f.get("autorizacion_sup", "").strip(),
-            justificacion     = f.get("justificacion", "").strip(),
-            observacion       = f.get("observacion", "").strip(),
-            estado            = "PENDIENTE",
+            placa             = str(f.get("placa") or "").strip(),
+            hora_inicio       = str(f.get("hora_inicio") or "").strip(),
+            hora_fin          = str(f.get("hora_fin") or "").strip(),
+            autorizacion_sup  = str(f.get("autorizacion_sup") or "").strip(),
+            justificacion     = str(f.get("justificacion") or "").strip(),
+            observacion       = str(f.get("observacion") or "").strip(),
+            valor_extra_nomina= float(f["valor_extra_nomina"]) if f.get("valor_extra_nomina") not in (None,"","0") else None,
+            valor_extra       = float(f["valor_extra"]) if f.get("valor_extra") not in (None,"","0") else None,
+            autorizacion_neo  = auth_neo or None,
+            horas_autorizadas = int(float(hrs_auth)) if hrs_auth not in (None,"") else None,
+            estado            = estado,
             reportado_por_id  = current_user.id,
             fecha_reporte     = datetime.utcnow(),
         )
