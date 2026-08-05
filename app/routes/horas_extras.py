@@ -191,6 +191,17 @@ def api_he_guardar():
     return jsonify({"ok": True, "guardados": len(guardados)})
 
 
+# ── API: obtener un registro por id ──────────────────────────────────────────
+@he_bp.route("/api/he/<int:id>", methods=["GET"])
+@login_required
+def api_he_get(id):
+    he = HoraExtra.query.get_or_404(id)
+    if current_user.rol.lower() == "coordinador":
+        if he.contrato_id not in _ids_contratos_usuario():
+            return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    return jsonify({"ok": True, "registro": he.to_dict()})
+
+
 # ── API: actualizar registro (coordinador puede editar PENDIENTE) ─────────────
 @he_bp.route("/api/he/<int:id>", methods=["PUT"])
 @login_required

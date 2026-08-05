@@ -105,6 +105,22 @@ body { background:var(--c-bg); }
 #saving-indicator { font-size:.73rem; color:#007d8a; display:none; }
 
 /* ── Cortes ── */
+/* ── Modales ── */
+.he-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:none;align-items:center;justify-content:center;padding:16px;}
+.he-modal-overlay.open{display:flex;}
+.he-modal{background:#fff;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.25);max-width:860px;width:100%;max-height:90vh;display:flex;flex-direction:column;}
+.he-modal-header{padding:16px 20px;background:#0d6b73;color:#fff;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:10px;}
+.he-modal-header h6{margin:0;font-weight:700;font-size:.95rem;flex:1;}
+.he-modal-header button{background:none;border:none;color:rgba(255,255,255,.7);font-size:1.2rem;cursor:pointer;line-height:1;padding:2px 6px;}
+.he-modal-body{padding:18px 20px;overflow-y:auto;flex:1;}
+.he-modal-footer{padding:12px 20px;border-top:1px solid #eee;display:flex;gap:8px;justify-content:flex-end;}
+.he-import-info{background:#e0f5f7;border-radius:8px;padding:10px 14px;font-size:.8rem;color:#0d6b73;margin-bottom:12px;}
+.he-import-preview{overflow:auto;max-height:260px;border:1px solid #dee2e6;border-radius:8px;}
+.he-import-preview table{width:100%;border-collapse:collapse;font-size:.72rem;}
+.he-import-preview th{background:#f0f4f8;padding:5px 8px;font-weight:700;border-bottom:1px solid #dee2e6;white-space:nowrap;color:#0d6b73;}
+.he-import-preview td{padding:4px 8px;border-bottom:1px solid #f0f0f0;white-space:nowrap;}
+.he-import-preview tr:nth-child(even) td{background:#fafbfc;}
+
 .he-cortes-empty {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     min-height:340px; gap:16px; color:#94a3b8;
@@ -131,6 +147,10 @@ body { background:var(--c-bg); }
                 <span id="saving-indicator" style="font-size:.78rem;color:rgba(255,255,255,.8);">
                     <i class="bi bi-hourglass-split me-1"></i>Guardando…
                 </span>
+                <button class="btn btn-sm btn-outline-light" onclick="abrirImportarNeo()"
+                        style="border-radius:8px;font-size:.78rem;font-weight:600;">
+                    <i class="bi bi-file-earmark-arrow-up me-1"></i>Importar
+                </button>
                 <button class="btn btn-sm btn-light" onclick="exportarExcel()"
                         style="border-radius:8px;font-size:.78rem;font-weight:600;">
                     <i class="bi bi-file-earmark-excel me-1 text-success"></i>Exportar
@@ -284,6 +304,47 @@ body { background:var(--c-bg); }
         </div>
     </div>
 
+</div>
+
+<!-- ── Modal Importar Excel NEO ── -->
+<div class="he-modal-overlay" id="modalImportarNeo">
+  <div class="he-modal">
+    <div class="he-modal-header">
+      <i class="bi bi-file-earmark-arrow-up"></i>
+      <h6>Importar horas desde Excel</h6>
+      <button onclick="document.getElementById('modalImportarNeo').classList.remove('open')">&times;</button>
+    </div>
+    <div class="he-modal-body">
+      <div class="he-import-info">
+        <strong>Columnas esperadas (en orden):</strong><br>
+        Fecha Labor · Cédula · Nombre · Recurso · Placa · Hora Inicio · Hora Fin · Id Concepto · #Hrs Reportadas · #Hrs Compensadas · Autorización(supervisor) · Justificación · Observación
+        <br><small style="opacity:.7">La primera fila puede ser encabezado — se detecta automáticamente.</small>
+      </div>
+      <div style="margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <label class="btn btn-outline-primary btn-sm" style="cursor:pointer;border-radius:7px;">
+          <i class="bi bi-folder2-open me-1"></i>Seleccionar archivo
+          <input type="file" id="neoImportFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="procesarImportNeo(this)">
+        </label>
+        <div style="min-width:220px;">
+          <select id="neoImportContrato" style="border-radius:7px;border:1px solid #dee2e6;padding:6px 10px;font-size:.82rem;width:100%;">
+            <option value="">— Contrato destino —</option>
+            {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+          </select>
+        </div>
+        <span id="neoImportFileName" style="font-size:.78rem;color:#6c757d;"></span>
+      </div>
+      <div id="neoImportPreviewWrap" style="display:none;">
+        <div style="font-size:.78rem;color:#495057;margin-bottom:6px;" id="neoImportCount"></div>
+        <div class="he-import-preview"><table id="neoImportPreviewTable"></table></div>
+      </div>
+    </div>
+    <div class="he-modal-footer">
+      <button class="btn btn-sm btn-secondary" onclick="document.getElementById('modalImportarNeo').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-sm btn-success fw-bold" id="btnNeoConfirmarImport" style="display:none" onclick="confirmarImportNeo()">
+        <i class="bi bi-cloud-upload me-1"></i>Importar registros
+      </button>
+    </div>
+  </div>
 </div>
 
 <script src="{{ url_for('static', filename='vendor/handsontable.min.js') }}"></script>
@@ -586,5 +647,123 @@ function exportarExcel() {
     XLSX.utils.book_append_sheet(wb, ws, "Horas Extras NEO");
     XLSX.writeFile(wb, "he_validacion_neo.xlsx");
 }
+
+// ── Importar Excel (NEO) ──────────────────────────────────────────────────────
+let _neoImportFilas = [];
+
+function abrirImportarNeo() {
+    const cid = document.getElementById("fContrato").value;
+    if (cid) document.getElementById("neoImportContrato").value = cid;
+    document.getElementById("neoImportFile").value = "";
+    document.getElementById("neoImportFileName").textContent = "";
+    document.getElementById("neoImportPreviewWrap").style.display = "none";
+    document.getElementById("btnNeoConfirmarImport").style.display = "none";
+    _neoImportFilas = [];
+    document.getElementById("modalImportarNeo").classList.add("open");
+}
+
+function procesarImportNeo(input) {
+    const file = input.files[0];
+    if (!file) return;
+    document.getElementById("neoImportFileName").textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const wb   = XLSX.read(data, { type:"array", cellDates:true });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
+        if (!rows.length) return;
+
+        const first = rows[0].map(v => String(v).toLowerCase());
+        const isHeader = first.some(v => v.includes("fecha") || v.includes("ced") || v.includes("hrs") || v.includes("hora"));
+        const dataRows = isHeader ? rows.slice(1) : rows;
+
+        _neoImportFilas = dataRows
+            .filter(r => r.some(v => v !== ""))
+            .map(r => ({
+                fecha_labor:       neoFmtFechaImport(r[0]),
+                cedula:            String(r[1] || "").trim(),
+                nombre:            String(r[2] || "").trim(),
+                recurso:           String(r[3] || "").trim(),
+                placa:             String(r[4] || "").trim(),
+                hora_inicio:       String(r[5] || "").trim(),
+                hora_fin:          String(r[6] || "").trim(),
+                id_concepto:       String(r[7] || "").trim(),
+                horas_reportadas:  parseInt(r[8]) || 0,
+                horas_compensadas: parseInt(r[9]) || 0,
+                autorizacion_sup:  String(r[10] || "").trim(),
+                justificacion:     String(r[11] || "").trim(),
+                observacion:       String(r[12] || "").trim(),
+            }))
+            .filter(f => f.fecha_labor && f.cedula && f.horas_reportadas > 0);
+
+        const headers = ["Fecha Labor","Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
+                         "Id Concepto","Hrs Rep.","Hrs Comp.","Supervisor","Justificación","Observación"];
+        const preview = _neoImportFilas.slice(0, 8);
+        const tbody = preview.map(f =>
+            `<tr>${[f.fecha_labor,f.cedula,f.nombre,f.recurso,f.placa,f.hora_inicio,f.hora_fin,
+                    f.id_concepto,f.horas_reportadas,f.horas_compensadas,f.autorizacion_sup,f.justificacion,f.observacion]
+                .map(v => `<td>${v}</td>`).join("")}</tr>`
+        ).join("");
+        document.getElementById("neoImportPreviewTable").innerHTML =
+            `<thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${tbody}</tbody>`;
+        document.getElementById("neoImportCount").textContent =
+            `${_neoImportFilas.length} registros válidos detectados${_neoImportFilas.length > 8 ? " (mostrando primeros 8)" : ""}`;
+        document.getElementById("neoImportPreviewWrap").style.display = "block";
+        document.getElementById("btnNeoConfirmarImport").style.display = _neoImportFilas.length ? "inline-block" : "none";
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function neoFmtFechaImport(val) {
+    if (!val) return "";
+    if (val instanceof Date) {
+        const y = val.getFullYear(), m = String(val.getMonth()+1).padStart(2,"0"), d = String(val.getDate()).padStart(2,"0");
+        return `${y}-${m}-${d}`;
+    }
+    const s = String(val).trim();
+    const p = s.split(/[-\/]/);
+    if (p.length === 3) {
+        if (p[0].length <= 2 && p[1].length <= 2) {
+            const y = p[2].length === 2 ? "20"+p[2] : p[2];
+            return `${y}-${p[1].padStart(2,"0")}-${p[0].padStart(2,"0")}`;
+        }
+        if (p[0].length === 4) return `${p[0]}-${p[1].padStart(2,"0")}-${p[2].padStart(2,"0")}`;
+    }
+    return s;
+}
+
+async function confirmarImportNeo() {
+    const cid = document.getElementById("neoImportContrato").value;
+    if (!cid) { alert("Seleccione un contrato destino"); return; }
+    if (!_neoImportFilas.length) return;
+
+    const btn = document.getElementById("btnNeoConfirmarImport");
+    btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Importando…';
+
+    const filas = _neoImportFilas.map(f => ({ ...f, contrato_id: cid }));
+    const r = await fetch("/api/he/guardar", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ filas })
+    });
+    const d = await r.json();
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
+    if (d.ok) {
+        document.getElementById("modalImportarNeo").classList.remove("open");
+        recargar(); cargarKpis();
+        // Toast simple
+        const t = document.createElement("div");
+        t.style.cssText = "position:fixed;bottom:24px;right:24px;z-index:9999;background:#198754;color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);";
+        t.textContent = `✓ ${d.guardados} registro(s) importados correctamente`;
+        document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
+    } else {
+        alert(d.msg || "Error al importar");
+    }
+}
+
+document.addEventListener("click", e => {
+    const overlay = document.getElementById("modalImportarNeo");
+    if (overlay && e.target === overlay) overlay.classList.remove("open");
+});
 </script>
 {% endblock %}
