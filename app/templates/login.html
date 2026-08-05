@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Incidencias NEO</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -62,7 +62,7 @@
             letter-spacing: .04em;
         }
 
-        /* Panel derecho â€” formulario */
+        /* Panel derecho — formulario */
         .login-right {
             width: 420px;
             flex-shrink: 0;
@@ -135,7 +135,7 @@
 
         .form-control::placeholder { color: #cbd5e1; }
 
-        /* toggle contraseÃ±a */
+        /* toggle contraseña */
         .btn-toggle-pwd {
             position: absolute;
             right: .75rem;
@@ -165,7 +165,7 @@
         .alert-danger-dark  { background: #fef2f2; border: 1.5px solid #fecaca; color: #dc2626; }
         .alert-success-dark { background: #f0fdf4; border: 1.5px solid #bbf7d0; color: #16a34a; }
 
-        /* botÃ³n */
+        /* botón */
         .btn-login {
             width: 100%;
             padding: .72rem;
@@ -197,15 +197,15 @@
     <div class="login-left">
         <img src="/static/img/img2.png" alt="Logo NEO">
         <div class="login-left-title">Incidencias NEO</div>
-        <div class="login-left-sub">Plataforma de gestiÃ³n operativa de campo para equipos de trabajo</div>
+        <div class="login-left-sub">Plataforma de gestión operativa de campo para equipos de trabajo</div>
         <div class="login-left-badge"><i class="bi bi-shield-check me-1"></i> Acceso seguro</div>
     </div>
 
-    <!-- Panel derecho â€” formulario -->
+    <!-- Panel derecho — formulario -->
     <div class="login-right">
         <div class="login-form-wrap">
 
-            <div class="login-greeting">Iniciar sesiÃ³n</div>
+            <div class="login-greeting">Iniciar sesión</div>
             <div class="login-greeting-sub">Ingresa tus credenciales para continuar</div>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -230,11 +230,11 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">ContraseÃ±a</label>
+                    <label class="form-label">Contraseña</label>
                     <div class="input-wrap">
                         <i class="bi bi-lock input-icon"></i>
                         <input type="password" id="pwdInput" name="password" class="form-control"
-                               placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required autocomplete="current-password">
+                               placeholder="••••••••" required autocomplete="current-password">
                         <button type="button" class="btn-toggle-pwd" onclick="togglePwd()" title="Mostrar/ocultar">
                             <i class="bi bi-eye" id="pwdIcon"></i>
                         </button>
@@ -252,14 +252,14 @@
                     color:#94a3b8;font-size:.78rem;text-decoration:underline;
                     text-underline-offset:3px;transition:color .2s;
                 " onmouseover="this.style.color='#00b8c9'" onmouseout="this.style.color='#94a3b8'">
-                    <i class="bi bi-key me-1"></i>Cambiar contraseÃ±a
+                    <i class="bi bi-key me-1"></i>Cambiar contraseña
                 </button>
             </div>
 
         </div>
     </div>
 
-    <!-- â”€â”€ MODAL CAMBIO DE CONTRASEÃ‘A â”€â”€ -->
+    <!-- ── MODAL CAMBIO DE CONTRASEÑA ── -->
     <div id="modalCambio" style="
         display:none;position:fixed;inset:0;z-index:9999;
         background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
@@ -273,7 +273,7 @@
             <button onclick="cerrarModalCambio()" style="
                 position:absolute;top:.8rem;right:.9rem;background:none;border:none;
                 font-size:1.2rem;cursor:pointer;color:#94a3b8;line-height:1;
-            ">Ã—</button>
+            ">×</button>
 
             <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1.25rem;">
                 <div style="
@@ -284,7 +284,7 @@
                     <i class="bi bi-key-fill" style="color:#fff;font-size:.9rem;"></i>
                 </div>
                 <div>
-                    <div style="font-weight:800;font-size:1rem;color:#0f172a;">Cambiar contraseÃ±a</div>
+                    <div style="font-weight:800;font-size:1rem;color:#0f172a;">Cambiar contraseña</div>
                     <div style="font-size:.75rem;color:#94a3b8;">Ingresa tu nuevo acceso</div>
                 </div>
             </div>
@@ -298,29 +298,29 @@
                            placeholder="Tu usuario">
                 </div>
                 <div style="margin-bottom:.9rem;">
-                    <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Nueva contraseÃ±a</label>
+                    <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Nueva contraseña</label>
                     <div style="position:relative;">
                         <input type="password" id="cpNueva"
                                style="width:100%;padding:.6rem 2.4rem .6rem .85rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.88rem;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s;"
                                onfocus="this.style.borderColor='#00b8c9'" onblur="this.style.borderColor='#e2e8f0'"
-                               placeholder="MÃ­nimo 4 caracteres">
+                               placeholder="Mínimo 4 caracteres">
                         <button type="button" onclick="toggleCpPwd('cpNueva','icoNueva')" style="position:absolute;right:.7rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.95rem;">
                             <i class="bi bi-eye" id="icoNueva"></i>
                         </button>
                     </div>
                 </div>
                 <div style="margin-bottom:1.2rem;">
-                    <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Confirmar contraseÃ±a</label>
+                    <label style="display:block;font-size:.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem;">Confirmar contraseña</label>
                     <div style="position:relative;">
                         <input type="password" id="cpConfirmar"
                                style="width:100%;padding:.6rem 2.4rem .6rem .85rem;border:1.5px solid #e2e8f0;border-radius:9px;font-size:.88rem;color:#0f172a;background:#f8fafc;outline:none;transition:border-color .2s;"
                                onfocus="this.style.borderColor='#00b8c9'" onblur="this.style.borderColor='#e2e8f0'"
-                               placeholder="Repite la nueva contraseÃ±a">
+                               placeholder="Repite la nueva contraseña">
                         <button type="button" onclick="toggleCpPwd('cpConfirmar','icoConf')" style="position:absolute;right:.7rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#94a3b8;font-size:.95rem;">
                             <i class="bi bi-eye" id="icoConf"></i>
                         </button>
                     </div>
-                    <div id="cpMismatch" style="display:none;font-size:.73rem;color:#dc2626;margin-top:.3rem;">Las contraseÃ±as no coinciden</div>
+                    <div id="cpMismatch" style="display:none;font-size:.73rem;color:#dc2626;margin-top:.3rem;">Las contraseñas no coinciden</div>
                 </div>
                 <button type="button" id="cpSubmit" onclick="guardarNuevaPwd()" style="
                     width:100%;padding:.65rem;border:none;border-radius:9px;
@@ -328,7 +328,7 @@
                     color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;
                     box-shadow:0 4px 14px rgba(0,184,201,.3);transition:opacity .2s;
                 ">
-                    <i class="bi bi-check-circle me-1"></i> Guardar nueva contraseÃ±a
+                    <i class="bi bi-check-circle me-1"></i> Guardar nueva contraseña
                 </button>
         </div>
     </div>
@@ -375,7 +375,7 @@
         document.getElementById('cpMismatch').style.display = ok ? 'none' : 'block';
     });
 
-    /* Enter en los campos del modal â†’ guardar (sin form) */
+    /* Enter en los campos del modal → guardar (sin form) */
     ['cpUsername','cpNueva','cpConfirmar'].forEach(function(id) {
         document.getElementById(id).addEventListener('keydown', function(e) {
             if (e.key === 'Enter') { e.preventDefault(); guardarNuevaPwd(); }
@@ -394,11 +394,11 @@
 
         if (!username || !nueva) { errEl.textContent = 'Completa todos los campos.'; errEl.style.display = ''; return; }
         if (nueva !== confirmar) { mismatch.style.display = ''; return; }
-        if (nueva.length < 4)   { errEl.textContent = 'La contraseÃ±a debe tener al menos 4 caracteres.'; errEl.style.display = ''; return; }
+        if (nueva.length < 4)   { errEl.textContent = 'La contraseña debe tener al menos 4 caracteres.'; errEl.style.display = ''; return; }
 
         const btn = document.getElementById('cpSubmit');
         btn.disabled = true;
-        btn.textContent = 'Guardandoâ€¦';
+        btn.textContent = 'Guardando…';
 
         const fd = new FormData();
         fd.append('username',           username);
@@ -409,10 +409,10 @@
             const r = await fetch('{{ url_for("auth.cambiar_password") }}', { method: 'POST', body: fd });
             if (r.redirected || r.ok) {
                 cerrarModalCambio();
-                /* Mostrar mensaje de Ã©xito en el login */
+                /* Mostrar mensaje de éxito en el login */
                 const alertBox = document.createElement('div');
                 alertBox.className = 'alert-login alert-success-dark';
-                alertBox.innerHTML = '<i class="bi bi-check-circle-fill"></i> ContraseÃ±a actualizada. Ya puedes iniciar sesiÃ³n.';
+                alertBox.innerHTML = '<i class="bi bi-check-circle-fill"></i> Contraseña actualizada. Ya puedes iniciar sesión.';
                 const form = document.querySelector('form');
                 form.parentNode.insertBefore(alertBox, form);
             } else {
@@ -420,12 +420,12 @@
                 errEl.style.display = '';
             }
         } catch(e) {
-            errEl.textContent = 'Error de conexiÃ³n.';
+            errEl.textContent = 'Error de conexión.';
             errEl.style.display = '';
         }
 
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Guardar nueva contraseÃ±a';
+        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Guardar nueva contraseña';
     }
 
     {% if show_cambio_pwd %}
@@ -436,4 +436,3 @@
     </script>
 </body>
 </html>
-
