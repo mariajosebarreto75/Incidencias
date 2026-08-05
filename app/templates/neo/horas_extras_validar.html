@@ -3,45 +3,99 @@
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/handsontable.min.css') }}">
 <style>
-:root { --c-neo:#007d8a; --c-bg:#f4f6fb; }
+:root { --c-neo:#007d8a; --c-bg:#f0f7f8; }
 body { background:var(--c-bg); }
-.he-page { max-width:100%; margin:0 auto; padding:20px 16px 80px; }
+.he-page { max-width:100%; margin:0 auto; padding:0 16px 80px; }
 
-.he-kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:16px; }
-.he-kpi { background:#fff; border-radius:10px; padding:12px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07); border-left:3px solid #ccc; }
-.he-kpi .kv { font-size:1.6rem; font-weight:800; line-height:1; }
-.he-kpi .kl { font-size:.63rem; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
-.he-kpi.total { border-color:#007d8a; } .he-kpi.total .kv { color:#007d8a; }
-.he-kpi.pend  { border-color:#f59e0b; } .he-kpi.pend  .kv { color:#f59e0b; }
-.he-kpi.conf  { border-color:#22c55e; } .he-kpi.conf  .kv { color:#22c55e; }
-.he-kpi.noconf{ border-color:#ef4444; } .he-kpi.noconf .kv { color:#ef4444; }
-.he-kpi.desc  { border-color:#8b5cf6; } .he-kpi.desc  .kv { color:#8b5cf6; }
-.he-kpi.hrs   { border-color:#0d3b66; } .he-kpi.hrs   .kv { color:#0d3b66; font-size:1.3rem; }
+/* ── Cabecera ── */
+.he-header {
+    background: linear-gradient(135deg,#006d79 0%,#00a8bc 100%);
+    border-radius: 0 0 18px 18px;
+    padding: 22px 28px 0;
+    margin: 0 -16px 24px;
+    box-shadow: 0 4px 20px rgba(0,109,121,.22);
+}
+.he-header-top { display:flex; align-items:center; gap:14px; margin-bottom:18px; flex-wrap:wrap; }
+.he-header-icon { width:46px;height:46px;background:rgba(255,255,255,.15);border-radius:12px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.he-header-icon i { font-size:1.3rem;color:#fff; }
+.he-header-title { font-size:1.25rem;font-weight:800;color:#fff;margin:0; }
+.he-header-sub   { font-size:.75rem;color:rgba(255,255,255,.65);margin:0; }
+.he-header-right { margin-left:auto;display:flex;align-items:center;gap:10px; }
 
+/* ── Tabs ── */
+.he-tabs { display:flex; gap:2px; }
+.he-tab {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:11px 22px 13px;
+    font-size:.82rem; font-weight:600; color:rgba(255,255,255,.6);
+    cursor:pointer; border-radius:10px 10px 0 0;
+    border:none; background:transparent;
+    transition:all .18s; white-space:nowrap;
+}
+.he-tab i { font-size:.95rem; }
+.he-tab:hover { color:rgba(255,255,255,.9); background:rgba(255,255,255,.08); }
+.he-tab.active { color:#006d79; background:#f0f7f8; font-weight:700; }
+.he-tab .tab-badge {
+    background:rgba(255,255,255,.2); color:rgba(255,255,255,.9);
+    font-size:.62rem; font-weight:800; padding:1px 6px; border-radius:10px;
+    min-width:18px; text-align:center;
+}
+.he-tab.active .tab-badge { background:#006d79; color:#fff; }
+
+/* ── Paneles ── */
+.he-panel { display:none; animation:panelIn .22s ease; }
+.he-panel.active { display:block; }
+@keyframes panelIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* ── Chips ── */
+.he-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; align-items:center; }
+.he-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px;
+    font-size:.78rem; font-weight:600; cursor:pointer; border:2px solid transparent;
+    transition:all .15s; user-select:none; white-space:nowrap; }
+.he-chip .cnt { font-size:.82rem; font-weight:800; }
+.he-chip:hover { filter:brightness(.92); }
+.he-chip.active { box-shadow:0 0 0 3px rgba(0,0,0,.18); }
+.he-chip.ch-all    { background:#d6f0f2; color:#006d79; }
+.he-chip.ch-all.active { background:#007d8a; color:#fff; }
+.he-chip.ch-pend   { background:#fff3cd; color:#92650a; }
+.he-chip.ch-pend.active { background:#f59e0b; color:#fff; }
+.he-chip.ch-conf   { background:#d1fae5; color:#065f46; }
+.he-chip.ch-conf.active { background:#22c55e; color:#fff; }
+.he-chip.ch-noconf { background:#fee2e2; color:#991b1b; }
+.he-chip.ch-noconf.active{ background:#ef4444; color:#fff; }
+.he-chip.ch-desc   { background:#ede9fe; color:#5b21b6; }
+.he-chip.ch-desc.active { background:#8b5cf6; color:#fff; }
+
+/* ── Métricas de horas ── */
+.he-hrs-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.he-hrs-card { background:#fff; border-radius:9px; padding:8px 14px; box-shadow:0 1px 5px rgba(0,0,0,.07);
+    display:flex; flex-direction:column; align-items:center; min-width:110px; }
+.he-hrs-card .hv { font-size:1.4rem; font-weight:800; line-height:1; }
+.he-hrs-card .hl { font-size:.6rem; font-weight:600; color:#9ca3af; text-transform:uppercase;
+    letter-spacing:.4px; margin-top:2px; text-align:center; }
+
+/* ── Filtros + Grid ── */
 .he-filtros { background:#fff; border-radius:10px; padding:10px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07);
     margin-bottom:12px; display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
-.he-filtros label { font-size:.7rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; display:block; margin-bottom:2px; }
+.he-filtros label { font-size:.7rem; font-weight:600; color:#495057; text-transform:uppercase;
+    letter-spacing:.3px; display:block; margin-bottom:2px; }
 .he-filtros select, .he-filtros input { font-size:.8rem; border-radius:7px; border:1px solid #dee2e6; padding:5px 9px; }
-
 .he-grid-panel { background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08); overflow:hidden; }
 .he-grid-head { background:#007d8a; color:#fff; padding:10px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .he-grid-head h6 { margin:0; font-weight:700; font-size:.88rem; flex:1; }
 .he-toolbar { padding:7px 12px; background:#f0f8f9; border-bottom:1px solid #c8e6e9;
     display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-
-.handsontable th { font-weight:700 !important; font-size:.68rem !important; text-transform:uppercase; letter-spacing:.3px; }
-.handsontable td { font-size:.78rem !important; }
-/* Columnas NEO editables — fondo verde muy suave */
-.ht-neo-edit { background:#f0fff4 !important; }
-/* Columnas readonly de meta (coordinador) */
-.handsontable .htDimmed { color:#555 !important; }
-
 .grid-legend { display:flex; gap:14px; padding:6px 14px; background:#fafbfc; border-top:1px solid #eee;
     font-size:.68rem; color:#6c757d; flex-wrap:wrap; }
 .grid-legend span { display:flex; align-items:center; gap:5px; }
 .lg-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
 
-/* Badge en celdas */
+/* ── Handsontable ── */
+.handsontable th { font-weight:700 !important; font-size:.68rem !important; text-transform:uppercase; letter-spacing:.3px; }
+.handsontable td { font-size:.78rem !important; }
+.ht-neo-edit { background:#f0fff4 !important; }
+.handsontable .htDimmed { color:#555 !important; }
 .ht-badge { display:inline-block; padding:1px 7px; border-radius:20px; font-size:.68rem; font-weight:700; }
 .ht-badge.PENDIENTE  { background:#fff3cd; color:#856404; }
 .ht-badge.CONFORME   { background:#d1e7dd; color:#0a3622; }
@@ -49,109 +103,187 @@ body { background:var(--c-bg); }
 .ht-badge.DESCONTADA { background:#ede9fe; color:#5b21b6; }
 
 #saving-indicator { font-size:.73rem; color:#007d8a; display:none; }
+
+/* ── Cortes ── */
+.he-cortes-empty {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:340px; gap:16px; color:#94a3b8;
+    background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.06);
+}
+.he-cortes-empty i { font-size:3.5rem; opacity:.35; }
+.he-cortes-empty h5 { margin:0; font-size:1rem; font-weight:700; color:#64748b; }
+.he-cortes-empty p  { margin:0; font-size:.82rem; text-align:center; max-width:320px; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="he-page">
 
-    <div class="d-flex align-items-center gap-3 mb-3">
-        <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#007d8a,#00b7c7);display:flex;align-items:center;justify-content:center;">
-            <i class="bi bi-patch-check-fill" style="color:#fff;font-size:1.1rem;"></i>
+    <!-- ── Cabecera con tabs ── -->
+    <div class="he-header">
+        <div class="he-header-top">
+            <div class="he-header-icon"><i class="bi bi-patch-check-fill"></i></div>
+            <div>
+                <h4 class="he-header-title">Horas Extras</h4>
+                <p class="he-header-sub">Validación y seguimiento de horas reportadas por coordinadores</p>
+            </div>
+            <div class="he-header-right">
+                <span id="saving-indicator" style="font-size:.78rem;color:rgba(255,255,255,.8);">
+                    <i class="bi bi-hourglass-split me-1"></i>Guardando…
+                </span>
+                <button class="btn btn-sm btn-light" onclick="exportarExcel()"
+                        style="border-radius:8px;font-size:.78rem;font-weight:600;">
+                    <i class="bi bi-file-earmark-excel me-1 text-success"></i>Exportar
+                </button>
+            </div>
         </div>
-        <div>
-            <h4 class="mb-0 fw-bold" style="color:#007d8a;">Validación de Horas Extras</h4>
-            <div style="font-size:.75rem;color:#6c757d;">Edita directamente las columnas verdes para validar</div>
-        </div>
-        <div class="ms-auto d-flex gap-2 align-items-center">
-            <span id="saving-indicator"><i class="bi bi-hourglass-split me-1"></i>Guardando…</span>
-            <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()" style="border-radius:8px;font-size:.8rem;">
-                <i class="bi bi-file-earmark-excel me-1"></i>Exportar
+
+        <!-- Pestañas -->
+        <div class="he-tabs">
+            <button class="he-tab active" onclick="cambiarTab('validacion',this)">
+                <i class="bi bi-patch-check"></i> Validación de Horas
+                <span class="tab-badge" id="tb-pend">—</span>
+            </button>
+            <button class="he-tab" onclick="cambiarTab('historial',this)">
+                <i class="bi bi-clock-history"></i> Historial
+            </button>
+            <button class="he-tab" onclick="cambiarTab('cortes',this)">
+                <i class="bi bi-archive"></i> Cortes
             </button>
         </div>
     </div>
 
-    <!-- KPIs -->
-    <div class="he-kpi-row">
-        <div class="he-kpi total"><div class="kv" id="k-total">—</div><div class="kl">Total registros</div></div>
-        <div class="he-kpi pend"> <div class="kv" id="k-pend">—</div> <div class="kl">Pendientes</div></div>
-        <div class="he-kpi conf"> <div class="kv" id="k-conf">—</div> <div class="kl">Conformes</div></div>
-        <div class="he-kpi noconf"><div class="kv" id="k-noconf">—</div><div class="kl">No Conformes</div></div>
-        <div class="he-kpi desc"> <div class="kv" id="k-desc">—</div> <div class="kl">Descontadas</div></div>
-        <div class="he-kpi hrs">
-            <div class="kv" id="k-hrs-rep" style="font-size:1.25rem;">—</div>
-            <div class="kl">Hrs Reportadas</div></div>
-        <div class="he-kpi conf">
-            <div class="kv" id="k-hrs-conf" style="font-size:1.25rem;">—</div>
-            <div class="kl">Hrs Conformes</div></div>
-        <div class="he-kpi noconf">
-            <div class="kv" id="k-hrs-noconf" style="font-size:1.25rem;">—</div>
-            <div class="kl">Hrs No Conformes</div></div>
-        <div class="he-kpi desc">
-            <div class="kv" id="k-hrs-desc" style="font-size:1.25rem;">—</div>
-            <div class="kl">Hrs Descontadas</div></div>
-        <div class="he-kpi" style="border-color:#22c55e;">
-            <div class="kv" id="k-hrs-auth" style="color:#22c55e;font-size:1.25rem;">—</div>
-            <div class="kl">Hrs Autorizadas</div></div>
-    </div>
+    <!-- ══════════════════ PANEL 1: VALIDACIÓN ══════════════════ -->
+    <div class="he-panel active" id="panel-validacion">
 
-    <!-- FILTROS -->
-    <div class="he-filtros">
-        <div>
-            <label>Contrato</label>
-            <select id="fContrato" onchange="recargar()" style="min-width:240px;">
-                <option value="">Todos los contratos</option>
-                {% for c in contratos %}
-                <option value="{{ c.id }}">{{ c.contrato }}</option>
-                {% endfor %}
-            </select>
+        <!-- Chips de estado -->
+        <div class="he-chips">
+            <div class="he-chip ch-all active" onclick="filtrarChip('',this)">
+                <i class="bi bi-list-ul"></i> Todos <span class="cnt" id="k-total">—</span>
+            </div>
+            <div class="he-chip ch-pend" onclick="filtrarChip('PENDIENTE',this)">
+                <i class="bi bi-hourglass-split"></i> Pendientes <span class="cnt" id="k-pend">—</span>
+            </div>
+            <div class="he-chip ch-conf" onclick="filtrarChip('CONFORME',this)">
+                <i class="bi bi-check-circle"></i> Conformes <span class="cnt" id="k-conf">—</span>
+            </div>
+            <div class="he-chip ch-noconf" onclick="filtrarChip('NO CONFORME',this)">
+                <i class="bi bi-x-circle"></i> No Conformes <span class="cnt" id="k-noconf">—</span>
+            </div>
+            <div class="he-chip ch-desc" onclick="filtrarChip('DESCONTADA',this)">
+                <i class="bi bi-dash-circle"></i> Descontadas <span class="cnt" id="k-desc">—</span>
+            </div>
         </div>
-        <div><label>Mes</label><input type="month" id="fMes" onchange="recargar()"></div>
-        <div>
-            <label>Estado</label>
-            <select id="fEstado" onchange="recargar()">
-                <option value="">Todos</option>
-                <option>PENDIENTE</option><option>CONFORME</option>
-                <option>NO CONFORME</option><option>DESCONTADA</option>
-            </select>
-        </div>
-        <button class="btn btn-sm btn-outline-secondary" onclick="recargar()" style="border-radius:7px;">
-            <i class="bi bi-arrow-clockwise"></i>
-        </button>
-    </div>
 
-    <!-- GRID -->
-    <div class="he-grid-panel">
-        <div class="he-grid-head">
-            <i class="bi bi-table" style="opacity:.8;"></i>
-            <h6>Horas Extras — Todos los Contratos</h6>
+        <!-- Métricas de horas -->
+        <div class="he-hrs-row">
+            <div class="he-hrs-card"><div class="hv" id="k-hrs-rep"    style="color:#0d3b66;">—</div><div class="hl">Hrs Reportadas</div></div>
+            <div class="he-hrs-card"><div class="hv" id="k-hrs-conf"   style="color:#22c55e;">—</div><div class="hl">Hrs Conformes</div></div>
+            <div class="he-hrs-card"><div class="hv" id="k-hrs-noconf" style="color:#ef4444;">—</div><div class="hl">Hrs No Conformes</div></div>
+            <div class="he-hrs-card"><div class="hv" id="k-hrs-desc"   style="color:#8b5cf6;">—</div><div class="hl">Hrs Descontadas</div></div>
+            <div class="he-hrs-card"><div class="hv" id="k-hrs-auth"   style="color:#007d8a;">—</div><div class="hl">Hrs Autorizadas</div></div>
         </div>
-        <div class="he-toolbar">
-            <div style="display:flex;align-items:center;gap:5px;">
-                <i class="bi bi-layout-three-columns" style="font-size:.8rem;color:#6c757d;"></i>
-                <label style="font-size:.7rem;color:#6c757d;margin:0;">Fijar columnas:</label>
-                <select id="selFreeze" onchange="hot.updateSettings({fixedColumnsLeft:parseInt(this.value)||0})"
-                        style="font-size:.72rem;border-radius:5px;border:1px solid #dee2e6;padding:3px 6px;">
-                    <option value="0">Sin fijar</option>
-                    <option value="1">1 col</option>
-                    <option value="2">2 cols</option>
-                    <option value="3">3 cols</option>
-                    <option value="4">4 cols</option>
-                    <option value="5">5 cols</option>
+
+        <!-- Filtros -->
+        <div class="he-filtros">
+            <div>
+                <label>Contrato</label>
+                <select id="fContrato" onchange="recargar()" style="min-width:240px;">
+                    <option value="">Todos los contratos</option>
+                    {% for c in contratos %}
+                    <option value="{{ c.id }}">{{ c.contrato }}</option>
+                    {% endfor %}
                 </select>
             </div>
-            <span style="font-size:.71rem;color:#6c757d;margin-left:6px;">
-                <i class="bi bi-funnel me-1"></i>Usa el menú de cada columna para filtrar · Las columnas verdes son editables
-            </span>
+            <div><label>Mes</label><input type="month" id="fMes" onchange="recargar()"></div>
+            <div>
+                <label>Estado</label>
+                <select id="fEstado" onchange="sincronizarChip(this.value);recargar()">
+                    <option value="">Todos</option>
+                    <option>PENDIENTE</option><option>CONFORME</option>
+                    <option>NO CONFORME</option><option>DESCONTADA</option>
+                </select>
+            </div>
+            <button class="btn btn-sm btn-outline-secondary" onclick="recargar()" style="border-radius:7px;">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
         </div>
-        <div style="overflow:auto;">
-            <div id="gridNeo"></div>
-        </div>
-        <div class="grid-legend">
-            <span><div class="lg-dot" style="background:#f8f9fa;border:1px solid #dee2e6;"></div> Solo lectura (datos del coordinador)</span>
-            <span><div class="lg-dot" style="background:#f0fff4;border:1px solid #86efac;"></div> Editable NEO — haz clic para validar</span>
+
+        <!-- Grid Handsontable -->
+        <div class="he-grid-panel">
+            <div class="he-grid-head">
+                <i class="bi bi-table" style="opacity:.8;"></i>
+                <h6>Horas Extras — Todos los Contratos</h6>
+            </div>
+            <div class="he-toolbar">
+                <div style="display:flex;align-items:center;gap:5px;">
+                    <i class="bi bi-layout-three-columns" style="font-size:.8rem;color:#6c757d;"></i>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0;">Fijar columnas:</label>
+                    <select id="selFreeze" onchange="hot.updateSettings({fixedColumnsLeft:parseInt(this.value)||0})"
+                            style="font-size:.72rem;border-radius:5px;border:1px solid #dee2e6;padding:3px 6px;">
+                        <option value="0">Sin fijar</option>
+                        <option value="1">1 col</option>
+                        <option value="2">2 cols</option>
+                        <option value="3">3 cols</option>
+                        <option value="4">4 cols</option>
+                        <option value="5">5 cols</option>
+                    </select>
+                </div>
+                <span style="font-size:.71rem;color:#6c757d;margin-left:6px;">
+                    <i class="bi bi-funnel me-1"></i>Usa el menú de cada columna para filtrar · Las columnas verdes son editables
+                </span>
+            </div>
+            <div style="overflow:auto;"><div id="gridNeo"></div></div>
+            <div class="grid-legend">
+                <span><div class="lg-dot" style="background:#f8f9fa;border:1px solid #dee2e6;"></div> Solo lectura (datos del coordinador)</span>
+                <span><div class="lg-dot" style="background:#f0fff4;border:1px solid #86efac;"></div> Editable NEO — haz clic para validar</span>
+            </div>
         </div>
     </div>
+
+    <!-- ══════════════════ PANEL 2: HISTORIAL ══════════════════ -->
+    <div class="he-panel" id="panel-historial">
+        <div class="he-grid-panel">
+            <div class="he-grid-head">
+                <i class="bi bi-clock-history" style="opacity:.8;"></i>
+                <h6>Historial de validaciones</h6>
+            </div>
+            <div class="he-toolbar">
+                <div>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Contrato:</label>
+                    <select id="hContrato" onchange="cargarHistorial()"
+                            style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;min-width:220px;">
+                        <option value="">Todos</option>
+                        {% for c in contratos %}
+                        <option value="{{ c.id }}">{{ c.contrato }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Mes:</label>
+                    <input type="month" id="hMes" onchange="cargarHistorial()"
+                           style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;">
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-success ms-auto" onclick="exportarExcel()" style="border-radius:7px;font-size:.76rem;">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar
+                </button>
+            </div>
+            <div style="overflow:auto;"><div id="gridHistorial"></div></div>
+        </div>
+    </div>
+
+    <!-- ══════════════════ PANEL 3: CORTES ══════════════════ -->
+    <div class="he-panel" id="panel-cortes">
+        <div class="he-cortes-empty">
+            <i class="bi bi-archive"></i>
+            <h5>Cortes de nómina</h5>
+            <p>Esta sección estará disponible próximamente. Aquí podrás consultar y validar registros de períodos de nómina cerrados.</p>
+        </div>
+    </div>
+
 </div>
 
 <script src="{{ url_for('static', filename='vendor/handsontable.min.js') }}"></script>
@@ -162,9 +294,7 @@ const C_FECHA=0, C_FREPORTE=1, C_CONTRATO=2, C_COORD=3,
       C_CED=4, C_NOM=5, C_REC=6, C_PLACA=7, C_HINICIO=8, C_HFIN=9,
       C_COD=10, C_TIPO=11, C_HRS=12, C_COMP=13, C_SUP=14,
       C_JUST=15, C_OBS=16,
-      // NEO editable
       C_HAUTH=17, C_ESTADO=18, C_OBSNEO=19,
-      // meta
       C_VALBY=20, C_VALFECHA=21;
 
 const ESTADOS_NEO = ["CONFORME", "NO CONFORME", "DESCONTADA"];
@@ -177,20 +307,49 @@ function estadoRenderer(hotInstance, td, row, col, prop, value) {
     td.innerHTML = `<span class="ht-badge ${key}">${v}</span>`;
 }
 
-let hot = null;
-let registrosIds = [];   // IDs indexados por fila
+let hot = null, hotHistorial = null;
+let registrosIds = [];
 let saveTimer = null;
+let historialCargado = false;
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function cambiarTab(nombre, btn) {
+    document.querySelectorAll(".he-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".he-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + nombre).classList.add("active");
+    if (nombre === "historial" && !historialCargado) {
+        historialCargado = true;
+        cargarHistorial();
+    }
+}
+
+// ── Chips ─────────────────────────────────────────────────────────────────────
+function filtrarChip(estado, el) {
+    document.querySelectorAll(".he-chip").forEach(c => c.classList.remove("active"));
+    el.classList.add("active");
+    document.getElementById("fEstado").value = estado;
+    recargar();
+}
+
+function sincronizarChip(estado) {
+    const map = {"":"ch-all","PENDIENTE":"ch-pend","CONFORME":"ch-conf","NO CONFORME":"ch-noconf","DESCONTADA":"ch-desc"};
+    document.querySelectorAll(".he-chip").forEach(c => c.classList.remove("active"));
+    const cls = map[estado];
+    if (cls) { const chip = document.querySelector(".he-chip."+cls); if (chip) chip.classList.add("active"); }
+}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
     const h = new Date();
-    document.getElementById("fMes").value =
-        `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,"0")}`;
+    const mes = `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,"0")}`;
+    document.getElementById("fMes").value = mes;
+    document.getElementById("hMes").value = mes;
     iniciarGrid();
     recargar();
 })();
 
-// ── Grid ──────────────────────────────────────────────────────────────────────
+// ── Grid principal ────────────────────────────────────────────────────────────
 function iniciarGrid() {
     hot = new Handsontable(document.getElementById("gridNeo"), {
         data: [],
@@ -200,40 +359,35 @@ function iniciarGrid() {
             "Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
             "Cód.","Tipo HE","Hrs Rep.","Hrs Comp.","Supervisor",
             "Justificación","Observación",
-            // NEO
             "Hrs Autorizadas","Estado NEO","Obs NEO",
-            // meta
             "Validado por","Fecha Validación"
         ],
         columns: [
-            { type:"text", readOnly:true },  // 0 fecha
-            { type:"text", readOnly:true },  // 1 fecha reporte
-            { type:"text", readOnly:true },  // 2 contrato
-            { type:"text", readOnly:true },  // 3 coordinador
-            { type:"text", readOnly:true },  // 4 cedula
-            { type:"text", readOnly:true },  // 5 nombre
-            { type:"text", readOnly:true },  // 6 recurso
-            { type:"text", readOnly:true },  // 7 placa
-            { type:"text", readOnly:true },  // 8 hora inicio
-            { type:"text", readOnly:true },  // 9 hora fin
-            { type:"text", readOnly:true },  // 10 cod
-            { type:"text", readOnly:true },  // 11 tipo_he
-            { type:"numeric", readOnly:true },// 12 hrs rep
-            { type:"numeric", readOnly:true },// 13 hrs comp
-            { type:"text", readOnly:true },  // 14 supervisor
-            { type:"text", readOnly:true },  // 15 just
-            { type:"text", readOnly:true },  // 16 obs
-            // NEO editable
-            { type:"numeric" },              // 17 hrs autorizadas
-            { type:"dropdown", source: ESTADOS_NEO, strict:false, allowInvalid:true,
-              renderer: estadoRenderer },     // 18 estado
-            { type:"text" },                 // 19 obs neo
-            // meta readonly
-            { type:"text", readOnly:true },  // 20 validado por
-            { type:"text", readOnly:true },  // 21 fecha validacion
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"numeric", readOnly:true },
+            { type:"numeric", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"numeric" },
+            { type:"dropdown", source: ESTADOS_NEO, strict:false, allowInvalid:true, renderer: estadoRenderer },
+            { type:"text" },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
         ],
         colWidths: [100,148,170,130, 100,160,125,80,80,80, 65,190,80,80,140, 160,160, 110,130,175, 140,135],
-        height: 580,
+        height: 520,
         stretchH: "none",
         manualColumnResize: true,
         manualColumnMove: true,
@@ -252,7 +406,7 @@ function iniciarGrid() {
     });
 }
 
-// ── Cargar datos ──────────────────────────────────────────────────────────────
+// ── Cargar datos validación ───────────────────────────────────────────────────
 async function recargar() {
     cargarKpis();
     const cid    = document.getElementById("fContrato").value;
@@ -262,7 +416,6 @@ async function recargar() {
     const registros = await r.json();
 
     registrosIds = registros.map(reg => reg.id);
-
     const filas = registros.map(reg => [
         fmtFecha(reg.fecha_labor),
         reg.fecha_reporte,
@@ -287,8 +440,59 @@ async function recargar() {
         reg.validado_por || "",
         reg.fecha_validacion || "",
     ]);
-
     hot.loadData(filas);
+}
+
+// ── Grid historial ────────────────────────────────────────────────────────────
+async function cargarHistorial() {
+    const cid = document.getElementById("hContrato").value;
+    const mes = document.getElementById("hMes").value;
+    const r = await fetch(`/api/he/registros?contrato_id=${cid}&mes=${mes}`);
+    const registros = await r.json();
+
+    const filas = registros.map(reg => [
+        fmtFecha(reg.fecha_labor),
+        reg.fecha_reporte,
+        reg.contrato,
+        reg.reportado_por,
+        reg.cedula,
+        reg.nombre,
+        reg.recurso,
+        reg.horas_reportadas,
+        reg.horas_autorizadas != null ? reg.horas_autorizadas : "—",
+        reg.autorizacion_neo || "PENDIENTE",
+        reg.validado_por || "—",
+        reg.fecha_validacion || "—",
+    ]);
+
+    if (hotHistorial) { hotHistorial.loadData(filas); return; }
+    hotHistorial = new Handsontable(document.getElementById("gridHistorial"), {
+        data: filas,
+        rowHeaders: true,
+        colHeaders: ["Fecha Lab.","Fecha Reporte","Contrato","Coordinador","Cédula","Nombre","Recurso",
+                     "Hrs Rep.","Hrs Auth.","Estado","Validado por","Fecha Validación"],
+        columns: [
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+            { type:"numeric", readOnly:true },
+            { type:"numeric", readOnly:true },
+            { type:"text", readOnly:true, renderer: estadoRenderer },
+            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },
+        ],
+        colWidths: [100,148,170,130,100,160,120,80,80,130,140,135],
+        height: 520,
+        stretchH: "none",
+        manualColumnResize: true,
+        filters: true,
+        dropdownMenu: true,
+        licenseKey: "non-commercial-and-evaluation",
+    });
 }
 
 function fmtFecha(v) {
@@ -301,37 +505,28 @@ function fmtFecha(v) {
 function autoGuardar(row) {
     const id = registrosIds[row];
     if (!id) return;
-
     const estado = (hot.getDataAtCell(row, C_ESTADO) || "").trim();
     const hrs    = hot.getDataAtCell(row, C_HAUTH);
     const obs    = (hot.getDataAtCell(row, C_OBSNEO) || "").trim();
-
-    if (!estado) return;  // No guardar si no tiene estado
+    if (!estado) return;
 
     clearTimeout(saveTimer);
-    const ind = document.getElementById("saving-indicator");
-    ind.style.display = "inline";
-
+    document.getElementById("saving-indicator").style.display = "inline";
     saveTimer = setTimeout(async () => {
         try {
             const r = await fetch(`/api/he/${id}/validar`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    autorizacion_neo:  estado,
-                    horas_autorizadas: parseInt(hrs) || 0,
-                    obs_neo:           obs,
-                }),
+                body: JSON.stringify({ autorizacion_neo: estado, horas_autorizadas: parseInt(hrs) || 0, obs_neo: obs }),
             });
             const d = await r.json();
             if (d.ok) {
-                // Actualizar "Validado por" y "Fecha validación" en la fila
-                hot.setDataAtCell(row, C_VALBY,    d.validado_por   || "", "auto");
+                hot.setDataAtCell(row, C_VALBY,    d.validado_por    || "", "auto");
                 hot.setDataAtCell(row, C_VALFECHA, d.fecha_validacion || "", "auto");
                 cargarKpis();
             }
         } catch(e) {}
-        ind.style.display = "none";
+        document.getElementById("saving-indicator").style.display = "none";
     }, 600);
 }
 
@@ -351,18 +546,19 @@ async function cargarKpis() {
     document.getElementById("k-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
     document.getElementById("k-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
     document.getElementById("k-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
+    document.getElementById("tb-pend").textContent      = d.pendientes;
 }
 
 // ── Exportar ──────────────────────────────────────────────────────────────────
 function exportarExcel() {
-    const data = hot.getData();
-    const headers = [
-        "Fecha Lab.","Fecha Reporte","Contrato","Coordinador",
-        "Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
-        "Cód.","Tipo HE","Hrs Rep.","Hrs Comp.","Supervisor",
-        "Justificación","Observación",
-        "Hrs Autorizadas","Estado NEO","Obs NEO","Validado por","Fecha Validación"
-    ];
+    const g = hotHistorial || hot;
+    const data = g.getData();
+    const headers = hotHistorial
+        ? ["Fecha Lab.","Fecha Reporte","Contrato","Coordinador","Cédula","Nombre","Recurso",
+           "Hrs Rep.","Hrs Auth.","Estado","Validado por","Fecha Validación"]
+        : ["Fecha Lab.","Fecha Reporte","Contrato","Coordinador","Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
+           "Cód.","Tipo HE","Hrs Rep.","Hrs Comp.","Supervisor","Justificación","Observación",
+           "Hrs Autorizadas","Estado NEO","Obs NEO","Validado por","Fecha Validación"];
     const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Horas Extras");
