@@ -625,7 +625,7 @@ async function cargarHistorial() {
 function fmtFecha(v) {
     if (!v) return "";
     const p = v.split("-");
-    return p.length === 3 ? `${p[2]}-${p[1]}-${p[0].slice(2)}` : v;
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : v;
 }
 
 // ── Auto-guardar ──────────────────────────────────────────────────────────────
@@ -775,7 +775,7 @@ function procesarImportNeo(input) {
                          "Tipo He","Vlr Extra Nom.","$ Vlr Extra","Auth NEO","Hrs Auth."];
         const preview = _neoImportFilas.slice(0, 8);
         const tbody = preview.map(f =>
-            `<tr>${[f.contrato,f.fecha_labor,f.cedula,f.nombre,f.recurso,f.placa,
+            `<tr>${[f.contrato,fmtFecha(f.fecha_labor),f.cedula,f.nombre,f.recurso,f.placa,
                     f.id_concepto,f.horas_reportadas,f.horas_compensadas,f.autorizacion_sup,f.justificacion,f.observacion,
                     f.tipo_he,f.valor_extra_nomina,f.valor_extra,f.autorizacion_neo,f.horas_autorizadas]
                 .map(v => `<td>${v}</td>`).join("")}</tr>`
