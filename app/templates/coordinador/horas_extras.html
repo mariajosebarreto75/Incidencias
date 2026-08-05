@@ -454,9 +454,9 @@ body { background:var(--c-bg); }
           <i class="bi bi-folder2-open me-1"></i>Seleccionar archivo
           <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="procesarImport(this)">
         </label>
-        <div class="he-form-group" style="margin:0;min-width:220px;">
+        <div class="he-form-group" style="margin:0;min-width:240px;">
           <select id="importContrato" style="border-radius:7px;border:1px solid #dee2e6;padding:6px 10px;font-size:.82rem;">
-            <option value="">— Contrato destino —</option>
+            <option value="">Usar contrato de cada fila (col. A)</option>
             {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
           </select>
         </div>
@@ -937,20 +937,31 @@ function procesarImport(input) {
 }
 
 function fmtFechaImport(val) {
-    if (!val) return "";
+    if (val === "" || val == null) return "";
+    // Fecha nativa de JS (cuando Excel la parseó como Date)
     if (val instanceof Date) {
         const y = val.getFullYear(), m = String(val.getMonth()+1).padStart(2,"0"), d = String(val.getDate()).padStart(2,"0");
         return `${y}-${m}-${d}`;
     }
+    // Número serial de Excel (días desde 1900-01-01)
+    if (typeof val === "number") {
+        const epoch = new Date(Date.UTC(1899,11,30) + val * 86400000);
+        return epoch.toISOString().split("T")[0];
+    }
     const s = String(val).trim();
-    // DD-MM-YY o DD-MM-YYYY
-    const p = s.split(/[-\/]/);
+    // DD-MM-AA, DD-MM-YYYY, DD/MM/AA, DD/MM/YYYY
+    const p = s.split(/[-\/\.]/);
     if (p.length === 3) {
-        if (p[0].length <= 2 && p[1].length <= 2) {
-            const y = p[2].length === 2 ? "20"+p[2] : p[2];
-            return `${y}-${p[1].padStart(2,"0")}-${p[0].padStart(2,"0")}`;
+        const [a, b, c] = p;
+        if (a.length <= 2 && b.length <= 2) {
+            // día-mes-año (AA o AAAA)
+            const y = c.length === 2 ? "20" + c : c;
+            return `${y}-${b.padStart(2,"0")}-${a.padStart(2,"0")}`;
         }
-        if (p[0].length === 4) return `${p[0]}-${p[1].padStart(2,"0")}-${p[2].padStart(2,"0")}`;
+        if (a.length === 4) {
+            // YYYY-MM-DD
+            return `${a}-${b.padStart(2,"0")}-${c.padStart(2,"0")}`;
+        }
     }
     return s;
 }
@@ -1072,9 +1083,8 @@ async function verCorte(id, nombre) {
 }
 
 async function confirmarImport() {
-    const cid = document.getElementById("importContrato").value;
-    if (!cid) { mostrarToast("Seleccione un contrato destino","warning"); return; }
     if (!_importFilas.length) return;
+    const cid = document.getElementById("importContrato").value; // puede ser "" → usa contrato de cada fila
 
     const btn = document.getElementById("btnConfirmarImport");
     btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Importando…';
