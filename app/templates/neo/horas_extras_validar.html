@@ -157,6 +157,14 @@ const C_FECHA=0, C_FREPORTE=1, C_CONTRATO=2, C_COORD=3,
 
 const ESTADOS_NEO = ["CONFORME", "NO CONFORME", "DESCONTADA"];
 
+function estadoRenderer(hotInstance, td, row, col, prop, value) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    const v = (value || "").trim();
+    if (!v) return;
+    const key = v.replace(/ /g, "-");
+    td.innerHTML = `<span class="ht-badge ${key}">${v}</span>`;
+}
+
 let hot = null;
 let registrosIds = [];   // IDs indexados por fila
 let saveTimer = null;
@@ -205,7 +213,8 @@ function iniciarGrid() {
             { type:"text", readOnly:true },  // 16 obs
             // NEO editable
             { type:"numeric" },              // 17 hrs autorizadas
-            { type:"dropdown", source: ESTADOS_NEO, strict:true, allowInvalid:false }, // 18 estado
+            { type:"dropdown", source: ESTADOS_NEO, strict:false, allowInvalid:true,
+              renderer: estadoRenderer },     // 18 estado
             { type:"text" },                 // 19 obs neo
             // meta readonly
             { type:"text", readOnly:true },  // 20 validado por
@@ -215,6 +224,7 @@ function iniciarGrid() {
         height: 580,
         stretchH: "none",
         manualColumnResize: true,
+        manualColumnMove: true,
         filters: true,
         dropdownMenu: true,
         fixedColumnsLeft: 0,
@@ -226,14 +236,6 @@ function iniciarGrid() {
         afterChange: function(changes, source) {
             if (!changes || source === "loadData") return;
             changes.forEach(([row]) => autoGuardar(row));
-        },
-        afterRenderer: function(td, row, col) {
-            if (col === C_ESTADO) {
-                const v = (hot.getDataAtCell(row, col) || "").replace(" ","-");
-                if (v) {
-                    td.innerHTML = `<span class="ht-badge ${v}">${hot.getDataAtCell(row, col)}</span>`;
-                }
-            }
         },
     });
 }
