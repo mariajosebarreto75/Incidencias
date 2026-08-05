@@ -177,7 +177,7 @@ def api_he_guardar():
             placa             = f.get("placa", "").strip(),
             hora_inicio       = f.get("hora_inicio", "").strip(),
             hora_fin          = f.get("hora_fin", "").strip(),
-            supervisor        = f.get("supervisor", "").strip(),
+            autorizacion_sup  = f.get("autorizacion_sup", "").strip(),
             justificacion     = f.get("justificacion", "").strip(),
             observacion       = f.get("observacion", "").strip(),
             estado            = "PENDIENTE",
@@ -211,7 +211,7 @@ def api_he_actualizar(id):
     he.tipo_he            = CONCEPTOS_HE.get(concepto, he.tipo_he)
     he.horas_reportadas   = int(float(f.get("horas_reportadas") or he.horas_reportadas))
     he.horas_compensadas  = int(float(f.get("horas_compensadas") or 0))
-    he.supervisor         = f.get("supervisor", he.supervisor)
+    he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
     he.justificacion      = f.get("justificacion", he.justificacion)
     he.observacion        = f.get("observacion", he.observacion)
     if f.get("valor_hora")         is not None: he.valor_hora         = f["valor_hora"]

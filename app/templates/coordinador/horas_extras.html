@@ -295,10 +295,8 @@ const FACTOR_HE   = { "03":1.25,"04":1.75,"05":2.05,"06":2.55,"07":0.80,"17":0.3
 const CONCEPTO_KEYS = Object.keys(CONCEPTOS);
 // Índices de columnas
 const C_FECHA=0, C_CED=1, C_NOM=2, C_REC=3, C_PLACA=4, C_HINICIO=5, C_HFIN=6,
-      C_COD=7, C_TIPO=8, C_HRS=9, C_COMP=10, C_SUP=11, C_JUST=12, C_OBS=13,
-      // NEO (readonly)
-      C_HAUTH=14, C_NEO=15, C_OBSNEO=16;
-const N_COLS = 17;
+      C_COD=7, C_TIPO=8, C_HRS=9, C_COMP=10, C_SUP=11, C_JUST=12, C_OBS=13;
+const N_COLS = 14;
 
 const FILAS = 40;
 let hot = null, tabla = null;
@@ -341,30 +339,26 @@ function iniciarGrid() {
         colHeaders: [
             "Fecha Labor","Cédula","Nombre","Recurso",
             "Placa","Hora Inicio","Hora Fin",
-            "Id Concepto","Tipo HE","Hrs Rep.","Hrs Comp.",
-            "Supervisor","Justificación","Observación",
-            "Hrs Autorizadas","Validación NEO","Obs NEO"
+            "Id Concepto","Tipo HE","#Hrs Reportadas","#Hrs Compensadas",
+            "Autorización(supervisor)","Justificación","Observación"
         ],
         columns: [
-            { type:"date",         dateFormat:"DD-MM-YY", correctFormat:true }, // 0 fecha
-            { type:"text" },                                                        // 1 cedula
-            { type:"text",         readOnly:true },                                 // 2 nombre
-            { type:"text" },                                                        // 3 recurso
-            { type:"text" },                                                        // 4 placa
-            { type:"time", timeFormat:"HH:mm", correctFormat:true },                  // 5 hora inicio
-            { type:"time", timeFormat:"HH:mm", correctFormat:true },                  // 6 hora fin
-            { type:"dropdown",     source: CONCEPTO_KEYS },                        // 7 concepto
-            { type:"text",         readOnly:true },                                 // 8 tipo_he
-            { type:"numeric" },                                                     // 9 horas
-            { type:"numeric" },                                                     // 10 comp
-            { type:"autocomplete", source: function(q, cb){ cb(supervisoresActuales); }, strict:false, allowInvalid:true }, // 11 supervisor
-            { type:"text" },                                                        // 12 just
-            { type:"text" },                                                        // 13 obs
-            { type:"numeric",      readOnly:true },                                 // 14 hrs auth (NEO)
-            { type:"text",         readOnly:true },                                 // 15 validacion NEO
-            { type:"text",         readOnly:true },                                 // 16 obs NEO
+            { type:"date",         dateFormat:"DD-MM-YY", correctFormat:true },
+            { type:"text" },
+            { type:"text",         readOnly:true },
+            { type:"text" },
+            { type:"text" },
+            { type:"time", timeFormat:"HH:mm", correctFormat:true },
+            { type:"time", timeFormat:"HH:mm", correctFormat:true },
+            { type:"dropdown",     source: CONCEPTO_KEYS },
+            { type:"text",         readOnly:true },
+            { type:"numeric" },
+            { type:"numeric" },
+            { type:"autocomplete", source: function(q, cb){ cb(supervisoresActuales); }, strict:false, allowInvalid:true },
+            { type:"text" },
+            { type:"text" },
         ],
-        colWidths: [115,105,185,135, 90,90,90, 110,200,90,90, 165,175,175, 105,130,175],
+        colWidths: [115,105,185,135, 90,90,90, 110,200,110,110, 175,175,175],
         fixedColumnsLeft: 0,
         height: 480,
         stretchH: "none",
@@ -374,10 +368,6 @@ function iniciarGrid() {
         copyPaste: true,
         undo: true,
         licenseKey: "non-commercial-and-evaluation",
-        cells: function(row, col) {
-            if (col >= C_HAUTH) return { className: "ht-neo-col" };
-            return {};
-        },
         afterChange: function(changes, source) {
             if (!changes || source === "loadData" || source === "auto") return;
             changes.forEach(([row, col, , newVal]) => {
@@ -492,7 +482,7 @@ async function guardarGrid() {
             id_concepto:       (row[C_COD]     || "").trim(),
             horas_reportadas:  hrs,
             horas_compensadas: parseInt(row[C_COMP]) || 0,
-            supervisor:        (row[C_SUP]     || "").trim(),
+            autorizacion_sup:  (row[C_SUP]     || "").trim(),
             justificacion:     (row[C_JUST]    || "").trim(),
             observacion:       (row[C_OBS]     || "").trim(),
         });
@@ -571,25 +561,28 @@ function cargarHistorial() {
     };
 
     const cols = [
-        { title:"Fecha",          field:"fecha_labor",        width:100, headerFilter:"input", formatter:fmtFecha },
-        { title:"Cédula",         field:"cedula",             width:100, headerFilter:"input" },
-        { title:"Nombre",         field:"nombre",             minWidth:145, headerFilter:"input" },
-        { title:"Recurso",        field:"recurso",            minWidth:110, headerFilter:"input" },
-        { title:"Cód.",           field:"id_concepto",        width:65 },
-        { title:"Tipo HE",        field:"tipo_he",            minWidth:175, headerFilter:"input" },
-        { title:"Hrs Rep.",       field:"horas_reportadas",   width:80, hozAlign:"right" },
-        { title:"Hrs Comp.",      field:"horas_compensadas",  width:80, hozAlign:"right" },
-        { title:"Supervisor",     field:"supervisor",         minWidth:140, headerFilter:"input" },
-        { title:"Valor Hora",     field:"valor_hora",         width:105, hozAlign:"right", formatter:fmtCol },
-        { title:"Vlr Extra Nom.", field:"valor_extra_nomina", width:120, hozAlign:"right", formatter:fmtCol },
-        { title:"$ Valor Extra",  field:"valor_extra",        width:110, hozAlign:"right", formatter:fmtCol },
-        { title:"Estado",         field:"estado",             width:115,
+        { title:"Fecha Labor",             field:"fecha_labor",        width:105, headerFilter:"input", formatter:fmtFecha },
+        { title:"Recurso",                 field:"recurso",            minWidth:110, headerFilter:"input" },
+        { title:"Placa",                   field:"placa",              width:90,  headerFilter:"input" },
+        { title:"Cédula",                  field:"cedula",             width:100, headerFilter:"input" },
+        { title:"Nombre",                  field:"nombre",             minWidth:145, headerFilter:"input" },
+        { title:"Id Concepto",             field:"id_concepto",        width:95 },
+        { title:"Tipo HE",                 field:"tipo_he",            minWidth:175, headerFilter:"input" },
+        { title:"#Hrs Reportadas",         field:"horas_reportadas",   width:110, hozAlign:"right" },
+        { title:"#Hrs Compensadas",        field:"horas_compensadas",  width:115, hozAlign:"right" },
+        { title:"Autorización(supervisor)",field:"autorizacion_sup",   minWidth:155, headerFilter:"input" },
+        { title:"Estado",                  field:"estado",             width:115,
           formatter: c => `<span class="badge-${c.getValue()}">${c.getValue()}</span>` },
-        { title:"Hrs Auth.",      field:"horas_autorizadas",  width:80, hozAlign:"right" },
-        { title:"Valid. NEO",     field:"autorizacion_neo",   width:115 },
-        { title:"Obs NEO",        field:"obs_neo",            minWidth:150, formatter:"textarea" },
-        { title:"Reportado",      field:"fecha_reporte",      width:120 },
-        { title:"Acc.", formatter: accionesCoor, width:70, hozAlign:"center", headerSort:false },
+        { title:"Hrs Aut",                 field:"horas_autorizadas",  width:80, hozAlign:"right" },
+        { title:"Validación Neo",          field:"autorizacion_neo",   width:120 },
+        { title:"Obs Neo",                 field:"obs_neo",            minWidth:150, formatter:"textarea" },
+        // columnas ocultas (solo para exportar)
+        { title:"Contrato",       field:"contrato",          visible:false },
+        { title:"Justificación",  field:"justificacion",     visible:false },
+        { title:"Observación",    field:"observacion",       visible:false },
+        { title:"Valor Extra Nom",field:"valor_extra_nomina",visible:false },
+        { title:"$ Valor Extra",  field:"valor_extra",       visible:false },
+        { title:"Acción", formatter: accionesCoor, width:75, hozAlign:"center", headerSort:false },
     ];
 
     if (tabla) { tabla.setData(url); return; }
@@ -616,7 +609,28 @@ async function eliminarHe(id) {
 }
 
 function exportarExcel() {
-    if (tabla) tabla.download("xlsx","horas_extras.xlsx",{sheetName:"Horas Extras"});
+    if (!tabla) return;
+    // Descarga usando Tabulator con columnas ocultas incluidas
+    tabla.download("xlsx", "horas_extras_coordinador.xlsx", {
+        sheetName: "Horas Extras",
+        documentProcessing: function(wb) {
+            // Renombrar headers a mayúsculas según especificación
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const HEADERS = [
+                "CONTRATO","FECHA LABOR","CEDULA","NOMBRE","RECURSO","ID CONCEPTO",
+                "# HORAS REPORTADAS","# HORAS COMPENSADAS","AUTORIZACIÓN(SUPERVISOR)",
+                "JUSTIFICACIÓN","OBSERVACIÓN","TIPO HE","VALOR EXTRA NOMINA","$ VALOR EXTRA",
+                "AUTORIZACIÓN NEO","# HORAS AUTORIZADAS"
+            ];
+            // Reemplazar fila 1 de encabezados
+            const range = XLSX.utils.decode_range(ws["!ref"]);
+            HEADERS.forEach((h, i) => {
+                const cell = XLSX.utils.encode_cell({r: 0, c: i});
+                if (ws[cell]) ws[cell].v = h;
+            });
+            return wb;
+        }
+    });
 }
 
 function mostrarToast(msg, tipo="success") {

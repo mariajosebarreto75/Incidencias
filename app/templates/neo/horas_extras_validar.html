@@ -289,13 +289,12 @@ body { background:var(--c-bg); }
 <script src="{{ url_for('static', filename='vendor/handsontable.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/xlsx.full.min.js') }}"></script>
 <script>
-// Índices de columnas
-const C_FECHA=0, C_FREPORTE=1, C_CONTRATO=2, C_COORD=3,
-      C_CED=4, C_NOM=5, C_REC=6, C_PLACA=7, C_HINICIO=8, C_HFIN=9,
-      C_COD=10, C_TIPO=11, C_HRS=12, C_COMP=13, C_SUP=14,
-      C_JUST=15, C_OBS=16,
-      C_HAUTH=17, C_ESTADO=18, C_OBSNEO=19,
-      C_VALBY=20, C_VALFECHA=21;
+// Índices de columnas (orden según vista NEO)
+const C_FECHA=0, C_CONTRATO=1, C_REC=2, C_PLACA=3, C_HINICIO=4, C_HFIN=5,
+      C_CED=6, C_NOM=7, C_COD=8, C_TIPO=9,
+      C_HRS=10, C_COMP=11, C_SUP=12, C_JUST=13, C_OBS=14,
+      C_HAUTH=15, C_ESTADO=16, C_OBSNEO=17,
+      C_FREPORTE=18, C_VALBY=19, C_VALFECHA=20;
 
 const ESTADOS_NEO = ["CONFORME", "NO CONFORME", "DESCONTADA"];
 
@@ -355,38 +354,37 @@ function iniciarGrid() {
         data: [],
         rowHeaders: true,
         colHeaders: [
-            "Fecha Lab.","Fecha Reporte","Contrato","Coordinador",
-            "Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
-            "Cód.","Tipo HE","Hrs Rep.","Hrs Comp.","Supervisor",
+            "Fecha Labor","Contrato","Recurso","Placa","Hora Inicio","Hora Fin",
+            "Cédula","Nombre","Id Concepto","Tipo HE",
+            "#Hrs Reportadas","#Hrs Compensadas","Autorización(supervisor)",
             "Justificación","Observación",
-            "Hrs Autorizadas","Estado NEO","Obs NEO",
-            "Validado por","Fecha Validación"
+            "Hrs Autorizadas","Estado Neo","Obs Neo",
+            "Fecha Reporte","Validado Por","Fecha Validación"
         ],
         columns: [
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"numeric", readOnly:true },
-            { type:"numeric", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
-            { type:"numeric" },
-            { type:"dropdown", source: ESTADOS_NEO, strict:false, allowInvalid:true, renderer: estadoRenderer },
-            { type:"text" },
-            { type:"text", readOnly:true },
-            { type:"text", readOnly:true },
+            { type:"text", readOnly:true },   // 0  fecha_labor
+            { type:"text", readOnly:true },   // 1  contrato
+            { type:"text", readOnly:true },   // 2  recurso
+            { type:"text", readOnly:true },   // 3  placa
+            { type:"text", readOnly:true },   // 4  hora_inicio
+            { type:"text", readOnly:true },   // 5  hora_fin
+            { type:"text", readOnly:true },   // 6  cedula
+            { type:"text", readOnly:true },   // 7  nombre
+            { type:"text", readOnly:true },   // 8  id_concepto
+            { type:"text", readOnly:true },   // 9  tipo_he
+            { type:"numeric", readOnly:true },// 10 horas_reportadas
+            { type:"numeric", readOnly:true },// 11 horas_compensadas
+            { type:"text", readOnly:true },   // 12 autorizacion_sup
+            { type:"text", readOnly:true },   // 13 justificacion
+            { type:"text", readOnly:true },   // 14 observacion
+            { type:"numeric" },               // 15 horas_autorizadas (editable)
+            { type:"dropdown", source: ESTADOS_NEO, strict:false, allowInvalid:true, renderer: estadoRenderer }, // 16
+            { type:"text" },                  // 17 obs_neo (editable)
+            { type:"text", readOnly:true },   // 18 fecha_reporte
+            { type:"text", readOnly:true },   // 19 validado_por
+            { type:"text", readOnly:true },   // 20 fecha_validacion
         ],
-        colWidths: [100,148,170,130, 100,160,125,80,80,80, 65,190,80,80,140, 160,160, 110,130,175, 140,135],
+        colWidths: [105,155,125,80,90,80, 100,160,95,190, 110,115,165, 155,155, 110,120,170, 140,140,130],
         height: 520,
         stretchH: "none",
         manualColumnResize: true,
@@ -394,7 +392,6 @@ function iniciarGrid() {
         filters: true,
         dropdownMenu: true,
         fixedColumnsLeft: 0,
-        hiddenColumns: { columns: [C_COORD, C_VALFECHA], indicators: false },
         licenseKey: "non-commercial-and-evaluation",
         cells: function(row, col) {
             if (col >= C_HAUTH && col <= C_OBSNEO) return { className: "ht-neo-edit" };
@@ -418,28 +415,27 @@ async function recargar() {
 
     registrosIds = registros.map(reg => reg.id);
     const filas = registros.map(reg => [
-        fmtFecha(reg.fecha_labor),
-        reg.fecha_reporte,
-        reg.contrato,
-        reg.reportado_por,
-        reg.cedula,
-        reg.nombre,
-        reg.recurso,
-        reg.placa || "",
-        reg.hora_inicio || "",
-        reg.hora_fin || "",
-        reg.id_concepto,
-        reg.tipo_he,
-        reg.horas_reportadas,
-        reg.horas_compensadas,
-        reg.supervisor || "",
-        reg.justificacion || "",
-        reg.observacion || "",
-        reg.horas_autorizadas != null ? reg.horas_autorizadas : "",
-        reg.autorizacion_neo || "",
-        reg.obs_neo || "",
-        reg.validado_por || "",
-        reg.fecha_validacion || "",
+        fmtFecha(reg.fecha_labor),        // 0  Fecha Labor
+        reg.contrato,                      // 1  Contrato
+        reg.recurso || "",                 // 2  Recurso
+        reg.placa || "",                   // 3  Placa
+        reg.hora_inicio || "",             // 4  Hora Inicio
+        reg.hora_fin || "",                // 5  Hora Fin
+        reg.cedula,                        // 6  Cédula
+        reg.nombre || "",                  // 7  Nombre
+        reg.id_concepto,                   // 8  Id Concepto
+        reg.tipo_he || "",                 // 9  Tipo HE
+        reg.horas_reportadas,              // 10 #Hrs Reportadas
+        reg.horas_compensadas,             // 11 #Hrs Compensadas
+        reg.autorizacion_sup || "",        // 12 Autorización(supervisor)
+        reg.justificacion || "",           // 13 Justificación
+        reg.observacion || "",             // 14 Observación
+        reg.horas_autorizadas != null ? reg.horas_autorizadas : "", // 15 Hrs Autorizadas
+        reg.autorizacion_neo || "",        // 16 Estado Neo
+        reg.obs_neo || "",                 // 17 Obs Neo
+        reg.fecha_reporte || "",           // 18 Fecha Reporte
+        reg.validado_por || "",            // 19 Validado Por
+        reg.fecha_validacion || "",        // 20 Fecha Validación
     ]);
     hot.loadData(filas);
 }
@@ -552,18 +548,43 @@ async function cargarKpis() {
 
 // ── Exportar ──────────────────────────────────────────────────────────────────
 function exportarExcel() {
-    const g = hotHistorial || hot;
-    const data = g.getData();
-    const headers = hotHistorial
-        ? ["Fecha Lab.","Fecha Reporte","Contrato","Coordinador","Cédula","Nombre","Recurso",
-           "Hrs Rep.","Hrs Auth.","Estado","Validado por","Fecha Validación"]
-        : ["Fecha Lab.","Fecha Reporte","Contrato","Coordinador","Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
-           "Cód.","Tipo HE","Hrs Rep.","Hrs Comp.","Supervisor","Justificación","Observación",
-           "Hrs Autorizadas","Estado NEO","Obs NEO","Validado por","Fecha Validación"];
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    // Export NEO: orden y headers en mayúsculas según especificación
+    // Columnas: CONTRATO | FECHA LABOR | CEDULA | NOMBRE | RECURSO | ID CONCEPTO |
+    //           # HORAS REPORTADAS | # HORAS COMPENSADAS | AUTORIZACIÓN(SUPERVISOR) |
+    //           JUSTIFICACIÓN | OBSERVACIÓN | TIPO HE | VALOR EXTRA NOMINA | $ VALOR EXTRA |
+    //           AUTORIZACIÓN NEO | # HORAS AUTORIZADAS | FECHA REPORTE | VALIDADO POR | FECHA VALIDACIÓN
+    const NEO_HEADERS = [
+        "CONTRATO","FECHA LABOR","CEDULA","NOMBRE","RECURSO","ID CONCEPTO",
+        "# HORAS REPORTADAS","# HORAS COMPENSADAS","AUTORIZACIÓN(SUPERVISOR)",
+        "JUSTIFICACIÓN","OBSERVACIÓN","TIPO HE","VALOR EXTRA NOMINA","$ VALOR EXTRA",
+        "AUTORIZACIÓN NEO","# HORAS AUTORIZADAS","FECHA REPORTE","VALIDADO POR","FECHA VALIDACIÓN"
+    ];
+    const gridData = hot.getData();
+    const rows = gridData.map(r => [
+        r[C_CONTRATO],  // CONTRATO
+        r[C_FECHA],     // FECHA LABOR
+        r[C_CED],       // CEDULA
+        r[C_NOM],       // NOMBRE
+        r[C_REC],       // RECURSO
+        r[C_COD],       // ID CONCEPTO
+        r[C_HRS],       // # HORAS REPORTADAS
+        r[C_COMP],      // # HORAS COMPENSADAS
+        r[C_SUP],       // AUTORIZACIÓN(SUPERVISOR)
+        r[C_JUST],      // JUSTIFICACIÓN
+        r[C_OBS],       // OBSERVACIÓN
+        r[C_TIPO],      // TIPO HE
+        "",             // VALOR EXTRA NOMINA (en blanco)
+        "",             // $ VALOR EXTRA (en blanco)
+        r[C_ESTADO],    // AUTORIZACIÓN NEO
+        r[C_HAUTH],     // # HORAS AUTORIZADAS
+        r[C_FREPORTE],  // FECHA REPORTE
+        r[C_VALBY],     // VALIDADO POR
+        r[C_VALFECHA],  // FECHA VALIDACIÓN
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([NEO_HEADERS, ...rows]);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Horas Extras");
-    XLSX.writeFile(wb, "he_validacion.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Horas Extras NEO");
+    XLSX.writeFile(wb, "he_validacion_neo.xlsx");
 }
 </script>
 {% endblock %}

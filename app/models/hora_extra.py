@@ -38,7 +38,7 @@ class HoraExtra(db.Model):
     placa               = db.Column(db.String(20))
     hora_inicio         = db.Column(db.String(10))
     hora_fin            = db.Column(db.String(10))
-    supervisor          = db.Column(db.String(200))
+    autorizacion_sup    = db.Column(db.String(200))
     justificacion       = db.Column(db.Text)
     observacion         = db.Column(db.Text)
     valor_hora          = db.Column(db.Numeric(14, 2))
@@ -77,7 +77,7 @@ class HoraExtra(db.Model):
             "placa":              self.placa or "",
             "hora_inicio":        self.hora_inicio or "",
             "hora_fin":           self.hora_fin or "",
-            "supervisor":         self.supervisor or "",
+            "autorizacion_sup":   self.autorizacion_sup or "",
             "justificacion":      self.justificacion or "",
             "observacion":        self.observacion or "",
             "valor_hora":         float(self.valor_hora) if self.valor_hora else None,
