@@ -167,11 +167,13 @@ def api_he_guardar():
     for f in filas:
         contrato_id = f.get("contrato_id")
 
-        # Si no viene contrato_id, intentar resolver por nombre
+        # Si no viene contrato_id, intentar resolver por nombre (insensible a mayúsculas/espacios)
         if not contrato_id and f.get("contrato"):
             nombre_c = str(f["contrato"]).strip()
             if nombre_c not in _contrato_cache:
-                c = Contrato.query.filter_by(contrato=nombre_c).first()
+                c = Contrato.query.filter(
+                    db.func.lower(db.func.trim(Contrato.contrato)) == nombre_c.lower()
+                ).first()
                 _contrato_cache[nombre_c] = c.id if c else None
             contrato_id = _contrato_cache[nombre_c]
 
