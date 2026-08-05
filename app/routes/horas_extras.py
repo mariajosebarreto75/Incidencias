@@ -497,6 +497,22 @@ def api_he_cortes_cerrar(corte_id):
     return jsonify({"ok": True, "corte": corte.to_dict()})
 
 
+@he_bp.route("/api/he/cortes/<int:corte_id>", methods=["DELETE"])
+@login_required
+def api_he_cortes_eliminar(corte_id):
+    import traceback
+    try:
+        corte = HeCorte.query.get_or_404(corte_id)
+        # Desasignar registros vinculados antes de eliminar
+        HoraExtra.query.filter_by(corte_id=corte_id).update({"corte_id": None}, synchronize_session=False)
+        db.session.delete(corte)
+        db.session.commit()
+        return jsonify({"ok": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": str(e), "trace": traceback.format_exc()}), 500
+
+
 @he_bp.route("/api/he/cortes/<int:corte_id>")
 @login_required
 def api_he_cortes_detalle(corte_id):

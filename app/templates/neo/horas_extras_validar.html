@@ -905,6 +905,8 @@ async function cargarCortesNeo() {
                     <i class="bi bi-lock me-1"></i>Cerrar corte</button>` : ""}
                 <button onclick="exportarCorteNeo(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-success" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-file-earmark-excel me-1"></i>Exportar</button>
+                <button onclick="eliminarCorteNeo(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-danger" style="border-radius:6px;font-size:.72rem;">
+                    <i class="bi bi-trash me-1"></i>Eliminar</button>
             </div>
         </div>`).join("");
 }
@@ -974,6 +976,14 @@ async function cerrarCorteNeo(id) {
     const d = await r.json();
     if (d.ok) { cortesCargadosNeo = false; cargarCortesNeo(); }
     else alert(d.msg || "Error");
+}
+
+async function eliminarCorteNeo(id, nombre) {
+    if (!confirm(`¿Eliminar el corte "${nombre}"?\nLos registros asociados quedarán sin corte asignado.`)) return;
+    const r = await fetch(`/api/he/cortes/${id}`, { method:"DELETE" });
+    const d = await r.json();
+    if (d.ok) { cortesCargadosNeo = false; cargarCortesNeo(); }
+    else alert(d.error || d.msg || "Error al eliminar");
 }
 
 async function verCorteNeo(id, nombre) {
