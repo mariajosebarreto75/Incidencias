@@ -250,7 +250,12 @@ def api_he_validar(id):
     he.validado_por_id   = current_user.id
     he.fecha_validacion  = datetime.utcnow()
     db.session.commit()
-    return jsonify({"ok": True, "estado": he.estado})
+    return jsonify({
+        "ok": True,
+        "estado": he.estado,
+        "validado_por":    current_user.nombre_completo,
+        "fecha_validacion": he.fecha_validacion.strftime("%Y-%m-%d %H:%M"),
+    })
 
 
 # ── API: KPIs para NEO ────────────────────────────────────────────────────────

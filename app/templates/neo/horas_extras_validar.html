@@ -1,230 +1,325 @@
 {% extends 'neo/navbNeo.html' %}
 
 {% block head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator_bootstrap5.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/handsontable.min.css') }}">
 <style>
 :root { --c-neo:#007d8a; --c-bg:#f4f6fb; }
 body { background:var(--c-bg); }
+.he-page { max-width:100%; margin:0 auto; padding:20px 16px 80px; }
 
-.he-page { max-width:1500px; margin:0 auto; padding:24px 16px 80px; }
-
-/* KPI cards */
-.he-kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin-bottom:20px; }
-.he-kpi { background:#fff; border-radius:10px; padding:14px 16px; box-shadow:0 1px 6px rgba(0,0,0,.07); border-left:3px solid #ccc; }
-.he-kpi .kv { font-size:1.7rem; font-weight:800; line-height:1; }
-.he-kpi .ks { font-size:.82rem; color:#6c757d; }
+.he-kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:16px; }
+.he-kpi { background:#fff; border-radius:10px; padding:12px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07); border-left:3px solid #ccc; }
+.he-kpi .kv { font-size:1.6rem; font-weight:800; line-height:1; }
 .he-kpi .kl { font-size:.63rem; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
-.he-kpi.total  { border-color:#007d8a; } .he-kpi.total  .kv { color:#007d8a; }
-.he-kpi.pend   { border-color:#f59e0b; } .he-kpi.pend   .kv { color:#f59e0b; }
-.he-kpi.apro   { border-color:#22c55e; } .he-kpi.apro   .kv { color:#22c55e; }
-.he-kpi.parc   { border-color:#3b82f6; } .he-kpi.parc   .kv { color:#3b82f6; }
-.he-kpi.rech   { border-color:#ef4444; } .he-kpi.rech   .kv { color:#ef4444; }
-.he-kpi.hrs    { border-color:#8b5cf6; } .he-kpi.hrs    .kv { color:#8b5cf6; font-size:1.3rem; }
+.he-kpi.total { border-color:#007d8a; } .he-kpi.total .kv { color:#007d8a; }
+.he-kpi.pend  { border-color:#f59e0b; } .he-kpi.pend  .kv { color:#f59e0b; }
+.he-kpi.conf  { border-color:#22c55e; } .he-kpi.conf  .kv { color:#22c55e; }
+.he-kpi.noconf{ border-color:#ef4444; } .he-kpi.noconf .kv { color:#ef4444; }
+.he-kpi.desc  { border-color:#8b5cf6; } .he-kpi.desc  .kv { color:#8b5cf6; }
+.he-kpi.hrs   { border-color:#0d3b66; } .he-kpi.hrs   .kv { color:#0d3b66; font-size:1.3rem; }
 
-/* Filtros */
-.he-filtros { background:#fff; border-radius:10px; padding:14px 18px; box-shadow:0 1px 6px rgba(0,0,0,.07); margin-bottom:16px; display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
-.he-filtros select, .he-filtros input { font-size:.82rem; border-radius:7px; border:1px solid #dee2e6; padding:6px 10px; }
-.he-filtros label { font-size:.72rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; margin-bottom:2px; }
+.he-filtros { background:#fff; border-radius:10px; padding:10px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07);
+    margin-bottom:12px; display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
+.he-filtros label { font-size:.7rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; display:block; margin-bottom:2px; }
+.he-filtros select, .he-filtros input { font-size:.8rem; border-radius:7px; border:1px solid #dee2e6; padding:5px 9px; }
 
-/* Tabla */
-.he-table-wrap { background:#fff; border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,.07); overflow:hidden; }
-.he-table-header { padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; }
-.he-table-header h6 { margin:0; font-weight:700; color:#007d8a; font-size:.9rem; }
+.he-grid-panel { background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08); overflow:hidden; }
+.he-grid-head { background:#007d8a; color:#fff; padding:10px 16px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.he-grid-head h6 { margin:0; font-weight:700; font-size:.88rem; flex:1; }
+.he-toolbar { padding:7px 12px; background:#f0f8f9; border-bottom:1px solid #c8e6e9;
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
-/* Estado badges */
-.badge-PENDIENTE   { background:#fff3cd; color:#856404; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
-.badge-CONFORME    { background:#d1e7dd; color:#0a3622; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
-.badge-NO\ CONFORME{ background:#f8d7da; color:#842029; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
-.badge-DESCONTADA  { background:#ede9fe; color:#5b21b6; padding:3px 8px; border-radius:20px; font-size:.7rem; font-weight:700; }
+.handsontable th { font-weight:700 !important; font-size:.68rem !important; text-transform:uppercase; letter-spacing:.3px; }
+.handsontable td { font-size:.78rem !important; }
+/* Columnas NEO editables — fondo verde muy suave */
+.ht-neo-edit { background:#f0fff4 !important; }
+/* Columnas readonly de meta (coordinador) */
+.handsontable .htDimmed { color:#555 !important; }
 
-/* Modal validación */
-.he-val-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1060; align-items:center; justify-content:center; }
-.he-val-bg.open { display:flex; }
-.he-val-modal { background:#fff; border-radius:14px; width:min(98vw,560px); box-shadow:0 16px 48px rgba(0,0,0,.25); overflow:hidden; }
-.he-val-head { background:#007d8a; color:#fff; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; }
-.he-val-head h5 { margin:0; font-weight:700; font-size:.95rem; }
-.he-val-body { padding:20px; }
-.he-val-foot { padding:12px 20px; border-top:1px solid #eee; display:flex; justify-content:flex-end; gap:8px; }
+.grid-legend { display:flex; gap:14px; padding:6px 14px; background:#fafbfc; border-top:1px solid #eee;
+    font-size:.68rem; color:#6c757d; flex-wrap:wrap; }
+.grid-legend span { display:flex; align-items:center; gap:5px; }
+.lg-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
 
-/* Ficha de datos del registro */
-.he-ficha { background:#f8f9fa; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:.82rem; }
-.he-ficha .row > div { margin-bottom:6px; }
-.he-ficha .lbl { font-size:.67rem; font-weight:700; color:#6c757d; text-transform:uppercase; letter-spacing:.3px; }
-.he-ficha .val { font-weight:600; color:#212529; }
+/* Badge en celdas */
+.ht-badge { display:inline-block; padding:1px 7px; border-radius:20px; font-size:.68rem; font-weight:700; }
+.ht-badge.PENDIENTE  { background:#fff3cd; color:#856404; }
+.ht-badge.CONFORME   { background:#d1e7dd; color:#0a3622; }
+.ht-badge.NO-CONFORME{ background:#f8d7da; color:#842029; }
+.ht-badge.DESCONTADA { background:#ede9fe; color:#5b21b6; }
 
-/* Opciones de autorización */
-.auth-opts { display:flex; gap:8px; margin-bottom:14px; }
-.auth-btn { flex:1; padding:10px; border-radius:8px; border:2px solid #dee2e6; background:#fff;
-            font-size:.8rem; font-weight:700; cursor:pointer; text-align:center; transition:.15s; }
-.auth-btn:hover { border-color:#007d8a; }
-.auth-btn.sel-CONFORME     { border-color:#22c55e; background:#d1e7dd; color:#0a3622; }
-.auth-btn.sel-NO-CONFORME  { border-color:#ef4444; background:#f8d7da; color:#842029; }
-.auth-btn.sel-DESCONTADA   { border-color:#7c3aed; background:#ede9fe; color:#5b21b6; }
-
-label.fl { font-size:.71rem; font-weight:600; color:#495057; text-transform:uppercase; letter-spacing:.3px; }
-
-.tabulator { border:none !important; }
-.tabulator-header { background:#f0f4f8 !important; }
-.tabulator-col-title { font-size:.72rem !important; font-weight:700 !important; color:#007d8a !important; text-transform:uppercase; }
-.tabulator-cell { font-size:.8rem !important; }
+#saving-indicator { font-size:.73rem; color:#007d8a; display:none; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="he-page">
 
-    <!-- TÍTULO -->
-    <div class="d-flex align-items-center gap-3 mb-4">
-        <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#007d8a,#00b7c7);display:flex;align-items:center;justify-content:center;">
-            <i class="bi bi-patch-check-fill" style="color:#fff;font-size:1.2rem;"></i>
+    <div class="d-flex align-items-center gap-3 mb-3">
+        <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#007d8a,#00b7c7);display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-patch-check-fill" style="color:#fff;font-size:1.1rem;"></i>
         </div>
         <div>
             <h4 class="mb-0 fw-bold" style="color:#007d8a;">Validación de Horas Extras</h4>
-            <div style="font-size:.77rem;color:#6c757d;">Revisión y autorización de horas extras reportadas por los coordinadores</div>
+            <div style="font-size:.75rem;color:#6c757d;">Edita directamente las columnas verdes para validar</div>
         </div>
-        <div class="ms-auto">
-            <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()" style="border-radius:8px;padding:7px 14px;font-size:.8rem;">
-                <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+        <div class="ms-auto d-flex gap-2 align-items-center">
+            <span id="saving-indicator"><i class="bi bi-hourglass-split me-1"></i>Guardando…</span>
+            <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()" style="border-radius:8px;font-size:.8rem;">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar
             </button>
         </div>
     </div>
 
     <!-- KPIs -->
     <div class="he-kpi-row">
-        <div class="he-kpi total">
-            <div class="kv" id="k-total">—</div>
-            <div class="kl">Total registros</div>
-        </div>
-        <div class="he-kpi pend">
-            <div class="kv" id="k-pend">—</div>
-            <div class="kl">Pendientes</div>
-        </div>
-        <div class="he-kpi apro">
-            <div class="kv" id="k-apro">—</div>
-            <div class="kl">Aprobadas</div>
-        </div>
-        <div class="he-kpi parc">
-            <div class="kv" id="k-parc">—</div>
-            <div class="kl">Parciales</div>
-        </div>
-        <div class="he-kpi rech">
-            <div class="kv" id="k-rech">—</div>
-            <div class="kl">Rechazadas</div>
-        </div>
-        <div class="he-kpi hrs">
-            <div class="kv" id="k-hrs-rep">—</div>
-            <div class="kl">Hrs reportadas</div>
-        </div>
+        <div class="he-kpi total"><div class="kv" id="k-total">—</div><div class="kl">Total</div></div>
+        <div class="he-kpi pend"> <div class="kv" id="k-pend">—</div> <div class="kl">Pendientes</div></div>
+        <div class="he-kpi conf"> <div class="kv" id="k-conf">—</div> <div class="kl">Conformes</div></div>
+        <div class="he-kpi noconf"><div class="kv" id="k-noconf">—</div><div class="kl">No Conformes</div></div>
+        <div class="he-kpi desc"> <div class="kv" id="k-desc">—</div> <div class="kl">Descontadas</div></div>
+        <div class="he-kpi hrs">  <div class="kv" id="k-hrs-rep">—</div><div class="kl">Hrs Reportadas</div></div>
         <div class="he-kpi hrs" style="border-color:#22c55e;">
-            <div class="kv" id="k-hrs-auth" style="color:#22c55e;">—</div>
-            <div class="kl">Hrs autorizadas</div>
-        </div>
+            <div class="kv" id="k-hrs-auth" style="color:#22c55e;">—</div><div class="kl">Hrs Autorizadas</div></div>
     </div>
 
     <!-- FILTROS -->
     <div class="he-filtros">
         <div>
-            <label>Contrato</label><br>
-            <select id="fContrato" onchange="cargarTabla()" style="min-width:240px;">
+            <label>Contrato</label>
+            <select id="fContrato" onchange="recargar()" style="min-width:240px;">
                 <option value="">Todos los contratos</option>
                 {% for c in contratos %}
                 <option value="{{ c.id }}">{{ c.contrato }}</option>
                 {% endfor %}
             </select>
         </div>
+        <div><label>Mes</label><input type="month" id="fMes" onchange="recargar()"></div>
         <div>
-            <label>Mes</label><br>
-            <input type="month" id="fMes" onchange="cargarTabla()">
-        </div>
-        <div>
-            <label>Estado</label><br>
-            <select id="fEstado" onchange="cargarTabla()">
+            <label>Estado</label>
+            <select id="fEstado" onchange="recargar()">
                 <option value="">Todos</option>
-                <option>PENDIENTE</option>
-                <option>CONFORME</option>
-                <option>NO CONFORME</option>
-                <option>DESCONTADA</option>
+                <option>PENDIENTE</option><option>CONFORME</option>
+                <option>NO CONFORME</option><option>DESCONTADA</option>
             </select>
         </div>
-        <button class="btn btn-sm btn-outline-secondary" onclick="cargarTabla()" style="border-radius:7px;">
-            <i class="bi bi-arrow-clockwise"></i> Actualizar
+        <button class="btn btn-sm btn-outline-secondary" onclick="recargar()" style="border-radius:7px;">
+            <i class="bi bi-arrow-clockwise"></i>
         </button>
     </div>
 
-    <!-- TABLA -->
-    <div class="he-table-wrap">
-        <div class="he-table-header">
-            <h6><i class="bi bi-table me-2"></i>Horas Extras — Todos los Contratos</h6>
-            <span style="font-size:.75rem;color:#6c757d;">Haz clic en una fila para validar</span>
+    <!-- GRID -->
+    <div class="he-grid-panel">
+        <div class="he-grid-head">
+            <i class="bi bi-table" style="opacity:.8;"></i>
+            <h6>Horas Extras — Todos los Contratos</h6>
         </div>
-        <div id="heTabla" style="min-height:300px;"></div>
-    </div>
-</div>
-
-<!-- ═══ MODAL VALIDACIÓN ══════════════════════════════════════════════════ -->
-<div class="he-val-bg" id="heValBg" onclick="cerrarVal(event)">
-<div class="he-val-modal" onclick="event.stopPropagation()">
-    <div class="he-val-head">
-        <h5><i class="bi bi-patch-check me-2"></i>Validar Registro</h5>
-        <button onclick="cerrarVal()" style="background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;">&times;</button>
-    </div>
-    <div class="he-val-body">
-
-        <!-- Ficha del registro -->
-        <div class="he-ficha" id="valFicha"></div>
-
-        <!-- Autorización -->
-        <div class="mb-3">
-            <label class="fl mb-2 d-block">Autorización NEO</label>
-            <div class="auth-opts">
-                <button class="auth-btn" id="btn-CONFORME"    onclick="selAuth('CONFORME')">
-                    <i class="bi bi-check-circle me-1"></i>Conforme
-                </button>
-                <button class="auth-btn" id="btn-NO-CONFORME" onclick="selAuth('NO CONFORME')">
-                    <i class="bi bi-x-circle me-1"></i>No Conforme
-                </button>
-                <button class="auth-btn" id="btn-DESCONTADA"  onclick="selAuth('DESCONTADA')">
-                    <i class="bi bi-dash-circle me-1"></i>Descontada
-                </button>
+        <div class="he-toolbar">
+            <div style="display:flex;align-items:center;gap:5px;">
+                <i class="bi bi-layout-three-columns" style="font-size:.8rem;color:#6c757d;"></i>
+                <label style="font-size:.7rem;color:#6c757d;margin:0;">Fijar columnas:</label>
+                <select id="selFreeze" onchange="hot.updateSettings({fixedColumnsLeft:parseInt(this.value)||0})"
+                        style="font-size:.72rem;border-radius:5px;border:1px solid #dee2e6;padding:3px 6px;">
+                    <option value="0">Sin fijar</option>
+                    <option value="1">1 col</option>
+                    <option value="2">2 cols</option>
+                    <option value="3">3 cols</option>
+                    <option value="4">4 cols</option>
+                    <option value="5">5 cols</option>
+                </select>
             </div>
+            <span style="font-size:.71rem;color:#6c757d;margin-left:6px;">
+                <i class="bi bi-funnel me-1"></i>Usa el menú de cada columna para filtrar · Las columnas verdes son editables
+            </span>
         </div>
-
-        <!-- Horas autorizadas -->
-        <div class="mb-3" id="wrapHrsAuth">
-            <label class="fl">Horas Autorizadas</label>
-            <input type="number" id="valHrsAuth" class="form-control form-control-sm mt-1" min="0" step="0.5" placeholder="0">
-            <small class="text-muted" style="font-size:.72rem;">Dejar en 0 si se rechaza totalmente</small>
+        <div style="overflow:auto;">
+            <div id="gridNeo"></div>
         </div>
-
-        <!-- Observación NEO -->
-        <div>
-            <label class="fl">Observación NEO</label>
-            <textarea id="valObs" class="form-control form-control-sm mt-1" rows="3"
-                      placeholder="Justificación de la decisión…"></textarea>
+        <div class="grid-legend">
+            <span><div class="lg-dot" style="background:#f8f9fa;border:1px solid #dee2e6;"></div> Solo lectura (datos del coordinador)</span>
+            <span><div class="lg-dot" style="background:#f0fff4;border:1px solid #86efac;"></div> Editable NEO — haz clic para validar</span>
         </div>
     </div>
-    <div class="he-val-foot">
-        <button class="btn btn-secondary btn-sm" onclick="cerrarVal()">Cancelar</button>
-        <button class="btn btn-sm fw-bold" id="btnGuardarVal" onclick="guardarVal()"
-                style="background:#007d8a;color:#fff;border-radius:7px;">
-            <i class="bi bi-save me-1"></i>Guardar validación
-        </button>
-    </div>
-</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/handsontable.min.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-let tabla = null;
-let valId = null;
-let authSel = null;
+// Índices de columnas
+const C_FECHA=0, C_FREPORTE=1, C_CONTRATO=2, C_COORD=3,
+      C_CED=4, C_NOM=5, C_REC=6, C_PLACA=7, C_HINICIO=8, C_HFIN=9,
+      C_COD=10, C_TIPO=11, C_HRS=12, C_COMP=13, C_SUP=14,
+      C_JUST=15, C_OBS=16,
+      // NEO editable
+      C_HAUTH=17, C_ESTADO=18, C_OBSNEO=19,
+      // meta
+      C_VALBY=20, C_VALFECHA=21;
 
-// ── Init mes ──────────────────────────────────────────────────────────────────
-(function() {
+const ESTADOS_NEO = ["CONFORME", "NO CONFORME", "DESCONTADA"];
+
+let hot = null;
+let registrosIds = [];   // IDs indexados por fila
+let saveTimer = null;
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function(){
     const h = new Date();
-    document.getElementById("fMes").value = `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,"0")}`;
+    document.getElementById("fMes").value =
+        `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,"0")}`;
+    iniciarGrid();
+    recargar();
 })();
+
+// ── Grid ──────────────────────────────────────────────────────────────────────
+function iniciarGrid() {
+    hot = new Handsontable(document.getElementById("gridNeo"), {
+        data: [],
+        rowHeaders: true,
+        colHeaders: [
+            "Fecha Lab.","Fecha Reporte","Contrato","Coordinador",
+            "Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
+            "Cód.","Tipo HE","Hrs Rep.","Hrs Comp.","Supervisor",
+            "Justificación","Observación",
+            // NEO
+            "Hrs Autorizadas","Estado NEO","Obs NEO",
+            // meta
+            "Validado por","Fecha Validación"
+        ],
+        columns: [
+            { type:"text", readOnly:true },  // 0 fecha
+            { type:"text", readOnly:true },  // 1 fecha reporte
+            { type:"text", readOnly:true },  // 2 contrato
+            { type:"text", readOnly:true },  // 3 coordinador
+            { type:"text", readOnly:true },  // 4 cedula
+            { type:"text", readOnly:true },  // 5 nombre
+            { type:"text", readOnly:true },  // 6 recurso
+            { type:"text", readOnly:true },  // 7 placa
+            { type:"text", readOnly:true },  // 8 hora inicio
+            { type:"text", readOnly:true },  // 9 hora fin
+            { type:"text", readOnly:true },  // 10 cod
+            { type:"text", readOnly:true },  // 11 tipo_he
+            { type:"numeric", readOnly:true },// 12 hrs rep
+            { type:"numeric", readOnly:true },// 13 hrs comp
+            { type:"text", readOnly:true },  // 14 supervisor
+            { type:"text", readOnly:true },  // 15 just
+            { type:"text", readOnly:true },  // 16 obs
+            // NEO editable
+            { type:"numeric" },              // 17 hrs autorizadas
+            { type:"dropdown", source: ESTADOS_NEO, strict:true, allowInvalid:false }, // 18 estado
+            { type:"text" },                 // 19 obs neo
+            // meta readonly
+            { type:"text", readOnly:true },  // 20 validado por
+            { type:"text", readOnly:true },  // 21 fecha validacion
+        ],
+        colWidths: [100,148,170,130, 100,160,125,80,80,80, 65,190,80,80,140, 160,160, 110,130,175, 140,135],
+        height: 580,
+        stretchH: "none",
+        manualColumnResize: true,
+        filters: true,
+        dropdownMenu: true,
+        fixedColumnsLeft: 0,
+        licenseKey: "non-commercial-and-evaluation",
+        cells: function(row, col) {
+            if (col >= C_HAUTH && col <= C_OBSNEO) return { className: "ht-neo-edit" };
+            return {};
+        },
+        afterChange: function(changes, source) {
+            if (!changes || source === "loadData") return;
+            changes.forEach(([row]) => autoGuardar(row));
+        },
+        afterRenderer: function(td, row, col) {
+            if (col === C_ESTADO) {
+                const v = (hot.getDataAtCell(row, col) || "").replace(" ","-");
+                if (v) {
+                    td.innerHTML = `<span class="ht-badge ${v}">${hot.getDataAtCell(row, col)}</span>`;
+                }
+            }
+        },
+    });
+}
+
+// ── Cargar datos ──────────────────────────────────────────────────────────────
+async function recargar() {
+    cargarKpis();
+    const cid    = document.getElementById("fContrato").value;
+    const mes    = document.getElementById("fMes").value;
+    const estado = document.getElementById("fEstado").value;
+    const r = await fetch(`/api/he/registros?contrato_id=${cid}&mes=${mes}&estado=${estado}`);
+    const registros = await r.json();
+
+    registrosIds = registros.map(reg => reg.id);
+
+    const filas = registros.map(reg => [
+        fmtFecha(reg.fecha_labor),
+        reg.fecha_reporte,
+        reg.contrato,
+        reg.reportado_por,
+        reg.cedula,
+        reg.nombre,
+        reg.recurso,
+        reg.placa || "",
+        reg.hora_inicio || "",
+        reg.hora_fin || "",
+        reg.id_concepto,
+        reg.tipo_he,
+        reg.horas_reportadas,
+        reg.horas_compensadas,
+        reg.supervisor || "",
+        reg.justificacion || "",
+        reg.observacion || "",
+        reg.horas_autorizadas != null ? reg.horas_autorizadas : "",
+        reg.autorizacion_neo || "",
+        reg.obs_neo || "",
+        reg.validado_por || "",
+        reg.fecha_validacion || "",
+    ]);
+
+    hot.loadData(filas);
+}
+
+function fmtFecha(v) {
+    if (!v) return "";
+    const p = v.split("-");
+    return p.length === 3 ? `${p[2]}-${p[1]}-${p[0].slice(2)}` : v;
+}
+
+// ── Auto-guardar ──────────────────────────────────────────────────────────────
+function autoGuardar(row) {
+    const id = registrosIds[row];
+    if (!id) return;
+
+    const estado = (hot.getDataAtCell(row, C_ESTADO) || "").trim();
+    const hrs    = hot.getDataAtCell(row, C_HAUTH);
+    const obs    = (hot.getDataAtCell(row, C_OBSNEO) || "").trim();
+
+    if (!estado) return;  // No guardar si no tiene estado
+
+    clearTimeout(saveTimer);
+    const ind = document.getElementById("saving-indicator");
+    ind.style.display = "inline";
+
+    saveTimer = setTimeout(async () => {
+        try {
+            const r = await fetch(`/api/he/${id}/validar`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    autorizacion_neo:  estado,
+                    horas_autorizadas: parseInt(hrs) || 0,
+                    obs_neo:           obs,
+                }),
+            });
+            const d = await r.json();
+            if (d.ok) {
+                // Actualizar "Validado por" y "Fecha validación" en la fila
+                hot.setDataAtCell(row, C_VALBY,    d.validado_por   || "", "auto");
+                hot.setDataAtCell(row, C_VALFECHA, d.fecha_validacion || "", "auto");
+                cargarKpis();
+            }
+        } catch(e) {}
+        ind.style.display = "none";
+    }, 600);
+}
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 async function cargarKpis() {
@@ -232,152 +327,29 @@ async function cargarKpis() {
     const mes = document.getElementById("fMes").value;
     const r = await fetch(`/api/he/kpis?contrato_id=${cid}&mes=${mes}`);
     const d = await r.json();
-    document.getElementById("k-total").textContent    = d.total;
-    document.getElementById("k-pend").textContent     = d.pendientes;
-    document.getElementById("k-apro").textContent     = d.aprobadas;
-    document.getElementById("k-parc").textContent     = d.parciales;
-    document.getElementById("k-rech").textContent     = d.rechazadas;
-    document.getElementById("k-hrs-rep").textContent  = (+d.hrs_reportadas).toFixed(1);
-    document.getElementById("k-hrs-auth").textContent = (+d.hrs_autorizadas).toFixed(1);
+    document.getElementById("k-total").textContent   = d.total;
+    document.getElementById("k-pend").textContent    = d.pendientes;
+    document.getElementById("k-conf").textContent    = d.aprobadas;
+    document.getElementById("k-noconf").textContent  = d.parciales;
+    document.getElementById("k-desc").textContent    = d.rechazadas;
+    document.getElementById("k-hrs-rep").textContent = (+d.hrs_reportadas  || 0).toFixed(0);
+    document.getElementById("k-hrs-auth").textContent= (+d.hrs_autorizadas || 0).toFixed(0);
 }
 
-// ── Tabla ─────────────────────────────────────────────────────────────────────
-function estadoBadge(cell) {
-    const v = cell.getValue() || "PENDIENTE";
-    return `<span class="badge-${v}">${v}</span>`;
-}
-
-function cargarTabla() {
-    cargarKpis();
-    const cid    = document.getElementById("fContrato").value;
-    const mes    = document.getElementById("fMes").value;
-    const estado = document.getElementById("fEstado").value;
-    const url    = `/api/he/registros?contrato_id=${cid}&mes=${mes}&estado=${estado}`;
-
-    const cols = [
-        { title:"#", formatter:"rownum", width:45, hozAlign:"center", headerFilter:false },
-        { title:"Fecha Lab.",     field:"fecha_labor",        width:105, headerFilter:"input" },
-        { title:"Fecha y Hora Reporte", field:"fecha_reporte", width:155, headerFilter:"input" },
-        { title:"Contrato",       field:"contrato",           minWidth:160, headerFilter:"input" },
-        { title:"Coordinador",    field:"reportado_por",      minWidth:130, headerFilter:"input" },
-        { title:"Cédula",         field:"cedula",             width:110, headerFilter:"input" },
-        { title:"Nombre",         field:"nombre",             minWidth:150, headerFilter:"input" },
-        { title:"Recurso",        field:"recurso",            minWidth:130, headerFilter:"input" },
-        { title:"Cód.",           field:"id_concepto",        width:70, headerFilter:"input" },
-        { title:"Tipo HE",        field:"tipo_he",            minWidth:190, headerFilter:"input" },
-        { title:"Hrs Rep.",       field:"horas_reportadas",   width:90, hozAlign:"right", headerFilter:"input" },
-        { title:"Hrs Comp.",      field:"horas_compensadas",  width:90, hozAlign:"right", headerFilter:"input" },
-        { title:"Auth. Coord.",   field:"autorizacion_coord", width:100,
-          formatter: c => c.getValue() === "SI"
-            ? `<span style="color:#22c55e;font-weight:700;">✔ SI</span>`
-            : c.getValue() === "NO"
-            ? `<span style="color:#ef4444;font-weight:700;">✖ NO</span>` : "—" },
-        { title:"Justificación",  field:"justificacion",      minWidth:150, headerFilter:"input", formatter:"textarea" },
-        { title:"Observación",    field:"observacion",        minWidth:150, headerFilter:"input", formatter:"textarea" },
-        { title:"Estado",         field:"estado",             width:110, formatter: estadoBadge,
-          headerFilter:"list",
-          headerFilterParams:{values:{"":"Todos","PENDIENTE":"PENDIENTE","CONFORME":"CONFORME","NO CONFORME":"NO CONFORME","DESCONTADA":"DESCONTADA"}} },
-        { title:"Hrs Autorizadas",field:"horas_autorizadas",  width:115, hozAlign:"right", headerFilter:"input" },
-        { title:"Auth. NEO",      field:"autorizacion_neo",   width:110, headerFilter:"input" },
-        { title:"Obs NEO",        field:"obs_neo",            minWidth:150, headerFilter:"input", formatter:"textarea" },
-        { title:"Validado por",   field:"validado_por",       minWidth:130, headerFilter:"input" },
-    ];
-
-    if (tabla) {
-        tabla.setData(url);
-        return;
-    }
-    tabla = new Tabulator("#heTabla", {
-        ajaxURL: url,
-        layout: "fitDataStretch",
-        resizableColumns: true,
-        movableColumns: true,
-        height: "560px",
-        columns: cols,
-        rowClick: function(e, row) {
-            abrirVal(row.getData());
-        },
-    });
-}
-
+// ── Exportar ──────────────────────────────────────────────────────────────────
 function exportarExcel() {
-    if (tabla) tabla.download("xlsx", "he_validacion.xlsx", { sheetName:"Horas Extras" });
+    const data = hot.getData();
+    const headers = [
+        "Fecha Lab.","Fecha Reporte","Contrato","Coordinador",
+        "Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
+        "Cód.","Tipo HE","Hrs Rep.","Hrs Comp.","Supervisor",
+        "Justificación","Observación",
+        "Hrs Autorizadas","Estado NEO","Obs NEO","Validado por","Fecha Validación"
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Horas Extras");
+    XLSX.writeFile(wb, "he_validacion.xlsx");
 }
-
-// ── Modal validación ──────────────────────────────────────────────────────────
-function abrirVal(reg) {
-    valId   = reg.id;
-    authSel = reg.autorizacion_neo || null;
-
-    // Ficha
-    document.getElementById("valFicha").innerHTML = `
-    <div class="row g-0">
-        <div class="col-6 col-md-3"><div class="lbl">Contrato</div><div class="val">${reg.contrato}</div></div>
-        <div class="col-6 col-md-3"><div class="lbl">Fecha Labor</div><div class="val">${reg.fecha_labor}</div></div>
-        <div class="col-6 col-md-3"><div class="lbl">Fecha y Hora Reporte</div><div class="val">${reg.fecha_reporte}</div></div>
-        <div class="col-6 col-md-3"><div class="lbl">Coordinador</div><div class="val">${reg.reportado_por}</div></div>
-        <div class="col-6 col-md-3 mt-2"><div class="lbl">Cédula</div><div class="val">${reg.cedula}</div></div>
-        <div class="col-6 col-md-5 mt-2"><div class="lbl">Nombre</div><div class="val">${reg.nombre}</div></div>
-        <div class="col-12 col-md-4 mt-2"><div class="lbl">Recurso</div><div class="val">${reg.recurso}</div></div>
-        <div class="col-6 col-md-3 mt-2"><div class="lbl">Tipo HE</div><div class="val">${reg.id_concepto} — ${reg.tipo_he}</div></div>
-        <div class="col-4 col-md-2 mt-2"><div class="lbl">Hrs Reportadas</div><div class="val" style="color:#0d3b66;font-size:1.05rem;">${reg.horas_reportadas}</div></div>
-        <div class="col-4 col-md-2 mt-2"><div class="lbl">Hrs Compens.</div><div class="val">${reg.horas_compensadas}</div></div>
-        <div class="col-4 col-md-2 mt-2"><div class="lbl">Auth. Coord.</div><div class="val">${reg.autorizacion_coord || "—"}</div></div>
-        <div class="col-12 mt-2"><div class="lbl">Justificación coordinador</div><div class="val">${reg.justificacion || "—"}</div></div>
-    </div>`;
-
-    // Prellenar si ya fue validado
-    document.getElementById("valHrsAuth").value = reg.horas_autorizadas || reg.horas_reportadas || "";
-    document.getElementById("valObs").value      = reg.obs_neo || "";
-    selAuth(authSel);
-
-    document.getElementById("heValBg").classList.add("open");
-}
-
-function cerrarVal(e) {
-    if (!e || e.target === document.getElementById("heValBg"))
-        document.getElementById("heValBg").classList.remove("open");
-}
-
-function selAuth(tipo) {
-    authSel = tipo;
-    ["CONFORME","NO CONFORME","DESCONTADA"].forEach(t => {
-        const key = t.replace(" ","-");
-        const b = document.getElementById(`btn-${key}`);
-        if (b) b.className = "auth-btn" + (t === tipo ? ` sel-${key}` : "");
-    });
-}
-
-async function guardarVal() {
-    if (!authSel) { alert("Seleccione una autorización"); return; }
-    const body = {
-        autorizacion_neo:  authSel,
-        horas_autorizadas: parseFloat(document.getElementById("valHrsAuth").value) || 0,
-        obs_neo:           document.getElementById("valObs").value.trim(),
-    };
-    const r = await fetch(`/api/he/${valId}/validar`, {
-        method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)
-    });
-    const d = await r.json();
-    if (d.ok) {
-        cerrarVal();
-        cargarTabla();
-        mostrarToast(`Registro marcado como ${d.estado}`, d.estado === "NO CONFORME" ? "danger" : d.estado === "DESCONTADA" ? "warning" : "success");
-    } else {
-        alert(d.msg || "Error al guardar");
-    }
-}
-
-// ── Toast ─────────────────────────────────────────────────────────────────────
-function mostrarToast(msg, tipo="success") {
-    const t = document.createElement("div");
-    t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${tipo==="success"?"#007d8a":tipo==="danger"?"#dc3545":"#0d3b66"};color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);`;
-    t.textContent = msg;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3000);
-}
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-cargarTabla();
 </script>
 {% endblock %}
