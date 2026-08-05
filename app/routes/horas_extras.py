@@ -241,8 +241,13 @@ def api_he_guardar():
     if not registros:
         return jsonify({"ok": False, "msg": f"Sin registros válidos ({omitidos} omitidos — contrato no encontrado)"}), 400
 
-    db.session.bulk_insert_mappings(HoraExtra, registros)
-    db.session.commit()
+    try:
+        db.session.bulk_insert_mappings(HoraExtra, registros)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        return jsonify({"ok": False, "msg": str(e), "trace": traceback.format_exc()}), 500
     return jsonify({"ok": True, "guardados": len(registros), "omitidos": omitidos})
 
 
