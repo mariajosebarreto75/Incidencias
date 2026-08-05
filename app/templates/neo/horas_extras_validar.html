@@ -394,6 +394,7 @@ function iniciarGrid() {
         filters: true,
         dropdownMenu: true,
         fixedColumnsLeft: 0,
+        hiddenColumns: { columns: [C_COORD, C_VALFECHA], indicators: false },
         licenseKey: "non-commercial-and-evaluation",
         cells: function(row, col) {
             if (col >= C_HAUTH && col <= C_OBSNEO) return { className: "ht-neo-edit" };
