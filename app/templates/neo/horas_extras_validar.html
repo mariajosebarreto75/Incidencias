@@ -105,6 +105,17 @@ body { background:var(--c-bg); }
 #saving-indicator { font-size:.73rem; color:#007d8a; display:none; }
 
 /* ── Cortes ── */
+/* ── Tarjetas de corte ── */
+.corte-card{background:#fff;border-radius:12px;box-shadow:0 1px 8px rgba(0,0,0,.08);padding:16px 18px;display:flex;flex-direction:column;gap:8px;border-left:4px solid #dee2e6;transition:box-shadow .15s;}
+.corte-card:hover{box-shadow:0 3px 14px rgba(0,0,0,.12);}
+.corte-card.abierto{border-left-color:#22c55e;}
+.corte-card.cerrado{border-left-color:#94a3b8;}
+.corte-card-title{font-weight:800;color:#0d6b73;font-size:.92rem;}
+.corte-card-meta{font-size:.73rem;color:#6c757d;}
+.corte-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.66rem;font-weight:700;}
+.corte-badge.abierto{background:#d1fae5;color:#065f46;}
+.corte-badge.cerrado{background:#e2e8f0;color:#475569;}
+
 /* ── Modales ── */
 .he-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;display:none;align-items:center;justify-content:center;padding:16px;}
 .he-modal-overlay.open{display:flex;}
@@ -297,13 +308,65 @@ body { background:var(--c-bg); }
 
     <!-- ══════════════════ PANEL 3: CORTES ══════════════════ -->
     <div class="he-panel" id="panel-cortes">
-        <div class="he-cortes-empty">
-            <i class="bi bi-archive"></i>
-            <h5>Cortes de nómina</h5>
-            <p>Esta sección estará disponible próximamente. Aquí podrás consultar y validar registros de períodos de nómina cerrados.</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h6 style="margin:0;font-weight:700;color:#0d6b73;"><i class="bi bi-archive me-2"></i>Cortes de nómina (17→16)</h6>
+            <button class="btn btn-sm btn-primary fw-semibold" onclick="abrirNuevoCorteNeo()" style="border-radius:7px;">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo corte
+            </button>
+        </div>
+        <div id="cortesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;">
+            <div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:48px 0;">
+                <i class="bi bi-archive" style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:10px;"></i>
+                Cargando cortes…
+            </div>
         </div>
     </div>
 
+</div>
+
+<!-- ── Modal Nuevo Corte NEO ── -->
+<div class="he-modal-overlay" id="modalNuevoCorteNeo">
+  <div class="he-modal" style="max-width:480px;">
+    <div class="he-modal-header">
+      <i class="bi bi-archive"></i>
+      <h6>Crear nuevo corte</h6>
+      <button onclick="document.getElementById('modalNuevoCorteNeo').classList.remove('open')">&times;</button>
+    </div>
+    <div class="he-modal-body">
+      <div style="background:#e0f5f7;border-radius:8px;padding:10px 14px;font-size:.8rem;color:#0d6b73;margin-bottom:14px;">
+        <strong>Período 17→16:</strong> los cortes van del día 17 de un mes al día 16 del mes siguiente.
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="display:block;font-size:.68rem;font-weight:700;color:#6c757d;text-transform:uppercase;margin-bottom:3px;">Nombre (opcional)</label>
+        <input type="text" id="neoCorteNombre" style="width:100%;border:1px solid #dee2e6;border-radius:7px;padding:6px 9px;font-size:.82rem;" placeholder="Ej: 17 Jun – 16 Jul 2025">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+          <label style="display:block;font-size:.68rem;font-weight:700;color:#6c757d;text-transform:uppercase;margin-bottom:3px;">Fecha inicio</label>
+          <input type="date" id="neoCorteInicio" style="width:100%;border:1px solid #dee2e6;border-radius:7px;padding:6px 9px;font-size:.82rem;">
+        </div>
+        <div>
+          <label style="display:block;font-size:.68rem;font-weight:700;color:#6c757d;text-transform:uppercase;margin-bottom:3px;">Fecha fin</label>
+          <input type="date" id="neoCorteFin" style="width:100%;border:1px solid #dee2e6;border-radius:7px;padding:6px 9px;font-size:.82rem;">
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="display:block;font-size:.68rem;font-weight:700;color:#6c757d;text-transform:uppercase;margin-bottom:3px;">Contrato (vacío = todos)</label>
+        <select id="neoCorteContrato" style="width:100%;border:1px solid #dee2e6;border-radius:7px;padding:6px 9px;font-size:.82rem;">
+          <option value="">— Todos los contratos —</option>
+          {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:.68rem;font-weight:700;color:#6c757d;text-transform:uppercase;margin-bottom:3px;">Observación</label>
+        <textarea id="neoCorteObs" rows="2" style="width:100%;border:1px solid #dee2e6;border-radius:7px;padding:6px 9px;font-size:.82rem;" placeholder="Opcional"></textarea>
+      </div>
+    </div>
+    <div class="he-modal-footer">
+      <button class="btn btn-sm btn-secondary" onclick="document.getElementById('modalNuevoCorteNeo').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-sm btn-primary fw-bold" onclick="crearCorteNeo()"><i class="bi bi-archive me-1"></i>Crear corte</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── Modal Importar Excel NEO ── -->
@@ -371,6 +434,7 @@ let hot = null, hotHistorial = null;
 let registrosIds = [];
 let saveTimer = null;
 let historialCargado = false;
+let cortesCargadosNeo = false;
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function cambiarTab(nombre, btn) {
@@ -381,6 +445,10 @@ function cambiarTab(nombre, btn) {
     if (nombre === "historial" && !historialCargado) {
         historialCargado = true;
         cargarHistorial();
+    }
+    if (nombre === "cortes" && !cortesCargadosNeo) {
+        cortesCargadosNeo = true;
+        cargarCortesNeo();
     }
 }
 
@@ -695,7 +763,7 @@ function procesarImportNeo(input) {
                 justificacion:     String(r[11] || "").trim(),
                 observacion:       String(r[12] || "").trim(),
             }))
-            .filter(f => f.fecha_labor && f.cedula && f.horas_reportadas > 0);
+            .filter(f => f.fecha_labor || f.cedula || f.recurso || f.horas_reportadas > 0); // validación relajada — se reactivará luego
 
         const headers = ["Fecha Labor","Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
                          "Id Concepto","Hrs Rep.","Hrs Comp.","Supervisor","Justificación","Observación"];
@@ -762,8 +830,141 @@ async function confirmarImportNeo() {
 }
 
 document.addEventListener("click", e => {
-    const overlay = document.getElementById("modalImportarNeo");
-    if (overlay && e.target === overlay) overlay.classList.remove("open");
+    ["modalImportarNeo","modalNuevoCorteNeo"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && e.target === el) el.classList.remove("open");
+    });
 });
+
+// ── Cortes NEO ────────────────────────────────────────────────────────────────
+async function cargarCortesNeo() {
+    const cid = document.getElementById("fContrato").value;
+    const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
+    const r = await fetch(url);
+    const cortes = await r.json();
+    const container = document.getElementById("cortesList");
+    if (!cortes.length) {
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:48px 0;">
+            <i class="bi bi-archive" style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:10px;"></i>
+            No hay cortes registrados aún.</div>`;
+        return;
+    }
+    container.innerHTML = cortes.map(c => `
+        <div class="corte-card ${c.estado.toLowerCase()}">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="corte-card-title">${c.nombre}</span>
+                <span class="corte-badge ${c.estado.toLowerCase()}">${c.estado}</span>
+            </div>
+            <div class="corte-card-meta">
+                <i class="bi bi-calendar-range me-1"></i>${c.fecha_inicio} → ${c.fecha_fin}
+                ${c.contrato ? `&nbsp;·&nbsp;<i class="bi bi-building me-1"></i>${c.contrato}` : ""}
+            </div>
+            ${c.cerrado_por ? `<div class="corte-card-meta"><i class="bi bi-person-check me-1"></i>Cerrado por ${c.cerrado_por} el ${c.fecha_cierre}</div>` : ""}
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+                <button onclick="verCorteNeo(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
+                    <i class="bi bi-eye me-1"></i>Ver registros</button>
+                ${c.estado === "ABIERTO" ? `
+                <button onclick="cerrarCorteNeo(${c.id})" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;font-size:.72rem;">
+                    <i class="bi bi-lock me-1"></i>Cerrar corte</button>` : ""}
+                <button onclick="exportarCorteNeo(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-success" style="border-radius:6px;font-size:.72rem;">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar</button>
+            </div>
+        </div>`).join("");
+}
+
+function abrirNuevoCorteNeo() {
+    const hoy = new Date();
+    const dia = hoy.getDate();
+    let ini, fin;
+    if (dia >= 17) {
+        ini = new Date(hoy.getFullYear(), hoy.getMonth(), 17);
+        fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 16);
+    } else {
+        ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 17);
+        fin = new Date(hoy.getFullYear(), hoy.getMonth(), 16);
+    }
+    const fmt = d => d.toISOString().split("T")[0];
+    document.getElementById("neoCorteNombre").value      = "";
+    document.getElementById("neoCorteInicio").value      = fmt(ini);
+    document.getElementById("neoCorteFin").value         = fmt(fin);
+    document.getElementById("neoCorteObs").value         = "";
+    const cid = document.getElementById("fContrato").value;
+    if (cid) document.getElementById("neoCorteContrato").value = cid;
+    document.getElementById("modalNuevoCorteNeo").classList.add("open");
+}
+
+async function crearCorteNeo() {
+    const payload = {
+        nombre:       document.getElementById("neoCorteNombre").value.trim(),
+        fecha_inicio: document.getElementById("neoCorteInicio").value,
+        fecha_fin:    document.getElementById("neoCorteFin").value,
+        contrato_id:  document.getElementById("neoCorteContrato").value || null,
+        observacion:  document.getElementById("neoCorteObs").value.trim(),
+    };
+    if (!payload.fecha_inicio || !payload.fecha_fin) { alert("Complete las fechas"); return; }
+    const r = await fetch("/api/he/cortes", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.ok) {
+        document.getElementById("modalNuevoCorteNeo").classList.remove("open");
+        cortesCargadosNeo = false;
+        cargarCortesNeo();
+        const t = document.createElement("div");
+        t.style.cssText = "position:fixed;bottom:24px;right:24px;z-index:9999;background:#198754;color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);";
+        t.textContent = `Corte creado · ${d.registros_asignados} registros asignados`;
+        document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
+    } else {
+        alert(d.msg || "Error al crear corte");
+    }
+}
+
+async function cerrarCorteNeo(id) {
+    if (!confirm("¿Cerrar este corte?")) return;
+    const r = await fetch(`/api/he/cortes/${id}/cerrar`, { method:"POST", headers:{"Content-Type":"application/json"}, body:"{}" });
+    const d = await r.json();
+    if (d.ok) { cortesCargadosNeo = false; cargarCortesNeo(); }
+    else alert(d.msg || "Error");
+}
+
+async function verCorteNeo(id, nombre) {
+    // Ir a tab validación y cargar registros del corte
+    const tab = document.querySelector(".he-tab:first-child");
+    cambiarTab("validacion", tab);
+    const registros = await (await fetch(`/api/he/registros?corte_id=${id}`)).json();
+    registrosIds = registros.map(reg => reg.id);
+    const filas = registros.map(reg => [
+        fmtFecha(reg.fecha_labor), reg.contrato, reg.recurso||"", reg.placa||"",
+        reg.hora_inicio||"", reg.hora_fin||"", reg.cedula, reg.nombre||"",
+        reg.id_concepto, reg.tipo_he||"",
+        reg.horas_reportadas, reg.horas_compensadas,
+        reg.autorizacion_sup||"", reg.justificacion||"", reg.observacion||"",
+        reg.horas_autorizadas!=null?reg.horas_autorizadas:"",
+        reg.autorizacion_neo||"", reg.obs_neo||"",
+        reg.fecha_reporte||"", reg.validado_por||"", reg.fecha_validacion||"",
+    ]);
+    if (hot) hot.loadData(filas);
+}
+
+async function exportarCorteNeo(id, nombre) {
+    const data = await (await fetch(`/api/he/cortes/${id}`)).json();
+    const registros = data.registros;
+    const NEO_HEADERS = [
+        "CONTRATO","FECHA LABOR","CEDULA","NOMBRE","RECURSO","ID CONCEPTO",
+        "# HORAS REPORTADAS","# HORAS COMPENSADAS","AUTORIZACIÓN(SUPERVISOR)",
+        "JUSTIFICACIÓN","OBSERVACIÓN","TIPO HE","VALOR EXTRA NOMINA","$ VALOR EXTRA",
+        "AUTORIZACIÓN NEO","# HORAS AUTORIZADAS","FECHA REPORTE","VALIDADO POR","FECHA VALIDACIÓN"
+    ];
+    const rows = registros.map(r => [
+        r.contrato, r.fecha_labor, r.cedula, r.nombre, r.recurso, r.id_concepto,
+        r.horas_reportadas, r.horas_compensadas, r.autorizacion_sup,
+        r.justificacion, r.observacion, r.tipo_he, "", "",
+        r.autorizacion_neo, r.horas_autorizadas, r.fecha_reporte, r.validado_por, r.fecha_validacion
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([NEO_HEADERS, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Corte");
+    XLSX.writeFile(wb, `corte_${nombre.replace(/\s/g,"_")}.xlsx`);
+}
 </script>
 {% endblock %}

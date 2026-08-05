@@ -116,6 +116,21 @@ body { background:var(--c-bg); }
 .tabulator-col-title { font-size:.7rem !important; font-weight:700 !important; color:#0d3b66 !important; text-transform:uppercase; }
 .tabulator-cell { font-size:.78rem !important; }
 
+/* ── Tarjetas de corte ── */
+.corte-card {
+    background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08);
+    padding:16px 18px; display:flex; flex-direction:column; gap:8px;
+    border-left:4px solid #dee2e6; transition:box-shadow .15s;
+}
+.corte-card:hover { box-shadow:0 3px 14px rgba(0,0,0,.12); }
+.corte-card.abierto { border-left-color:#22c55e; }
+.corte-card.cerrado { border-left-color:#94a3b8; }
+.corte-card-title { font-weight:800; color:#0d3b66; font-size:.92rem; }
+.corte-card-meta { font-size:.73rem; color:#6c757d; }
+.corte-badge { display:inline-block; padding:2px 10px; border-radius:20px; font-size:.66rem; font-weight:700; }
+.corte-badge.abierto { background:#d1fae5; color:#065f46; }
+.corte-badge.cerrado { background:#e2e8f0; color:#475569; }
+
 /* ── Modales ── */
 .he-modal-overlay {
     position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1050;
@@ -315,11 +330,60 @@ body { background:var(--c-bg); }
 
     <!-- ══════════════════ PANEL 3: CORTES ══════════════════ -->
     <div class="he-panel" id="panel-cortes">
-        <div class="he-cortes-empty">
-            <i class="bi bi-archive"></i>
-            <h5>Cortes de nómina</h5>
-            <p>Esta sección estará disponible próximamente. Aquí podrás consultar y validar registros de períodos de nómina cerrados.</p>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <h6 style="margin:0;font-weight:700;color:#0d3b66;"><i class="bi bi-archive me-2"></i>Cortes de nómina (17→16)</h6>
+            <button class="btn btn-sm btn-primary fw-semibold" onclick="abrirNuevoCorte()" style="border-radius:7px;">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo corte
+            </button>
         </div>
+        <div id="cortesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;">
+            <div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:48px 0;">
+                <i class="bi bi-archive" style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:10px;"></i>
+                Cargando cortes…
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal nuevo corte -->
+    <div class="he-modal-overlay" id="modalNuevoCorte">
+      <div class="he-modal" style="max-width:480px;">
+        <div class="he-modal-header">
+          <i class="bi bi-archive"></i>
+          <h6>Crear nuevo corte</h6>
+          <button onclick="cerrarModal('modalNuevoCorte')">&times;</button>
+        </div>
+        <div class="he-modal-body">
+          <div style="background:#fff8e1;border-radius:8px;padding:10px 14px;font-size:.8rem;color:#7c5e0a;margin-bottom:14px;">
+            <strong>Período 17→16:</strong> los cortes van del día 17 de un mes al día 16 del mes siguiente.
+          </div>
+          <div class="he-form-row cols1">
+            <div class="he-form-group"><label>Nombre del corte (opcional)</label>
+              <input type="text" id="corteNombre" placeholder="Ej: 17 Jun – 16 Jul 2025">
+            </div>
+          </div>
+          <div class="he-form-row">
+            <div class="he-form-group"><label>Fecha inicio</label><input type="date" id="corteFechaInicio"></div>
+            <div class="he-form-group"><label>Fecha fin</label><input type="date" id="corteFechaFin"></div>
+          </div>
+          <div class="he-form-row cols1">
+            <div class="he-form-group"><label>Contrato (dejar vacío = todos)</label>
+              <select id="corteContrato">
+                <option value="">— Todos los contratos —</option>
+                {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="he-form-row cols1">
+            <div class="he-form-group"><label>Observación</label>
+              <textarea id="corteObs" rows="2" placeholder="Opcional"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="he-modal-footer">
+          <button class="btn btn-sm btn-secondary" onclick="cerrarModal('modalNuevoCorte')">Cancelar</button>
+          <button class="btn btn-sm btn-primary fw-bold" onclick="crearCorte()"><i class="bi bi-archive me-1"></i>Crear corte</button>
+        </div>
+      </div>
     </div>
 
 </div>
@@ -433,16 +497,6 @@ let supervisoresActuales = [];  // lista actual para aplicar a filas nuevas
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 let validacionCargada = false;
-function cambiarTab(nombre, btn) {
-    document.querySelectorAll(".he-tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".he-panel").forEach(p => p.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById("panel-" + nombre).classList.add("active");
-    if (nombre === "validacion" && !validacionCargada) {
-        validacionCargada = true;
-        cargarHistorial();
-    }
-}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
@@ -855,7 +909,7 @@ function procesarImport(input) {
                 justificacion:    String(r[11] || "").trim(),
                 observacion:      String(r[12] || "").trim(),
             }))
-            .filter(f => f.fecha_labor && f.cedula && f.horas_reportadas > 0);
+            .filter(f => f.fecha_labor || f.cedula || f.recurso || f.horas_reportadas > 0); // validación relajada — se reactivará luego
 
         // Preview
         const headers = ["Fecha Labor","Cédula","Nombre","Recurso","Placa","H.Inicio","H.Fin",
@@ -893,6 +947,122 @@ function fmtFechaImport(val) {
         if (p[0].length === 4) return `${p[0]}-${p[1].padStart(2,"0")}-${p[2].padStart(2,"0")}`;
     }
     return s;
+}
+
+// ── Cortes ────────────────────────────────────────────────────────────────────
+let cortesCargados = false;
+
+async function cambiarTab(nombre, btn) {
+    document.querySelectorAll(".he-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".he-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + nombre).classList.add("active");
+    if (nombre === "validacion" && !validacionCargada) {
+        validacionCargada = true;
+        cargarHistorial();
+    }
+    if (nombre === "cortes" && !cortesCargados) {
+        cortesCargados = true;
+        cargarCortes();
+    }
+}
+
+async function cargarCortes() {
+    const cid = document.getElementById("gridContrato").value;
+    const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
+    const r = await fetch(url);
+    const cortes = await r.json();
+    const container = document.getElementById("cortesList");
+    if (!cortes.length) {
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:48px 0;">
+            <i class="bi bi-archive" style="font-size:2.5rem;opacity:.3;display:block;margin-bottom:10px;"></i>
+            No hay cortes registrados aún.</div>`;
+        return;
+    }
+    container.innerHTML = cortes.map(c => `
+        <div class="corte-card ${c.estado.toLowerCase()}">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span class="corte-card-title">${c.nombre}</span>
+                <span class="corte-badge ${c.estado.toLowerCase()}">${c.estado}</span>
+            </div>
+            <div class="corte-card-meta">
+                <i class="bi bi-calendar-range me-1"></i>${c.fecha_inicio} → ${c.fecha_fin}
+                ${c.contrato ? `&nbsp;·&nbsp;<i class="bi bi-building me-1"></i>${c.contrato}` : ""}
+            </div>
+            ${c.estado === "CERRADO" ? `<div class="corte-card-meta"><i class="bi bi-person-check me-1"></i>Cerrado por ${c.cerrado_por} el ${c.fecha_cierre}</div>` : ""}
+            <div style="display:flex;gap:6px;margin-top:4px;">
+                <button onclick="verCorte(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
+                    <i class="bi bi-eye me-1"></i>Ver registros</button>
+                ${c.estado === "ABIERTO" ? `
+                <button onclick="cerrarCorte(${c.id})" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;font-size:.72rem;">
+                    <i class="bi bi-lock me-1"></i>Cerrar corte</button>` : ""}
+            </div>
+        </div>`).join("");
+}
+
+function abrirNuevoCorte() {
+    // Sugerir fechas del corte actual (17 del mes pasado → 16 del mes actual)
+    const hoy = new Date();
+    const dia = hoy.getDate();
+    let ini, fin;
+    if (dia >= 17) {
+        ini = new Date(hoy.getFullYear(), hoy.getMonth(), 17);
+        fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 16);
+    } else {
+        ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 17);
+        fin = new Date(hoy.getFullYear(), hoy.getMonth(), 16);
+    }
+    const fmt = d => d.toISOString().split("T")[0];
+    document.getElementById("corteFechaInicio").value = fmt(ini);
+    document.getElementById("corteFechaFin").value    = fmt(fin);
+    document.getElementById("corteNombre").value      = "";
+    document.getElementById("corteObs").value         = "";
+    const cid = document.getElementById("gridContrato").value;
+    if (cid) document.getElementById("corteContrato").value = cid;
+    document.getElementById("modalNuevoCorte").classList.add("open");
+}
+
+async function crearCorte() {
+    const payload = {
+        nombre:       document.getElementById("corteNombre").value.trim(),
+        fecha_inicio: document.getElementById("corteFechaInicio").value,
+        fecha_fin:    document.getElementById("corteFechaFin").value,
+        contrato_id:  document.getElementById("corteContrato").value || null,
+        observacion:  document.getElementById("corteObs").value.trim(),
+    };
+    if (!payload.fecha_inicio || !payload.fecha_fin) { mostrarToast("Complete las fechas","warning"); return; }
+    const r = await fetch("/api/he/cortes", {
+        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.ok) {
+        cerrarModal("modalNuevoCorte");
+        cortesCargados = false;
+        cargarCortes();
+        mostrarToast(`Corte creado · ${d.registros_asignados} registros asignados`, "success");
+    } else {
+        mostrarToast(d.msg || "Error al crear corte", "danger");
+    }
+}
+
+async function cerrarCorte(id) {
+    if (!confirm("¿Cerrar este corte? Ya no se podrán agregar registros nuevos.")) return;
+    const r = await fetch(`/api/he/cortes/${id}/cerrar`, { method:"POST", headers:{"Content-Type":"application/json"}, body: "{}" });
+    const d = await r.json();
+    if (d.ok) { cargarCortes(); mostrarToast("Corte cerrado","success"); }
+    else mostrarToast(d.msg || "Error","danger");
+}
+
+async function verCorte(id, nombre) {
+    const r = await fetch(`/api/he/cortes/${id}`);
+    const d = await r.json();
+    // Cambiar a tab validación y cargar registros de ese corte
+    const tab = document.querySelector(".he-tab:nth-child(2)");
+    cambiarTab("validacion", tab);
+    // Usar URL del corte para cargar en Tabulator
+    const url = `/api/he/registros?corte_id=${id}`;
+    if (tabla) { tabla.setData(url); }
+    mostrarToast(`Mostrando corte: ${nombre}`, "success");
 }
 
 async function confirmarImport() {

@@ -9,6 +9,7 @@ from app.models.contrato import Contrato
 from app.models.persona import Persona
 from app.models.user_contrato import UserContrato
 from app.models.supervisor import Supervisor
+from app.models.he_corte import HeCorte
 
 he_bp = Blueprint("he_bp", __name__)
 
@@ -89,10 +90,13 @@ def api_he_registros():
         q = q.filter(HoraExtra.contrato_id.in_(ids))
 
     contrato_id = request.args.get("contrato_id", type=int)
-    mes = request.args.get("mes", "")
-    estado = request.args.get("estado", "")
+    mes         = request.args.get("mes", "")
+    estado      = request.args.get("estado", "")
+    corte_id    = request.args.get("corte_id", type=int)
 
-    if contrato_id:
+    if corte_id:
+        q = q.filter(HoraExtra.corte_id == corte_id)
+    elif contrato_id:
         q = q.filter(HoraExtra.contrato_id == contrato_id)
     if mes:
         try:
@@ -342,4 +346,95 @@ def api_he_kpis():
         "hrs_descontadas":  _hrs_rep(q_desc),
         "hrs_pendientes":   _hrs_rep(q_pend),
         "hrs_autorizadas":  _hrs_auth(q),
+    })
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CORTES
+# ══════════════════════════════════════════════════════════════════════════════
+
+@he_bp.route("/api/he/cortes")
+@login_required
+def api_he_cortes_list():
+    """Lista de cortes, opcionalmente filtrado por contrato."""
+    contrato_id = request.args.get("contrato_id", type=int)
+    q = HeCorte.query
+    if contrato_id:
+        q = q.filter((HeCorte.contrato_id == contrato_id) | (HeCorte.contrato_id == None))
+    elif current_user.rol.lower() == "coordinador":
+        ids = _ids_contratos_usuario()
+        q = q.filter((HeCorte.contrato_id.in_(ids)) | (HeCorte.contrato_id == None))
+    cortes = q.order_by(HeCorte.fecha_inicio.desc()).all()
+    return jsonify([c.to_dict() for c in cortes])
+
+
+@he_bp.route("/api/he/cortes", methods=["POST"])
+@login_required
+def api_he_cortes_crear():
+    """Crear un nuevo corte (y opcionalmente asignar registros sueltos a él)."""
+    d = request.get_json(silent=True) or {}
+    fi = d.get("fecha_inicio")
+    ff = d.get("fecha_fin")
+    nombre = d.get("nombre", "").strip()
+    if not fi or not ff:
+        return jsonify({"ok": False, "msg": "fecha_inicio y fecha_fin son requeridos"}), 400
+
+    fecha_inicio = date.fromisoformat(fi)
+    fecha_fin    = date.fromisoformat(ff)
+    if not nombre:
+        meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+        nombre = f"{fecha_inicio.day} {meses[fecha_inicio.month-1]} – {fecha_fin.day} {meses[fecha_fin.month-1]} {fecha_fin.year}"
+
+    contrato_id = d.get("contrato_id") or None
+
+    corte = HeCorte(
+        nombre        = nombre,
+        fecha_inicio  = fecha_inicio,
+        fecha_fin     = fecha_fin,
+        contrato_id   = contrato_id,
+        estado        = "ABIERTO",
+        creado_por_id = current_user.id,
+    )
+    db.session.add(corte)
+    db.session.flush()  # obtener id
+
+    # Asignar registros dentro del período a este corte
+    q = HoraExtra.query.filter(
+        HoraExtra.fecha_labor >= fecha_inicio,
+        HoraExtra.fecha_labor <= fecha_fin,
+        HoraExtra.corte_id == None,
+    )
+    if contrato_id:
+        q = q.filter(HoraExtra.contrato_id == contrato_id)
+    asignados = q.update({"corte_id": corte.id}, synchronize_session=False)
+
+    db.session.commit()
+    return jsonify({"ok": True, "corte": corte.to_dict(), "registros_asignados": asignados})
+
+
+@he_bp.route("/api/he/cortes/<int:corte_id>/cerrar", methods=["POST"])
+@login_required
+def api_he_cortes_cerrar(corte_id):
+    """Cerrar un corte activo."""
+    corte = HeCorte.query.get_or_404(corte_id)
+    if corte.estado == "CERRADO":
+        return jsonify({"ok": False, "msg": "El corte ya está cerrado"}), 400
+    d = request.get_json(silent=True) or {}
+    corte.estado         = "CERRADO"
+    corte.cerrado_por_id = current_user.id
+    corte.fecha_cierre   = datetime.utcnow()
+    corte.observacion    = d.get("observacion", corte.observacion)
+    db.session.commit()
+    return jsonify({"ok": True, "corte": corte.to_dict()})
+
+
+@he_bp.route("/api/he/cortes/<int:corte_id>")
+@login_required
+def api_he_cortes_detalle(corte_id):
+    """Registros de un corte específico."""
+    corte = HeCorte.query.get_or_404(corte_id)
+    registros = HoraExtra.query.filter_by(corte_id=corte_id).order_by(HoraExtra.fecha_labor).all()
+    return jsonify({
+        "corte":     corte.to_dict(),
+        "registros": [r.to_dict() for r in registros],
     })
