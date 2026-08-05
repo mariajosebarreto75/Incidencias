@@ -163,6 +163,8 @@ def api_he_guardar():
     guardados = []
     # Cache de contratos por nombre para no repetir queries
     _contrato_cache = {}
+    # Cache de cortes: (contrato_id, fecha) -> corte_id
+    _corte_cache = {}
 
     for f in filas:
         contrato_id = f.get("contrato_id")
@@ -220,6 +222,18 @@ def api_he_guardar():
             reportado_por_id  = current_user.id,
             fecha_reporte     = datetime.utcnow(),
         )
+        # Asignar al corte cuyo período cubre la fecha_labor
+        if he.fecha_labor:
+            cache_key = (contrato_id, he.fecha_labor)
+            if cache_key not in _corte_cache:
+                corte = HeCorte.query.filter(
+                    HeCorte.fecha_inicio <= he.fecha_labor,
+                    HeCorte.fecha_fin   >= he.fecha_labor,
+                    db.or_(HeCorte.contrato_id == contrato_id, HeCorte.contrato_id == None)
+                ).order_by(HeCorte.contrato_id.desc().nullslast()).first()
+                _corte_cache[cache_key] = corte.id if corte else None
+            he.corte_id = _corte_cache[cache_key]
+
         db.session.add(he)
         guardados.append(he)
 
