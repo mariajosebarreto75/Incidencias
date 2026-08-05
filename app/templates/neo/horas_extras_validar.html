@@ -659,21 +659,31 @@ function autoGuardar(row) {
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 async function cargarKpis() {
-    const cid = document.getElementById("fContrato").value;
-    const mes = document.getElementById("fMes").value;
-    const r = await fetch(`/api/he/kpis?contrato_id=${cid}&mes=${mes}`);
-    const d = await r.json();
-    document.getElementById("k-total").textContent      = d.total;
-    document.getElementById("k-pend").textContent       = d.pendientes;
-    document.getElementById("k-conf").textContent       = d.conformes;
-    document.getElementById("k-noconf").textContent     = d.no_conformes;
-    document.getElementById("k-desc").textContent       = d.descontadas;
-    document.getElementById("k-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
-    document.getElementById("k-hrs-conf").textContent   = (+d.hrs_conformes    || 0).toFixed(0);
-    document.getElementById("k-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
-    document.getElementById("k-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
-    document.getElementById("k-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
-    document.getElementById("tb-pend").textContent      = d.pendientes;
+    try {
+        const cid = document.getElementById("fContrato").value;
+        const mes = document.getElementById("fMes").value;
+        const r = await fetch(`/api/he/kpis?contrato_id=${cid}&mes=${mes}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        document.getElementById("k-total").textContent      = d.total      ?? "—";
+        document.getElementById("k-pend").textContent       = d.pendientes ?? "—";
+        document.getElementById("k-conf").textContent       = d.conformes  ?? "—";
+        document.getElementById("k-noconf").textContent     = d.no_conformes ?? "—";
+        document.getElementById("k-desc").textContent       = d.descontadas ?? "—";
+        document.getElementById("k-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
+        document.getElementById("k-hrs-conf").textContent   = (+d.hrs_conformes    || 0).toFixed(0);
+        document.getElementById("k-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
+        document.getElementById("k-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
+        document.getElementById("k-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
+        document.getElementById("tb-pend").textContent      = d.pendientes ?? "—";
+    } catch(e) {
+        console.error("KPIs:", e);
+        ["k-total","k-pend","k-conf","k-noconf","k-desc"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = "!";
+        });
+    }
 }
 
 // ── Exportar ──────────────────────────────────────────────────────────────────
