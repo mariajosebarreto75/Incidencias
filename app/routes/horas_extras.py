@@ -110,8 +110,12 @@ def api_he_registros():
     if estado:
         q = q.filter(HoraExtra.estado == estado)
 
-    registros = q.order_by(HoraExtra.fecha_reporte.desc()).all()
-    return jsonify([r.to_dict() for r in registros])
+    try:
+        registros = q.order_by(HoraExtra.fecha_reporte.desc()).all()
+        return jsonify([r.to_dict() for r in registros])
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
 
 # ── HUB: página de selección de módulo ───────────────────────────────────────
@@ -390,19 +394,23 @@ def api_he_kpis():
     q_desc   = q.filter(HoraExtra.estado == "DESCONTADA")
     q_pend   = q.filter(HoraExtra.estado == "PENDIENTE")
 
-    return jsonify({
-        "total":            q.count(),
-        "pendientes":       q_pend.count(),
-        "conformes":        q_conf.count(),
-        "no_conformes":     q_noconf.count(),
-        "descontadas":      q_desc.count(),
-        "hrs_reportadas":   _hrs_rep(q),
-        "hrs_conformes":    _hrs_rep(q_conf),
-        "hrs_no_conformes": _hrs_rep(q_noconf),
-        "hrs_descontadas":  _hrs_rep(q_desc),
-        "hrs_pendientes":   _hrs_rep(q_pend),
-        "hrs_autorizadas":  _hrs_auth(q),
-    })
+    try:
+        return jsonify({
+            "total":            q.count(),
+            "pendientes":       q_pend.count(),
+            "conformes":        q_conf.count(),
+            "no_conformes":     q_noconf.count(),
+            "descontadas":      q_desc.count(),
+            "hrs_reportadas":   _hrs_rep(q),
+            "hrs_conformes":    _hrs_rep(q_conf),
+            "hrs_no_conformes": _hrs_rep(q_noconf),
+            "hrs_descontadas":  _hrs_rep(q_desc),
+            "hrs_pendientes":   _hrs_rep(q_pend),
+            "hrs_autorizadas":  _hrs_auth(q),
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════════
