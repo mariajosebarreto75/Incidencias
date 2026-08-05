@@ -258,11 +258,16 @@ def api_he_validar(id):
     })
 
 
-# ── API: KPIs para NEO ────────────────────────────────────────────────────────
+# ── API: KPIs ────────────────────────────────────────────────────────────────
 @he_bp.route("/api/he/kpis")
 @login_required
 def api_he_kpis():
     q = HoraExtra.query
+
+    # Coordinadores solo ven sus contratos
+    if current_user.rol.lower() == "coordinador":
+        q = q.filter(HoraExtra.contrato_id.in_(_ids_contratos_usuario()))
+
     contrato_id = request.args.get("contrato_id", type=int)
     mes = request.args.get("mes", "")
     if contrato_id:
@@ -276,19 +281,32 @@ def api_he_kpis():
             )
         except Exception:
             pass
-    total      = q.count()
-    pendientes = q.filter(HoraExtra.estado == "PENDIENTE").count()
-    aprobadas  = q.filter(HoraExtra.estado == "APROBADA").count()
-    parciales  = q.filter(HoraExtra.estado == "PARCIAL").count()
-    rechazadas = q.filter(HoraExtra.estado == "RECHAZADA").count()
-    hrs_rep    = db.session.query(db.func.sum(HoraExtra.horas_reportadas)).filter(
-        HoraExtra.contrato_id == contrato_id if contrato_id else True
-    ).scalar() or 0
-    hrs_auth   = db.session.query(db.func.sum(HoraExtra.horas_autorizadas)).filter(
-        HoraExtra.contrato_id == contrato_id if contrato_id else True
-    ).scalar() or 0
+
+    def _hrs_rep(q_base):
+        return float(q_base.with_entities(
+            db.func.coalesce(db.func.sum(HoraExtra.horas_reportadas), 0)
+        ).scalar() or 0)
+
+    def _hrs_auth(q_base):
+        return float(q_base.with_entities(
+            db.func.coalesce(db.func.sum(HoraExtra.horas_autorizadas), 0)
+        ).scalar() or 0)
+
+    q_conf   = q.filter(HoraExtra.estado == "CONFORME")
+    q_noconf = q.filter(HoraExtra.estado == "NO CONFORME")
+    q_desc   = q.filter(HoraExtra.estado == "DESCONTADA")
+    q_pend   = q.filter(HoraExtra.estado == "PENDIENTE")
+
     return jsonify({
-        "total": total, "pendientes": pendientes, "aprobadas": aprobadas,
-        "parciales": parciales, "rechazadas": rechazadas,
-        "hrs_reportadas": float(hrs_rep), "hrs_autorizadas": float(hrs_auth),
+        "total":            q.count(),
+        "pendientes":       q_pend.count(),
+        "conformes":        q_conf.count(),
+        "no_conformes":     q_noconf.count(),
+        "descontadas":      q_desc.count(),
+        "hrs_reportadas":   _hrs_rep(q),
+        "hrs_conformes":    _hrs_rep(q_conf),
+        "hrs_no_conformes": _hrs_rep(q_noconf),
+        "hrs_descontadas":  _hrs_rep(q_desc),
+        "hrs_pendientes":   _hrs_rep(q_pend),
+        "hrs_autorizadas":  _hrs_auth(q),
     })

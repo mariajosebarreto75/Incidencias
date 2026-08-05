@@ -75,11 +75,23 @@ body { background:var(--c-bg); }
 
     <!-- KPIs -->
     <div class="he-kpi-row">
-        <div class="he-kpi total"> <div class="kv" id="k-total">—</div><div class="kl">Total</div></div>
+        <div class="he-kpi total"> <div class="kv" id="k-total">—</div><div class="kl">Total registros</div></div>
         <div class="he-kpi pend">  <div class="kv" id="k-pend">—</div> <div class="kl">Pendientes</div></div>
         <div class="he-kpi conf">  <div class="kv" id="k-conf">—</div> <div class="kl">Conformes</div></div>
         <div class="he-kpi noconf"><div class="kv" id="k-noconf">—</div><div class="kl">No Conformes</div></div>
         <div class="he-kpi desc">  <div class="kv" id="k-desc">—</div> <div class="kl">Descontadas</div></div>
+        <div class="he-kpi" style="border-color:#0d3b66;">
+            <div class="kv" id="k-hrs-rep" style="color:#0d3b66;font-size:1.25rem;">—</div>
+            <div class="kl">Hrs Reportadas</div></div>
+        <div class="he-kpi conf">
+            <div class="kv" id="k-hrs-conf" style="font-size:1.25rem;">—</div>
+            <div class="kl">Hrs Conformes</div></div>
+        <div class="he-kpi noconf">
+            <div class="kv" id="k-hrs-noconf" style="font-size:1.25rem;">—</div>
+            <div class="kl">Hrs No Conformes</div></div>
+        <div class="he-kpi desc">
+            <div class="kv" id="k-hrs-desc" style="font-size:1.25rem;">—</div>
+            <div class="kl">Hrs Descontadas</div></div>
     </div>
 
     <!-- PANEL EXCEL -->
@@ -390,11 +402,15 @@ async function cargarKpis() {
     const mes = document.getElementById("fMes").value;
     const r = await fetch(`/api/he/kpis?contrato_id=${cid}&mes=${mes}`);
     const d = await r.json();
-    document.getElementById("k-total").textContent  = d.total;
-    document.getElementById("k-pend").textContent   = d.pendientes;
-    document.getElementById("k-conf").textContent   = d.aprobadas;
-    document.getElementById("k-noconf").textContent = d.parciales;
-    document.getElementById("k-desc").textContent   = d.rechazadas;
+    document.getElementById("k-total").textContent      = d.total;
+    document.getElementById("k-pend").textContent       = d.pendientes;
+    document.getElementById("k-conf").textContent       = d.conformes;
+    document.getElementById("k-noconf").textContent     = d.no_conformes;
+    document.getElementById("k-desc").textContent       = d.descontadas;
+    document.getElementById("k-hrs-rep").textContent    = d.hrs_reportadas;
+    document.getElementById("k-hrs-conf").textContent   = d.hrs_conformes;
+    document.getElementById("k-hrs-noconf").textContent = d.hrs_no_conformes;
+    document.getElementById("k-hrs-desc").textContent   = d.hrs_descontadas;
 }
 
 // ── Historial ─────────────────────────────────────────────────────────────────
