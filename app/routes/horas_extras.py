@@ -436,44 +436,49 @@ def api_he_cortes_list():
 @login_required
 def api_he_cortes_crear():
     """Crear un nuevo corte (y opcionalmente asignar registros sueltos a él)."""
-    d = request.get_json(silent=True) or {}
-    fi = d.get("fecha_inicio")
-    ff = d.get("fecha_fin")
-    nombre = d.get("nombre", "").strip()
-    if not fi or not ff:
-        return jsonify({"ok": False, "msg": "fecha_inicio y fecha_fin son requeridos"}), 400
+    import traceback
+    try:
+        d = request.get_json(silent=True) or {}
+        fi = d.get("fecha_inicio")
+        ff = d.get("fecha_fin")
+        nombre = d.get("nombre", "").strip()
+        if not fi or not ff:
+            return jsonify({"ok": False, "msg": "fecha_inicio y fecha_fin son requeridos"}), 400
 
-    fecha_inicio = date.fromisoformat(fi)
-    fecha_fin    = date.fromisoformat(ff)
-    if not nombre:
-        meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
-        nombre = f"{fecha_inicio.day} {meses[fecha_inicio.month-1]} – {fecha_fin.day} {meses[fecha_fin.month-1]} {fecha_fin.year}"
+        fecha_inicio = date.fromisoformat(fi)
+        fecha_fin    = date.fromisoformat(ff)
+        if not nombre:
+            meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+            nombre = f"{fecha_inicio.day} {meses[fecha_inicio.month-1]} – {fecha_fin.day} {meses[fecha_fin.month-1]} {fecha_fin.year}"
 
-    contrato_id = d.get("contrato_id") or None
+        contrato_id = d.get("contrato_id") or None
 
-    corte = HeCorte(
-        nombre        = nombre,
-        fecha_inicio  = fecha_inicio,
-        fecha_fin     = fecha_fin,
-        contrato_id   = contrato_id,
-        estado        = "ABIERTO",
-        creado_por_id = current_user.id,
-    )
-    db.session.add(corte)
-    db.session.flush()  # obtener id
+        corte = HeCorte(
+            nombre        = nombre,
+            fecha_inicio  = fecha_inicio,
+            fecha_fin     = fecha_fin,
+            contrato_id   = contrato_id,
+            estado        = "ABIERTO",
+            creado_por_id = current_user.id,
+        )
+        db.session.add(corte)
+        db.session.flush()  # obtener id
 
-    # Asignar registros dentro del período a este corte
-    q = HoraExtra.query.filter(
-        HoraExtra.fecha_labor >= fecha_inicio,
-        HoraExtra.fecha_labor <= fecha_fin,
-        HoraExtra.corte_id == None,
-    )
-    if contrato_id:
-        q = q.filter(HoraExtra.contrato_id == contrato_id)
-    asignados = q.update({"corte_id": corte.id}, synchronize_session=False)
+        # Asignar registros dentro del período a este corte
+        q = HoraExtra.query.filter(
+            HoraExtra.fecha_labor >= fecha_inicio,
+            HoraExtra.fecha_labor <= fecha_fin,
+            HoraExtra.corte_id == None,
+        )
+        if contrato_id:
+            q = q.filter(HoraExtra.contrato_id == contrato_id)
+        asignados = q.update({"corte_id": corte.id}, synchronize_session=False)
 
-    db.session.commit()
-    return jsonify({"ok": True, "corte": corte.to_dict(), "registros_asignados": asignados})
+        db.session.commit()
+        return jsonify({"ok": True, "corte": corte.to_dict(), "registros_asignados": asignados})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": str(e), "trace": traceback.format_exc()}), 500
 
 
 @he_bp.route("/api/he/cortes/<int:corte_id>/cerrar", methods=["POST"])
