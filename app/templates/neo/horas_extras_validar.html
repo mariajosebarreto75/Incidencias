@@ -364,7 +364,8 @@ body { background:var(--c-bg); }
     </div>
     <div class="he-modal-footer">
       <button class="btn btn-sm btn-secondary" onclick="document.getElementById('modalNuevoCorteNeo').classList.remove('open')">Cancelar</button>
-      <button class="btn btn-sm btn-primary fw-bold" onclick="crearCorteNeo()"><i class="bi bi-archive me-1"></i>Crear corte</button>
+      <button class="btn btn-sm btn-outline-success fw-bold" onclick="crearCorteNeo(true)"><i class="bi bi-file-earmark-arrow-up me-1"></i>Crear e Importar</button>
+      <button class="btn btn-sm btn-primary fw-bold" onclick="crearCorteNeo(false)"><i class="bi bi-archive me-1"></i>Crear corte</button>
     </div>
   </div>
 </div>
@@ -929,7 +930,7 @@ function abrirNuevoCorteNeo() {
     document.getElementById("modalNuevoCorteNeo").classList.add("open");
 }
 
-async function crearCorteNeo() {
+async function crearCorteNeo(abrirImport = false) {
     const payload = {
         nombre:       document.getElementById("neoCorteNombre").value.trim(),
         fecha_inicio: document.getElementById("neoCorteInicio").value,
@@ -946,12 +947,23 @@ async function crearCorteNeo() {
         document.getElementById("modalNuevoCorteNeo").classList.remove("open");
         cortesCargadosNeo = false;
         cargarCortesNeo();
-        const t = document.createElement("div");
-        t.style.cssText = "position:fixed;bottom:24px;right:24px;z-index:9999;background:#198754;color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);";
-        t.textContent = `Corte creado · ${d.registros_asignados} registros asignados`;
-        document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
+        if (abrirImport) {
+            // Pre-cargar contrato del corte en el modal de importar y abrirlo
+            if (payload.contrato_id)
+                document.getElementById("neoImportContrato").value = payload.contrato_id;
+            document.getElementById("neoImportInfo").textContent = "";
+            document.getElementById("neoImportFile").value = "";
+            document.getElementById("btnNeoConfirmarImport").style.display = "none";
+            _neoImportFilas = [];
+            document.getElementById("modalImportarNeo").classList.add("open");
+        } else {
+            const t = document.createElement("div");
+            t.style.cssText = "position:fixed;bottom:24px;right:24px;z-index:9999;background:#198754;color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.3);";
+            t.textContent = `Corte creado · ${d.registros_asignados} registros asignados`;
+            document.body.appendChild(t); setTimeout(() => t.remove(), 4000);
+        }
     } else {
-        alert(d.msg || "Error al crear corte");
+        alert(d.msg || d.error || "Error al crear corte");
     }
 }
 
