@@ -51,6 +51,8 @@ class HoraExtra(db.Model):
     obs_neo             = db.Column(db.Text)
     estado              = db.Column(db.String(30), default="PENDIENTE")  # PENDIENTE / CONFORME / NO CONFORME / DESCONTADA
 
+    corte_id            = db.Column(db.Integer, db.ForeignKey("he_cortes.id"))
+
     # Metadatos
     reportado_por_id    = db.Column(db.Integer, db.ForeignKey("users.id"))
     fecha_reporte       = db.Column(db.DateTime, default=datetime.utcnow)
