@@ -110,6 +110,28 @@ def api_he_registros():
     return jsonify([r.to_dict() for r in registros])
 
 
+# ── HUB: página de selección de módulo ───────────────────────────────────────
+@he_bp.route("/horas-extras")
+@login_required
+def he_hub():
+    rol = current_user.rol.lower()
+    puede_ingresar = rol in ("coordinador", "admin")
+    puede_validar  = rol in ("neo", "admin") or current_user.tiene_permiso("horas_extras")
+    if rol == "coordinador":
+        base_template = "coordinador/navbarcoor.html"
+    elif rol == "neo":
+        base_template = "neo/navbNeo.html"
+    else:
+        base_template = "neo/navbNeo.html"
+    return render_template(
+        "horas_extras/hub.html",
+        base_template=base_template,
+        puede_ingresar=puede_ingresar,
+        puede_validar=puede_validar,
+        title="Horas Extras",
+    )
+
+
 # ── COORDINADOR: página de registro ──────────────────────────────────────────
 @he_bp.route("/coordinador/horas-extras")
 @login_required

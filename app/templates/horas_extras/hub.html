@@ -1,0 +1,388 @@
+{% extends base_template %}
+
+{% block head %}
+<style>
+:root { --hub-primary:#0d3b66; --hub-accent:#00b8c9; }
+body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:100vh; }
+
+.hub-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+}
+
+/* ── Header ── */
+.hub-header {
+    text-align: center;
+    margin-bottom: 52px;
+}
+.hub-header-icon {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg,#0d3b66,#1565c0);
+    border-radius: 20px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 32px rgba(13,59,102,.28);
+    animation: iconPulse 3s ease-in-out infinite;
+}
+@keyframes iconPulse {
+    0%,100% { box-shadow: 0 8px 32px rgba(13,59,102,.28); }
+    50%      { box-shadow: 0 12px 40px rgba(13,59,102,.45); }
+}
+.hub-header-icon i { font-size: 2rem; color: #fff; }
+.hub-title {
+    font-size: 2rem; font-weight: 800; color: #0d3b66;
+    margin: 0 0 8px;
+    letter-spacing: -.5px;
+}
+.hub-subtitle {
+    font-size: .95rem; color: #64748b; margin: 0;
+    max-width: 480px; margin: 0 auto;
+}
+
+/* ── Línea decorativa ── */
+.hub-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 0 auto 44px;
+    max-width: 320px;
+}
+.hub-divider::before,.hub-divider::after {
+    content: ''; flex: 1; height: 1px; background: linear-gradient(to right,transparent,#cbd5e1,transparent);
+}
+.hub-divider span { font-size: .7rem; color: #94a3b8; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
+
+/* ── Grid de tarjetas ── */
+.hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+/* ── Tarjeta base ── */
+.hub-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 36px 30px 32px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    text-decoration: none;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+    transition: transform .22s cubic-bezier(.34,1.56,.64,1),
+                box-shadow .22s ease;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,.8);
+}
+.hub-card:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 16px 48px rgba(0,0,0,.14);
+    text-decoration: none;
+}
+.hub-card:active { transform: translateY(-2px); }
+
+/* Brillo en hover */
+.hub-card::before {
+    content: '';
+    position: absolute; top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.35) 50%, transparent 60%);
+    transition: left .45s ease;
+}
+.hub-card:hover::before { left: 140%; }
+
+/* Accent top bar */
+.hub-card::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 4px;
+    border-radius: 20px 20px 0 0;
+    background: var(--card-accent, #0d3b66);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .3s ease;
+}
+.hub-card:hover::after { transform: scaleX(1); }
+
+/* Icono de tarjeta */
+.hub-card-icon {
+    width: 60px; height: 60px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 22px;
+    flex-shrink: 0;
+    transition: transform .22s cubic-bezier(.34,1.56,.64,1);
+}
+.hub-card:hover .hub-card-icon { transform: scale(1.12) rotate(-4deg); }
+.hub-card-icon i { font-size: 1.6rem; }
+
+/* Texto */
+.hub-card-tag {
+    font-size: .65rem; font-weight: 700; letter-spacing: 1.8px;
+    text-transform: uppercase; margin-bottom: 6px;
+    opacity: .65;
+}
+.hub-card-title {
+    font-size: 1.2rem; font-weight: 800; margin: 0 0 10px;
+    color: #1e293b; line-height: 1.25;
+}
+.hub-card-desc {
+    font-size: .82rem; color: #64748b; margin: 0 0 24px; flex: 1;
+    line-height: 1.55;
+}
+
+/* Badge de rol */
+.hub-card-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: .68rem; font-weight: 700;
+    margin-bottom: 18px; width: fit-content;
+}
+
+/* Flecha CTA */
+.hub-card-cta {
+    display: flex; align-items: center; gap: 6px;
+    font-size: .78rem; font-weight: 700;
+    transition: gap .2s ease;
+}
+.hub-card:hover .hub-card-cta { gap: 10px; }
+.hub-card-cta i { font-size: .9rem; }
+
+/* ── Variantes de color ── */
+/* Ingresar horas — azul */
+.hub-card.card-ingresar {
+    --card-accent: #1565c0;
+}
+.hub-card.card-ingresar .hub-card-icon { background: #e8f0fe; }
+.hub-card.card-ingresar .hub-card-icon i { color: #1565c0; }
+.hub-card.card-ingresar .hub-card-tag  { color: #1565c0; }
+.hub-card.card-ingresar .hub-card-badge { background: #e8f0fe; color: #1565c0; }
+.hub-card.card-ingresar .hub-card-cta  { color: #1565c0; }
+
+/* Validar horas — verde */
+.hub-card.card-validar {
+    --card-accent: #059669;
+}
+.hub-card.card-validar .hub-card-icon { background: #d1fae5; }
+.hub-card.card-validar .hub-card-icon i { color: #059669; }
+.hub-card.card-validar .hub-card-tag  { color: #059669; }
+.hub-card.card-validar .hub-card-badge { background: #d1fae5; color: #065f46; }
+.hub-card.card-validar .hub-card-cta  { color: #059669; }
+
+/* Cortes pasados — naranja */
+.hub-card.card-cortes {
+    --card-accent: #d97706;
+}
+.hub-card.card-cortes .hub-card-icon { background: #fef3c7; }
+.hub-card.card-cortes .hub-card-icon i { color: #d97706; }
+.hub-card.card-cortes .hub-card-tag  { color: #d97706; }
+.hub-card.card-cortes .hub-card-badge { background: #fef3c7; color: #92400e; }
+.hub-card.card-cortes .hub-card-cta  { color: #d97706; }
+
+/* Disabled */
+.hub-card.card-disabled {
+    opacity: .5; pointer-events: none;
+    filter: grayscale(.4);
+}
+.hub-card.card-disabled::after { display: none; }
+
+/* ── Estadísticas rápidas ── */
+.hub-stats {
+    display: flex; justify-content: center; flex-wrap: wrap;
+    gap: 24px; margin-top: 44px;
+    padding: 24px 28px;
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 1px 8px rgba(0,0,0,.06);
+}
+.hub-stat { text-align: center; }
+.hub-stat-val { font-size: 1.7rem; font-weight: 800; color: #0d3b66; line-height: 1; }
+.hub-stat-lbl { font-size: .65rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;
+    letter-spacing: .8px; margin-top: 4px; }
+.hub-stat-sep { width: 1px; background: #e2e8f0; align-self: stretch; }
+
+/* ── Entrada animada ── */
+.hub-card { animation: cardIn .4s ease both; }
+.hub-card:nth-child(1) { animation-delay: .05s; }
+.hub-card:nth-child(2) { animation-delay: .13s; }
+.hub-card:nth-child(3) { animation-delay: .21s; }
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hub-wrap">
+
+    <!-- Header -->
+    <div class="hub-header">
+        <div class="hub-header-icon">
+            <i class="bi bi-clock-history"></i>
+        </div>
+        <h1 class="hub-title">Horas Extras</h1>
+        <p class="hub-subtitle">Selecciona la acción que deseas realizar en el módulo de horas extras</p>
+    </div>
+
+    <div class="hub-divider"><span>módulo</span></div>
+
+    <!-- Tarjetas -->
+    <div class="hub-grid">
+
+        {# ── INGRESAR HORAS (Coordinador) ── #}
+        {% if puede_ingresar %}
+        <a href="/coordinador/horas-extras" class="hub-card card-ingresar">
+            <div class="hub-card-icon">
+                <i class="bi bi-pencil-square"></i>
+            </div>
+            <div class="hub-card-tag">Coordinador</div>
+            <div class="hub-card-badge">
+                <i class="bi bi-person-badge"></i> Tu rol
+            </div>
+            <div class="hub-card-title">Ingresar Horas</div>
+            <div class="hub-card-desc">
+                Registra las horas extras de tu contrato. Ingresa fechas, recursos,
+                supervisores, turnos y justificaciones en la hoja de ingreso.
+            </div>
+            <div class="hub-card-cta">
+                <span>Ir a ingreso</span>
+                <i class="bi bi-arrow-right"></i>
+            </div>
+        </a>
+        {% endif %}
+
+        {# ── VALIDAR HORAS (NEO/Admin) ── #}
+        {% if puede_validar %}
+        <a href="/neo/horas-extras" class="hub-card card-validar">
+            <div class="hub-card-icon">
+                <i class="bi bi-patch-check"></i>
+            </div>
+            <div class="hub-card-tag">NEO</div>
+            <div class="hub-card-badge">
+                <i class="bi bi-shield-check"></i> Validación
+            </div>
+            <div class="hub-card-title">Validar Horas</div>
+            <div class="hub-card-desc">
+                Revisa las horas reportadas por los coordinadores, asigna estado
+                (Conforme / No Conforme / Descontada) y registra las horas autorizadas.
+            </div>
+            <div class="hub-card-cta">
+                <span>Ir a validación</span>
+                <i class="bi bi-arrow-right"></i>
+            </div>
+        </a>
+        {% endif %}
+
+        {# ── CORTES PASADOS (NEO/Admin) ── #}
+        {% if puede_validar %}
+        <a href="/neo/horas-extras?corte=pasado" class="hub-card card-cortes">
+            <div class="hub-card-icon">
+                <i class="bi bi-archive"></i>
+            </div>
+            <div class="hub-card-tag">Histórico</div>
+            <div class="hub-card-badge">
+                <i class="bi bi-calendar-range"></i> Cortes
+            </div>
+            <div class="hub-card-title">Validar Cortes Pasados</div>
+            <div class="hub-card-desc">
+                Consulta y valida horas de períodos anteriores. Filtra por mes de corte
+                para revisar o corregir registros de ciclos ya cerrados.
+            </div>
+            <div class="hub-card-cta">
+                <span>Ver cortes</span>
+                <i class="bi bi-arrow-right"></i>
+            </div>
+        </a>
+        {% endif %}
+
+        {# ── Si solo puede ingresar, muestra tarjetas info sobre validación ── #}
+        {% if puede_ingresar and not puede_validar %}
+        <div class="hub-card card-validar card-disabled">
+            <div class="hub-card-icon">
+                <i class="bi bi-patch-check"></i>
+            </div>
+            <div class="hub-card-tag">NEO</div>
+            <div class="hub-card-badge">
+                <i class="bi bi-lock"></i> Solo NEO
+            </div>
+            <div class="hub-card-title">Validar Horas</div>
+            <div class="hub-card-desc">
+                La validación de horas la realiza el equipo NEO. Una vez que envíes
+                tus registros aparecerán aquí para su revisión.
+            </div>
+            <div class="hub-card-cta">
+                <span>Sin acceso</span>
+                <i class="bi bi-lock"></i>
+            </div>
+        </div>
+
+        <div class="hub-card card-cortes card-disabled">
+            <div class="hub-card-icon">
+                <i class="bi bi-archive"></i>
+            </div>
+            <div class="hub-card-tag">Histórico</div>
+            <div class="hub-card-badge">
+                <i class="bi bi-lock"></i> Solo NEO
+            </div>
+            <div class="hub-card-title">Cortes Pasados</div>
+            <div class="hub-card-desc">
+                Acceso reservado para el equipo NEO para la revisión de períodos
+                anteriores de nómina.
+            </div>
+            <div class="hub-card-cta">
+                <span>Sin acceso</span>
+                <i class="bi bi-lock"></i>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Stats rápidas -->
+    <div class="hub-stats">
+        <div class="hub-stat">
+            <div class="hub-stat-val" id="hs-total">—</div>
+            <div class="hub-stat-lbl">Total registros</div>
+        </div>
+        <div class="hub-stat-sep"></div>
+        <div class="hub-stat">
+            <div class="hub-stat-val" id="hs-pend" style="color:#f59e0b;">—</div>
+            <div class="hub-stat-lbl">Pendientes</div>
+        </div>
+        <div class="hub-stat-sep"></div>
+        <div class="hub-stat">
+            <div class="hub-stat-val" id="hs-conf" style="color:#22c55e;">—</div>
+            <div class="hub-stat-lbl">Conformes</div>
+        </div>
+        <div class="hub-stat-sep"></div>
+        <div class="hub-stat">
+            <div class="hub-stat-val" id="hs-noconf" style="color:#ef4444;">—</div>
+            <div class="hub-stat-lbl">No Conformes</div>
+        </div>
+        <div class="hub-stat-sep"></div>
+        <div class="hub-stat">
+            <div class="hub-stat-val" id="hs-hrs" style="color:#0d3b66;">—</div>
+            <div class="hub-stat-lbl">Hrs Reportadas</div>
+        </div>
+        <div class="hub-stat-sep"></div>
+        <div class="hub-stat">
+            <div class="hub-stat-val" id="hs-auth" style="color:#059669;">—</div>
+            <div class="hub-stat-lbl">Hrs Autorizadas</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(async () => {
+    try {
+        const r = await fetch("/api/he/kpis");
+        const d = await r.json();
+        document.getElementById("hs-total").textContent  = d.total;
+        document.getElementById("hs-pend").textContent   = d.pendientes;
+        document.getElementById("hs-conf").textContent   = d.conformes;
+        document.getElementById("hs-noconf").textContent = d.no_conformes;
+        document.getElementById("hs-hrs").textContent    = (+d.hrs_reportadas  || 0).toFixed(0);
+        document.getElementById("hs-auth").textContent   = (+d.hrs_autorizadas || 0).toFixed(0);
+    } catch(e) {}
+})();
+</script>
+{% endblock %}
