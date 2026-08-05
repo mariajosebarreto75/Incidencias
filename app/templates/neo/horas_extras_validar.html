@@ -364,7 +364,7 @@ body { background:var(--c-bg); }
     </div>
     <div class="he-modal-footer">
       <button class="btn btn-sm btn-secondary" onclick="document.getElementById('modalNuevoCorteNeo').classList.remove('open')">Cancelar</button>
-      <button class="btn btn-sm btn-outline-success fw-bold" onclick="crearCorteNeo(true)"><i class="bi bi-file-earmark-arrow-up me-1"></i>Crear e Importar</button>
+      <button class="btn btn-sm btn-success fw-bold" onclick="crearCorteNeo(true)"><i class="bi bi-file-earmark-arrow-up me-1"></i>Importar</button>
       <button class="btn btn-sm btn-primary fw-bold" onclick="crearCorteNeo(false)"><i class="bi bi-archive me-1"></i>Crear corte</button>
     </div>
   </div>
@@ -948,11 +948,12 @@ async function crearCorteNeo(abrirImport = false) {
         cortesCargadosNeo = false;
         cargarCortesNeo();
         if (abrirImport) {
-            // Pre-cargar contrato del corte en el modal de importar y abrirlo
+            // Limpiar y abrir modal de importar
             if (payload.contrato_id)
                 document.getElementById("neoImportContrato").value = payload.contrato_id;
-            document.getElementById("neoImportInfo").textContent = "";
             document.getElementById("neoImportFile").value = "";
+            document.getElementById("neoImportFileName").textContent = "";
+            document.getElementById("neoImportPreviewWrap").style.display = "none";
             document.getElementById("btnNeoConfirmarImport").style.display = "none";
             _neoImportFilas = [];
             document.getElementById("modalImportarNeo").classList.add("open");
