@@ -392,36 +392,22 @@ body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:1
         </div>
     </div>
     {% else %}
-    <!-- Stats rápidas (NEO) -->
-    <div class="hub-stats">
-        <div class="hub-stat">
-            <div class="hub-stat-val" id="hs-total">—</div>
-            <div class="hub-stat-lbl">Total registros</div>
+    <!-- Stats NEO con tarjetas grandes -->
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:28px;padding:0 4px;">
+        <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #0d3b66;">
+            <div class="val" id="hs-total">—</div><div class="lbl">Total Registros</div>
         </div>
-        <div class="hub-stat-sep"></div>
-        <div class="hub-stat">
-            <div class="hub-stat-val" id="hs-pend" style="color:#f59e0b;">—</div>
-            <div class="hub-stat-lbl">Pendientes</div>
+        <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #0ea5e9;">
+            <div class="val blue" id="hs-hrs">—</div><div class="lbl">Hrs Reportadas</div>
         </div>
-        <div class="hub-stat-sep"></div>
-        <div class="hub-stat">
-            <div class="hub-stat-val" id="hs-conf" style="color:#22c55e;">—</div>
-            <div class="hub-stat-lbl">Conformes</div>
+        <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #22c55e;">
+            <div class="val green" id="hs-auth">—</div><div class="lbl">Hrs Autorizadas</div>
         </div>
-        <div class="hub-stat-sep"></div>
-        <div class="hub-stat">
-            <div class="hub-stat-val" id="hs-noconf" style="color:#ef4444;">—</div>
-            <div class="hub-stat-lbl">No Conformes</div>
+        <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #ef4444;">
+            <div class="val" style="color:#dc2626;" id="hs-noconf">—</div><div class="lbl">Hrs No Autorizadas</div>
         </div>
-        <div class="hub-stat-sep"></div>
-        <div class="hub-stat">
-            <div class="hub-stat-val" id="hs-hrs" style="color:#0d3b66;">—</div>
-            <div class="hub-stat-lbl">Hrs Reportadas</div>
-        </div>
-        <div class="hub-stat-sep"></div>
-        <div class="hub-stat">
-            <div class="hub-stat-val" id="hs-auth" style="color:#059669;">—</div>
-            <div class="hub-stat-lbl">Hrs Autorizadas</div>
+        <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #f59e0b;">
+            <div class="val" style="color:#b45309;" id="hs-desc">—</div><div class="lbl">Hrs Descontadas</div>
         </div>
     </div>
     {% endif %}
@@ -456,16 +442,8 @@ const contratosData = [
                 const col = CONC_COLORS[i % CONC_COLORS.length];
                 return `<div class="coor-conc-card" style="border-left-color:${col};">
                     <div class="ct">${c.codigo} — ${c.nombre}</div>
-                    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-                        <div>
-                            <div class="cv">${c.hrs_autorizadas.toFixed(0)}</div>
-                            <div class="cs">hrs autorizadas</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:.85rem;font-weight:700;color:#166534;">${c.conformes}<span style="color:#9ca3af;font-weight:400;font-size:.75rem;"> / ${c.total}</span></div>
-                            <div class="cs">conformes / total</div>
-                        </div>
-                    </div>
+                    <div class="cv">${c.hrs_autorizadas.toFixed(0)}</div>
+                    <div class="cs">hrs autorizadas</div>
                     <div class="cb"><div class="cbf" style="width:${pct}%;background:${col};"></div></div>
                     <div class="cp">${pct}% conforme · ${c.hrs_reportadas.toFixed(0)} hrs reportadas</div>
                 </div>`;
@@ -503,12 +481,11 @@ const contratosData = [
     try {
         const r = await fetch("/api/he/kpis");
         const d = await r.json();
-        document.getElementById("hs-total").textContent  = d.total;
-        document.getElementById("hs-pend").textContent   = d.pendientes;
-        document.getElementById("hs-conf").textContent   = d.conformes;
-        document.getElementById("hs-noconf").textContent = d.no_conformes;
-        document.getElementById("hs-hrs").textContent    = (+d.hrs_reportadas  || 0).toFixed(0);
-        document.getElementById("hs-auth").textContent   = (+d.hrs_autorizadas || 0).toFixed(0);
+        document.getElementById("hs-total").textContent   = (d.total||0).toLocaleString("es-CO");
+        document.getElementById("hs-hrs").textContent     = (+d.hrs_reportadas   ||0).toFixed(0);
+        document.getElementById("hs-auth").textContent    = (+d.hrs_autorizadas  ||0).toFixed(0);
+        document.getElementById("hs-noconf").textContent  = (+d.hrs_no_conformes ||0).toFixed(0);
+        document.getElementById("hs-desc").textContent    = (+d.hrs_descontadas  ||0).toFixed(0);
     } catch(e) {}
 })();
 {% endif %}

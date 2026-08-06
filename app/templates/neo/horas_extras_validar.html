@@ -67,13 +67,41 @@ body { background:var(--c-bg); }
 .he-chip.ch-desc   { background:#ede9fe; color:#5b21b6; }
 .he-chip.ch-desc.active { background:#8b5cf6; color:#fff; }
 
-/* ── Métricas de horas ── */
-.he-hrs-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-.he-hrs-card { background:#fff; border-radius:9px; padding:8px 14px; box-shadow:0 1px 5px rgba(0,0,0,.07);
-    display:flex; flex-direction:column; align-items:center; min-width:110px; }
-.he-hrs-card .hv { font-size:1.4rem; font-weight:800; line-height:1; }
-.he-hrs-card .hl { font-size:.6rem; font-weight:600; color:#9ca3af; text-transform:uppercase;
-    letter-spacing:.4px; margin-top:2px; text-align:center; }
+/* ── Tarjetas grandes de KPI ── */
+.he-kpi-row { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:18px; }
+.he-kpi-card {
+    flex:1; min-width:150px;
+    background:#fff; border-radius:14px; padding:18px 20px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08);
+    border-top:4px solid #dee2e6;
+}
+.he-kpi-card.primary { border-top-color:#0d3b66; }
+.he-kpi-card.info    { border-top-color:#0ea5e9; }
+.he-kpi-card.success { border-top-color:#22c55e; }
+.he-kpi-card.danger  { border-top-color:#ef4444; }
+.he-kpi-card.warning { border-top-color:#f59e0b; }
+.he-kpi-val { font-size:2rem; font-weight:800; line-height:1; color:#0d3b66; }
+.he-kpi-card.info    .he-kpi-val { color:#0369a1; }
+.he-kpi-card.success .he-kpi-val { color:#166534; }
+.he-kpi-card.danger  .he-kpi-val { color:#dc2626; }
+.he-kpi-card.warning .he-kpi-val { color:#b45309; }
+.he-kpi-lbl { font-size:.62rem; font-weight:700; color:#9ca3af; text-transform:uppercase;
+    letter-spacing:.6px; margin-top:5px; }
+
+/* ── Desglose por concepto ── */
+.he-conc-section { margin-bottom:18px; }
+.he-conc-label { font-size:.65rem; font-weight:700; color:#6c757d; text-transform:uppercase;
+    letter-spacing:.5px; margin-bottom:8px; }
+.he-conc-grid-neo { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+.he-conc-card-neo {
+    background:#fff; border-radius:10px; padding:12px 14px;
+    border-left:4px solid #007d8a; box-shadow:0 1px 6px rgba(0,0,0,.07);
+}
+.he-conc-card-neo .ct { font-size:.68rem; font-weight:700; color:#0d6b73; margin-bottom:8px; line-height:1.3; }
+.he-conc-card-neo .cv { font-size:1.25rem; font-weight:800; color:#166534; line-height:1; }
+.he-conc-card-neo .cs { font-size:.6rem; color:#6c757d; font-weight:600; text-transform:uppercase; letter-spacing:.3px; }
+.he-conc-card-neo .cb { height:4px; border-radius:2px; background:#e2e8f0; margin-top:8px; overflow:hidden; }
+.he-conc-card-neo .cbf { height:100%; border-radius:2px; background:#007d8a; }
 
 /* ── Filtros + Grid ── */
 .he-filtros { background:#fff; border-radius:10px; padding:10px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07);
@@ -206,13 +234,33 @@ body { background:var(--c-bg); }
             </div>
         </div>
 
-        <!-- Métricas de horas -->
-        <div class="he-hrs-row">
-            <div class="he-hrs-card"><div class="hv" id="k-hrs-rep"    style="color:#0d3b66;">—</div><div class="hl">Hrs Reportadas</div></div>
-            <div class="he-hrs-card"><div class="hv" id="k-hrs-conf"   style="color:#22c55e;">—</div><div class="hl">Hrs Conformes</div></div>
-            <div class="he-hrs-card"><div class="hv" id="k-hrs-noconf" style="color:#ef4444;">—</div><div class="hl">Hrs No Conformes</div></div>
-            <div class="he-hrs-card"><div class="hv" id="k-hrs-desc"   style="color:#8b5cf6;">—</div><div class="hl">Hrs Descontadas</div></div>
-            <div class="he-hrs-card"><div class="hv" id="k-hrs-auth"   style="color:#007d8a;">—</div><div class="hl">Hrs Autorizadas</div></div>
+        <!-- Tarjetas KPI grandes -->
+        <div class="he-kpi-row">
+            <div class="he-kpi-card primary">
+                <div class="he-kpi-val" id="kv-total">—</div>
+                <div class="he-kpi-lbl">Total Registros</div>
+            </div>
+            <div class="he-kpi-card info">
+                <div class="he-kpi-val" id="kv-hrs-rep">—</div>
+                <div class="he-kpi-lbl">Hrs Reportadas</div>
+            </div>
+            <div class="he-kpi-card success">
+                <div class="he-kpi-val" id="kv-hrs-auth">—</div>
+                <div class="he-kpi-lbl">Hrs Autorizadas</div>
+            </div>
+            <div class="he-kpi-card danger">
+                <div class="he-kpi-val" id="kv-hrs-noconf">—</div>
+                <div class="he-kpi-lbl">Hrs No Autorizadas</div>
+            </div>
+            <div class="he-kpi-card warning">
+                <div class="he-kpi-val" id="kv-hrs-desc">—</div>
+                <div class="he-kpi-lbl">Hrs Descontadas</div>
+            </div>
+        </div>
+        <!-- Desglose por concepto -->
+        <div class="he-conc-section" id="neoConceptoSection" style="display:none;">
+            <div class="he-conc-label"><i class="bi bi-grid-3x3-gap me-1"></i>Por tipo de hora — solo CONFORMES</div>
+            <div class="he-conc-grid-neo" id="neoConceptoGrid"></div>
         </div>
 
         <!-- Filtros -->
@@ -313,13 +361,28 @@ body { background:var(--c-bg); }
             </div>
         </div>
 
-        <!-- Métricas de horas historial -->
-        <div class="he-hrs-row">
-            <div class="he-hrs-card"><div class="hv" id="hk-hrs-rep"    style="color:#0d3b66;">—</div><div class="hl">Hrs Reportadas</div></div>
-            <div class="he-hrs-card"><div class="hv" id="hk-hrs-conf"   style="color:#22c55e;">—</div><div class="hl">Hrs Conformes</div></div>
-            <div class="he-hrs-card"><div class="hv" id="hk-hrs-noconf" style="color:#ef4444;">—</div><div class="hl">Hrs No Conformes</div></div>
-            <div class="he-hrs-card"><div class="hv" id="hk-hrs-desc"   style="color:#8b5cf6;">—</div><div class="hl">Hrs Descontadas</div></div>
-            <div class="he-hrs-card"><div class="hv" id="hk-hrs-auth"   style="color:#007d8a;">—</div><div class="hl">Hrs Autorizadas</div></div>
+        <!-- Tarjetas KPI historial -->
+        <div class="he-kpi-row">
+            <div class="he-kpi-card primary">
+                <div class="he-kpi-val" id="hkv-total">—</div>
+                <div class="he-kpi-lbl">Total Registros</div>
+            </div>
+            <div class="he-kpi-card info">
+                <div class="he-kpi-val" id="hk-hrs-rep">—</div>
+                <div class="he-kpi-lbl">Hrs Reportadas</div>
+            </div>
+            <div class="he-kpi-card success">
+                <div class="he-kpi-val" id="hk-hrs-auth">—</div>
+                <div class="he-kpi-lbl">Hrs Autorizadas</div>
+            </div>
+            <div class="he-kpi-card danger">
+                <div class="he-kpi-val" id="hk-hrs-noconf">—</div>
+                <div class="he-kpi-lbl">Hrs No Autorizadas</div>
+            </div>
+            <div class="he-kpi-card warning">
+                <div class="he-kpi-val" id="hk-hrs-desc">—</div>
+                <div class="he-kpi-lbl">Hrs Descontadas</div>
+            </div>
         </div>
 
         <div class="he-grid-panel">
@@ -388,6 +451,14 @@ body { background:var(--c-bg); }
 
     <!-- ══════════════════ PANEL 3: CORTES ══════════════════ -->
     <div class="he-panel" id="panel-cortes">
+        <!-- KPIs cortes NEO -->
+        <div class="he-kpi-row" id="cortesKpiRowNeo">
+            <div class="he-kpi-card primary"><div class="he-kpi-val" id="ck-total">—</div><div class="he-kpi-lbl">Total Registros</div></div>
+            <div class="he-kpi-card info">   <div class="he-kpi-val" id="ck-hrs-rep">—</div><div class="he-kpi-lbl">Hrs Reportadas</div></div>
+            <div class="he-kpi-card success"><div class="he-kpi-val" id="ck-hrs-auth">—</div><div class="he-kpi-lbl">Hrs Autorizadas</div></div>
+            <div class="he-kpi-card danger"> <div class="he-kpi-val" id="ck-hrs-noauth">—</div><div class="he-kpi-lbl">Hrs No Autorizadas</div></div>
+            <div class="he-kpi-card warning"><div class="he-kpi-val" id="ck-hrs-desc">—</div><div class="he-kpi-lbl">Hrs Descontadas</div></div>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
             <h6 style="margin:0;font-weight:700;color:#0d6b73;"><i class="bi bi-archive me-2"></i>Cortes de nómina (17→16)</h6>
             <button class="btn btn-sm btn-primary fw-semibold" onclick="abrirNuevoCorteNeo()" style="border-radius:7px;">
@@ -531,7 +602,20 @@ function cambiarTab(nombre, btn) {
     if (nombre === "cortes" && !cortesCargadosNeo) {
         cortesCargadosNeo = true;
         cargarCortesNeo();
+        cargarKpisCortesNeo();
     }
+}
+
+async function cargarKpisCortesNeo() {
+    try {
+        const r = await fetch("/api/he/kpis");
+        const d = await r.json();
+        document.getElementById("ck-total").textContent     = (d.total||0).toLocaleString("es-CO");
+        document.getElementById("ck-hrs-rep").textContent   = (+d.hrs_reportadas  ||0).toFixed(0);
+        document.getElementById("ck-hrs-auth").textContent  = (+d.hrs_autorizadas ||0).toFixed(0);
+        document.getElementById("ck-hrs-noauth").textContent= (+d.hrs_no_conformes||0).toFixed(0);
+        document.getElementById("ck-hrs-desc").textContent  = (+d.hrs_descontadas ||0).toFixed(0);
+    } catch(e) {}
 }
 
 // ── Chips ─────────────────────────────────────────────────────────────────────
@@ -770,16 +854,18 @@ async function cargarKpisHistorial() {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const d = await r.json();
         if (d.error) throw new Error(d.error);
+        // Chips
         document.getElementById("hk-total").textContent      = d.total      ?? "—";
         document.getElementById("hk-pend").textContent       = d.pendientes ?? "—";
         document.getElementById("hk-conf").textContent       = d.conformes  ?? "—";
         document.getElementById("hk-noconf").textContent     = d.no_conformes ?? "—";
         document.getElementById("hk-desc").textContent       = d.descontadas ?? "—";
+        // Tarjetas grandes historial
+        document.getElementById("hkv-total").textContent     = (d.total || 0).toLocaleString("es-CO");
         document.getElementById("hk-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
-        document.getElementById("hk-hrs-conf").textContent   = (+d.hrs_conformes    || 0).toFixed(0);
+        document.getElementById("hk-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
         document.getElementById("hk-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
         document.getElementById("hk-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
-        document.getElementById("hk-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
     } catch(e) {
         ["hk-total","hk-pend","hk-conf","hk-noconf","hk-desc"].forEach(id => {
             const el = document.getElementById(id); if (el) el.textContent = "!";
@@ -918,17 +1004,45 @@ async function cargarKpis() {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const d = await r.json();
         if (d.error) throw new Error(d.error);
+        // Chips
         document.getElementById("k-total").textContent      = d.total      ?? "—";
         document.getElementById("k-pend").textContent       = d.pendientes ?? "—";
         document.getElementById("k-conf").textContent       = d.conformes  ?? "—";
         document.getElementById("k-noconf").textContent     = d.no_conformes ?? "—";
         document.getElementById("k-desc").textContent       = d.descontadas ?? "—";
-        document.getElementById("k-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
-        document.getElementById("k-hrs-conf").textContent   = (+d.hrs_conformes    || 0).toFixed(0);
-        document.getElementById("k-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
-        document.getElementById("k-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
-        document.getElementById("k-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
         document.getElementById("tb-pend").textContent      = d.pendientes ?? "—";
+        // Tarjetas grandes
+        document.getElementById("kv-total").textContent     = (d.total || 0).toLocaleString("es-CO");
+        document.getElementById("kv-hrs-rep").textContent   = (+d.hrs_reportadas   || 0).toFixed(0);
+        document.getElementById("kv-hrs-auth").textContent  = (+d.hrs_autorizadas  || 0).toFixed(0);
+        document.getElementById("kv-hrs-noconf").textContent= (+d.hrs_no_conformes || 0).toFixed(0);
+        document.getElementById("kv-hrs-desc").textContent  = (+d.hrs_descontadas  || 0).toFixed(0);
+        // Desglose por concepto (solo si hay contrato_id)
+        if (cid) {
+            try {
+                const rr = await fetch(`/api/he/resumen?contrato_id=${cid}`);
+                const dd = await rr.json();
+                const sec  = document.getElementById("neoConceptoSection");
+                const grid = document.getElementById("neoConceptoGrid");
+                const NEO_COLORS = ["#007d8a","#0369a1","#065f46","#6b21a8","#9d174d","#0e7490","#1565c0"];
+                if (dd.ok && dd.por_concepto.length) {
+                    grid.innerHTML = dd.por_concepto.map((c, i) => {
+                        const col = NEO_COLORS[i % NEO_COLORS.length];
+                        return `<div class="he-conc-card-neo" style="border-left-color:${col};">
+                            <div class="ct">${c.codigo} — ${c.nombre}</div>
+                            <div class="cv">${c.hrs_autorizadas.toFixed(0)}</div>
+                            <div class="cs">hrs autorizadas</div>
+                            <div class="cb"><div class="cbf" style="background:${col};width:${c.total>0?Math.round(c.conformes/c.total*100):0}%;"></div></div>
+                        </div>`;
+                    }).join("");
+                    sec.style.display = "";
+                } else {
+                    sec.style.display = "none";
+                }
+            } catch(e) {}
+        } else {
+            document.getElementById("neoConceptoSection").style.display = "none";
+        }
     } catch(e) {
         console.error("KPIs:", e);
         ["k-total","k-pend","k-conf","k-noconf","k-desc"].forEach(id => {

@@ -419,6 +419,14 @@ body { background:var(--c-bg); }
 
     <!-- ══════════════════ PANEL 3: CORTES ══════════════════ -->
     <div class="he-panel" id="panel-cortes">
+        <!-- KPIs cortes coordinador -->
+        <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:20px;" id="cortesKpiRow">
+            <div class="he-stat-card primary" style="flex:1;min-width:140px;"><div class="he-stat-val" id="ck-total">—</div><div class="he-stat-lbl">Total Registros</div></div>
+            <div class="he-stat-card info"    style="flex:1;min-width:140px;"><div class="he-stat-val" id="ck-hrs-rep">—</div><div class="he-stat-lbl">Hrs Reportadas</div></div>
+            <div class="he-stat-card success" style="flex:1;min-width:140px;"><div class="he-stat-val" id="ck-hrs-auth">—</div><div class="he-stat-lbl">Hrs Autorizadas</div></div>
+            <div class="he-stat-card danger"  style="flex:1;min-width:140px;"><div class="he-stat-val" id="ck-hrs-noauth">—</div><div class="he-stat-lbl">Hrs No Autorizadas</div></div>
+            <div class="he-stat-card warning" style="flex:1;min-width:140px;"><div class="he-stat-val" id="ck-hrs-desc">—</div><div class="he-stat-lbl">Hrs Descontadas</div></div>
+        </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
             <h6 style="margin:0;font-weight:700;color:#0d3b66;"><i class="bi bi-archive me-2"></i>Cortes de nómina (17→16)</h6>
             <button class="btn btn-sm btn-primary fw-semibold" onclick="abrirNuevoCorte()" style="border-radius:7px;">
@@ -819,15 +827,9 @@ async function cargarResumen() {
             return `
             <div class="he-conc-card" style="border-left-color:${color};">
                 <div class="he-conc-title">${c.codigo} — ${c.nombre}</div>
-                <div class="he-conc-row">
-                    <div>
-                        <div class="he-conc-num" style="color:${color};">${c.hrs_autorizadas.toFixed(0)}</div>
-                        <div class="he-conc-sub">hrs autorizadas</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:.8rem;font-weight:700;color:#166534;">${c.conformes} <span style="color:#6c757d;font-weight:400;">/ ${c.total}</span></div>
-                        <div class="he-conc-sub">conformes / total</div>
-                    </div>
+                <div>
+                    <div class="he-conc-num" style="color:${color};">${c.hrs_autorizadas.toFixed(0)}</div>
+                    <div class="he-conc-sub">hrs autorizadas</div>
                 </div>
                 <div class="he-conc-bar">
                     <div class="he-conc-bar-fill" style="width:${pct}%;background:${color};"></div>
@@ -1168,7 +1170,21 @@ async function cambiarTab(nombre, btn) {
     if (nombre === "cortes" && !cortesCargados) {
         cortesCargados = true;
         cargarCortes();
+        cargarKpisCortesCoor();
     }
+}
+
+async function cargarKpisCortesCoor() {
+    const cid = document.getElementById("gridContrato").value;
+    try {
+        const r = await fetch(`/api/he/kpis?contrato_id=${cid}`);
+        const d = await r.json();
+        document.getElementById("ck-total").textContent     = (d.total||0).toLocaleString("es-CO");
+        document.getElementById("ck-hrs-rep").textContent   = (+d.hrs_reportadas  ||0).toFixed(0);
+        document.getElementById("ck-hrs-auth").textContent  = (+d.hrs_autorizadas ||0).toFixed(0);
+        document.getElementById("ck-hrs-noauth").textContent= (+d.hrs_no_conformes||0).toFixed(0);
+        document.getElementById("ck-hrs-desc").textContent  = (+d.hrs_descontadas ||0).toFixed(0);
+    } catch(e) {}
 }
 
 async function cargarCortes() {
