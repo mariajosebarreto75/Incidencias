@@ -184,7 +184,7 @@ body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:1
 }
 .hub-card.card-disabled::after { display: none; }
 
-/* ── Estadísticas rápidas ── */
+/* ── Estadísticas rápidas (NEO) ── */
 .hub-stats {
     display: flex; justify-content: center; flex-wrap: wrap;
     gap: 24px; margin-top: 44px;
@@ -197,6 +197,51 @@ body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:1
 .hub-stat-lbl { font-size: .65rem; font-weight: 600; color: #94a3b8; text-transform: uppercase;
     letter-spacing: .8px; margin-top: 4px; }
 .hub-stat-sep { width: 1px; background: #e2e8f0; align-self: stretch; }
+
+/* ── Resumen coordinador ── */
+.coor-resumen { margin-top: 44px; }
+.coor-resumen-title {
+    font-size: .7rem; font-weight: 700; color: #64748b;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.coor-contrato-block {
+    background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    padding: 22px 24px; margin-bottom: 20px;
+}
+.coor-contrato-name {
+    font-size: .95rem; font-weight: 800; color: #0d3b66;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.coor-main-stats {
+    display: flex; flex-wrap: wrap; gap: 0;
+    border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    margin-bottom: 18px;
+}
+.coor-stat-box {
+    flex: 1; min-width: 130px; padding: 14px 18px; text-align: center;
+    border-right: 1px solid #e2e8f0;
+}
+.coor-stat-box:last-child { border-right: none; }
+.coor-stat-box .val { font-size: 1.6rem; font-weight: 800; line-height: 1; color: #0d3b66; }
+.coor-stat-box .val.green { color: #166534; }
+.coor-stat-box .val.blue  { color: #0369a1; }
+.coor-stat-box .lbl { font-size: .6rem; font-weight: 600; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: .5px; margin-top: 4px; }
+.coor-conc-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;
+}
+.coor-conc-card {
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px;
+    border-left: 4px solid #0d3b66;
+}
+.coor-conc-card .ct { font-size: .68rem; font-weight: 700; color: #0d3b66; margin-bottom: 8px; line-height:1.3; }
+.coor-conc-card .cv { font-size: 1.25rem; font-weight: 800; color: #166534; line-height: 1; }
+.coor-conc-card .cs { font-size: .6rem; color: #6c757d; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.coor-conc-card .cb { height: 4px; border-radius: 2px; background: #e2e8f0; margin-top: 8px; overflow: hidden; }
+.coor-conc-card .cbf { height: 100%; border-radius: 2px; background: #22c55e; }
+.coor-conc-card .cp { font-size: .6rem; color: #9ca3af; text-align: right; margin-top: 3px; }
+.coor-loading { color: #94a3b8; font-size: .82rem; text-align: center; padding: 20px; }
 
 /* ── Entrada animada ── */
 .hub-card { animation: cardIn .4s ease both; }
@@ -336,7 +381,18 @@ body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:1
 
     </div>
 
-    <!-- Stats rápidas -->
+    {% if puede_ingresar %}
+    <!-- Resumen por contrato (coordinadores) -->
+    <div class="coor-resumen">
+        <div class="coor-resumen-title">
+            <i class="bi bi-bar-chart-line"></i> Resumen de mis contratos — todos los cortes
+        </div>
+        <div id="coorResumenWrap">
+            <div class="coor-loading"><i class="bi bi-hourglass-split me-2"></i>Cargando resumen…</div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Stats rápidas (NEO) -->
     <div class="hub-stats">
         <div class="hub-stat">
             <div class="hub-stat-val" id="hs-total">—</div>
@@ -368,10 +424,85 @@ body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:1
             <div class="hub-stat-lbl">Hrs Autorizadas</div>
         </div>
     </div>
+    {% endif %}
 
 </div>
 
 <script>
+const CONC_COLORS = ["#0d3b66","#1565c0","#0369a1","#0e7490","#065f46","#6b21a8","#9d174d"];
+
+{% if puede_ingresar %}
+// Coordinador: resumen por contrato
+const contratosData = [
+    {% for c in contratos %}
+    { id: {{ c.id }}, nombre: {{ c.contrato | tojson }} },
+    {% endfor %}
+];
+
+(async () => {
+    const wrap = document.getElementById("coorResumenWrap");
+    if (!contratosData.length) {
+        wrap.innerHTML = '<div class="coor-loading">Sin contratos asignados.</div>';
+        return;
+    }
+    const bloques = await Promise.all(contratosData.map(async ct => {
+        try {
+            const r = await fetch(`/api/he/resumen?contrato_id=${ct.id}`);
+            const d = await r.json();
+            if (!d.ok) return `<div class="coor-contrato-block"><div class="coor-contrato-name"><i class="bi bi-building me-1"></i>${ct.nombre}</div><p style="color:#94a3b8;font-size:.82rem;">Sin datos</p></div>`;
+
+            const concCards = d.por_concepto.length ? d.por_concepto.map((c, i) => {
+                const pct = c.total > 0 ? Math.round((c.conformes / c.total) * 100) : 0;
+                const col = CONC_COLORS[i % CONC_COLORS.length];
+                return `<div class="coor-conc-card" style="border-left-color:${col};">
+                    <div class="ct">${c.codigo} — ${c.nombre}</div>
+                    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+                        <div>
+                            <div class="cv">${c.hrs_autorizadas.toFixed(0)}</div>
+                            <div class="cs">hrs autorizadas</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:.85rem;font-weight:700;color:#166534;">${c.conformes}<span style="color:#9ca3af;font-weight:400;font-size:.75rem;"> / ${c.total}</span></div>
+                            <div class="cs">conformes / total</div>
+                        </div>
+                    </div>
+                    <div class="cb"><div class="cbf" style="width:${pct}%;background:${col};"></div></div>
+                    <div class="cp">${pct}% conforme · ${c.hrs_reportadas.toFixed(0)} hrs reportadas</div>
+                </div>`;
+            }).join("") : '<div style="color:#94a3b8;font-size:.78rem;grid-column:1/-1;">Sin registros aún</div>';
+
+            return `<div class="coor-contrato-block">
+                <div class="coor-contrato-name"><i class="bi bi-building me-1"></i>${ct.nombre}</div>
+                <div class="coor-main-stats">
+                    <div class="coor-stat-box">
+                        <div class="val">${d.total.toLocaleString("es-CO")}</div>
+                        <div class="lbl">Total Registros</div>
+                    </div>
+                    <div class="coor-stat-box">
+                        <div class="val blue">${d.hrs_reportadas.toFixed(0)}</div>
+                        <div class="lbl">Hrs Reportadas</div>
+                    </div>
+                    <div class="coor-stat-box">
+                        <div class="val green">${d.conformes.toLocaleString("es-CO")}</div>
+                        <div class="lbl">Conformes</div>
+                    </div>
+                    <div class="coor-stat-box">
+                        <div class="val green">${d.hrs_autorizadas.toFixed(0)}</div>
+                        <div class="lbl">Hrs Autorizadas</div>
+                    </div>
+                </div>
+                <div style="font-size:.65rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+                    <i class="bi bi-grid-3x3-gap me-1"></i>Por tipo de hora — CONFORMES
+                </div>
+                <div class="coor-conc-grid">${concCards}</div>
+            </div>`;
+        } catch(e) { return ''; }
+    }));
+    wrap.innerHTML = bloques.join("");
+})();
+
+{% else %}
+// NEO: stats globales
 (async () => {
     try {
         const r = await fetch("/api/he/kpis");
@@ -384,5 +515,6 @@ body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:1
         document.getElementById("hs-auth").textContent   = (+d.hrs_autorizadas || 0).toFixed(0);
     } catch(e) {}
 })();
+{% endif %}
 </script>
 {% endblock %}

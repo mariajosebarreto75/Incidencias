@@ -147,11 +147,13 @@ def he_hub():
         base_template = "neo/navbNeo.html"
     else:
         base_template = "neo/navbNeo.html"
+    contratos = _contratos_del_usuario() if puede_ingresar else []
     return render_template(
         "horas_extras/hub.html",
         base_template=base_template,
         puede_ingresar=puede_ingresar,
         puede_validar=puede_validar,
+        contratos=contratos,
         title="Horas Extras",
     )
 
