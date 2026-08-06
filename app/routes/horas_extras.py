@@ -95,6 +95,7 @@ def api_he_registros():
     corte_id     = request.args.get("corte_id", type=int)
     fecha_desde  = request.args.get("fecha_desde", "")
     fecha_hasta  = request.args.get("fecha_hasta", "")
+    id_concepto  = request.args.get("id_concepto", "")
 
     if corte_id:
         q = q.filter(HoraExtra.corte_id == corte_id)
@@ -122,6 +123,8 @@ def api_he_registros():
             pass
     if estado:
         q = q.filter(HoraExtra.estado == estado)
+    if id_concepto:
+        q = q.filter(HoraExtra.id_concepto == id_concepto)
 
     try:
         registros = q.order_by(HoraExtra.fecha_reporte.desc()).all()
@@ -383,6 +386,7 @@ def api_he_kpis():
     corte_id    = request.args.get("corte_id", type=int)
     fecha_desde = request.args.get("fecha_desde", "")
     fecha_hasta = request.args.get("fecha_hasta", "")
+    id_concepto = request.args.get("id_concepto", "")
 
     if corte_id:
         q = q.filter(HoraExtra.corte_id == corte_id)
@@ -408,6 +412,8 @@ def api_he_kpis():
             )
         except Exception:
             pass
+    if id_concepto:
+        q = q.filter(HoraExtra.id_concepto == id_concepto)
 
     def _hrs_rep(q_base):
         return float(q_base.with_entities(

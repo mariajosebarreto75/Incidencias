@@ -313,6 +313,15 @@ body { background:var(--c-bg); }
             </div>
             <div><label>Desde</label><input type="date" id="fDesde" onchange="document.getElementById('fCorte').value='';cargarHistorial()"></div>
             <div><label>Hasta</label><input type="date" id="fHasta" onchange="document.getElementById('fCorte').value='';cargarHistorial()"></div>
+            <div>
+                <label>Concepto</label>
+                <select id="fConcepto" onchange="cargarHistorial()" style="min-width:160px;">
+                    <option value="">Todos</option>
+                    {% for k, v in conceptos.items() %}
+                    <option value="{{ k }}">{{ k }} – {{ v }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             <input type="hidden" id="fMes">
             <div><label>Estado</label>
                 <select id="fEstado" onchange="sincronizarChip(this.value);cargarHistorial()">
@@ -733,9 +742,11 @@ async function cargarKpis() {
     const corte = document.getElementById("fCorte").value;
     const desde = document.getElementById("fDesde").value;
     const hasta = document.getElementById("fHasta").value;
+    const concepto = document.getElementById("fConcepto").value;
     let url = `/api/he/kpis?contrato_id=${cid}`;
     if (corte)      url += `&corte_id=${corte}`;
     else if (desde) url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    if (concepto)   url += `&id_concepto=${encodeURIComponent(concepto)}`;
     const r = await fetch(url);
     const d = await r.json();
     document.getElementById("k-total").textContent      = d.total;
@@ -767,14 +778,16 @@ function sincronizarChip(estado) {
 
 // ── Historial ─────────────────────────────────────────────────────────────────
 function cargarHistorial() {
-    const cid    = document.getElementById("fContrato").value;
-    const corte  = document.getElementById("fCorte").value;
-    const desde  = document.getElementById("fDesde").value;
-    const hasta  = document.getElementById("fHasta").value;
-    const estado = document.getElementById("fEstado").value;
+    const cid     = document.getElementById("fContrato").value;
+    const corte   = document.getElementById("fCorte").value;
+    const desde   = document.getElementById("fDesde").value;
+    const hasta   = document.getElementById("fHasta").value;
+    const estado  = document.getElementById("fEstado").value;
+    const concepto= document.getElementById("fConcepto").value;
     let url = `/api/he/registros?contrato_id=${cid}&estado=${estado}`;
     if (corte)      url += `&corte_id=${corte}`;
     else if (desde) url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    if (concepto)   url += `&id_concepto=${encodeURIComponent(concepto)}`;
     cargarKpis();
 
     const fmtCol = c => {
