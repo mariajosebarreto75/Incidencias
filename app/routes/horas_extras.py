@@ -402,9 +402,20 @@ def api_he_resumen():
     conformes      = q_conf.count()
     hrs_autorizadas= _sum_auth(q_conf)
 
+    # Obtener conceptos reales de la DB (puede ser "3" o "03", lo que sea)
+    codigos_db = [
+        r[0] for r in
+        q.with_entities(HoraExtra.id_concepto).distinct().all()
+        if r[0]
+    ]
     por_concepto = []
-    for codigo, nombre in CONCEPTOS_HE.items():
-        qc      = q.filter(HoraExtra.id_concepto == codigo)
+    for codigo in sorted(codigos_db, key=lambda x: x.zfill(4)):
+        # Buscar nombre en el dict probando con y sin cero inicial
+        nombre = (CONCEPTOS_HE.get(codigo)
+                  or CONCEPTOS_HE.get(codigo.zfill(2))
+                  or CONCEPTOS_HE.get(codigo.lstrip("0") or "0")
+                  or codigo)
+        qc       = q.filter(HoraExtra.id_concepto == codigo)
         ct_total = qc.count()
         if ct_total == 0:
             continue
