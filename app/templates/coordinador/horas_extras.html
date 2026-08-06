@@ -973,7 +973,7 @@ function procesarImport(input) {
                 autorizacion_neo:  String(r[15] || "").trim(),
                 horas_autorizadas: r[16] !== "" && r[16] != null ? parseFloat(r[16]) : "",
             }))
-            .filter(f => f.fecha_labor || f.cedula || f.recurso || f.horas_reportadas > 0); // validación relajada
+            .filter(f => f.fecha_labor && f.cedula && f.id_concepto && f.horas_reportadas > 0);
 
         // Preview
         const headers = ["Contrato","Fecha Labor","Cédula","Nombre","Recurso","Placa",
