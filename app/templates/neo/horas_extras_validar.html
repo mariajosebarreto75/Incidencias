@@ -284,6 +284,35 @@ body { background:var(--c-bg); }
 
     <!-- ══════════════════ PANEL 2: HISTORIAL ══════════════════ -->
     <div class="he-panel" id="panel-historial">
+
+        <!-- Chips de estado historial -->
+        <div class="he-chips">
+            <div class="he-chip ch-all active" onclick="filtrarChipH('',this)">
+                <i class="bi bi-list-ul"></i> Todos <span class="cnt" id="hk-total">—</span>
+            </div>
+            <div class="he-chip ch-pend" onclick="filtrarChipH('PENDIENTE',this)">
+                <i class="bi bi-hourglass-split"></i> Pendientes <span class="cnt" id="hk-pend">—</span>
+            </div>
+            <div class="he-chip ch-conf" onclick="filtrarChipH('CONFORME',this)">
+                <i class="bi bi-check-circle"></i> Conformes <span class="cnt" id="hk-conf">—</span>
+            </div>
+            <div class="he-chip ch-noconf" onclick="filtrarChipH('NO CONFORME',this)">
+                <i class="bi bi-x-circle"></i> No Conformes <span class="cnt" id="hk-noconf">—</span>
+            </div>
+            <div class="he-chip ch-desc" onclick="filtrarChipH('DESCONTADA',this)">
+                <i class="bi bi-dash-circle"></i> Descontadas <span class="cnt" id="hk-desc">—</span>
+            </div>
+        </div>
+
+        <!-- Métricas de horas historial -->
+        <div class="he-hrs-row">
+            <div class="he-hrs-card"><div class="hv" id="hk-hrs-rep"    style="color:#0d3b66;">—</div><div class="hl">Hrs Reportadas</div></div>
+            <div class="he-hrs-card"><div class="hv" id="hk-hrs-conf"   style="color:#22c55e;">—</div><div class="hl">Hrs Conformes</div></div>
+            <div class="he-hrs-card"><div class="hv" id="hk-hrs-noconf" style="color:#ef4444;">—</div><div class="hl">Hrs No Conformes</div></div>
+            <div class="he-hrs-card"><div class="hv" id="hk-hrs-desc"   style="color:#8b5cf6;">—</div><div class="hl">Hrs Descontadas</div></div>
+            <div class="he-hrs-card"><div class="hv" id="hk-hrs-auth"   style="color:#007d8a;">—</div><div class="hl">Hrs Autorizadas</div></div>
+        </div>
+
         <div class="he-grid-panel">
             <div class="he-grid-head">
                 <i class="bi bi-clock-history" style="opacity:.8;"></i>
@@ -325,6 +354,15 @@ body { background:var(--c-bg); }
                         {% for k, v in conceptos.items() %}
                         <option value="{{ k }}">{{ k }} – {{ v }}</option>
                         {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Estado:</label>
+                    <select id="hEstado" onchange="sincronizarChipH(this.value);cargarHistorial()"
+                            style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;">
+                        <option value="">Todos</option>
+                        <option>PENDIENTE</option><option>CONFORME</option>
+                        <option>NO CONFORME</option><option>DESCONTADA</option>
                     </select>
                 </div>
                 <input type="hidden" id="hMes">
@@ -478,6 +516,7 @@ function cambiarTab(nombre, btn) {
     document.getElementById("panel-" + nombre).classList.add("active");
     if (nombre === "historial" && !historialCargado) {
         historialCargado = true;
+        cargarKpisHistorial();
         cargarHistorial();
     }
     if (nombre === "cortes" && !cortesCargadosNeo) {
@@ -704,14 +743,64 @@ async function recargar() {
     hot.loadData(filas);
 }
 
+// ── KPIs historial ────────────────────────────────────────────────────────────
+async function cargarKpisHistorial() {
+    try {
+        const cid     = document.getElementById("hContrato").value;
+        const corte   = document.getElementById("hCorte").value;
+        const desde   = document.getElementById("hDesde").value;
+        const hasta   = document.getElementById("hHasta").value;
+        const concepto= document.getElementById("hConcepto").value;
+        let url = `/api/he/kpis?contrato_id=${cid}`;
+        if (corte)      url += `&corte_id=${corte}`;
+        else if (desde) url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
+        if (concepto)   url += `&id_concepto=${encodeURIComponent(concepto)}`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        document.getElementById("hk-total").textContent      = d.total      ?? "—";
+        document.getElementById("hk-pend").textContent       = d.pendientes ?? "—";
+        document.getElementById("hk-conf").textContent       = d.conformes  ?? "—";
+        document.getElementById("hk-noconf").textContent     = d.no_conformes ?? "—";
+        document.getElementById("hk-desc").textContent       = d.descontadas ?? "—";
+        document.getElementById("hk-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
+        document.getElementById("hk-hrs-conf").textContent   = (+d.hrs_conformes    || 0).toFixed(0);
+        document.getElementById("hk-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
+        document.getElementById("hk-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
+        document.getElementById("hk-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
+    } catch(e) {
+        ["hk-total","hk-pend","hk-conf","hk-noconf","hk-desc"].forEach(id => {
+            const el = document.getElementById(id); if (el) el.textContent = "!";
+        });
+    }
+}
+
+function filtrarChipH(estado, el) {
+    el.closest(".he-chips").querySelectorAll(".he-chip").forEach(c => c.classList.remove("active"));
+    el.classList.add("active");
+    document.getElementById("hEstado").value = estado;
+    cargarHistorial();
+}
+
+function sincronizarChipH(estado) {
+    const map = {"":"ch-all","PENDIENTE":"ch-pend","CONFORME":"ch-conf","NO CONFORME":"ch-noconf","DESCONTADA":"ch-desc"};
+    const chips = document.querySelectorAll("#panel-historial .he-chip");
+    chips.forEach(c => c.classList.remove("active"));
+    const cls = map[estado];
+    if (cls) { const chip = document.querySelector("#panel-historial .he-chip." + cls); if (chip) chip.classList.add("active"); }
+}
+
 // ── Grid historial ────────────────────────────────────────────────────────────
 async function cargarHistorial() {
+    cargarKpisHistorial();
     const cid     = document.getElementById("hContrato").value;
     const corte   = document.getElementById("hCorte").value;
     const desde   = document.getElementById("hDesde").value;
     const hasta   = document.getElementById("hHasta").value;
     const concepto= document.getElementById("hConcepto").value;
-    let url = `/api/he/registros?contrato_id=${cid}`;
+    const estado  = document.getElementById("hEstado").value;
+    let url = `/api/he/registros?contrato_id=${cid}&estado=${estado}`;
     if (corte)      url += `&corte_id=${corte}`;
     else if (desde) url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
     if (concepto)   url += `&id_concepto=${encodeURIComponent(concepto)}`;
