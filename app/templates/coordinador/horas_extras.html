@@ -177,9 +177,13 @@ body { background:var(--c-bg); }
 .he-stat-card.primary   { border-top-color:#0d3b66; }
 .he-stat-card.success   { border-top-color:#22c55e; }
 .he-stat-card.info      { border-top-color:#0ea5e9; }
+.he-stat-card.danger    { border-top-color:#ef4444; }
+.he-stat-card.warning   { border-top-color:#f59e0b; }
 .he-stat-val { font-size:1.8rem; font-weight:800; line-height:1; color:#0d3b66; }
 .he-stat-card.success .he-stat-val { color:#166534; }
 .he-stat-card.info    .he-stat-val { color:#0369a1; }
+.he-stat-card.danger  .he-stat-val { color:#dc2626; }
+.he-stat-card.warning .he-stat-val { color:#b45309; }
 .he-stat-lbl { font-size:.68rem; font-weight:600; color:#6c757d; text-transform:uppercase; letter-spacing:.4px; }
 .he-resumen-conceptos { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
 .he-conc-card {
@@ -264,15 +268,19 @@ body { background:var(--c-bg); }
                 </div>
                 <div class="he-stat-card info">
                     <div class="he-stat-val" id="rs-hrs-rep">—</div>
-                    <div class="he-stat-lbl">Horas Reportadas</div>
-                </div>
-                <div class="he-stat-card success">
-                    <div class="he-stat-val" id="rs-conformes">—</div>
-                    <div class="he-stat-lbl">Registros Conformes</div>
+                    <div class="he-stat-lbl">Hrs Reportadas</div>
                 </div>
                 <div class="he-stat-card success">
                     <div class="he-stat-val" id="rs-hrs-auth">—</div>
-                    <div class="he-stat-lbl">Horas Autorizadas</div>
+                    <div class="he-stat-lbl">Hrs Autorizadas</div>
+                </div>
+                <div class="he-stat-card danger">
+                    <div class="he-stat-val" id="rs-hrs-noauth">—</div>
+                    <div class="he-stat-lbl">Hrs No Autorizadas</div>
+                </div>
+                <div class="he-stat-card warning">
+                    <div class="he-stat-val" id="rs-hrs-desc">—</div>
+                    <div class="he-stat-lbl">Hrs Descontadas</div>
                 </div>
             </div>
             <!-- Tarjetas por concepto -->
@@ -794,10 +802,11 @@ async function cargarResumen() {
         const d = await r.json();
         if (!d.ok) return;
 
-        document.getElementById("rs-total").textContent    = d.total.toLocaleString("es-CO");
-        document.getElementById("rs-hrs-rep").textContent  = d.hrs_reportadas.toFixed(0);
-        document.getElementById("rs-conformes").textContent= d.conformes.toLocaleString("es-CO");
-        document.getElementById("rs-hrs-auth").textContent = d.hrs_autorizadas.toFixed(0);
+        document.getElementById("rs-total").textContent      = d.total.toLocaleString("es-CO");
+        document.getElementById("rs-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
+        document.getElementById("rs-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
+        document.getElementById("rs-hrs-noauth").textContent = (+d.hrs_no_autorizadas || 0).toFixed(0);
+        document.getElementById("rs-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
 
         const cont = document.getElementById("resumenConceptos");
         if (!d.por_concepto.length) {

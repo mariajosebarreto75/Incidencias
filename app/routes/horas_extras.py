@@ -396,11 +396,15 @@ def api_he_resumen():
             db.func.coalesce(db.func.sum(HoraExtra.horas_autorizadas), 0)
         ).scalar() or 0)
 
-    q_conf = q.filter(HoraExtra.estado == "CONFORME")
-    total          = q.count()
-    hrs_reportadas = _sum_rep(q)
-    conformes      = q_conf.count()
-    hrs_autorizadas= _sum_auth(q_conf)
+    q_conf    = q.filter(HoraExtra.estado == "CONFORME")
+    q_noconf  = q.filter(HoraExtra.estado == "NO CONFORME")
+    q_desc    = q.filter(HoraExtra.estado == "DESCONTADA")
+    total            = q.count()
+    hrs_reportadas   = _sum_rep(q)
+    conformes        = q_conf.count()
+    hrs_autorizadas  = _sum_auth(q_conf)
+    hrs_no_autorizadas = _sum_rep(q_noconf)
+    hrs_descontadas    = _sum_rep(q_desc)
 
     # Obtener conceptos reales de la DB (puede ser "3" o "03", lo que sea)
     codigos_db = [
@@ -433,10 +437,12 @@ def api_he_resumen():
         return jsonify({
             "ok": True,
             "total": total,
-            "hrs_reportadas":  hrs_reportadas,
-            "conformes":       conformes,
-            "hrs_autorizadas": hrs_autorizadas,
-            "por_concepto":    por_concepto,
+            "hrs_reportadas":    hrs_reportadas,
+            "conformes":         conformes,
+            "hrs_autorizadas":   hrs_autorizadas,
+            "hrs_no_autorizadas": hrs_no_autorizadas,
+            "hrs_descontadas":   hrs_descontadas,
+            "por_concepto":      por_concepto,
         })
     except Exception as e:
         import traceback
