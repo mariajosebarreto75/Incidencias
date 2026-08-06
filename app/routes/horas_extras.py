@@ -371,6 +371,65 @@ def api_he_validar(id):
     })
 
 
+# ── API: Resumen por contrato (todos los cortes) ─────────────────────────────
+@he_bp.route("/api/he/resumen")
+@login_required
+def api_he_resumen():
+    contrato_id = request.args.get("contrato_id", type=int)
+    if not contrato_id:
+        return jsonify({"ok": False, "msg": "contrato_id requerido"}), 400
+    if current_user.rol.lower() == "coordinador":
+        if contrato_id not in _ids_contratos_usuario():
+            return jsonify({"ok": False, "msg": "No autorizado"}), 403
+
+    q = HoraExtra.query.filter_by(contrato_id=contrato_id)
+
+    def _sum_rep(base):
+        return float(base.with_entities(
+            db.func.coalesce(db.func.sum(HoraExtra.horas_reportadas), 0)
+        ).scalar() or 0)
+
+    def _sum_auth(base):
+        return float(base.with_entities(
+            db.func.coalesce(db.func.sum(HoraExtra.horas_autorizadas), 0)
+        ).scalar() or 0)
+
+    q_conf = q.filter(HoraExtra.estado == "CONFORME")
+    total          = q.count()
+    hrs_reportadas = _sum_rep(q)
+    conformes      = q_conf.count()
+    hrs_autorizadas= _sum_auth(q_conf)
+
+    por_concepto = []
+    for codigo, nombre in CONCEPTOS_HE.items():
+        qc      = q.filter(HoraExtra.id_concepto == codigo)
+        ct_total = qc.count()
+        if ct_total == 0:
+            continue
+        qc_conf  = qc.filter(HoraExtra.estado == "CONFORME")
+        por_concepto.append({
+            "codigo":         codigo,
+            "nombre":         nombre,
+            "total":          ct_total,
+            "conformes":      qc_conf.count(),
+            "hrs_reportadas": _sum_rep(qc),
+            "hrs_autorizadas":_sum_auth(qc_conf),
+        })
+
+    try:
+        return jsonify({
+            "ok": True,
+            "total": total,
+            "hrs_reportadas":  hrs_reportadas,
+            "conformes":       conformes,
+            "hrs_autorizadas": hrs_autorizadas,
+            "por_concepto":    por_concepto,
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"ok": False, "error": str(e), "trace": traceback.format_exc()}), 500
+
+
 # ── API: KPIs ────────────────────────────────────────────────────────────────
 @he_bp.route("/api/he/kpis")
 @login_required

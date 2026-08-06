@@ -166,6 +166,36 @@ body { background:var(--c-bg); }
 .he-import-preview tr:nth-child(even) td { background:#fafbfc; }
 .he-import-info { background:#e8f4fd;border-radius:8px;padding:10px 14px;font-size:.8rem;color:#0d3b66;margin-bottom:12px; }
 
+/* ── Resumen dashboard ── */
+.he-resumen { margin-bottom:20px; }
+.he-resumen-main { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+.he-stat-card {
+    background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08);
+    padding:14px 20px; display:flex; flex-direction:column; gap:4px; min-width:160px; flex:1;
+    border-top:4px solid #dee2e6;
+}
+.he-stat-card.primary   { border-top-color:#0d3b66; }
+.he-stat-card.success   { border-top-color:#22c55e; }
+.he-stat-card.info      { border-top-color:#0ea5e9; }
+.he-stat-val { font-size:1.8rem; font-weight:800; line-height:1; color:#0d3b66; }
+.he-stat-card.success .he-stat-val { color:#166534; }
+.he-stat-card.info    .he-stat-val { color:#0369a1; }
+.he-stat-lbl { font-size:.68rem; font-weight:600; color:#6c757d; text-transform:uppercase; letter-spacing:.4px; }
+.he-resumen-conceptos { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+.he-conc-card {
+    background:#fff; border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,.07);
+    padding:12px 15px; display:flex; flex-direction:column; gap:6px;
+    border-left:4px solid #0d3b66;
+}
+.he-conc-title { font-size:.72rem; font-weight:700; color:#0d3b66; line-height:1.3; }
+.he-conc-row { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.he-conc-num { font-size:1.1rem; font-weight:800; color:#0d3b66; }
+.he-conc-sub { font-size:.62rem; color:#6c757d; font-weight:600; text-transform:uppercase; letter-spacing:.3px; }
+.he-conc-bar { height:5px; border-radius:3px; background:#e2e8f0; margin-top:2px; overflow:hidden; }
+.he-conc-bar-fill { height:100%; background:#22c55e; border-radius:3px; transition:width .4s; }
+.he-resumen-empty { background:#fff; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,.06);
+    padding:28px; text-align:center; color:#94a3b8; font-size:.85rem; }
+
 /* ── Panel Cortes ── */
 .he-cortes-empty {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -216,6 +246,40 @@ body { background:var(--c-bg); }
             <button class="he-tab" onclick="cambiarTab('cortes',this)">
                 <i class="bi bi-archive"></i> Cortes
             </button>
+        </div>
+    </div>
+
+    <!-- ══════════════════ RESUMEN DASHBOARD ══════════════════ -->
+    <div class="he-resumen" id="resumenDashboard">
+        <div class="he-resumen-empty" id="resumenVacio">
+            <i class="bi bi-bar-chart-line" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3;"></i>
+            Seleccione un contrato para ver el resumen de horas
+        </div>
+        <div id="resumenContenido" style="display:none;">
+            <!-- Tarjetas principales -->
+            <div class="he-resumen-main">
+                <div class="he-stat-card primary">
+                    <div class="he-stat-val" id="rs-total">—</div>
+                    <div class="he-stat-lbl">Total Registros</div>
+                </div>
+                <div class="he-stat-card info">
+                    <div class="he-stat-val" id="rs-hrs-rep">—</div>
+                    <div class="he-stat-lbl">Horas Reportadas</div>
+                </div>
+                <div class="he-stat-card success">
+                    <div class="he-stat-val" id="rs-conformes">—</div>
+                    <div class="he-stat-lbl">Registros Conformes</div>
+                </div>
+                <div class="he-stat-card success">
+                    <div class="he-stat-val" id="rs-hrs-auth">—</div>
+                    <div class="he-stat-lbl">Horas Autorizadas</div>
+                </div>
+            </div>
+            <!-- Tarjetas por concepto -->
+            <div style="font-size:.72rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">
+                <i class="bi bi-grid-3x3-gap me-1"></i>Desglose por tipo de hora — solo CONFORMES
+            </div>
+            <div class="he-resumen-conceptos" id="resumenConceptos"></div>
         </div>
     </div>
 
@@ -529,6 +593,7 @@ let validacionCargada = false;
     });
     const cid = document.getElementById("gridContrato").value;
     if (cid) onContratoChange();
+    else cargarResumen();
 })();
 
 // ── Handsontable ──────────────────────────────────────────────────────────────
@@ -643,6 +708,7 @@ async function onContratoChange() {
     validacionCargada = false;
     const cid = document.getElementById("gridContrato").value;
     document.getElementById("fContrato").value = cid;
+    cargarResumen();
     await actualizarCortesCoor();
     cargarKpis();
     // Solo recargar historial si la tab de validación está activa
@@ -709,6 +775,58 @@ async function guardarGrid() {
     } else {
         mostrarToast(d.msg || "Error al guardar","danger");
     }
+}
+
+// ── Resumen dashboard ────────────────────────────────────────────────────────
+const COLORES_CONC = ["#0d3b66","#1565c0","#0369a1","#0e7490","#065f46","#6b21a8","#9d174d"];
+
+async function cargarResumen() {
+    const cid = document.getElementById("gridContrato").value;
+    const vacio    = document.getElementById("resumenVacio");
+    const contenido= document.getElementById("resumenContenido");
+    if (!cid) {
+        vacio.style.display = ""; contenido.style.display = "none"; return;
+    }
+    vacio.style.display = "none"; contenido.style.display = "";
+
+    try {
+        const r = await fetch(`/api/he/resumen?contrato_id=${cid}`);
+        const d = await r.json();
+        if (!d.ok) return;
+
+        document.getElementById("rs-total").textContent    = d.total.toLocaleString("es-CO");
+        document.getElementById("rs-hrs-rep").textContent  = d.hrs_reportadas.toFixed(0);
+        document.getElementById("rs-conformes").textContent= d.conformes.toLocaleString("es-CO");
+        document.getElementById("rs-hrs-auth").textContent = d.hrs_autorizadas.toFixed(0);
+
+        const cont = document.getElementById("resumenConceptos");
+        if (!d.por_concepto.length) {
+            cont.innerHTML = `<div style="color:#94a3b8;font-size:.8rem;grid-column:1/-1;">Sin registros aún</div>`;
+            return;
+        }
+        cont.innerHTML = d.por_concepto.map((c, i) => {
+            const pct = c.total > 0 ? Math.round((c.conformes / c.total) * 100) : 0;
+            const color = COLORES_CONC[i % COLORES_CONC.length];
+            return `
+            <div class="he-conc-card" style="border-left-color:${color};">
+                <div class="he-conc-title">${c.codigo} — ${c.nombre}</div>
+                <div class="he-conc-row">
+                    <div>
+                        <div class="he-conc-num" style="color:${color};">${c.hrs_autorizadas.toFixed(0)}</div>
+                        <div class="he-conc-sub">hrs autorizadas</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:.8rem;font-weight:700;color:#166534;">${c.conformes} <span style="color:#6c757d;font-weight:400;">/ ${c.total}</span></div>
+                        <div class="he-conc-sub">conformes / total</div>
+                    </div>
+                </div>
+                <div class="he-conc-bar">
+                    <div class="he-conc-bar-fill" style="width:${pct}%;background:${color};"></div>
+                </div>
+                <div style="font-size:.62rem;color:#6c757d;text-align:right;">${pct}% conforme · ${c.hrs_reportadas.toFixed(0)} hrs reportadas</div>
+            </div>`;
+        }).join("");
+    } catch(e) { console.error("Resumen:", e); }
 }
 
 // ── Filtro por corte (coordinador) ───────────────────────────────────────────
