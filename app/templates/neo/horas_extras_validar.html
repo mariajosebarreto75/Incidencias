@@ -1047,11 +1047,8 @@ function _openFilterPopup(htInst, col, anchorBtn) {
         return (v === null || v === undefined) ? '' : String(v);
     }))].sort((a,b) => a.localeCompare(b, 'es', {sensitivity:'base'}));
 
-    // Leer selección actual del plugin filters
-    const plugin = htInst.getPlugin('filters');
-    const conds  = plugin.conditionCollection?.getConditions(col) || [];
-    const byVal  = conds.find(c => c.name === 'by_value');
-    _fpSelected  = byVal ? new Set(byVal.args[0]) : new Set(allVals); // sin filtro = todo seleccionado
+    // Sin filtro activo = todo seleccionado
+    _fpSelected = new Set(allVals);
 
     _renderPopupList(allVals);
 
