@@ -1033,8 +1033,6 @@ function _showFilterBtn(col, TH) {
     // Insertar junto al texto del encabezado
     const span = TH.querySelector('.colHeader') || TH;
     span.parentNode ? span.after(btn) : TH.appendChild(btn);
-    // Marcar si ya tiene filtro activo
-    _refreshFilterBtnState(col, TH);
 }
 
 function _getHotFromTH(TH) {
