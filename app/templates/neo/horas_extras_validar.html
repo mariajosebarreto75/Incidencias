@@ -104,21 +104,45 @@ body { background:var(--c-bg); }
 .he-conc-card-neo .cbf { height:100%; border-radius:2px; background:#007d8a; }
 
 /* ── Botón filtro Handsontable siempre visible ── */
-button.changeType {
-    display: inline-flex !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    background: #d6f0f2 !important;
-    border: 1px solid #9dd4da !important;
-    border-radius: 3px !important;
-    color: #006d79 !important;
-    padding: 0 4px !important;
-    margin-left: 4px !important;
-    font-size: 9px !important;
-    cursor: pointer !important;
-    height: 14px !important;
+/* ── Botón filtro columna ── */
+.ht-col-filter-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 4px; width: 15px; height: 13px;
+    background: #d6f0f2; border: 1px solid #9dd4da; border-radius: 3px;
+    color: #006d79; font-size: 9px; cursor: pointer; vertical-align: middle;
+    flex-shrink: 0; line-height: 1;
 }
-button.changeType:hover { background: #007d8a !important; color: #fff !important; }
+.ht-col-filter-btn:hover, .ht-col-filter-btn.active { background:#007d8a; color:#fff; border-color:#005f6b; }
+
+/* ── Popup filtro ── */
+#htFilterPopup {
+    position: fixed; z-index: 99999;
+    background: #fff; border: 1px solid #dee2e6; border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.18); padding: 10px;
+    min-width: 200px; max-width: 280px; font-size: .78rem;
+    display: none;
+}
+#htFilterPopup .fp-search {
+    width: 100%; box-sizing: border-box; border: 1px solid #dee2e6;
+    border-radius: 5px; padding: 4px 8px; font-size: .75rem; margin-bottom: 6px; outline: none;
+}
+#htFilterPopup .fp-list {
+    max-height: 200px; overflow-y: auto; border: 1px solid #f0f0f0;
+    border-radius: 4px; padding: 4px;
+}
+#htFilterPopup .fp-item { display: flex; align-items: center; gap: 6px; padding: 2px 4px;
+    border-radius: 3px; cursor: pointer; }
+#htFilterPopup .fp-item:hover { background: #f0fafb; }
+#htFilterPopup .fp-item label { cursor: pointer; margin: 0; flex: 1; font-size: .75rem; }
+#htFilterPopup .fp-actions {
+    display: flex; gap: 6px; margin-top: 8px; justify-content: flex-end;
+}
+#htFilterPopup .fp-btn {
+    border: none; border-radius: 5px; padding: 4px 12px; font-size: .72rem;
+    font-weight: 600; cursor: pointer;
+}
+#htFilterPopup .fp-btn.ok  { background: #007d8a; color: #fff; }
+#htFilterPopup .fp-btn.clr { background: #f1f5f9; color: #495057; }
 
 /* ── Filtros + Grid ── */
 .he-filtros { background:#fff; border-radius:10px; padding:10px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07);
@@ -493,6 +517,16 @@ button.changeType:hover { background: #007d8a !important; color: #fff !important
 </div>
 
 <!-- ── Modal Nuevo Corte NEO ── -->
+<!-- Popup filtro columnas Handsontable -->
+<div id="htFilterPopup">
+    <input class="fp-search" placeholder="Buscar…" id="fpSearch">
+    <div class="fp-list" id="fpList"></div>
+    <div class="fp-actions">
+        <button class="fp-btn clr" id="fpClear">Limpiar</button>
+        <button class="fp-btn ok"  id="fpOk">Aplicar</button>
+    </div>
+</div>
+
 <div class="he-modal-overlay" id="modalNuevoCorteNeo">
   <div class="he-modal" style="max-width:480px;">
     <div class="he-modal-header">
@@ -708,7 +742,7 @@ function iniciarGrid() {
         manualColumnResize: true,
         manualColumnMove: true,
         filters: true,
-        dropdownMenu: ['sort_asc','sort_desc','-','filter_by_condition','filter_operators','filter_by_value','filter_action_bar'],
+        dropdownMenu: false,
         fixedColumnsLeft: 0,
         licenseKey: "non-commercial-and-evaluation",
         cells: function(row, col) {
@@ -966,29 +1000,152 @@ async function cargarHistorial() {
         stretchH: "none",
         manualColumnResize: true,
         filters: true,
-        dropdownMenu: ['sort_asc','sort_desc','-','filter_by_condition','filter_operators','filter_by_value','filter_action_bar'],
+        dropdownMenu: false,
         licenseKey: "non-commercial-and-evaluation",
         afterGetColHeader: function(col, TH) { _showFilterBtn(col, TH); },
     });
 }
 
-// ── Forzar botón changeType visible en cada TH ───────────────────────────────
+// ── Sistema de filtro propio para Handsontable ───────────────────────────────
+let _fpHot = null, _fpCol = -1, _fpSelected = new Set();
+
+// Inyecta botón ▾ en cada TH
 function _showFilterBtn(col, TH) {
     if (col < 0) return;
-    const btn = TH.querySelector('button.changeType');
-    if (!btn) return;
-    btn.style.setProperty('display',    'inline-flex', 'important');
-    btn.style.setProperty('opacity',    '1',           'important');
-    btn.style.setProperty('visibility', 'visible',     'important');
-    btn.style.setProperty('background', '#d6f0f2',     'important');
-    btn.style.setProperty('border',     '1px solid #9dd4da', 'important');
-    btn.style.setProperty('border-radius', '3px',      'important');
-    btn.style.setProperty('color',      '#006d79',     'important');
-    btn.style.setProperty('padding',    '0 4px',       'important');
-    btn.style.setProperty('margin-left','4px',         'important');
-    btn.style.setProperty('cursor',     'pointer',     'important');
-    btn.style.setProperty('height',     '14px',        'important');
-    btn.style.setProperty('font-size',  '9px',         'important');
+    if (TH.querySelector('.ht-col-filter-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'ht-col-filter-btn';
+    btn.innerHTML = '▾';
+    btn.title = 'Filtrar';
+    btn.setAttribute('data-col', col);
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const htInst = TH.closest('.ht_master, .handsontable') ? _getHotFromTH(TH) : null;
+        _openFilterPopup(htInst || hot, col, btn);
+    });
+    // Insertar junto al texto del encabezado
+    const span = TH.querySelector('.colHeader') || TH;
+    span.parentNode ? span.after(btn) : TH.appendChild(btn);
+    // Marcar si ya tiene filtro activo
+    _refreshFilterBtnState(col, TH);
+}
+
+function _getHotFromTH(TH) {
+    // Detecta si pertenece al grid historial o al principal
+    if (hotHistorial && hotHistorial.rootElement && hotHistorial.rootElement.contains(TH)) return hotHistorial;
+    return hot;
+}
+
+function _openFilterPopup(htInst, col, anchorBtn) {
+    _fpHot = htInst;
+    _fpCol = col;
+
+    // Recolectar valores únicos de la columna
+    const data = htInst.getData();
+    const allVals = [...new Set(data.map(r => {
+        const v = r[col];
+        return (v === null || v === undefined) ? '' : String(v);
+    }))].sort((a,b) => a.localeCompare(b, 'es', {sensitivity:'base'}));
+
+    // Leer selección actual del plugin filters
+    const plugin = htInst.getPlugin('filters');
+    const conds  = plugin.conditionCollection?.getConditions(col) || [];
+    const byVal  = conds.find(c => c.name === 'by_value');
+    _fpSelected  = byVal ? new Set(byVal.args[0]) : new Set(allVals); // sin filtro = todo seleccionado
+
+    _renderPopupList(allVals);
+
+    // Posicionar popup
+    const popup = document.getElementById('htFilterPopup');
+    const rect  = anchorBtn.getBoundingClientRect();
+    popup.style.display = 'block';
+    popup.style.left = Math.min(rect.left, window.innerWidth - 300) + 'px';
+    popup.style.top  = (rect.bottom + 4) + 'px';
+
+    document.getElementById('fpSearch').value = '';
+    document.getElementById('fpSearch').focus();
+
+    // Guardar lista completa para búsqueda
+    popup._allVals = allVals;
+}
+
+function _renderPopupList(vals) {
+    const list = document.getElementById('fpList');
+    const allChecked = vals.every(v => _fpSelected.has(v));
+    list.innerHTML = `
+        <div class="fp-item" id="fpSelAll">
+            <input type="checkbox" id="fpChkAll" ${allChecked ? 'checked' : ''}>
+            <label for="fpChkAll"><strong>(Seleccionar todo)</strong></label>
+        </div>
+        ${vals.map((v,i) => `
+        <div class="fp-item">
+            <input type="checkbox" id="fpc${i}" ${_fpSelected.has(v) ? 'checked' : ''} data-val="${v.replace(/"/g,'&quot;')}">
+            <label for="fpc${i}">${v === '' ? '(Vacías)' : v}</label>
+        </div>`).join('')}`;
+
+    // Seleccionar todo
+    list.querySelector('#fpChkAll').addEventListener('change', function() {
+        const chks = list.querySelectorAll('input[data-val]');
+        chks.forEach(c => { c.checked = this.checked; });
+        _fpSelected = this.checked ? new Set(vals) : new Set();
+    });
+    // Checkboxes individuales
+    list.querySelectorAll('input[data-val]').forEach(chk => {
+        chk.addEventListener('change', function() {
+            if (this.checked) _fpSelected.add(this.dataset.val);
+            else _fpSelected.delete(this.dataset.val);
+            list.querySelector('#fpChkAll').checked = vals.every(v => _fpSelected.has(v));
+        });
+    });
+}
+
+// Búsqueda en el popup
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('fpSearch').addEventListener('input', function() {
+        const q = this.value.toLowerCase();
+        const popup = document.getElementById('htFilterPopup');
+        const filtered = (popup._allVals || []).filter(v => v.toLowerCase().includes(q));
+        _renderPopupList(filtered);
+    });
+    document.getElementById('fpOk').addEventListener('click', _applyFilter);
+    document.getElementById('fpClear').addEventListener('click', _clearFilter);
+    // Cerrar al hacer clic fuera
+    document.addEventListener('mousedown', function(e) {
+        const popup = document.getElementById('htFilterPopup');
+        if (popup.style.display !== 'none' && !popup.contains(e.target) && !e.target.classList.contains('ht-col-filter-btn')) {
+            popup.style.display = 'none';
+        }
+    });
+});
+
+function _applyFilter() {
+    if (!_fpHot || _fpCol < 0) return;
+    const plugin = _fpHot.getPlugin('filters');
+    plugin.removeConditions(_fpCol);
+    const data = _fpHot.getData();
+    const allVals = [...new Set(data.map(r => String(r[_fpCol] ?? '')))];
+    const allSelected = allVals.every(v => _fpSelected.has(v));
+    if (!allSelected && _fpSelected.size > 0) {
+        plugin.addCondition(_fpCol, 'by_value', [[..._fpSelected]]);
+    }
+    plugin.filter();
+    document.getElementById('htFilterPopup').style.display = 'none';
+    // Actualizar estado del botón
+    _fpHot.rootElement.querySelectorAll(`.ht-col-filter-btn[data-col="${_fpCol}"]`).forEach(b => {
+        b.classList.toggle('active', !allSelected && _fpSelected.size > 0);
+    });
+}
+
+function _clearFilter() {
+    if (!_fpHot || _fpCol < 0) return;
+    _fpHot.getPlugin('filters').removeConditions(_fpCol);
+    _fpHot.getPlugin('filters').filter();
+    document.getElementById('htFilterPopup').style.display = 'none';
+    _fpHot.rootElement.querySelectorAll(`.ht-col-filter-btn[data-col="${_fpCol}"]`).forEach(b => b.classList.remove('active'));
+}
+
+function _refreshFilterBtnState(col, TH) {
+    // Se actualiza al aplicar filtros
 }
 
 function fmtFecha(v) {
