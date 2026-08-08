@@ -103,17 +103,24 @@ body { background:var(--c-bg); }
 .he-conc-card-neo .cb { height:4px; border-radius:2px; background:#e2e8f0; margin-top:8px; overflow:hidden; }
 .he-conc-card-neo .cbf { height:100%; border-radius:2px; background:#007d8a; }
 
-/* ── Handsontable: fila de filtros inline ── */
-.ht-filter-input {
-    width: 100%; box-sizing: border-box;
-    border: 1px solid #b6d9dc; border-radius: 4px;
-    padding: 2px 5px; font-size: .68rem;
-    background: #f0fafb; color: #0d3b66;
-    margin-top: 3px; outline: none;
+/* ── Handsontable: embudo de filtro siempre visible ── */
+.handsontable th .changeType {
+    display: inline-flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    background: #d6f0f2;
+    border: 1px solid #9dd4da;
+    border-radius: 3px;
+    color: #006d79;
+    padding: 1px 4px;
+    margin-left: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
 }
-.ht-filter-input:focus { border-color: #007d8a; background: #fff; }
-.ht-filter-input.active { border-color: #007d8a; background: #d6f0f2; font-weight: 600; }
-.handsontable th { vertical-align: top !important; padding-bottom: 4px !important; }
+.handsontable th .changeType:hover { background: #007d8a; color: #fff; }
+/* columna activamente filtrada */
+.handsontable th.ht__highlight .changeType { background: #007d8a; color: #fff; }
 
 /* ── Filtros + Grid ── */
 .he-filtros { background:#fff; border-radius:10px; padding:10px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07);
@@ -703,7 +710,7 @@ function iniciarGrid() {
         manualColumnResize: true,
         manualColumnMove: true,
         filters: true,
-        dropdownMenu: false,
+        dropdownMenu: ['sort_asc','sort_desc','-','filter_by_condition','filter_operators','filter_by_value','filter_action_bar'],
         fixedColumnsLeft: 0,
         licenseKey: "non-commercial-and-evaluation",
         cells: function(row, col) {
@@ -714,33 +721,7 @@ function iniciarGrid() {
             if (!changes || source === "loadData") return;
             changes.forEach(([row]) => autoGuardar(row));
         },
-        afterGetColHeader: function(col, TH) { _addColFilter(this, col, TH); },
     });
-}
-
-// ── Filtro inline en encabezados ─────────────────────────────────────────────
-function _addColFilter(htInstance, col, TH) {
-    if (col < 0) return;
-    if (TH.querySelector(".ht-filter-input")) return; // ya insertado
-    const inp = document.createElement("input");
-    inp.className = "ht-filter-input";
-    inp.placeholder = "Filtrar…";
-    inp.setAttribute("data-col", col);
-    inp.addEventListener("mousedown", e => e.stopPropagation());
-    inp.addEventListener("click",     e => e.stopPropagation());
-    inp.addEventListener("keyup", function() {
-        const plugin = htInstance.getPlugin("filters");
-        plugin.removeConditions(col);
-        if (this.value.trim()) {
-            plugin.addCondition(col, "contains", [this.value.trim().toLowerCase()]);
-            this.classList.add("active");
-        } else {
-            this.classList.remove("active");
-        }
-        plugin.filter();
-        this.focus();
-    });
-    TH.appendChild(inp);
 }
 
 // ── Filtro por corte ─────────────────────────────────────────────────────────
@@ -986,9 +967,8 @@ async function cargarHistorial() {
         stretchH: "none",
         manualColumnResize: true,
         filters: true,
-        dropdownMenu: false,
+        dropdownMenu: ['sort_asc','sort_desc','-','filter_by_condition','filter_operators','filter_by_value','filter_action_bar'],
         licenseKey: "non-commercial-and-evaluation",
-        afterGetColHeader: function(col, TH) { _addColFilter(this, col, TH); },
     });
 }
 
