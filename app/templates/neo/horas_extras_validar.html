@@ -972,8 +972,7 @@ async function cargarHistorial() {
 // ── Botón embudo filtro en encabezados Handsontable ──────────────────────────
 function _injectFilterBtn(col, TH) {
     if (col < 0) return;
-    if (TH.querySelector('.ht-filter-btn')) return; // ya insertado
-    // El botón original (changeType) lo dejamos oculto; creamos uno visible propio
+    if (TH.querySelector('.ht-filter-btn')) return;
     const orig = TH.querySelector('button.changeType');
     const myBtn = document.createElement('button');
     myBtn.className = 'ht-filter-btn';
@@ -982,11 +981,19 @@ function _injectFilterBtn(col, TH) {
     myBtn.addEventListener('mousedown', function(e) {
         e.stopPropagation();
         e.preventDefault();
-        if (orig) orig.click(); // abre el dropdownMenu de Handsontable
+        if (!orig) return;
+        // Handsontable escucha 'mousedown' en changeType, no 'click'
+        const rect = orig.getBoundingClientRect();
+        orig.dispatchEvent(new MouseEvent('mousedown', {
+            bubbles: true, cancelable: true,
+            clientX: rect.left + rect.width / 2,
+            clientY: rect.top + rect.height / 2,
+            view: window,
+        }));
     });
     const span = TH.querySelector('.colHeader');
     if (span) span.after(myBtn);
-    else TH.querySelector('.relative')?.appendChild(myBtn) || TH.appendChild(myBtn);
+    else (TH.querySelector('.relative') || TH).appendChild(myBtn);
 }
 
 function fmtFecha(v) {
