@@ -103,19 +103,22 @@ body { background:var(--c-bg); }
 .he-conc-card-neo .cb { height:4px; border-radius:2px; background:#e2e8f0; margin-top:8px; overflow:hidden; }
 .he-conc-card-neo .cbf { height:100%; border-radius:2px; background:#007d8a; }
 
-/* ── Botón filtro personalizado sobre Handsontable ── */
-.ht-filter-btn {
+/* ── Botón filtro Handsontable siempre visible ── */
+button.changeType {
     display: inline-flex !important;
-    align-items: center; justify-content: center;
-    margin-left: 5px;
-    background: #d6f0f2; border: 1px solid #9dd4da;
-    border-radius: 3px; color: #006d79;
-    width: 16px; height: 14px; font-size: 9px;
-    cursor: pointer; vertical-align: middle;
-    line-height: 1; flex-shrink: 0;
+    opacity: 1 !important;
+    visibility: visible !important;
+    background: #d6f0f2 !important;
+    border: 1px solid #9dd4da !important;
+    border-radius: 3px !important;
+    color: #006d79 !important;
+    padding: 0 4px !important;
+    margin-left: 4px !important;
+    font-size: 9px !important;
+    cursor: pointer !important;
+    height: 14px !important;
 }
-.ht-filter-btn:hover { background: #007d8a; color: #fff; border-color: #007d8a; }
-.ht-filter-btn.filtered { background: #007d8a; color: #fff; border-color: #005f6b; }
+button.changeType:hover { background: #007d8a !important; color: #fff !important; }
 
 /* ── Filtros + Grid ── */
 .he-filtros { background:#fff; border-radius:10px; padding:10px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07);
@@ -716,7 +719,7 @@ function iniciarGrid() {
             if (!changes || source === "loadData") return;
             changes.forEach(([row]) => autoGuardar(row));
         },
-        afterGetColHeader: _injectFilterBtn,
+        afterRender: function() { _mostrarBotonesFilter(this); },
     });
 }
 
@@ -965,35 +968,17 @@ async function cargarHistorial() {
         filters: true,
         dropdownMenu: ['sort_asc','sort_desc','-','filter_by_condition','filter_operators','filter_by_value','filter_action_bar'],
         licenseKey: "non-commercial-and-evaluation",
-        afterGetColHeader: _injectFilterBtn,
+        afterRender: function() { _mostrarBotonesFilter(this); },
     });
 }
 
-// ── Botón embudo filtro en encabezados Handsontable ──────────────────────────
-function _injectFilterBtn(col, TH) {
-    if (col < 0) return;
-    if (TH.querySelector('.ht-filter-btn')) return;
-    const orig = TH.querySelector('button.changeType');
-    const myBtn = document.createElement('button');
-    myBtn.className = 'ht-filter-btn';
-    myBtn.title = 'Filtrar esta columna';
-    myBtn.innerHTML = '▾';
-    myBtn.addEventListener('mousedown', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        if (!orig) return;
-        // Handsontable escucha 'mousedown' en changeType, no 'click'
-        const rect = orig.getBoundingClientRect();
-        orig.dispatchEvent(new MouseEvent('mousedown', {
-            bubbles: true, cancelable: true,
-            clientX: rect.left + rect.width / 2,
-            clientY: rect.top + rect.height / 2,
-            view: window,
-        }));
+// ── Forzar botones changeType visibles después de cada render ────────────────
+function _mostrarBotonesFilter(htInst) {
+    htInst.rootElement.querySelectorAll('button.changeType').forEach(btn => {
+        btn.style.setProperty('display',     'inline-flex', 'important');
+        btn.style.setProperty('opacity',     '1',           'important');
+        btn.style.setProperty('visibility',  'visible',     'important');
     });
-    const span = TH.querySelector('.colHeader');
-    if (span) span.after(myBtn);
-    else (TH.querySelector('.relative') || TH).appendChild(myBtn);
 }
 
 function fmtFecha(v) {
