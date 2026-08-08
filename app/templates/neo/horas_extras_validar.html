@@ -635,6 +635,7 @@ function estadoRenderer(hotInstance, td, row, col, prop, value) {
 
 let hot = null, hotHistorial = null;
 let registrosIds = [];
+let _fullData = [], _fullIds = [], _htColFilters = {};
 let saveTimer = null;
 let historialCargado = false;
 let cortesCargadosNeo = false;
@@ -863,7 +864,7 @@ async function recargar() {
     const r = await fetch(url);
     const registros = await r.json();
 
-    registrosIds = registros.map(reg => reg.id);
+    const _ids  = registros.map(reg => reg.id);
     const filas = registros.map(reg => [
         fmtFecha(reg.fecha_labor),        // 0  Fecha Labor
         reg.contrato,                      // 1  Contrato
@@ -887,7 +888,13 @@ async function recargar() {
         reg.validado_por || "",            // 19 Validado Por
         reg.fecha_validacion || "",        // 20 Fecha Validación
     ]);
+    // Guardar copia completa para filtros de columna
+    _fullData = filas;
+    _fullIds  = _ids;
+    registrosIds = _ids;
     hot.loadData(filas);
+    _htColFilters = {};  // resetear filtros al recargar
+    _refreshFilterBtns(hot);
 }
 
 // ── KPIs historial ────────────────────────────────────────────────────────────
@@ -1117,32 +1124,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function _applyFilter() {
     if (!_fpHot || _fpCol < 0) return;
-    const plugin = _fpHot.getPlugin('filters');
-    plugin.removeConditions(_fpCol);
-    const data = _fpHot.getData();
-    const allVals = [...new Set(data.map(r => String(r[_fpCol] ?? '')))];
+    const allVals = [...new Set(_fullData.map(r => String(r[_fpCol] ?? '')))];
     const allSelected = allVals.every(v => _fpSelected.has(v));
-    if (!allSelected && _fpSelected.size > 0) {
-        plugin.addCondition(_fpCol, 'by_value', [[..._fpSelected]]);
+    if (allSelected) {
+        delete _htColFilters[_fpCol];
+    } else {
+        _htColFilters[_fpCol] = new Set(_fpSelected);
     }
-    plugin.filter();
     document.getElementById('htFilterPopup').style.display = 'none';
-    // Actualizar estado del botón
-    _fpHot.rootElement.querySelectorAll(`.ht-col-filter-btn[data-col="${_fpCol}"]`).forEach(b => {
-        b.classList.toggle('active', !allSelected && _fpSelected.size > 0);
-    });
+    _applyAllFilters();
+    _refreshFilterBtns(_fpHot);
 }
 
 function _clearFilter() {
     if (!_fpHot || _fpCol < 0) return;
-    _fpHot.getPlugin('filters').removeConditions(_fpCol);
-    _fpHot.getPlugin('filters').filter();
+    delete _htColFilters[_fpCol];
     document.getElementById('htFilterPopup').style.display = 'none';
-    _fpHot.rootElement.querySelectorAll(`.ht-col-filter-btn[data-col="${_fpCol}"]`).forEach(b => b.classList.remove('active'));
+    _applyAllFilters();
+    _refreshFilterBtns(_fpHot);
 }
 
-function _refreshFilterBtnState(col, TH) {
-    // Se actualiza al aplicar filtros
+function _applyAllFilters() {
+    // Filtrar _fullData según _htColFilters activos
+    const cols = Object.keys(_htColFilters).map(Number);
+    let filteredData = _fullData;
+    let filteredIds  = _fullIds;
+    if (cols.length > 0) {
+        const pairs = _fullData.map((row, i) => [row, _fullIds[i]]);
+        const filtered = pairs.filter(([row]) =>
+            cols.every(col => _htColFilters[col].has(String(row[col] ?? '')))
+        );
+        filteredData = filtered.map(([row]) => row);
+        filteredIds  = filtered.map(([,id]) => id);
+    }
+    registrosIds = filteredIds;
+    hot.loadData(filteredData);
+}
+
+function _refreshFilterBtns(htInst) {
+    htInst.rootElement.querySelectorAll('.ht-col-filter-btn').forEach(b => {
+        const col = parseInt(b.dataset.col);
+        b.classList.toggle('active', col in _htColFilters);
+    });
 }
 
 function fmtFecha(v) {
