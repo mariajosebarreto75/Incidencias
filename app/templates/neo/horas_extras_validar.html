@@ -104,23 +104,25 @@ body { background:var(--c-bg); }
 .he-conc-card-neo .cbf { height:100%; border-radius:2px; background:#007d8a; }
 
 /* ── Handsontable: embudo de filtro siempre visible ── */
-.handsontable th .changeType {
+/* Handsontable oculta .changeType por defecto; lo forzamos con máxima especificidad */
+.ht_master thead tr th .relative button.changeType,
+.ht_clone_top thead tr th .relative button.changeType {
     display: inline-flex !important;
     opacity: 1 !important;
     visibility: visible !important;
-    background: #d6f0f2;
-    border: 1px solid #9dd4da;
-    border-radius: 3px;
-    color: #006d79;
-    padding: 1px 4px;
-    margin-left: 4px;
-    font-size: 10px;
-    cursor: pointer;
-    flex-shrink: 0;
+    background: #d6f0f2 !important;
+    border: 1px solid #9dd4da !important;
+    border-radius: 3px !important;
+    color: #006d79 !important;
+    padding: 1px 4px !important;
+    margin-left: 4px !important;
+    font-size: 10px !important;
+    cursor: pointer !important;
 }
-.handsontable th .changeType:hover { background: #007d8a; color: #fff; }
-/* columna activamente filtrada */
-.handsontable th.ht__highlight .changeType { background: #007d8a; color: #fff; }
+.ht_master thead tr th .relative button.changeType:hover,
+.ht_clone_top thead tr th .relative button.changeType:hover {
+    background: #007d8a !important; color: #fff !important;
+}
 
 /* ── Filtros + Grid ── */
 .he-filtros { background:#fff; border-radius:10px; padding:10px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07);
@@ -721,6 +723,10 @@ function iniciarGrid() {
             if (!changes || source === "loadData") return;
             changes.forEach(([row]) => autoGuardar(row));
         },
+        afterGetColHeader: function(col, TH) {
+            const btn = TH.querySelector('button.changeType');
+            if (btn) { btn.style.display='inline-flex'; btn.style.opacity='1'; btn.style.visibility='visible'; }
+        },
     });
 }
 
@@ -969,6 +975,10 @@ async function cargarHistorial() {
         filters: true,
         dropdownMenu: ['sort_asc','sort_desc','-','filter_by_condition','filter_operators','filter_by_value','filter_action_bar'],
         licenseKey: "non-commercial-and-evaluation",
+        afterGetColHeader: function(col, TH) {
+            const btn = TH.querySelector('button.changeType');
+            if (btn) { btn.style.display='inline-flex'; btn.style.opacity='1'; btn.style.visibility='visible'; }
+        },
     });
 }
 

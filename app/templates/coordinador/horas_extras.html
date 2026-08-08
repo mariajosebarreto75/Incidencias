@@ -115,6 +115,16 @@ body { background:var(--c-bg); }
 .tabulator-header { background:#f0f4f8 !important; }
 .tabulator-col-title { font-size:.7rem !important; font-weight:700 !important; color:#0d3b66 !important; text-transform:uppercase; }
 .tabulator-cell { font-size:.78rem !important; }
+/* ── Filtros de columna Tabulator ── */
+.tabulator-header-filter input {
+    width:100%; box-sizing:border-box;
+    border:1px solid #b6cfe8; border-radius:4px;
+    padding:2px 6px; font-size:.7rem;
+    background:#f8fbff; color:#0d3b66; outline:none;
+    margin-top:2px;
+}
+.tabulator-header-filter input:focus { border-color:#0d3b66; background:#fff; }
+.tabulator-col-content { display:flex; flex-direction:column; gap:2px; }
 
 /* ── Tarjetas de corte ── */
 .corte-card {
