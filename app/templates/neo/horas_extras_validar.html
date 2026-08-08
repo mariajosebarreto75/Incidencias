@@ -719,7 +719,7 @@ function iniciarGrid() {
             if (!changes || source === "loadData") return;
             changes.forEach(([row]) => autoGuardar(row));
         },
-        afterRender: function() { _mostrarBotonesFilter(this); },
+        afterGetColHeader: function(col, TH) { _showFilterBtn(col, TH); },
     });
 }
 
@@ -968,17 +968,27 @@ async function cargarHistorial() {
         filters: true,
         dropdownMenu: ['sort_asc','sort_desc','-','filter_by_condition','filter_operators','filter_by_value','filter_action_bar'],
         licenseKey: "non-commercial-and-evaluation",
-        afterRender: function() { _mostrarBotonesFilter(this); },
+        afterGetColHeader: function(col, TH) { _showFilterBtn(col, TH); },
     });
 }
 
-// ── Forzar botones changeType visibles después de cada render ────────────────
-function _mostrarBotonesFilter(htInst) {
-    htInst.rootElement.querySelectorAll('button.changeType').forEach(btn => {
-        btn.style.setProperty('display',     'inline-flex', 'important');
-        btn.style.setProperty('opacity',     '1',           'important');
-        btn.style.setProperty('visibility',  'visible',     'important');
-    });
+// ── Forzar botón changeType visible en cada TH ───────────────────────────────
+function _showFilterBtn(col, TH) {
+    if (col < 0) return;
+    const btn = TH.querySelector('button.changeType');
+    if (!btn) return;
+    btn.style.setProperty('display',    'inline-flex', 'important');
+    btn.style.setProperty('opacity',    '1',           'important');
+    btn.style.setProperty('visibility', 'visible',     'important');
+    btn.style.setProperty('background', '#d6f0f2',     'important');
+    btn.style.setProperty('border',     '1px solid #9dd4da', 'important');
+    btn.style.setProperty('border-radius', '3px',      'important');
+    btn.style.setProperty('color',      '#006d79',     'important');
+    btn.style.setProperty('padding',    '0 4px',       'important');
+    btn.style.setProperty('margin-left','4px',         'important');
+    btn.style.setProperty('cursor',     'pointer',     'important');
+    btn.style.setProperty('height',     '14px',        'important');
+    btn.style.setProperty('font-size',  '9px',         'important');
 }
 
 function fmtFecha(v) {
