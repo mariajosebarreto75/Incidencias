@@ -636,6 +636,7 @@ function estadoRenderer(hotInstance, td, row, col, prop, value) {
 let hot = null, hotHistorial = null;
 let registrosIds = [];
 let _fullData = [], _fullIds = [], _htColFilters = {};
+let _fullHistData = [], _fullHistIds = [], _htHistColFilters = {};
 let saveTimer = null;
 let historialCargado = false;
 let cortesCargadosNeo = false;
@@ -980,7 +981,10 @@ async function cargarHistorial() {
         reg.fecha_validacion || "—",
     ]);
 
-    if (hotHistorial) { hotHistorial.loadData(filas); return; }
+    _fullHistData = filas.slice();
+    _fullHistIds  = registros.map(r => r.id);
+    _htHistColFilters = {};
+    if (hotHistorial) { hotHistorial.loadData(filas); _refreshFilterBtns(hotHistorial); return; }
     hotHistorial = new Handsontable(document.getElementById("gridHistorial"), {
         data: filas,
         rowHeaders: true,
@@ -1045,15 +1049,21 @@ function _openFilterPopup(htInst, col, anchorBtn) {
     _fpHot = htInst;
     _fpCol = col;
 
-    // Recolectar valores únicos de la columna
-    const data = htInst.getData();
-    const allVals = [...new Set(data.map(r => {
+    // Usar _fullData siempre (no getData que devuelve solo filas filtradas)
+    const sourceData = (htInst === hotHistorial && typeof _fullHistData !== 'undefined') ? _fullHistData : _fullData;
+    const allVals = [...new Set(sourceData.map(r => {
         const v = r[col];
         return (v === null || v === undefined) ? '' : String(v);
-    }))].sort((a,b) => a.localeCompare(b, 'es', {sensitivity:'base'}));
+    }))].sort((a,b) => String(a).localeCompare(String(b), 'es', {sensitivity:'base'}));
 
-    // Sin filtro activo = todo seleccionado
-    _fpSelected = new Set(allVals);
+    // Si hay filtro activo para esta columna, restaurar selección previa; si no, todo seleccionado
+    const hist  = htInst === hotHistorial;
+    const fmap  = hist ? _htHistColFilters : _htColFilters;
+    if (fmap[col]) {
+        _fpSelected = new Set(fmap[col]);
+    } else {
+        _fpSelected = new Set(allVals);
+    }
 
     _renderPopupList(allVals);
 
@@ -1073,7 +1083,7 @@ function _openFilterPopup(htInst, col, anchorBtn) {
 
 function _renderPopupList(vals) {
     const list = document.getElementById('fpList');
-    const allChecked = vals.every(v => _fpSelected.has(v));
+    const allChecked = vals.length > 0 && vals.every(v => _fpSelected.has(String(v)));
     list.innerHTML = `
         <div class="fp-item" id="fpSelAll">
             <input type="checkbox" id="fpChkAll" ${allChecked ? 'checked' : ''}>
@@ -1081,32 +1091,38 @@ function _renderPopupList(vals) {
         </div>
         ${vals.map((v,i) => `
         <div class="fp-item">
-            <input type="checkbox" id="fpc${i}" ${_fpSelected.has(v) ? 'checked' : ''} data-val="${v.replace(/"/g,'&quot;')}">
-            <label for="fpc${i}">${v === '' ? '(Vacías)' : v}</label>
+            <input type="checkbox" id="fpc${i}" ${_fpSelected.has(String(v)) ? 'checked' : ''} data-idx="${i}">
+            <label for="fpc${i}">${v === '' ? '(Vacías)' : String(v).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</label>
         </div>`).join('')}`;
 
-    // Seleccionar todo
-    list.querySelector('#fpChkAll').addEventListener('change', function() {
-        const chks = list.querySelectorAll('input[data-val]');
-        chks.forEach(c => { c.checked = this.checked; });
-        _fpSelected = this.checked ? new Set(vals) : new Set();
-    });
-    // Checkboxes individuales
-    list.querySelectorAll('input[data-val]').forEach(chk => {
-        chk.addEventListener('change', function() {
-            if (this.checked) _fpSelected.add(this.dataset.val);
-            else _fpSelected.delete(this.dataset.val);
-            list.querySelector('#fpChkAll').checked = vals.every(v => _fpSelected.has(v));
-        });
-    });
+    // Guardar vals en el elemento para acceso desde el handler
+    list._fpVals = vals.map(String);
+
+    // Delegación de eventos (un solo listener por render, evita listeners fantasma)
+    list.onchange = function(e) {
+        const chk = e.target;
+        if (!chk || chk.type !== 'checkbox') return;
+        if (chk.id === 'fpChkAll') {
+            list.querySelectorAll('input[data-idx]').forEach(c => { c.checked = chk.checked; });
+            _fpSelected = chk.checked ? new Set(list._fpVals) : new Set();
+        } else {
+            const idx = parseInt(chk.dataset.idx);
+            const val = list._fpVals[idx];
+            if (chk.checked) _fpSelected.add(val);
+            else _fpSelected.delete(val);
+            const chkAll = list.querySelector('#fpChkAll');
+            if (chkAll) chkAll.checked = list._fpVals.every(v => _fpSelected.has(v));
+        }
+    };
 }
 
 // Búsqueda en el popup
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('fpSearch').addEventListener('input', function() {
-        const q = this.value.toLowerCase();
+        const q = this.value.toLowerCase().trim();
         const popup = document.getElementById('htFilterPopup');
-        const filtered = (popup._allVals || []).filter(v => v.toLowerCase().includes(q));
+        const all = popup._allVals || [];
+        const filtered = q ? all.filter(v => String(v).toLowerCase().includes(q)) : all;
         _renderPopupList(filtered);
     });
     document.getElementById('fpOk').addEventListener('click', _applyFilter);
@@ -1120,49 +1136,69 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+function _isHistGrid() { return _fpHot && hotHistorial && _fpHot === hotHistorial; }
+
 function _applyFilter() {
     if (!_fpHot || _fpCol < 0) return;
-    const allVals = [...new Set(_fullData.map(r => String(r[_fpCol] ?? '')))];
-    const allSelected = allVals.every(v => _fpSelected.has(v));
+    const hist = _isHistGrid();
+    const src  = hist ? _fullHistData : _fullData;
+    const fmap = hist ? _htHistColFilters : _htColFilters;
+    const allVals = [...new Set(src.map(r => String(r[_fpCol] ?? '')))];
+    const allSelected = allVals.length === 0 || allVals.every(v => _fpSelected.has(v));
     if (allSelected) {
-        delete _htColFilters[_fpCol];
+        delete fmap[_fpCol];
     } else {
-        _htColFilters[_fpCol] = new Set(_fpSelected);
+        fmap[_fpCol] = new Set(_fpSelected);
     }
     document.getElementById('htFilterPopup').style.display = 'none';
-    _applyAllFilters();
-    _refreshFilterBtns(_fpHot);
+    _applyAllFilters(_fpHot);
 }
 
 function _clearFilter() {
     if (!_fpHot || _fpCol < 0) return;
-    delete _htColFilters[_fpCol];
+    const hist = _isHistGrid();
+    const fmap = hist ? _htHistColFilters : _htColFilters;
+    delete fmap[_fpCol];
     document.getElementById('htFilterPopup').style.display = 'none';
-    _applyAllFilters();
-    _refreshFilterBtns(_fpHot);
+    _applyAllFilters(_fpHot);
 }
 
-function _applyAllFilters() {
-    // Filtrar _fullData según _htColFilters activos
-    const cols = Object.keys(_htColFilters).map(Number);
-    let filteredData = _fullData;
-    let filteredIds  = _fullIds;
+function _applyAllFilters(htInst) {
+    const hist = htInst && hotHistorial && htInst === hotHistorial;
+    const src   = hist ? _fullHistData : _fullData;
+    const ids   = hist ? _fullHistIds  : _fullIds;
+    const fmap  = hist ? _htHistColFilters : _htColFilters;
+    const cols  = Object.keys(fmap).map(Number);
+
+    let filteredData = src;
+    let filteredIds  = ids;
     if (cols.length > 0) {
-        const pairs = _fullData.map((row, i) => [row, _fullIds[i]]);
+        const pairs = src.map((row, i) => [row, ids[i]]);
         const filtered = pairs.filter(([row]) =>
-            cols.every(col => _htColFilters[col].has(String(row[col] ?? '')))
+            cols.every(col => fmap[col].has(String(row[col] ?? '')))
         );
         filteredData = filtered.map(([row]) => row);
         filteredIds  = filtered.map(([,id]) => id);
     }
-    registrosIds = filteredIds;
-    hot.loadData(filteredData);
+
+    if (hist) {
+        hotHistorial.loadData(filteredData);
+        // afterGetColHeader re-inyecta botones; marcar activos en el siguiente tick
+        setTimeout(() => _refreshFilterBtns(hotHistorial), 0);
+    } else {
+        registrosIds = filteredIds;
+        hot.loadData(filteredData);
+        setTimeout(() => _refreshFilterBtns(hot), 0);
+    }
 }
 
 function _refreshFilterBtns(htInst) {
+    if (!htInst || !htInst.rootElement) return;
+    const hist = htInst === hotHistorial;
+    const fmap = hist ? _htHistColFilters : _htColFilters;
     htInst.rootElement.querySelectorAll('.ht-col-filter-btn').forEach(b => {
         const col = parseInt(b.dataset.col);
-        b.classList.toggle('active', col in _htColFilters);
+        b.classList.toggle('active', col in fmap);
     });
 }
 
