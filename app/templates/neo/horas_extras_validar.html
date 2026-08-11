@@ -240,14 +240,14 @@ body { background:var(--c-bg); }
 
         <!-- Pestañas -->
         <div class="he-tabs">
-            <button class="he-tab active" onclick="cambiarTab('validacion',this)">
+            <button class="he-tab active" onclick="if(typeof cambiarTab!='undefined')cambiarTab('validacion',this)">
                 <i class="bi bi-patch-check"></i> Validación de Horas
                 <span class="tab-badge" id="tb-pend">—</span>
             </button>
-            <button class="he-tab" onclick="cambiarTab('historial',this)">
+            <button class="he-tab" onclick="if(typeof cambiarTab!='undefined')cambiarTab('historial',this)">
                 <i class="bi bi-clock-history"></i> Historial
             </button>
-            <button class="he-tab" onclick="cambiarTab('cortes',this)">
+            <button class="he-tab" onclick="if(typeof cambiarTab!='undefined')cambiarTab('cortes',this)">
                 <i class="bi bi-archive"></i> Cortes
             </button>
         </div>
@@ -693,16 +693,14 @@ function sincronizarChip(estado) {
 (function(){
     iniciarGrid();
     actualizarCortes().then(() => {
-        try {
-            // Auto-seleccionar el corte ABIERTO más reciente
-            const abierto = _cortesCache.find(c => c.estado === "ABIERTO");
-            if (abierto) {
-                document.getElementById("fCorte").value = String(abierto.id);
-                sincronizarFechasCorte();
-                sincronizarBtnCerrar();
-            }
-            recargar();
-        } catch(e) { console.error("IIFE .then ERROR:", e.message, e.stack); }
+        // Auto-seleccionar el corte ABIERTO más reciente
+        const abierto = _cortesCache.find(c => c.estado === "ABIERTO");
+        if (abierto) {
+            document.getElementById("fCorte").value = String(abierto.id);
+            sincronizarFechasCorte();
+            sincronizarBtnCerrar();
+        }
+        recargar();
     });
 })();
 
@@ -766,7 +764,6 @@ function iniciarGrid() {
 // ── Filtro por corte ─────────────────────────────────────────────────────────
 let _cortesCache = [];
 async function actualizarCortes() {
-    console.log("actualizarCortes inicio","fContrato=",document.getElementById("fContrato"),"fCorte=",document.getElementById("fCorte"),"fDesde=",document.getElementById("fDesde"),"fHasta=",document.getElementById("fHasta"),"fEstado=",document.getElementById("fEstado"),"fConcepto=",document.getElementById("fConcepto"));
     const elContrato = document.getElementById("fContrato");
     const cid = elContrato ? elContrato.value : "";
     const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
@@ -774,26 +771,20 @@ async function actualizarCortes() {
         const r = await fetch(url);
         _cortesCache = await r.json();
     } catch(e) { _cortesCache = []; }
-    console.log("actualizarCortes _cortesCache=", _cortesCache);
-    try {
-        const sel = document.getElementById("fCorte");
-        if (sel) {
-            const val = sel.value;
-            sel.innerHTML = '<option value="">Todos los cortes</option>' +
-                _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
-            if (_cortesCache.find(c => String(c.id) === val)) sel.value = val;
-        }
-        // Sincronizar selector de historial (hCorte) con los mismos cortes
-        const hSel = document.getElementById("hCorte");
-        if (hSel) {
-            const hVal = hSel.value;
-            _cortesCacheH = _cortesCache;
-            hSel.innerHTML = '<option value="">Todos los cortes</option>' +
-                _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
-            if (_cortesCache.find(c => String(c.id) === hVal)) hSel.value = hVal;
-        }
-    } catch(err) {
-        console.error("actualizarCortes ERROR:", err, err.stack);
+    const sel = document.getElementById("fCorte");
+    if (sel) {
+        const val = sel.value;
+        sel.innerHTML = '<option value="">Todos los cortes</option>' +
+            _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+        if (_cortesCache.find(c => String(c.id) === val)) sel.value = val;
+    }
+    const hSel = document.getElementById("hCorte");
+    if (hSel) {
+        const hVal = hSel.value;
+        _cortesCacheH = _cortesCache;
+        hSel.innerHTML = '<option value="">Todos los cortes</option>' +
+            _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+        if (_cortesCache.find(c => String(c.id) === hVal)) hSel.value = hVal;
     }
 }
 
