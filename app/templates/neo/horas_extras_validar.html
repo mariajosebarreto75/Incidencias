@@ -1195,13 +1195,41 @@ function _applyAllFilters(htInst) {
 
     if (hist) {
         hotHistorial.loadData(filteredData);
-        // afterGetColHeader re-inyecta botones; marcar activos en el siguiente tick
         setTimeout(() => _refreshFilterBtns(hotHistorial), 0);
     } else {
         registrosIds = filteredIds;
         hot.loadData(filteredData);
         setTimeout(() => _refreshFilterBtns(hot), 0);
+        // Actualizar tarjetas con los datos visibles tras filtrar columnas
+        _actualizarKpisDesdeFiltered(filteredData);
     }
+}
+
+function _actualizarKpisDesdeFiltered(rows) {
+    const total      = rows.length;
+    let pend = 0, conf = 0, noconf = 0, desc = 0;
+    let hrsRep = 0, hrsAuth = 0, hrsNoconf = 0, hrsDesc = 0;
+    for (const r of rows) {
+        const est  = (r[C_ESTADO] || "").trim().toUpperCase();
+        const rep  = parseFloat(r[C_HRS])   || 0;
+        const auth = parseFloat(r[C_HAUTH]) || 0;
+        hrsRep += rep;
+        if (est === "CONFORME")        { conf++;   hrsAuth   += auth; }
+        else if (est === "NO CONFORME"){ noconf++; hrsNoconf += auth; }
+        else if (est === "DESCONTADA") { desc++;   hrsDesc   += auth; }
+        else                           { pend++;                      }
+    }
+    document.getElementById("k-total").textContent       = total;
+    document.getElementById("k-pend").textContent        = pend;
+    document.getElementById("k-conf").textContent        = conf;
+    document.getElementById("k-noconf").textContent      = noconf;
+    document.getElementById("k-desc").textContent        = desc;
+    document.getElementById("tb-pend").textContent       = pend;
+    document.getElementById("kv-total").textContent      = total.toLocaleString("es-CO");
+    document.getElementById("kv-hrs-rep").textContent    = hrsRep.toFixed(0);
+    document.getElementById("kv-hrs-auth").textContent   = hrsAuth.toFixed(0);
+    document.getElementById("kv-hrs-noconf").textContent = hrsNoconf.toFixed(0);
+    document.getElementById("kv-hrs-desc").textContent   = hrsDesc.toFixed(0);
 }
 
 function _refreshFilterBtns(htInst) {
