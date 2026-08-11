@@ -772,21 +772,26 @@ async function actualizarCortes() {
         const r = await fetch(url);
         _cortesCache = await r.json();
     } catch(e) { _cortesCache = []; }
-    const sel = document.getElementById("fCorte");
-    if (sel) {
-        const val = sel.value;
-        sel.innerHTML = '<option value="">Todos los cortes</option>' +
-            _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
-        if (_cortesCache.find(c => String(c.id) === val)) sel.value = val;
-    }
-    // Sincronizar selector de historial (hCorte) con los mismos cortes
-    const hSel = document.getElementById("hCorte");
-    if (hSel) {
-        const hVal = hSel.value;
-        _cortesCacheH = _cortesCache;
-        hSel.innerHTML = '<option value="">Todos los cortes</option>' +
-            _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
-        if (_cortesCache.find(c => String(c.id) === hVal)) hSel.value = hVal;
+    console.log("actualizarCortes _cortesCache=", _cortesCache);
+    try {
+        const sel = document.getElementById("fCorte");
+        if (sel) {
+            const val = sel.value;
+            sel.innerHTML = '<option value="">Todos los cortes</option>' +
+                _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+            if (_cortesCache.find(c => String(c.id) === val)) sel.value = val;
+        }
+        // Sincronizar selector de historial (hCorte) con los mismos cortes
+        const hSel = document.getElementById("hCorte");
+        if (hSel) {
+            const hVal = hSel.value;
+            _cortesCacheH = _cortesCache;
+            hSel.innerHTML = '<option value="">Todos los cortes</option>' +
+                _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+            if (_cortesCache.find(c => String(c.id) === hVal)) hSel.value = hVal;
+        }
+    } catch(err) {
+        console.error("actualizarCortes ERROR:", err, err.stack);
     }
 }
 
