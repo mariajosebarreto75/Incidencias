@@ -432,6 +432,23 @@ body { background:var(--c-bg); }
                 <h6>Historial de validaciones</h6>
             </div>
             <div class="he-toolbar">
+                <div>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Corte:</label>
+                    <select id="hCorte" onchange="sincronizarFechasHistorial();cargarHistorial()"
+                            style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;min-width:180px;">
+                        <option value="">Todos los cortes</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Desde:</label>
+                    <input type="date" id="hDesde" onchange="document.getElementById('hCorte').value='';cargarHistorial()"
+                           style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;">
+                </div>
+                <div>
+                    <label style="font-size:.7rem;color:#6c757d;margin:0 4px 0 0;">Hasta:</label>
+                    <input type="date" id="hHasta" onchange="document.getElementById('hCorte').value='';cargarHistorial()"
+                           style="font-size:.78rem;border-radius:6px;border:1px solid #dee2e6;padding:4px 8px;">
+                </div>
                 <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;" title="Recargar">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
@@ -602,6 +619,7 @@ function cambiarTab(nombre, btn) {
     document.getElementById("panel-" + nombre).classList.add("active");
     if (nombre === "historial" && !historialCargado) {
         historialCargado = true;
+        actualizarCortesHistorial();
         cargarKpisHistorial();
         cargarHistorial();
     }
@@ -747,6 +765,29 @@ function sincronizarFechasCorte() {
     }
 }
 
+let _cortesCacheH = [];
+async function actualizarCortesHistorial() {
+    try {
+        const r = await fetch("/api/he/cortes");
+        _cortesCacheH = await r.json();
+    } catch(e) { _cortesCacheH = []; }
+    const sel = document.getElementById("hCorte");
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Todos los cortes</option>' +
+        _cortesCacheH.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+    if (_cortesCacheH.find(c => String(c.id) === val)) sel.value = val;
+}
+
+function sincronizarFechasHistorial() {
+    const cid = document.getElementById("hCorte").value;
+    const c = _cortesCacheH.find(x => String(x.id) === cid);
+    if (c) {
+        document.getElementById("hDesde").value = c.fecha_inicio;
+        document.getElementById("hHasta").value = c.fecha_fin;
+    }
+}
+
 function sincronizarBtnCerrar() {
     const cid = document.getElementById("fCorte").value;
     const c = _cortesCache.find(x => String(x.id) === cid);
@@ -869,8 +910,12 @@ function filtrarChipH(estado, el) {
 // ── Grid historial ────────────────────────────────────────────────────────────
 async function cargarHistorial(corteId) {
     cargarKpisHistorial();
+    const corte = corteId || (document.getElementById("hCorte") ? document.getElementById("hCorte").value : "");
+    const desde = document.getElementById("hDesde") ? document.getElementById("hDesde").value : "";
+    const hasta  = document.getElementById("hHasta") ? document.getElementById("hHasta").value : "";
     let url = '/api/he/registros';
-    if (corteId) url += `?corte_id=${corteId}`;
+    if (corte)       url += `?corte_id=${corte}`;
+    else if (desde)  url += `?fecha_desde=${desde}&fecha_hasta=${hasta}`;
     const r = await fetch(url);
     const registros = await r.json();
 

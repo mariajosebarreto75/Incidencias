@@ -379,8 +379,16 @@ body { background:var(--c-bg); }
             <div class="he-hrs-card"><div class="hv" id="k-hrs-desc" style="color:#8b5cf6;">—</div><div class="hl">Hrs Descontadas</div></div>
         </div>
 
-        <!-- Botón recargar -->
-        <div style="margin-bottom:10px;">
+        <!-- Filtros historial -->
+        <div class="he-filtros">
+            <div>
+                <label>Corte</label>
+                <select id="fCorte" onchange="sincronizarFechasCoor();cargarHistorial()" style="min-width:200px;">
+                    <option value="">Todos los cortes</option>
+                </select>
+            </div>
+            <div><label>Desde</label><input type="date" id="fDesde" onchange="document.getElementById('fCorte').value='';cargarHistorial()"></div>
+            <div><label>Hasta</label><input type="date" id="fHasta" onchange="document.getElementById('fCorte').value='';cargarHistorial()"></div>
             <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;" title="Recargar"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
 
@@ -569,6 +577,7 @@ let validacionCargada = false;
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
     iniciarGrid();
+    actualizarCortesCoor();
     cargarKpis();
     const cid = document.getElementById("gridContrato").value;
     if (cid) onContratoChange();
@@ -686,6 +695,7 @@ function fechaParaBackend(val) {
 async function onContratoChange() {
     validacionCargada = false;
     cargarResumen();
+    actualizarCortesCoor();
     cargarKpis();
     // Solo recargar historial si la tab de validación está activa
     if (document.getElementById("panel-validacion").classList.contains("active")) {
@@ -801,6 +811,32 @@ async function cargarResumen() {
 }
 
 
+// ── Filtro por corte ─────────────────────────────────────────────────────────
+let _cortesCacheCoor = [];
+async function actualizarCortesCoor() {
+    const cid = document.getElementById("gridContrato").value;
+    const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
+    try {
+        const r = await fetch(url);
+        _cortesCacheCoor = await r.json();
+    } catch(e) { _cortesCacheCoor = []; }
+    const sel = document.getElementById("fCorte");
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Todos los cortes</option>' +
+        _cortesCacheCoor.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+    if (_cortesCacheCoor.find(c => String(c.id) === val)) sel.value = val;
+}
+
+function sincronizarFechasCoor() {
+    const cid = document.getElementById("fCorte").value;
+    const c = _cortesCacheCoor.find(x => String(x.id) === cid);
+    if (c) {
+        document.getElementById("fDesde").value = c.fecha_inicio;
+        document.getElementById("fHasta").value = c.fecha_fin;
+    }
+}
+
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 async function cargarKpis() {
     const cid = document.getElementById("gridContrato").value;
@@ -829,9 +865,13 @@ function filtrarChip(estado, el) {
 
 // ── Historial ─────────────────────────────────────────────────────────────────
 function cargarHistorial(corteId) {
-    const cid = document.getElementById("gridContrato").value;
+    const cid   = document.getElementById("gridContrato").value;
+    const corte = corteId || (document.getElementById("fCorte") ? document.getElementById("fCorte").value : "");
+    const desde = document.getElementById("fDesde") ? document.getElementById("fDesde").value : "";
+    const hasta  = document.getElementById("fHasta") ? document.getElementById("fHasta").value : "";
     let url = `/api/he/registros?contrato_id=${cid}`;
-    if (corteId) url += `&corte_id=${corteId}`;
+    if (corte)      url += `&corte_id=${corte}`;
+    else if (desde) url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
     cargarKpis();
 
     const fmtCol = c => {
