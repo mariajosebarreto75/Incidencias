@@ -693,14 +693,16 @@ function sincronizarChip(estado) {
 (function(){
     iniciarGrid();
     actualizarCortes().then(() => {
-        // Auto-seleccionar el corte ABIERTO más reciente
-        const abierto = _cortesCache.find(c => c.estado === "ABIERTO");
-        if (abierto) {
-            document.getElementById("fCorte").value = String(abierto.id);
-            sincronizarFechasCorte();
-            sincronizarBtnCerrar();
-        }
-        recargar();
+        try {
+            // Auto-seleccionar el corte ABIERTO más reciente
+            const abierto = _cortesCache.find(c => c.estado === "ABIERTO");
+            if (abierto) {
+                document.getElementById("fCorte").value = String(abierto.id);
+                sincronizarFechasCorte();
+                sincronizarBtnCerrar();
+            }
+            recargar();
+        } catch(e) { console.error("IIFE .then ERROR:", e.message, e.stack); }
     });
 })();
 
