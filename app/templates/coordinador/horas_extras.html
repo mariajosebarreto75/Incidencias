@@ -210,6 +210,38 @@ body { background:var(--c-bg); }
 .he-resumen-empty { background:#fff; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,.06);
     padding:28px; text-align:center; color:#94a3b8; font-size:.85rem; }
 
+/* ── Filtros teal Handsontable ── */
+.ht-col-filter-btn {
+    display:inline-flex;align-items:center;justify-content:center;
+    width:18px;height:18px;border-radius:4px;border:none;
+    background:#007d8a;color:#fff;font-size:.65rem;cursor:pointer;
+    margin-left:4px;vertical-align:middle;line-height:1;padding:0;flex-shrink:0;
+    transition:background .15s;
+}
+.ht-col-filter-btn:hover,.ht-col-filter-btn.active { background:#005f6b; }
+.ht-col-filter-btn.active { box-shadow:0 0 0 2px #fff,0 0 0 4px #007d8a; }
+#htFilterPopupC {
+    position:fixed;z-index:9999;background:#fff;border:1px solid #dee2e6;
+    border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.18);
+    width:270px;display:none;padding:10px 0 0;
+}
+#htFilterPopupC .fp-search {
+    margin:0 10px 8px;padding:5px 9px;border:1px solid #dee2e6;border-radius:6px;
+    font-size:.8rem;width:calc(100% - 20px);box-sizing:border-box;outline:none;
+}
+#htFilterPopupC .fp-list {
+    max-height:220px;overflow-y:auto;padding:0 4px;
+}
+#htFilterPopupC .fp-item {
+    display:flex;align-items:center;gap:7px;padding:4px 8px;border-radius:5px;
+    font-size:.8rem;cursor:pointer;
+}
+#htFilterPopupC .fp-item:hover { background:#f0f4fb; }
+#htFilterPopupC .fp-item input { accent-color:#007d8a;cursor:pointer; }
+#htFilterPopupC .fp-item label { cursor:pointer;margin:0;user-select:none; }
+#htFilterPopupC .fp-actions {
+    display:flex;gap:6px;padding:8px 10px;border-top:1px solid #eee;margin-top:6px;
+}
 /* ── Panel Cortes ── */
 .he-cortes-empty {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -551,6 +583,15 @@ body { background:var(--c-bg); }
     </div>
   </div>
 </div>
+<!-- Popup filtro columna Handsontable -->
+<div id="htFilterPopupC">
+  <input class="fp-search" id="fpSearchC" type="text" placeholder="Buscar…">
+  <div class="fp-list" id="fpListC"></div>
+  <div class="fp-actions">
+    <button id="fpOkC" class="btn btn-sm btn-primary" style="flex:1;font-size:.75rem;border-radius:6px;">Aplicar</button>
+    <button id="fpClearC" class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;border-radius:6px;">Quitar filtro</button>
+  </div>
+</div>
 <datalist id="supList"></datalist>
 
 <!-- ── Modal Duplicados ── -->
@@ -586,22 +627,28 @@ body { background:var(--c-bg); }
 </div>
 
 <script src="{{ url_for('static', filename='vendor/handsontable.min.js') }}"></script>
-<script src="{{ url_for('static', filename='vendor/tabulator.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/xlsx.full.min.js') }}"></script>
 <script>
 const CONCEPTOS   = {{ conceptos | tojson }};
 const FACTOR_HE   = { "03":1.25,"04":1.75,"05":2.05,"06":2.55,"07":0.80,"17":0.35,"19":1.15 };
 const CONCEPTO_KEYS = Object.keys(CONCEPTOS);
-// Índices de columnas
+// Índices columnas registro (entrada)
 const C_FECHA=0, C_CED=1, C_NOM=2, C_REC=3, C_PLACA=4, C_HINICIO=5, C_HFIN=6,
       C_COD=7, C_TIPO=8, C_HRS=9, C_COMP=10, C_SUP=11, C_JUST=12, C_OBS=13;
 const N_COLS = 14;
+// Índices columnas validación (historial)
+const V_FECHA=0, V_CED=1, V_NOM=2, V_REC=3, V_PLACA=4, V_COD=5, V_TIPO=6,
+      V_HRS=7, V_COMP=8, V_SUP=9, V_JUST=10, V_OBS=11,
+      V_ESTADO=12, V_HAUTH=13, V_NEOAUTH=14, V_OBSNEO=15;
 
 const FILAS = 40;
-let hot = null, tabla = null;
+let hot = null, hotVal = null;
+let _currentValIds = [];
+let _fullValData = [], _fullValIds = [], _htValFilters = {};
+let _fullRegData = [], _htRegFilters = {};
 let cedulaTimers = {};
-let salariosPorFila = {};  // { row: salario }
-let supervisoresActuales = [];  // lista actual para aplicar a filas nuevas
+let salariosPorFila = {};
+let supervisoresActuales = [];
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 let validacionCargada = false;
@@ -655,6 +702,7 @@ function iniciarGrid() {
         copyPaste: true,
         undo: true,
         licenseKey: "non-commercial-and-evaluation",
+        afterGetColHeader: function(col, TH) { _showFilterBtnC(hot, col, TH, false); },
         afterChange: function(changes, source) {
             if (!changes || source === "loadData" || source === "auto") return;
             changes.forEach(([row, col, , newVal]) => {
@@ -913,74 +961,155 @@ async function cargarKpis() {
 function filtrarChip(estado, el) {
     document.querySelectorAll(".he-chip").forEach(c => c.classList.remove("active"));
     el.classList.add("active");
-    // Filtro cliente via Tabulator headerFilter en columna "estado"
-    if (tabla) tabla.setHeaderFilterValue('estado', estado);
+    if (!hotVal) return;
+    if (!estado) {
+        _htValFilters = {};
+    } else {
+        _htValFilters = { [V_ESTADO]: new Set([estado]) };
+    }
+    _applyAllFiltersCoor();
 }
 
-// ── Historial ─────────────────────────────────────────────────────────────────
-function cargarHistorial(corteId) {
+// ── Historial (Handsontable) ──────────────────────────────────────────────────
+function fmtFechaCoor(v) {
+    if (!v) return "";
+    const p = v.split("-");
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : v;
+}
+
+function estadoRendererCoor(hot, td, row, col, prop, value) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    const v = (value || "").trim();
+    const col_map = { "PENDIENTE":"#fff3cd;color:#856404", "CONFORME":"#d1e7dd;color:#0a3622",
+                      "NO CONFORME":"#f8d7da;color:#842029", "DESCONTADA":"#ede9fe;color:#5b21b6" };
+    if (col_map[v]) td.innerHTML = `<span style="background:${col_map[v].split(';')[0].replace('background:','')};${col_map[v].split(';')[1]};padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700;">${v}</span>`;
+}
+
+function accionRendererCoor(hot, td, row, col, prop, value) {
+    const id     = _currentValIds[row];
+    const estado = (hotVal ? hotVal.getDataAtCell(row, V_ESTADO) : "") || "";
+    td.innerHTML = "";
+    if (!id) return;
+    if (estado === "PENDIENTE") {
+        const btnE = document.createElement("button");
+        btnE.innerHTML = '<i class="bi bi-pencil"></i>';
+        btnE.title = "Editar";
+        btnE.style.cssText = "background:#0d6efd;color:#fff;border:none;border-radius:5px;padding:2px 7px;font-size:.7rem;cursor:pointer;margin-right:3px;";
+        btnE.onclick = () => editarHe(id);
+        td.appendChild(btnE);
+    }
+    const btnD = document.createElement("button");
+    btnD.innerHTML = '<i class="bi bi-trash"></i>';
+    btnD.title = "Eliminar";
+    btnD.style.cssText = "background:#dc3545;color:#fff;border:none;border-radius:5px;padding:2px 7px;font-size:.7rem;cursor:pointer;";
+    btnD.onclick = () => eliminarHe(id);
+    td.appendChild(btnD);
+}
+
+async function cargarHistorial(corteId) {
     const cid   = document.getElementById("gridContrato").value;
-    const corte = corteId || (document.getElementById("fCorte") ? document.getElementById("fCorte").value : "");
-    const desde = document.getElementById("fDesde") ? document.getElementById("fDesde").value : "";
-    const hasta  = document.getElementById("fHasta") ? document.getElementById("fHasta").value : "";
+    const corte = corteId || (document.getElementById("fCorte")?.value ?? "");
+    const desde = document.getElementById("fDesde")?.value ?? "";
+    const hasta = document.getElementById("fHasta")?.value ?? "";
     let url = `/api/he/registros?contrato_id=${cid}`;
     if (corte)      url += `&corte_id=${corte}`;
     else if (desde) url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
     cargarKpis();
 
-    const fmtCol = c => {
-        const v = c.getValue();
-        return v ? new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(v) : "—";
-    };
-    const fmtFecha = c => {
-        const v = c.getValue();
-        if (!v) return "";
-        const p = v.split("-");
-        return p.length === 3 ? `${p[2]}-${p[1]}-${p[0].slice(2)}` : v;
-    };
+    try {
+        const r = await fetch(url);
+        const regs = await r.json();
+        _fullValIds  = regs.map(reg => reg.id);
+        _fullValData = regs.map(reg => [
+            fmtFechaCoor(reg.fecha_labor),
+            reg.cedula || "",
+            reg.nombre || "",
+            reg.recurso || "",
+            reg.placa || "",
+            reg.id_concepto || "",
+            reg.tipo_he || "",
+            reg.horas_reportadas ?? "",
+            reg.horas_compensadas ?? "",
+            reg.autorizacion_sup || "",
+            reg.justificacion || "",
+            reg.observacion || "",
+            reg.estado || "",
+            reg.horas_autorizadas ?? "",
+            reg.autorizacion_neo || "",
+            reg.obs_neo || "",
+        ]);
+        _htValFilters = {};
 
-    const cols = [
-        { title:"Fecha Labor",             field:"fecha_labor",        width:105, headerFilter:"input", formatter:fmtFecha },
-        { title:"Recurso",                 field:"recurso",            minWidth:110, headerFilter:"input" },
-        { title:"Placa",                   field:"placa",              width:90,  headerFilter:"input" },
-        { title:"Cédula",                  field:"cedula",             width:100, headerFilter:"input" },
-        { title:"Nombre",                  field:"nombre",             minWidth:145, headerFilter:"input" },
-        { title:"Id Concepto",             field:"id_concepto",        width:95,  headerFilter:"input" },
-        { title:"Tipo HE",                 field:"tipo_he",            minWidth:175, headerFilter:"input" },
-        { title:"#Hrs Reportadas",         field:"horas_reportadas",   width:110, hozAlign:"right", headerFilter:"number" },
-        { title:"#Hrs Compensadas",        field:"horas_compensadas",  width:115, hozAlign:"right", headerFilter:"number" },
-        { title:"Autorización(supervisor)",field:"autorizacion_sup",   minWidth:155, headerFilter:"input" },
-        { title:"Estado",                  field:"estado",             width:115,  headerFilter:"input",
-          formatter: c => `<span class="badge-${c.getValue()}">${c.getValue()}</span>` },
-        { title:"Hrs Aut",                 field:"horas_autorizadas",  width:80, hozAlign:"right", headerFilter:"number" },
-        { title:"Validación Neo",          field:"autorizacion_neo",   width:120, headerFilter:"input" },
-        { title:"Obs Neo",                 field:"obs_neo",            minWidth:150, headerFilter:"input", formatter:"textarea" },
-        // columnas ocultas (solo para exportar)
-        { title:"Contrato",       field:"contrato",          visible:false },
-        { title:"Justificación",  field:"justificacion",     visible:false },
-        { title:"Observación",    field:"observacion",       visible:false },
-        { title:"Valor Extra Nom",field:"valor_extra_nomina",visible:false },
-        { title:"$ Valor Extra",  field:"valor_extra",       visible:false },
-        { title:"Acción", formatter: accionesCoor, width:75, hozAlign:"center", headerSort:false },
-    ];
-
-    if (tabla) { tabla.setData(url); return; }
-    tabla = new Tabulator("#heTabla", {
-        ajaxURL: url, layout:"fitDataStretch",
-        resizableColumns:true, height:"360px", columns: cols,
-    });
+        if (!hotVal) {
+            hotVal = new Handsontable(document.getElementById("heTabla"), {
+                data: _fullValData,
+                rowHeaders: true,
+                colHeaders: [
+                    "Fecha Labor","Cédula","Nombre","Recurso","Placa",
+                    "Id Concepto","Tipo HE","#Hrs Rep.","#Hrs Comp.",
+                    "Autorización Sup.","Justificación","Observación",
+                    "Estado","Hrs Auth.","Auth NEO","Obs NEO","Acciones"
+                ],
+                columns: [
+                    { type:"text", readOnly:true },   // V_FECHA
+                    { type:"text", readOnly:true },   // V_CED
+                    { type:"text", readOnly:true },   // V_NOM
+                    { type:"text" },                  // V_REC (editable PEND)
+                    { type:"text" },                  // V_PLACA (editable PEND)
+                    { type:"text", readOnly:true },   // V_COD
+                    { type:"text", readOnly:true },   // V_TIPO
+                    { type:"numeric", readOnly:true },// V_HRS
+                    { type:"numeric" },               // V_COMP (siempre editable)
+                    { type:"text" },                  // V_SUP (editable PEND)
+                    { type:"text" },                  // V_JUST (editable PEND)
+                    { type:"text" },                  // V_OBS (siempre editable)
+                    { type:"text", readOnly:true, renderer: estadoRendererCoor }, // V_ESTADO
+                    { type:"numeric", readOnly:true },// V_HAUTH
+                    { type:"text", readOnly:true },   // V_NEOAUTH
+                    { type:"text", readOnly:true },   // V_OBSNEO
+                    { data: null, renderer: accionRendererCoor, readOnly:true, width:80 },
+                ],
+                cells: function(row, col) {
+                    const estado = (hotVal ? hotVal.getDataAtCell(row, V_ESTADO) : "") || "";
+                    const PEND_ONLY = [V_REC, V_PLACA, V_SUP, V_JUST];
+                    if (PEND_ONLY.includes(col) && estado !== "PENDIENTE") return { readOnly: true };
+                    return {};
+                },
+                colWidths: [95,95,160,110,80,80,170,75,80,145,140,140,105,70,100,130,80],
+                height: 420,
+                stretchH: "none",
+                manualColumnResize: true,
+                licenseKey: "non-commercial-and-evaluation",
+                afterGetColHeader: function(col, TH) { _showFilterBtnC(hotVal, col, TH, true); },
+                afterChange: async function(changes, source) {
+                    if (!changes || source === "loadData" || source === "auto") return;
+                    const FIELD_MAP = {
+                        [V_REC]:"recurso", [V_PLACA]:"placa",
+                        [V_COMP]:"horas_compensadas", [V_SUP]:"autorizacion_sup",
+                        [V_JUST]:"justificacion", [V_OBS]:"observacion"
+                    };
+                    for (const [row, col, , newVal] of changes) {
+                        if (!(col in FIELD_MAP)) continue;
+                        const id = _currentValIds[row];
+                        if (!id) continue;
+                        try {
+                            const resp = await fetch(`/api/he/${id}`, {
+                                method:"PUT", headers:{"Content-Type":"application/json"},
+                                body: JSON.stringify({ [FIELD_MAP[col]]: newVal ?? "" })
+                            });
+                            const d = await resp.json();
+                            if (!d.ok) mostrarToast(d.msg || "Error al guardar", "danger");
+                        } catch(e) { mostrarToast("Error de red","danger"); }
+                    }
+                },
+            });
+        } else {
+            hotVal.loadData(_fullValData);
+        }
+        _currentValIds = [..._fullValIds];
+        setTimeout(() => _refreshFilterBtnsC(hotVal), 0);
+    } catch(e) { console.error("cargarHistorial:", e); }
 }
-
-function accionesCoor(cell) {
-    const r = cell.getRow().getData();
-    if (r.estado !== "PENDIENTE") return `<span style="color:#adb5bd;font-size:.7rem;">—</span>`;
-    return `
-        <button onclick="editarHe(${r.id})" title="Editar"
-            style="background:#0d6efd;color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:.72rem;cursor:pointer;margin-right:3px;">
-            <i class="bi bi-pencil"></i></button>
-        <button onclick="eliminarHe(${r.id})" title="Eliminar"
-            style="background:#dc3545;color:#fff;border:none;border-radius:5px;padding:3px 8px;font-size:.72rem;cursor:pointer;">
-            <i class="bi bi-trash"></i></button>`;
 }
 
 async function editarHe(id) {
@@ -1029,7 +1158,7 @@ async function guardarEdicion() {
     const d = await r.json();
     if (d.ok) {
         cerrarModal("modalEditar");
-        cargarHistorial();
+        cargarHistorial(); cargarKpis();
         mostrarToast("Registro actualizado","success");
     } else {
         mostrarToast(d.msg || "Error al guardar","danger");
@@ -1037,11 +1166,11 @@ async function guardarEdicion() {
 }
 
 async function eliminarHe(id) {
-    if (!confirm("¿Eliminar este registro?")) return;
+    if (!confirm("¿Eliminar este registro? Esta acción no se puede deshacer.")) return;
     const r = await fetch(`/api/he/${id}`, { method:"DELETE" });
     const d = await r.json();
-    if (d.ok) { cargarHistorial(); mostrarToast("Registro eliminado","danger"); }
-    else alert(d.msg || "Error");
+    if (d.ok) { cargarHistorial(); cargarKpis(); mostrarToast("Registro eliminado","danger"); }
+    else mostrarToast(d.msg || "Error al eliminar","danger");
 }
 
 // ── Modal helpers ─────────────────────────────────────────────────────────────
@@ -1049,7 +1178,7 @@ function cerrarModal(id) {
     document.getElementById(id).classList.remove("open");
 }
 document.addEventListener("click", e => {
-    ["modalEditar","modalImportar"].forEach(id => {
+    ["modalEditar","modalImportar","modalNuevoCorte"].forEach(id => {
         const el = document.getElementById(id);
         if (el && e.target === el) el.classList.remove("open");
     });
@@ -1335,13 +1464,7 @@ async function verCorte(id, nombre) {
     await actualizarCortesCoor();
     const sel = document.getElementById("fCorte");
     if (sel) { sel.value = String(id); sincronizarFechasCoor(); }
-    // Cargar datos del corte en la tabla
-    const url = `/api/he/registros?corte_id=${id}`;
-    if (tabla) {
-        tabla.setData(url);
-    } else {
-        cargarHistorial(id);
-    }
+    cargarHistorial(id);
     mostrarToast(`Mostrando corte: ${nombre}`, "success");
 }
 
@@ -1419,29 +1542,184 @@ async function confirmarImport() {
 }
 
 function exportarExcel() {
-    if (!tabla) return;
-    // Descarga usando Tabulator con columnas ocultas incluidas
-    tabla.download("xlsx", "horas_extras_coordinador.xlsx", {
-        sheetName: "Horas Extras",
-        documentProcessing: function(wb) {
-            // Renombrar headers a mayúsculas según especificación
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            const HEADERS = [
-                "CONTRATO","FECHA LABOR","CEDULA","NOMBRE","RECURSO","ID CONCEPTO",
-                "# HORAS REPORTADAS","# HORAS COMPENSADAS","AUTORIZACIÓN(SUPERVISOR)",
-                "JUSTIFICACIÓN","OBSERVACIÓN","TIPO HE","VALOR EXTRA NOMINA","$ VALOR EXTRA",
-                "AUTORIZACIÓN NEO","# HORAS AUTORIZADAS"
-            ];
-            // Reemplazar fila 1 de encabezados
-            const range = XLSX.utils.decode_range(ws["!ref"]);
-            HEADERS.forEach((h, i) => {
-                const cell = XLSX.utils.encode_cell({r: 0, c: i});
-                if (ws[cell]) ws[cell].v = h;
-            });
-            return wb;
+    if (!_fullValData.length) { mostrarToast("No hay datos para exportar","warning"); return; }
+    const HEADERS = ["FECHA LABOR","CEDULA","NOMBRE","RECURSO","PLACA","ID CONCEPTO",
+        "TIPO HE","# HORAS REPORTADAS","# HORAS COMPENSADAS","AUTORIZACIÓN(SUPERVISOR)",
+        "JUSTIFICACIÓN","OBSERVACIÓN","ESTADO","HRS AUTORIZADAS","AUTH NEO","OBS NEO"];
+    // Exportar datos actuales (filtrados si hay filtro)
+    const rows = hotVal ? hotVal.getData() : _fullValData;
+    const data = [HEADERS, ...rows.map(r => r.slice(0, 16))];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Horas Extras");
+    XLSX.writeFile(wb, "horas_extras_coordinador.xlsx");
+}
+
+// ── Sistema filtros teal Handsontable ─────────────────────────────────────────
+let _fpCHot = null, _fpCCol = -1, _fpCSelected = new Set(), _fpCIsVal = false;
+
+function _showFilterBtnC(htInst, col, TH, isVal) {
+    if (col < 0 || TH.querySelector('.ht-col-filter-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'ht-col-filter-btn';
+    btn.innerHTML = '▾';
+    btn.title = 'Filtrar';
+    btn.setAttribute('data-col', col);
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        _fpCIsVal = isVal;
+        _openFilterPopupC(htInst, col, btn, isVal);
+    });
+    const span = TH.querySelector('.colHeader') || TH;
+    span.parentNode ? span.after(btn) : TH.appendChild(btn);
+}
+
+function _openFilterPopupC(htInst, col, anchorBtn, isVal) {
+    _fpCHot = htInst; _fpCCol = col; _fpCIsVal = isVal;
+    const src   = isVal ? _fullValData : _fullRegData;
+    const fmap  = isVal ? _htValFilters : _htRegFilters;
+    const allVals = [...new Set(src.map(r => {
+        const v = r[col]; return (v === null || v === undefined) ? '' : String(v);
+    }))].sort((a,b) => String(a).localeCompare(String(b), 'es', {sensitivity:'base'}));
+    _fpCSelected = fmap[col] ? new Set(fmap[col]) : new Set(allVals);
+    _renderPopupListC(allVals);
+    const popup = document.getElementById('htFilterPopupC');
+    const rect  = anchorBtn.getBoundingClientRect();
+    popup.style.display = 'block';
+    popup.style.left = Math.min(rect.left, window.innerWidth - 280) + 'px';
+    popup.style.top  = (rect.bottom + 4) + 'px';
+    popup._allVals = allVals;
+    document.getElementById('fpSearchC').value = '';
+    document.getElementById('fpSearchC').focus();
+}
+
+function _renderPopupListC(vals) {
+    const list = document.getElementById('fpListC');
+    const allChecked = vals.length > 0 && vals.every(v => _fpCSelected.has(String(v)));
+    list.innerHTML = `
+        <div class="fp-item" id="fpSelAllC">
+            <input type="checkbox" id="fpChkAllC" ${allChecked ? 'checked' : ''}>
+            <label for="fpChkAllC"><strong>(Seleccionar todo)</strong></label>
+        </div>
+        ${vals.map((v,i) => `
+        <div class="fp-item">
+            <input type="checkbox" id="fpcC${i}" ${_fpCSelected.has(String(v)) ? 'checked' : ''} data-idx="${i}">
+            <label for="fpcC${i}">${v === '' ? '(Vacías)' : String(v).replace(/</g,'&lt;')}</label>
+        </div>`).join('')}`;
+    list._fpVals = vals.map(String);
+    list.onchange = function(e) {
+        const chk = e.target; if (!chk || chk.type !== 'checkbox') return;
+        if (chk.id === 'fpChkAllC') {
+            list.querySelectorAll('input[data-idx]').forEach(c => { c.checked = chk.checked; });
+            _fpCSelected = chk.checked ? new Set(list._fpVals) : new Set();
+        } else {
+            const val = list._fpVals[parseInt(chk.dataset.idx)];
+            if (chk.checked) _fpCSelected.add(val); else _fpCSelected.delete(val);
+            const ca = list.querySelector('#fpChkAllC');
+            if (ca) ca.checked = list._fpVals.every(v => _fpCSelected.has(v));
         }
+    };
+}
+
+function _applyFilterC() {
+    const src  = _fpCIsVal ? _fullValData : _fullRegData;
+    const fmap = _fpCIsVal ? _htValFilters : _htRegFilters;
+    const allVals = [...new Set(src.map(r => String(r[_fpCCol] ?? '')))];
+    const allSelected = allVals.length === 0 || allVals.every(v => _fpCSelected.has(v));
+    if (allSelected) delete fmap[_fpCCol]; else fmap[_fpCCol] = new Set(_fpCSelected);
+    document.getElementById('htFilterPopupC').style.display = 'none';
+    _applyAllFiltersCoor();
+}
+
+function _clearFilterC() {
+    const fmap = _fpCIsVal ? _htValFilters : _htRegFilters;
+    delete fmap[_fpCCol];
+    document.getElementById('htFilterPopupC').style.display = 'none';
+    _applyAllFiltersCoor();
+}
+
+function _applyAllFiltersCoor() {
+    // Filtrar validación
+    if (hotVal) {
+        const src  = _fullValData;
+        const ids  = _fullValIds;
+        const fmap = _htValFilters;
+        const cols = Object.keys(fmap).map(Number);
+        let filtData = src, filtIds = ids;
+        if (cols.length > 0) {
+            const pairs = src.map((row, i) => [row, ids[i]]);
+            const filtered = pairs.filter(([row]) => cols.every(c => fmap[c].has(String(row[c] ?? ''))));
+            filtData = filtered.map(([r]) => r);
+            filtIds  = filtered.map(([,id]) => id);
+        }
+        _currentValIds = filtIds;
+        hotVal.loadData(filtData);
+        setTimeout(() => _refreshFilterBtnsC(hotVal), 0);
+        _actualizarKpisCoor(filtData);
+    }
+    // Filtrar registro
+    if (hot && _fullRegData.length) {
+        const src  = _fullRegData;
+        const fmap = _htRegFilters;
+        const cols = Object.keys(fmap).map(Number);
+        hot.loadData(cols.length > 0
+            ? src.filter(row => cols.every(c => fmap[c].has(String(row[c] ?? ''))))
+            : src);
+        setTimeout(() => _refreshFilterBtnsC(hot), 0);
+    }
+}
+
+function _actualizarKpisCoor(rows) {
+    let total = rows.length, pend = 0, conf = 0, noconf = 0, desc = 0;
+    let hrsRep = 0, hrsConf = 0, hrsNoconf = 0, hrsDesc = 0;
+    for (const r of rows) {
+        const est  = (r[V_ESTADO] || "").trim().toUpperCase();
+        const rep  = parseFloat(r[V_HRS])   || 0;
+        const auth = parseFloat(r[V_HAUTH]) || 0;
+        hrsRep += rep;
+        if (est === "CONFORME")        { conf++;   hrsConf   += auth; }
+        else if (est === "NO CONFORME"){ noconf++; hrsNoconf += auth; }
+        else if (est === "DESCONTADA") { desc++;   hrsDesc   += auth; }
+        else                           { pend++;                      }
+    }
+    document.getElementById("k-total").textContent    = total;
+    document.getElementById("k-pend").textContent     = pend;
+    document.getElementById("k-conf").textContent     = conf;
+    document.getElementById("k-noconf").textContent   = noconf;
+    document.getElementById("k-desc").textContent     = desc;
+    document.getElementById("tb-pend").textContent    = pend;
+    document.getElementById("k-hrs-rep").textContent  = hrsRep.toFixed(0);
+    document.getElementById("k-hrs-conf").textContent = hrsConf.toFixed(0);
+    document.getElementById("k-hrs-noconf").textContent = hrsNoconf.toFixed(0);
+    document.getElementById("k-hrs-desc").textContent = hrsDesc.toFixed(0);
+}
+
+function _refreshFilterBtnsC(htInst) {
+    if (!htInst || !htInst.rootElement) return;
+    const fmap = (htInst === hotVal) ? _htValFilters : _htRegFilters;
+    htInst.rootElement.querySelectorAll('.ht-col-filter-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.col) in fmap);
     });
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('fpSearchC').addEventListener('input', function() {
+        const q = this.value.toLowerCase().trim();
+        const all = document.getElementById('htFilterPopupC')._allVals || [];
+        _renderPopupListC(q ? all.filter(v => String(v).toLowerCase().includes(q)) : all);
+    });
+    document.getElementById('fpOkC').addEventListener('click', _applyFilterC);
+    document.getElementById('fpClearC').addEventListener('click', _clearFilterC);
+    document.addEventListener('mousedown', function(e) {
+        const popup = document.getElementById('htFilterPopupC');
+        if (popup.style.display !== 'none' && !popup.contains(e.target) && !e.target.classList.contains('ht-col-filter-btn'))
+            popup.style.display = 'none';
+    });
+    document.addEventListener('scroll', function(e) {
+        const popup = document.getElementById('htFilterPopupC');
+        if (!popup.contains(e.target)) popup.style.display = 'none';
+    }, true);
+});
 
 function mostrarToast(msg, tipo="success") {
     const c = {success:"#198754", danger:"#dc3545", warning:"#d97706"};

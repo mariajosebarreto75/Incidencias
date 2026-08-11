@@ -375,17 +375,30 @@ def api_he_get(id):
 @login_required
 def api_he_actualizar(id):
     he = HoraExtra.query.get_or_404(id)
+    f = request.get_json(silent=True) or {}
     if current_user.rol.lower() == "coordinador":
-        if he.estado != "PENDIENTE":
-            return jsonify({"ok": False, "msg": "Solo se pueden editar registros pendientes"}), 403
         if he.contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
-    f = request.get_json(silent=True) or {}
+        if he.estado != "PENDIENTE":
+            # No-PENDIENTE: solo horas_compensadas y observacion permitidos
+            campos_permitidos = {"horas_compensadas", "observacion"}
+            if any(k not in campos_permitidos for k in f if k != "placa"):
+                # Si solo vienen campos permitidos, aplicar; sino bloquear
+                claves = set(f.keys()) - campos_permitidos
+                if claves:
+                    return jsonify({"ok": False, "msg": "Solo se pueden editar registros pendientes"}), 403
+            if "horas_compensadas" in f:
+                he.horas_compensadas = int(float(f["horas_compensadas"] or 0))
+            if "observacion" in f:
+                he.observacion = f["observacion"]
+            db.session.commit()
+            return jsonify({"ok": True})
     concepto = f.get("id_concepto", he.id_concepto)
     he.fecha_labor        = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else he.fecha_labor
     he.cedula             = f.get("cedula", he.cedula)
     he.nombre             = f.get("nombre", he.nombre)
     he.recurso            = f.get("recurso", he.recurso)
+    he.placa              = f.get("placa", he.placa)
     he.id_concepto        = concepto
     he.tipo_he            = CONCEPTOS_HE.get(concepto, he.tipo_he)
     he.horas_reportadas   = int(float(f.get("horas_reportadas") or he.horas_reportadas))
