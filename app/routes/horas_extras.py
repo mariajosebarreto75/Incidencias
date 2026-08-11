@@ -97,22 +97,34 @@ def api_he_registros():
     fecha_hasta  = request.args.get("fecha_hasta", "")
     id_concepto  = request.args.get("id_concepto", "")
 
-    if corte_id:
-        q = q.filter(HoraExtra.corte_id == corte_id)
-    elif contrato_id:
+    if contrato_id:
         q = q.filter(HoraExtra.contrato_id == contrato_id)
 
-    if fecha_desde:
+    if corte_id:
+        corte_obj = HeCorte.query.get(corte_id)
+        if corte_obj:
+            from sqlalchemy import or_ as sa_or
+            q = q.filter(sa_or(
+                HoraExtra.corte_id == corte_id,
+                db.and_(
+                    HoraExtra.fecha_labor >= corte_obj.fecha_inicio,
+                    HoraExtra.fecha_labor <= corte_obj.fecha_fin,
+                )
+            ))
+        else:
+            q = q.filter(HoraExtra.corte_id == corte_id)
+
+    if fecha_desde and not corte_id:
         try:
             q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde))
         except Exception:
             pass
-    if fecha_hasta:
+    if fecha_hasta and not corte_id:
         try:
             q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
         except Exception:
             pass
-    if mes and not fecha_desde and not fecha_hasta:
+    if mes and not fecha_desde and not fecha_hasta and not corte_id:
         try:
             year, month = mes.split("-")
             q = q.filter(
