@@ -1412,29 +1412,94 @@ function procesarImportNeo(input) {
         const isHeader = first.some(v => v.includes("fecha") || v.includes("ced") || v.includes("hrs") || v.includes("hora"));
         const dataRows = isHeader ? rows.slice(1) : rows;
 
-        _neoImportFilas = dataRows
-            .filter(r => r.some(v => v !== ""))
-            .map(r => ({
-                contrato:          String(r[0]  || "").trim(),
-                fecha_labor:       neoFmtFechaImport(r[1]),
-                cedula:            String(r[2]  || "").trim(),
-                nombre:            String(r[3]  || "").trim(),
-                recurso:           String(r[4]  || "").trim(),
-                placa:             String(r[5]  || "").trim(),
-                id_concepto:       String(r[6]  || "").trim(),
-                horas_reportadas:  parseFloat(r[7])  || 0,
-                horas_compensadas: parseFloat(r[8])  || 0,
-                autorizacion_sup:  String(r[9]  || "").trim(),
-                justificacion:     String(r[10] || "").trim(),
-                observacion:       String(r[11] || "").trim(),
-                tipo_he:           String(r[12] || "").trim(),
-                valor_extra_nomina:String(r[13] || "").trim(),
-                valor_extra:       String(r[14] || "").trim(),
-                autorizacion_neo:  String(r[15] || "").trim(),
-                horas_autorizadas: r[16] !== "" && r[16] != null ? parseFloat(r[16]) : "",
-            }))
-            .filter(f => f.fecha_labor && f.cedula && f.id_concepto && f.horas_reportadas > 0);
+        const usaContratoFijo = !!document.getElementById("neoImportContrato").value;
 
+        // Campos obligatorios: [índice en fila raw, nombre visible, validación]
+        const OBLIGATORIOS = [
+            { raw: 1,  nombre: "Fecha Labor",    check: v => !!neoFmtFechaImport(v) },
+            { raw: 2,  nombre: "Cédula",          check: v => String(v||"").trim() !== "" },
+            { raw: 3,  nombre: "Nombre",           check: v => String(v||"").trim() !== "" },
+            { raw: 6,  nombre: "Id Concepto",      check: v => String(v||"").trim() !== "" },
+            { raw: 7,  nombre: "Horas Reportadas", check: v => parseFloat(v) > 0 },
+        ];
+        // Contrato obligatorio solo si no hay contrato fijo seleccionado
+        if (!usaContratoFijo) {
+            OBLIGATORIOS.push({ raw: 0, nombre: "Contrato", check: v => String(v||"").trim() !== "" });
+        }
+
+        const errores = [];   // { fila (1-based), campo, valor }
+        const filasParsed = [];
+
+        dataRows.forEach((r, idx) => {
+            if (!r.some(v => v !== "")) return; // fila completamente vacía → ignorar
+            const filaNum = idx + (isHeader ? 2 : 1); // número de fila en Excel
+
+            const camposError = [];
+            for (const ob of OBLIGATORIOS) {
+                if (!ob.check(r[ob.raw])) {
+                    camposError.push({ campo: ob.nombre, valor: String(r[ob.raw] ?? "").trim() });
+                }
+            }
+
+            if (camposError.length > 0) {
+                for (const ce of camposError) {
+                    errores.push({ fila: filaNum, ...ce });
+                }
+            } else {
+                filasParsed.push({
+                    contrato:          String(r[0]  || "").trim(),
+                    fecha_labor:       neoFmtFechaImport(r[1]),
+                    cedula:            String(r[2]  || "").trim(),
+                    nombre:            String(r[3]  || "").trim(),
+                    recurso:           String(r[4]  || "").trim(),
+                    placa:             String(r[5]  || "").trim(),
+                    id_concepto:       String(r[6]  || "").trim(),
+                    horas_reportadas:  parseFloat(r[7])  || 0,
+                    horas_compensadas: parseFloat(r[8])  || 0,
+                    autorizacion_sup:  String(r[9]  || "").trim(),
+                    justificacion:     String(r[10] || "").trim(),
+                    observacion:       String(r[11] || "").trim(),
+                    tipo_he:           String(r[12] || "").trim(),
+                    valor_extra_nomina:String(r[13] || "").trim(),
+                    valor_extra:       String(r[14] || "").trim(),
+                    autorizacion_neo:  String(r[15] || "").trim(),
+                    horas_autorizadas: r[16] !== "" && r[16] != null ? parseFloat(r[16]) : "",
+                });
+            }
+        });
+
+        const wrap = document.getElementById("neoImportPreviewWrap");
+        const countEl = document.getElementById("neoImportCount");
+        const tbl = document.getElementById("neoImportPreviewTable");
+
+        if (errores.length > 0) {
+            // Mostrar tabla de errores y bloquear import
+            _neoImportFilas = [];
+            const errHtml = errores.map(e =>
+                `<tr style="background:#fff5f5;">
+                    <td style="color:#dc3545;font-weight:600;">Fila ${e.fila}</td>
+                    <td style="color:#dc3545;">${e.campo}</td>
+                    <td style="color:#6c757d;font-style:italic;">${e.valor === "" ? "(vacío)" : e.valor}</td>
+                </tr>`
+            ).join("");
+            tbl.innerHTML = `
+                <thead><tr>
+                    <th style="background:#dc3545;color:#fff;">Fila</th>
+                    <th style="background:#dc3545;color:#fff;">Campo obligatorio</th>
+                    <th style="background:#dc3545;color:#fff;">Valor encontrado</th>
+                </tr></thead>
+                <tbody>${errHtml}</tbody>`;
+            countEl.innerHTML = `<span style="color:#dc3545;font-weight:600;">
+                ⚠ No se puede importar: ${errores.length} error(es) en ${[...new Set(errores.map(e=>e.fila))].length} fila(s).
+                Corrija el archivo Excel y vuelva a cargarlo.
+                ${filasParsed.length > 0 ? `(${filasParsed.length} fila(s) sí eran válidas pero no se importará ninguna hasta corregir los errores.)` : ""}
+            </span>`;
+            wrap.style.display = "block";
+            document.getElementById("btnNeoConfirmarImport").style.display = "none";
+            return;
+        }
+
+        _neoImportFilas = filasParsed;
         const headers = ["Contrato","Fecha Labor","Cédula","Nombre","Recurso","Placa",
                          "Id Concepto","Hrs Rep.","Hrs Comp.","Autorización","Justificación","Observación",
                          "Tipo He","Vlr Extra Nom.","$ Vlr Extra","Auth NEO","Hrs Auth."];
@@ -1445,11 +1510,10 @@ function procesarImportNeo(input) {
                     f.tipo_he,f.valor_extra_nomina,f.valor_extra,f.autorizacion_neo,f.horas_autorizadas]
                 .map(v => `<td>${v}</td>`).join("")}</tr>`
         ).join("");
-        document.getElementById("neoImportPreviewTable").innerHTML =
-            `<thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${tbody}</tbody>`;
-        document.getElementById("neoImportCount").textContent =
+        tbl.innerHTML = `<thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${tbody}</tbody>`;
+        countEl.textContent =
             `${_neoImportFilas.length} registros válidos detectados${_neoImportFilas.length > 8 ? " (mostrando primeros 8)" : ""}`;
-        document.getElementById("neoImportPreviewWrap").style.display = "block";
+        wrap.style.display = "block";
         document.getElementById("btnNeoConfirmarImport").style.display = _neoImportFilas.length ? "inline-block" : "none";
     };
     reader.readAsArrayBuffer(file);
