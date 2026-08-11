@@ -1477,6 +1477,7 @@ async function confirmarImportNeo() {
                 body: JSON.stringify({ filas: lote })
             });
             const d = await r.json();
+            console.log(`Lote ${Math.floor(i/LOTE)+1}: guardados=${d.guardados} omitidos=${d.omitidos} dup=${d.duplicados_omitidos}`, d);
             if (!d.ok) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
