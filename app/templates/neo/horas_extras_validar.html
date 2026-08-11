@@ -1493,6 +1493,11 @@ async function confirmarImportNeo() {
                             <td style="padding:5px 10px;color:#856404;">${x.motivo}</td>
                         </tr>`).join("");
                     document.getElementById("modalDupNeo").style.display = "flex";
+                } else if (d.contratos_no_encontrados) {
+                    const lista = (d.detalle || []).map(x =>
+                        `• "${x.contrato}" — ${x.total} fila(s) (ej: fila(s) ${x.filas.join(", ")}${x.total > 5 ? "…" : ""})`
+                    ).join("\n");
+                    alert(`⚠️ ${d.msg}\n\nContratos no encontrados:\n${lista}\n\nVerifica que el nombre en el Excel coincida exactamente con los contratos del sistema.`);
                 } else {
                     toast(d.msg || "Error al importar lote", "#dc3545");
                 }

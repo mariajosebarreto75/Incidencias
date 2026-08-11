@@ -213,9 +213,14 @@ def api_he_guardar():
 
     registros = []
     omitidos  = 0
+    contratos_no_encontrados = {}   # nombre -> lista de filas
     for f in filas:
         cid = _cid(f)
         if not cid:
+            nombre_contrato = str(f.get("contrato") or "").strip() or "(sin contrato)"
+            if nombre_contrato not in contratos_no_encontrados:
+                contratos_no_encontrados[nombre_contrato] = []
+            contratos_no_encontrados[nombre_contrato].append(len(registros) + omitidos + 1)
             omitidos += 1
             continue
         if ids_permitidos is not None and cid not in ids_permitidos:
@@ -260,8 +265,20 @@ def api_he_guardar():
             "corte_id":          _corte(cid, fl),
         })
 
+    if contratos_no_encontrados:
+        detalle = [
+            {"contrato": nombre, "filas": filas_cnt[:5], "total": len(filas_cnt)}
+            for nombre, filas_cnt in contratos_no_encontrados.items()
+        ]
+        return jsonify({
+            "ok": False,
+            "contratos_no_encontrados": True,
+            "msg": f"{omitidos} fila(s) tienen contratos que no existen en el sistema. Corrija los nombres antes de importar.",
+            "detalle": detalle,
+        }), 422
+
     if not registros:
-        return jsonify({"ok": False, "msg": f"Sin registros válidos ({omitidos} omitidos — contrato no encontrado)"}), 400
+        return jsonify({"ok": False, "msg": "Sin registros válidos"}), 400
 
     # ── Validación de duplicados ──────────────────────────────────────────────
     # 1) Duplicados dentro del mismo lote
