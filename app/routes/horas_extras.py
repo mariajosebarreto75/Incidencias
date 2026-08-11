@@ -281,25 +281,7 @@ def api_he_guardar():
         return jsonify({"ok": False, "msg": "Sin registros válidos"}), 400
 
     # ── Validación de duplicados ──────────────────────────────────────────────
-    # 1) Duplicados dentro del mismo lote
-    lote_keys = {}
-    duplicados_lote = []
-    for i, r in enumerate(registros):
-        k = (r["contrato_id"], r["cedula"], r["id_concepto"],
-             str(r["fecha_labor"]), r["horas_reportadas"])
-        if k in lote_keys:
-            duplicados_lote.append({
-                "fila": i + 1,
-                "cedula": r["cedula"],
-                "concepto": r["id_concepto"],
-                "fecha": str(r["fecha_labor"]),
-                "hrs": r["horas_reportadas"],
-                "motivo": f"Duplicado de fila {lote_keys[k] + 1} en este lote",
-            })
-        else:
-            lote_keys[k] = i
-
-    # 2) Duplicados contra registros ya existentes en la BD
+    # 1) Duplicados contra BD
     from sqlalchemy import tuple_ as sa_tuple
     claves_bd = sa_tuple(
         HoraExtra.contrato_id, HoraExtra.cedula,
@@ -312,37 +294,46 @@ def api_he_guardar():
         (e.contrato_id, e.cedula, e.id_concepto, str(e.fecha_labor), e.horas_reportadas)
         for e in existentes
     }
-    duplicados_bd = []
+
+    # 2) Separar válidos de duplicados (intra-lote + BD)
+    lote_keys = {}
+    registros_ok = []
+    duplicados = []
     for i, r in enumerate(registros):
         k = (r["contrato_id"], r["cedula"], r["id_concepto"],
              str(r["fecha_labor"]), r["horas_reportadas"])
-        if k in existentes_set:
-            duplicados_bd.append({
-                "fila": i + 1,
-                "cedula": r["cedula"],
-                "concepto": r["id_concepto"],
-                "fecha": str(r["fecha_labor"]),
-                "hrs": r["horas_reportadas"],
+        if k in lote_keys:
+            duplicados.append({
+                "fila": i + 1, "cedula": r["cedula"], "concepto": r["id_concepto"],
+                "fecha": str(r["fecha_labor"]), "hrs": r["horas_reportadas"],
+                "motivo": f"Duplicado de fila {lote_keys[k] + 1} en este lote",
+            })
+        elif k in existentes_set:
+            duplicados.append({
+                "fila": i + 1, "cedula": r["cedula"], "concepto": r["id_concepto"],
+                "fecha": str(r["fecha_labor"]), "hrs": r["horas_reportadas"],
                 "motivo": "Ya existe en la base de datos",
             })
-
-    todos_duplicados = duplicados_lote + duplicados_bd
-    if todos_duplicados:
-        return jsonify({
-            "ok": False,
-            "duplicados": True,
-            "msg": f"Se encontraron {len(todos_duplicados)} registro(s) duplicado(s). Corrija antes de guardar.",
-            "detalle": todos_duplicados,
-        }), 409
+        else:
+            lote_keys[k] = i
+            registros_ok.append(r)
 
     try:
-        db.session.bulk_insert_mappings(HoraExtra, registros)
-        db.session.commit()
+        if registros_ok:
+            db.session.bulk_insert_mappings(HoraExtra, registros_ok)
+            db.session.commit()
     except Exception as e:
         db.session.rollback()
         import traceback
         return jsonify({"ok": False, "msg": str(e), "trace": traceback.format_exc()}), 500
-    return jsonify({"ok": True, "guardados": len(registros), "omitidos": omitidos})
+
+    return jsonify({
+        "ok": True,
+        "guardados": len(registros_ok),
+        "omitidos": omitidos,
+        "duplicados_omitidos": len(duplicados),
+        "detalle_duplicados": duplicados,
+    })
 
 
 # ── API: obtener un registro por id ──────────────────────────────────────────

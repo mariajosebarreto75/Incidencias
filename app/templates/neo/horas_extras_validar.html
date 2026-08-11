@@ -1505,6 +1505,10 @@ async function confirmarImportNeo() {
             }
             guardados += d.guardados || 0;
             omitidos  += d.omitidos  || 0;
+            // Acumular duplicados saltados para mostrar al final
+            if (d.duplicados_omitidos > 0) {
+                window._importDupDetalle = (window._importDupDetalle || []).concat(d.detalle_duplicados || []);
+            }
         } catch(e) {
             toast("Error de red al importar", "#dc3545");
             btn.disabled = false;
@@ -1517,10 +1521,31 @@ async function confirmarImportNeo() {
     btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
     document.getElementById("modalImportarNeo").classList.remove("open");
     recargar(); cargarKpis();
-    const msg = omitidos > 0
-        ? `✓ ${guardados} importados · ${omitidos} omitidos (contrato no encontrado)`
-        : `✓ ${guardados} registro(s) importados correctamente`;
-    toast(msg, "#198754");
+
+    const dupDetalle = window._importDupDetalle || [];
+    window._importDupDetalle = [];
+    const totalDup = dupDetalle.length;
+
+    if (totalDup > 0) {
+        // Mostrar modal de duplicados con los que se saltaron
+        document.getElementById("dupNeoMsg").textContent =
+            `Se importaron ${guardados} registro(s). Se saltaron ${totalDup} duplicado(s) automáticamente:`;
+        document.getElementById("dupNeoBody").innerHTML = dupDetalle.map(x => `
+            <tr style="border-bottom:1px solid #f5c6cb;">
+                <td style="padding:5px 10px;font-weight:700;color:#856404;">Fila ${x.fila}</td>
+                <td style="padding:5px 10px;">${x.cedula}</td>
+                <td style="padding:5px 10px;">${x.concepto}</td>
+                <td style="padding:5px 10px;">${x.fecha}</td>
+                <td style="padding:5px 10px;text-align:right;">${x.hrs}</td>
+                <td style="padding:5px 10px;color:#856404;">${x.motivo}</td>
+            </tr>`).join("");
+        document.getElementById("modalDupNeo").style.display = "flex";
+    } else {
+        const msg = omitidos > 0
+            ? `✓ ${guardados} importados · ${omitidos} omitidos (contrato no encontrado)`
+            : `✓ ${guardados} registro(s) importados correctamente`;
+        toast(msg, "#198754");
+    }
 }
 
 document.addEventListener("click", e => {
