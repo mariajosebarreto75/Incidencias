@@ -1414,13 +1414,16 @@ function procesarImportNeo(input) {
 
         const usaContratoFijo = !!document.getElementById("neoImportContrato").value;
 
-        // Campos obligatorios: [índice en fila raw, nombre visible, validación]
+        // Opcionales: Nombre(3), Recurso(4), Placa(5), Hrs Compensadas(8),
+        //             Vlr Extra Nom.(13), Vlr Extra(14), Auth NEO(15), Hrs Auth.(16)
         const OBLIGATORIOS = [
-            { raw: 1,  nombre: "Fecha Labor",    check: v => !!neoFmtFechaImport(v) },
-            { raw: 2,  nombre: "Cédula",          check: v => String(v||"").trim() !== "" },
-            { raw: 3,  nombre: "Nombre",           check: v => String(v||"").trim() !== "" },
-            { raw: 6,  nombre: "Id Concepto",      check: v => String(v||"").trim() !== "" },
-            { raw: 7,  nombre: "Horas Reportadas", check: v => parseFloat(v) > 0 },
+            { raw: 1,  nombre: "Fecha Labor",       check: v => !!neoFmtFechaImport(v) },
+            { raw: 2,  nombre: "Cédula",             check: v => String(v||"").trim() !== "" },
+            { raw: 6,  nombre: "Id Concepto",        check: v => String(v||"").trim() !== "" },
+            { raw: 7,  nombre: "Horas Reportadas",   check: v => parseFloat(v) > 0 },
+            { raw: 9,  nombre: "Autorización Sup.",  check: v => String(v||"").trim() !== "" },
+            { raw: 10, nombre: "Justificación",      check: v => String(v||"").trim() !== "" },
+            { raw: 12, nombre: "Tipo HE",            check: v => String(v||"").trim() !== "" },
         ];
         // Contrato obligatorio solo si no hay contrato fijo seleccionado
         if (!usaContratoFijo) {
