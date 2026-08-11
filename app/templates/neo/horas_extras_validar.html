@@ -764,27 +764,29 @@ function iniciarGrid() {
 // ── Filtro por corte ─────────────────────────────────────────────────────────
 let _cortesCache = [];
 async function actualizarCortes() {
-    const cid = document.getElementById("fContrato").value;
+    console.log("actualizarCortes inicio","fContrato=",document.getElementById("fContrato"),"fCorte=",document.getElementById("fCorte"),"fDesde=",document.getElementById("fDesde"),"fHasta=",document.getElementById("fHasta"),"fEstado=",document.getElementById("fEstado"),"fConcepto=",document.getElementById("fConcepto"));
+    const elContrato = document.getElementById("fContrato");
+    const cid = elContrato ? elContrato.value : "";
     const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
     try {
         const r = await fetch(url);
         _cortesCache = await r.json();
     } catch(e) { _cortesCache = []; }
     const sel = document.getElementById("fCorte");
-    const val = sel.value;
-    sel.innerHTML = '<option value="">Todos los cortes</option>' +
-        _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
-    if (_cortesCache.find(c => String(c.id) === val)) sel.value = val;
-    // Sincronizar también el selector de historial si es el mismo contrato
-    if (document.getElementById("hContrato").value === document.getElementById("fContrato").value) {
-        _cortesCacheHistorial = _cortesCache;
-        const hSel = document.getElementById("hCorte");
-        if (hSel) {
-            const hVal = hSel.value;
-            hSel.innerHTML = '<option value="">Todos los cortes</option>' +
-                _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
-            if (_cortesCache.find(c => String(c.id) === hVal)) hSel.value = hVal;
-        }
+    if (sel) {
+        const val = sel.value;
+        sel.innerHTML = '<option value="">Todos los cortes</option>' +
+            _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+        if (_cortesCache.find(c => String(c.id) === val)) sel.value = val;
+    }
+    // Sincronizar selector de historial (hCorte) con los mismos cortes
+    const hSel = document.getElementById("hCorte");
+    if (hSel) {
+        const hVal = hSel.value;
+        _cortesCacheH = _cortesCache;
+        hSel.innerHTML = '<option value="">Todos los cortes</option>' +
+            _cortesCache.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+        if (_cortesCache.find(c => String(c.id) === hVal)) hSel.value = hVal;
     }
 }
 
@@ -854,12 +856,12 @@ async function cerrarCorteActual() {
 // ── Cargar datos validación ───────────────────────────────────────────────────
 async function recargar() {
     cargarKpis();
-    const cid     = document.getElementById("fContrato").value;
-    const corte   = document.getElementById("fCorte").value;
-    const desde   = document.getElementById("fDesde").value;
-    const hasta   = document.getElementById("fHasta").value;
-    const estado  = document.getElementById("fEstado").value;
-    const concepto= document.getElementById("fConcepto").value;
+    const cid     = document.getElementById("fContrato")?.value ?? "";
+    const corte   = document.getElementById("fCorte")?.value ?? "";
+    const desde   = document.getElementById("fDesde")?.value ?? "";
+    const hasta   = document.getElementById("fHasta")?.value ?? "";
+    const estado  = document.getElementById("fEstado")?.value ?? "";
+    const concepto= document.getElementById("fConcepto")?.value ?? "";
     let url = `/api/he/registros?contrato_id=${cid}&estado=${estado}`;
     if (corte)       url += `&corte_id=${corte}`;
     else if (desde)  url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
@@ -1234,11 +1236,11 @@ function autoGuardar(row) {
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 async function cargarKpis() {
     try {
-        const cid   = document.getElementById("fContrato").value;
-        const corte = document.getElementById("fCorte").value;
-        const desde = document.getElementById("fDesde").value;
-        const hasta = document.getElementById("fHasta").value;
-        const concepto = document.getElementById("fConcepto").value;
+        const cid   = document.getElementById("fContrato")?.value ?? "";
+        const corte = document.getElementById("fCorte")?.value ?? "";
+        const desde = document.getElementById("fDesde")?.value ?? "";
+        const hasta = document.getElementById("fHasta")?.value ?? "";
+        const concepto = document.getElementById("fConcepto")?.value ?? "";
         let url = `/api/he/kpis?contrato_id=${cid}`;
         if (corte)       url += `&corte_id=${corte}`;
         else if (desde)  url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
@@ -1340,7 +1342,7 @@ function exportarExcel() {
 let _neoImportFilas = [];
 
 function abrirImportarNeo() {
-    const cid = document.getElementById("fContrato").value;
+    const cid = document.getElementById("fContrato")?.value ?? "";
     if (cid) document.getElementById("neoImportContrato").value = cid;
     document.getElementById("neoImportFile").value = "";
     document.getElementById("neoImportFileName").textContent = "";
@@ -1509,7 +1511,7 @@ document.addEventListener("click", e => {
 
 // ── Cortes NEO ────────────────────────────────────────────────────────────────
 async function cargarCortesNeo() {
-    const cid = document.getElementById("fContrato").value;
+    const cid = document.getElementById("fContrato")?.value ?? "";
     const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
     const r = await fetch(url);
     const cortes = await r.json();
@@ -1561,7 +1563,7 @@ function abrirNuevoCorteNeo() {
     document.getElementById("neoCorteInicio").value      = fmt(ini);
     document.getElementById("neoCorteFin").value         = fmt(fin);
     document.getElementById("neoCorteObs").value         = "";
-    const cid = document.getElementById("fContrato").value;
+    const cid = document.getElementById("fContrato")?.value ?? "";
     if (cid) document.getElementById("neoCorteContrato").value = cid;
     document.getElementById("modalNuevoCorteNeo").classList.add("open");
 }
