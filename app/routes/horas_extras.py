@@ -263,6 +263,61 @@ def api_he_guardar():
     if not registros:
         return jsonify({"ok": False, "msg": f"Sin registros válidos ({omitidos} omitidos — contrato no encontrado)"}), 400
 
+    # ── Validación de duplicados ──────────────────────────────────────────────
+    # 1) Duplicados dentro del mismo lote
+    lote_keys = {}
+    duplicados_lote = []
+    for i, r in enumerate(registros):
+        k = (r["contrato_id"], r["cedula"], r["id_concepto"],
+             str(r["fecha_labor"]), r["horas_reportadas"])
+        if k in lote_keys:
+            duplicados_lote.append({
+                "fila": i + 1,
+                "cedula": r["cedula"],
+                "concepto": r["id_concepto"],
+                "fecha": str(r["fecha_labor"]),
+                "hrs": r["horas_reportadas"],
+                "motivo": f"Duplicado de fila {lote_keys[k] + 1} en este lote",
+            })
+        else:
+            lote_keys[k] = i
+
+    # 2) Duplicados contra registros ya existentes en la BD
+    from sqlalchemy import tuple_ as sa_tuple
+    claves_bd = sa_tuple(
+        HoraExtra.contrato_id, HoraExtra.cedula,
+        HoraExtra.id_concepto, HoraExtra.fecha_labor, HoraExtra.horas_reportadas
+    )
+    buscar = [(r["contrato_id"], r["cedula"], r["id_concepto"],
+               r["fecha_labor"], r["horas_reportadas"]) for r in registros]
+    existentes = HoraExtra.query.filter(claves_bd.in_(buscar)).all()
+    existentes_set = {
+        (e.contrato_id, e.cedula, e.id_concepto, str(e.fecha_labor), e.horas_reportadas)
+        for e in existentes
+    }
+    duplicados_bd = []
+    for i, r in enumerate(registros):
+        k = (r["contrato_id"], r["cedula"], r["id_concepto"],
+             str(r["fecha_labor"]), r["horas_reportadas"])
+        if k in existentes_set:
+            duplicados_bd.append({
+                "fila": i + 1,
+                "cedula": r["cedula"],
+                "concepto": r["id_concepto"],
+                "fecha": str(r["fecha_labor"]),
+                "hrs": r["horas_reportadas"],
+                "motivo": "Ya existe en la base de datos",
+            })
+
+    todos_duplicados = duplicados_lote + duplicados_bd
+    if todos_duplicados:
+        return jsonify({
+            "ok": False,
+            "duplicados": True,
+            "msg": f"Se encontraron {len(todos_duplicados)} registro(s) duplicado(s). Corrija antes de guardar.",
+            "detalle": todos_duplicados,
+        }), 409
+
     try:
         db.session.bulk_insert_mappings(HoraExtra, registros)
         db.session.commit()

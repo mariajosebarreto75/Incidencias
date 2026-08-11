@@ -553,6 +553,38 @@ body { background:var(--c-bg); }
 </div>
 <datalist id="supList"></datalist>
 
+<!-- ── Modal Duplicados ── -->
+<div class="he-modal-overlay" id="modalDuplicados" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;">
+  <div class="he-modal" style="max-width:700px;width:96%;">
+    <div class="he-modal-header" style="background:#dc3545;">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <h6>Registros duplicados detectados</h6>
+      <button onclick="document.getElementById('modalDuplicados').style.display='none'">&times;</button>
+    </div>
+    <div class="he-modal-body">
+      <p style="font-size:.84rem;color:#495057;margin-bottom:10px;" id="dupMsg"></p>
+      <div style="overflow-x:auto;max-height:320px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem;" id="dupTable">
+          <thead style="background:#f8d7da;position:sticky;top:0;">
+            <tr>
+              <th style="padding:6px 10px;text-align:left;">Fila</th>
+              <th style="padding:6px 10px;text-align:left;">Cédula</th>
+              <th style="padding:6px 10px;text-align:left;">Id Concepto</th>
+              <th style="padding:6px 10px;text-align:left;">Fecha Labor</th>
+              <th style="padding:6px 10px;text-align:right;">Hrs Rep.</th>
+              <th style="padding:6px 10px;text-align:left;">Motivo</th>
+            </tr>
+          </thead>
+          <tbody id="dupBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="he-modal-footer">
+      <button class="btn btn-sm btn-secondary" onclick="document.getElementById('modalDuplicados').style.display='none'">Cerrar y corregir</button>
+    </div>
+  </div>
+</div>
+
 <script src="{{ url_for('static', filename='vendor/handsontable.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/tabulator.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/xlsx.full.min.js') }}"></script>
@@ -758,9 +790,25 @@ async function guardarGrid() {
         hot.loadData(Array.from({length: hot.countRows()}, () => Array(N_COLS).fill("")));
         salariosPorFila = {};
         cargarHistorial(); cargarKpis();
+    } else if (d.duplicados) {
+        mostrarDuplicados(d.msg, d.detalle);
     } else {
         mostrarToast(d.msg || "Error al guardar","danger");
     }
+}
+
+function mostrarDuplicados(msg, detalle) {
+    document.getElementById("dupMsg").textContent = msg;
+    document.getElementById("dupBody").innerHTML = (detalle || []).map(d => `
+        <tr style="border-bottom:1px solid #f5c6cb;">
+            <td style="padding:5px 10px;font-weight:700;color:#dc3545;">Fila ${d.fila}</td>
+            <td style="padding:5px 10px;">${d.cedula}</td>
+            <td style="padding:5px 10px;">${d.concepto}</td>
+            <td style="padding:5px 10px;">${d.fecha}</td>
+            <td style="padding:5px 10px;text-align:right;">${d.hrs}</td>
+            <td style="padding:5px 10px;color:#856404;">${d.motivo}</td>
+        </tr>`).join("");
+    document.getElementById("modalDuplicados").style.display = "flex";
 }
 
 // ── Resumen dashboard ────────────────────────────────────────────────────────
@@ -1255,9 +1303,14 @@ async function confirmarImport() {
             });
             const d = await r.json();
             if (!d.ok) {
-                mostrarToast(d.msg || "Error al importar lote","danger");
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
+                if (d.duplicados) {
+                    cerrarModal("modalImportar");
+                    mostrarDuplicados(d.msg, d.detalle);
+                } else {
+                    mostrarToast(d.msg || "Error al importar lote", "danger");
+                }
                 return;
             }
             guardados += d.guardados || 0;
