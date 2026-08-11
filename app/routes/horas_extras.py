@@ -80,6 +80,17 @@ def api_persona_he():
     return jsonify({"ok": True, "nombre": p.Nombre, "salario": p.Salario})
 
 
+# ── API: resolver nombres por cédulas (batch) ─────────────────────────────────
+@he_bp.route("/api/he/personas/nombres", methods=["POST"])
+@login_required
+def api_personas_nombres():
+    cedulas = request.json or []
+    if not cedulas:
+        return jsonify({})
+    personas = Persona.query.filter(Persona.Documento.in_(cedulas)).all()
+    return jsonify({p.Documento: p.Nombre for p in personas})
+
+
 # ── API: listar registros (coordinador: solo los suyos; NEO: todos) ────────────
 @he_bp.route("/api/he/registros")
 @login_required

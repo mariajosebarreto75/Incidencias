@@ -1401,7 +1401,7 @@ function procesarImportNeo(input) {
     if (!file) return;
     document.getElementById("neoImportFileName").textContent = file.name;
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         const data = new Uint8Array(e.target.result);
         const wb   = XLSX.read(data, { type:"array", cellDates:true });
         const ws   = wb.Sheets[wb.SheetNames[0]];
@@ -1500,6 +1500,23 @@ function procesarImportNeo(input) {
             wrap.style.display = "block";
             document.getElementById("btnNeoConfirmarImport").style.display = "none";
             return;
+        }
+
+        // Resolver nombres faltantes desde BD (por cédula)
+        const sinNombre = filasParsed.filter(f => !f.nombre && f.cedula);
+        if (sinNombre.length > 0) {
+            const cedulas = [...new Set(sinNombre.map(f => f.cedula))];
+            try {
+                const rn = await fetch("/api/he/personas/nombres", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(cedulas)
+                });
+                const mapa = await rn.json(); // { cedula: nombre }
+                for (const f of filasParsed) {
+                    if (!f.nombre && mapa[f.cedula]) f.nombre = mapa[f.cedula];
+                }
+            } catch(e) { /* si falla, deja en blanco */ }
         }
 
         _neoImportFilas = filasParsed;
