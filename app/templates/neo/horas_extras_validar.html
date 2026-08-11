@@ -1135,8 +1135,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     // Cerrar si la tabla hace scroll (el popup es fixed y no sigue al botón)
-    document.addEventListener('scroll', function() {
-        document.getElementById('htFilterPopup').style.display = 'none';
+    document.addEventListener('scroll', function(e) {
+        const popup = document.getElementById('htFilterPopup');
+        // Ignorar scroll dentro del propio popup
+        if (popup.contains(e.target)) return;
+        popup.style.display = 'none';
     }, true);  // capture=true para capturar scroll en cualquier elemento hijo
 });
 
