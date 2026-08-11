@@ -383,12 +383,12 @@ body { background:var(--c-bg); }
         <div class="he-filtros">
             <div>
                 <label>Corte</label>
-                <select id="fCorte" onchange="sincronizarFechasCoor();cargarHistorial()" style="min-width:200px;">
+                <select id="fCorte" onchange="sincronizarFechasCoor();cargarHistorial();cargarKpis()" style="min-width:200px;">
                     <option value="">Todos los cortes</option>
                 </select>
             </div>
-            <div><label>Desde</label><input type="date" id="fDesde" onchange="document.getElementById('fCorte').value='';cargarHistorial()"></div>
-            <div><label>Hasta</label><input type="date" id="fHasta" onchange="document.getElementById('fCorte').value='';cargarHistorial()"></div>
+            <div><label>Desde</label><input type="date" id="fDesde" onchange="document.getElementById('fCorte').value='';cargarHistorial();cargarKpis()"></div>
+            <div><label>Hasta</label><input type="date" id="fHasta" onchange="document.getElementById('fCorte').value='';cargarHistorial();cargarKpis()"></div>
             <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;" title="Recargar"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
 
@@ -887,21 +887,27 @@ function sincronizarFechasCoor() {
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 async function cargarKpis() {
-    const cid = document.getElementById("gridContrato").value;
-    const url = `/api/he/kpis?contrato_id=${cid}`;
-    const r = await fetch(url);
-    const d = await r.json();
-    document.getElementById("k-total").textContent      = d.total;
-    document.getElementById("k-pend").textContent       = d.pendientes;
-    document.getElementById("k-conf").textContent       = d.conformes;
-    document.getElementById("k-noconf").textContent     = d.no_conformes;
-    document.getElementById("k-desc").textContent       = d.descontadas;
-    document.getElementById("k-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
-    document.getElementById("k-hrs-conf").textContent   = (+d.hrs_conformes    || 0).toFixed(0);
-    document.getElementById("k-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
-    document.getElementById("k-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
-    // Badge en la tab de Validación
-    document.getElementById("tb-pend").textContent      = d.pendientes;
+    const cid   = document.getElementById("gridContrato").value;
+    const corte = document.getElementById("fCorte")?.value ?? "";
+    const desde = document.getElementById("fDesde")?.value ?? "";
+    const hasta = document.getElementById("fHasta")?.value ?? "";
+    let url = `/api/he/kpis?contrato_id=${cid}`;
+    if (corte)            url += `&corte_id=${corte}`;
+    else if (desde && hasta) url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    try {
+        const r = await fetch(url);
+        const d = await r.json();
+        document.getElementById("k-total").textContent      = d.total      ?? "—";
+        document.getElementById("k-pend").textContent       = d.pendientes ?? "—";
+        document.getElementById("k-conf").textContent       = d.conformes  ?? "—";
+        document.getElementById("k-noconf").textContent     = d.no_conformes ?? "—";
+        document.getElementById("k-desc").textContent       = d.descontadas ?? "—";
+        document.getElementById("k-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
+        document.getElementById("k-hrs-conf").textContent   = (+d.hrs_conformes    || 0).toFixed(0);
+        document.getElementById("k-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
+        document.getElementById("k-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
+        document.getElementById("tb-pend").textContent      = d.pendientes ?? "—";
+    } catch(e) {}
 }
 
 function filtrarChip(estado, el) {
@@ -1069,45 +1075,108 @@ function procesarImport(input) {
     if (!file) return;
     document.getElementById("importFileName").textContent = file.name;
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         const data = new Uint8Array(e.target.result);
         const wb   = XLSX.read(data, { type:"array", cellDates:true });
         const ws   = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
         if (!rows.length) { mostrarToast("Archivo vacío","warning"); return; }
 
-        // Detectar si primera fila es encabezado
         const first = rows[0].map(v => String(v).toLowerCase());
-        const isHeader = first.some(v =>
-            v.includes("fecha") || v.includes("ced") || v.includes("hrs") || v.includes("hora")
-        );
+        const isHeader = first.some(v => v.includes("fecha") || v.includes("ced") || v.includes("hrs") || v.includes("hora"));
         const dataRows = isHeader ? rows.slice(1) : rows;
 
-        // Mapear filas → objetos
-        _importFilas = dataRows
-            .filter(r => r.some(v => v !== ""))
-            .map(r => ({
-                contrato:          String(r[0]  || "").trim(),
-                fecha_labor:       fmtFechaImport(r[1]),
-                cedula:            String(r[2]  || "").trim(),
-                nombre:            String(r[3]  || "").trim(),
-                recurso:           String(r[4]  || "").trim(),
-                placa:             String(r[5]  || "").trim(),
-                id_concepto:       String(r[6]  || "").trim(),
-                horas_reportadas:  parseFloat(r[7])  || 0,
-                horas_compensadas: parseFloat(r[8])  || 0,
-                autorizacion_sup:  String(r[9]  || "").trim(),
-                justificacion:     String(r[10] || "").trim(),
-                observacion:       String(r[11] || "").trim(),
-                tipo_he:           String(r[12] || "").trim(),
-                valor_extra_nomina:String(r[13] || "").trim(),
-                valor_extra:       String(r[14] || "").trim(),
-                autorizacion_neo:  String(r[15] || "").trim(),
-                horas_autorizadas: r[16] !== "" && r[16] != null ? parseFloat(r[16]) : "",
-            }))
-            .filter(f => f.fecha_labor && f.cedula && f.id_concepto && f.horas_reportadas > 0);
+        const usaContratoFijo = !!document.getElementById("importContrato").value;
 
-        // Preview
+        // Campos obligatorios (misma lógica que NEO)
+        // Opcionales: Nombre(3), Recurso(4), Placa(5), Hrs Comp(8), Vlr Extra Nom(13), Vlr Extra(14), Auth NEO(15), Hrs Auth(16)
+        const OBLIGATORIOS = [
+            { raw: 1,  nombre: "Fecha Labor",      check: v => !!fmtFechaImport(v) },
+            { raw: 2,  nombre: "Cédula",            check: v => String(v||"").trim() !== "" },
+            { raw: 6,  nombre: "Id Concepto",       check: v => String(v||"").trim() !== "" },
+            { raw: 7,  nombre: "Horas Reportadas",  check: v => parseFloat(v) > 0 },
+            { raw: 9,  nombre: "Autorización Sup.", check: v => String(v||"").trim() !== "" },
+            { raw: 10, nombre: "Justificación",     check: v => String(v||"").trim() !== "" },
+            { raw: 12, nombre: "Tipo HE",           check: v => String(v||"").trim() !== "" },
+        ];
+        if (!usaContratoFijo) {
+            OBLIGATORIOS.push({ raw: 0, nombre: "Contrato", check: v => String(v||"").trim() !== "" });
+        }
+
+        const errores = [];
+        const filasParsed = [];
+
+        dataRows.forEach((r, idx) => {
+            if (!r.some(v => v !== "")) return;
+            const filaNum = idx + (isHeader ? 2 : 1);
+            const camposError = OBLIGATORIOS.filter(ob => !ob.check(r[ob.raw]))
+                                            .map(ob => ({ campo: ob.nombre, valor: String(r[ob.raw] ?? "").trim() }));
+            if (camposError.length > 0) {
+                camposError.forEach(ce => errores.push({ fila: filaNum, ...ce }));
+            } else {
+                filasParsed.push({
+                    contrato:          String(r[0]  || "").trim(),
+                    fecha_labor:       fmtFechaImport(r[1]),
+                    cedula:            String(r[2]  || "").trim(),
+                    nombre:            String(r[3]  || "").trim(),
+                    recurso:           String(r[4]  || "").trim(),
+                    placa:             String(r[5]  || "").trim(),
+                    id_concepto:       String(r[6]  || "").trim(),
+                    horas_reportadas:  parseFloat(r[7])  || 0,
+                    horas_compensadas: parseFloat(r[8])  || 0,
+                    autorizacion_sup:  String(r[9]  || "").trim(),
+                    justificacion:     String(r[10] || "").trim(),
+                    observacion:       String(r[11] || "").trim(),
+                    tipo_he:           String(r[12] || "").trim(),
+                    valor_extra_nomina:String(r[13] || "").trim(),
+                    valor_extra:       String(r[14] || "").trim(),
+                    autorizacion_neo:  String(r[15] || "").trim(),
+                    horas_autorizadas: r[16] !== "" && r[16] != null ? parseFloat(r[16]) : "",
+                });
+            }
+        });
+
+        const wrap    = document.getElementById("importPreviewWrap");
+        const countEl = document.getElementById("importCount");
+        const tbl     = document.getElementById("importPreviewTable");
+
+        if (errores.length > 0) {
+            _importFilas = [];
+            tbl.innerHTML = `
+                <thead><tr>
+                    <th style="background:#dc3545;color:#fff;">Fila</th>
+                    <th style="background:#dc3545;color:#fff;">Campo obligatorio</th>
+                    <th style="background:#dc3545;color:#fff;">Valor encontrado</th>
+                </tr></thead>
+                <tbody>${errores.map(e => `<tr style="background:#fff5f5;">
+                    <td style="color:#dc3545;font-weight:600;">Fila ${e.fila}</td>
+                    <td style="color:#dc3545;">${e.campo}</td>
+                    <td style="color:#6c757d;font-style:italic;">${e.valor === "" ? "(vacío)" : e.valor}</td>
+                </tr>`).join("")}</tbody>`;
+            countEl.innerHTML = `<span style="color:#dc3545;font-weight:600;">
+                ⚠ No se puede importar: ${errores.length} error(es) en ${[...new Set(errores.map(e=>e.fila))].length} fila(s).
+                Corrija el archivo Excel y vuelva a cargarlo.
+                ${filasParsed.length > 0 ? `(${filasParsed.length} fila(s) válidas, pero no se importa nada hasta corregir los errores.)` : ""}
+            </span>`;
+            wrap.style.display = "block";
+            document.getElementById("btnConfirmarImport").style.display = "none";
+            return;
+        }
+
+        // Auto-completar nombres faltantes desde BD
+        const sinNombre = filasParsed.filter(f => !f.nombre && f.cedula);
+        if (sinNombre.length > 0) {
+            const cedulas = [...new Set(sinNombre.map(f => f.cedula))];
+            try {
+                const rn = await fetch("/api/he/personas/nombres", {
+                    method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(cedulas)
+                });
+                const mapa = await rn.json();
+                for (const f of filasParsed) { if (!f.nombre && mapa[f.cedula]) f.nombre = mapa[f.cedula]; }
+            } catch(e) {}
+        }
+
+        _importFilas = filasParsed;
         const headers = ["Contrato","Fecha Labor","Cédula","Nombre","Recurso","Placa",
                          "Id Concepto","Hrs Rep.","Hrs Comp.","Autorización","Justificación","Observación",
                          "Tipo He","Vlr Extra Nom.","$ Vlr Extra","Auth NEO","Hrs Auth."];
@@ -1118,11 +1187,9 @@ function procesarImport(input) {
                     f.tipo_he,f.valor_extra_nomina,f.valor_extra,f.autorizacion_neo,f.horas_autorizadas]
                 .map(v => `<td>${v}</td>`).join("")}</tr>`
         ).join("");
-        document.getElementById("importPreviewTable").innerHTML =
-            `<thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${tbody}</tbody>`;
-        document.getElementById("importCount").textContent =
-            `${_importFilas.length} registros válidos detectados${_importFilas.length > 8 ? " (mostrando primeros 8)" : ""}`;
-        document.getElementById("importPreviewWrap").style.display = "block";
+        tbl.innerHTML = `<thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${tbody}</tbody>`;
+        countEl.textContent = `${_importFilas.length} registros válidos detectados${_importFilas.length > 8 ? " (mostrando primeros 8)" : ""}`;
+        wrap.style.display = "block";
         document.getElementById("btnConfirmarImport").style.display = _importFilas.length ? "inline-block" : "none";
     };
     reader.readAsArrayBuffer(file);
@@ -1202,9 +1269,6 @@ async function cargarCortes() {
             <div style="display:flex;gap:6px;margin-top:4px;">
                 <button onclick="verCorte(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-eye me-1"></i>Ver registros</button>
-                ${c.estado === "ABIERTO" ? `
-                <button onclick="cerrarCorte(${c.id})" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;font-size:.72rem;">
-                    <i class="bi bi-lock me-1"></i>Cerrar corte</button>` : ""}
             </div>
         </div>`).join("");
 }
@@ -1288,6 +1352,7 @@ async function confirmarImport() {
     const LOTE = 300;
     const total = _importFilas.length;
     let guardados = 0, omitidos = 0;
+    window._importDupDetalleC = [];
 
     btn.disabled = true;
 
@@ -1305,9 +1370,9 @@ async function confirmarImport() {
             if (!d.ok) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
-                if (d.duplicados) {
+                if (d.contratos_no_encontrados) {
                     cerrarModal("modalImportar");
-                    mostrarDuplicados(d.msg, d.detalle);
+                    alert("⚠ Contratos no encontrados en la BD:\n\n" + (d.detalle||[]).map(x=>`• ${x.contrato}: ${x.filas.length} fila(s)`).join("\n"));
                 } else {
                     mostrarToast(d.msg || "Error al importar lote", "danger");
                 }
@@ -1315,6 +1380,9 @@ async function confirmarImport() {
             }
             guardados += d.guardados || 0;
             omitidos  += d.omitidos  || 0;
+            if (d.detalle_duplicados?.length) {
+                window._importDupDetalleC.push(...d.detalle_duplicados);
+            }
         } catch(e) {
             mostrarToast("Error de red al importar","danger");
             btn.disabled = false;
@@ -1327,10 +1395,27 @@ async function confirmarImport() {
     btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';
     cerrarModal("modalImportar");
     cargarHistorial(); cargarKpis();
-    const msg = omitidos > 0
-        ? `✓ ${guardados} importados · ${omitidos} omitidos (contrato no encontrado)`
-        : `✓ ${guardados} registro(s) importados correctamente`;
-    mostrarToast(msg, "success");
+
+    const dupDetalle = window._importDupDetalleC || [];
+    window._importDupDetalleC = [];
+    if (dupDetalle.length > 0) {
+        document.getElementById("dupMsg").textContent = `Se importaron ${guardados} registro(s). Se saltaron ${dupDetalle.length} duplicado(s) automáticamente:`;
+        document.getElementById("dupBody").innerHTML = dupDetalle.map(d => `
+            <tr style="border-bottom:1px solid #f5c6cb;">
+                <td style="padding:5px 10px;font-weight:700;color:#dc3545;">Fila ${d.fila}</td>
+                <td style="padding:5px 10px;">${d.cedula}</td>
+                <td style="padding:5px 10px;">${d.concepto}</td>
+                <td style="padding:5px 10px;">${d.fecha}</td>
+                <td style="padding:5px 10px;text-align:right;">${d.hrs}</td>
+                <td style="padding:5px 10px;color:#856404;">${d.motivo}</td>
+            </tr>`).join("");
+        document.getElementById("modalDuplicados").style.display = "flex";
+    } else {
+        const msg = omitidos > 0
+            ? `✓ ${guardados} importados · ${omitidos} omitidos (contrato no encontrado)`
+            : `✓ ${guardados} registro(s) importados correctamente`;
+        mostrarToast(msg, "success");
+    }
 }
 
 function exportarExcel() {
