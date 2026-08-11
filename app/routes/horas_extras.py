@@ -522,20 +522,33 @@ def api_he_kpis():
     id_concepto = request.args.get("id_concepto", "")
 
     if corte_id:
-        q = q.filter(HoraExtra.corte_id == corte_id)
+        # Registros asignados al corte O con fecha_labor dentro del período del corte
+        corte_obj = HeCorte.query.get(corte_id)
+        if corte_obj:
+            from sqlalchemy import or_ as sa_or
+            q = q.filter(sa_or(
+                HoraExtra.corte_id == corte_id,
+                db.and_(
+                    HoraExtra.fecha_labor >= corte_obj.fecha_inicio,
+                    HoraExtra.fecha_labor <= corte_obj.fecha_fin,
+                )
+            ))
+        else:
+            q = q.filter(HoraExtra.corte_id == corte_id)
     elif contrato_id:
         q = q.filter(HoraExtra.contrato_id == contrato_id)
 
-    if fecha_desde:
-        try:
-            q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde))
-        except Exception:
-            pass
-    if fecha_hasta:
-        try:
-            q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
-        except Exception:
-            pass
+    if not corte_id:
+        if fecha_desde:
+            try:
+                q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde))
+            except Exception:
+                pass
+        if fecha_hasta:
+            try:
+                q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
+            except Exception:
+                pass
     if mes and not fecha_desde and not fecha_hasta:
         try:
             year, month = mes.split("-")

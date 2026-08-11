@@ -918,6 +918,7 @@ async function cargarKpisHistorial() {
         const desde = document.getElementById("hDesde")?.value ?? "";
         const hasta = document.getElementById("hHasta")?.value ?? "";
         let url = '/api/he/kpis';
+        // Filtrar por fecha siempre que haya un corte o fechas explícitas
         if (corte) url += `?corte_id=${corte}`;
         else if (desde && hasta) url += `?fecha_desde=${desde}&fecha_hasta=${hasta}`;
         const r = await fetch(url);
