@@ -1134,6 +1134,10 @@ document.addEventListener('DOMContentLoaded', function() {
             popup.style.display = 'none';
         }
     });
+    // Cerrar si la tabla hace scroll (el popup es fixed y no sigue al botón)
+    document.addEventListener('scroll', function() {
+        document.getElementById('htFilterPopup').style.display = 'none';
+    }, true);  // capture=true para capturar scroll en cualquier elemento hijo
 });
 
 function _isHistGrid() { return _fpHot && hotHistorial && _fpHot === hotHistorial; }
