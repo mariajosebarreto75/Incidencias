@@ -1571,8 +1571,10 @@ async function cargarCortesNeo() {
                     <i class="bi bi-lock me-1"></i>Cerrar corte</button>` : ""}
                 <button onclick="exportarCorteNeo(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-success" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-file-earmark-excel me-1"></i>Exportar</button>
-                <button onclick="eliminarCorteNeo(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-danger" style="border-radius:6px;font-size:.72rem;">
-                    <i class="bi bi-trash me-1"></i>Eliminar</button>
+                <button onclick="eliminarCorteNeo(${c.id},'${c.nombre}',false)" class="btn btn-sm btn-outline-danger" style="border-radius:6px;font-size:.72rem;">
+                    <i class="bi bi-trash me-1"></i>Eliminar corte</button>
+                <button onclick="eliminarCorteNeo(${c.id},'${c.nombre}',true)" class="btn btn-sm btn-danger" style="border-radius:6px;font-size:.72rem;">
+                    <i class="bi bi-trash3-fill me-1"></i>Eliminar corte + registros</button>
             </div>
         </div>`).join("");
 }
@@ -1644,12 +1646,20 @@ async function cerrarCorteNeo(id) {
     else alert(d.msg || "Error");
 }
 
-async function eliminarCorteNeo(id, nombre) {
-    if (!confirm(`¿Eliminar el corte "${nombre}"?\nLos registros asociados quedarán sin corte asignado.`)) return;
-    const r = await fetch(`/api/he/cortes/${id}`, { method:"DELETE" });
+async function eliminarCorteNeo(id, nombre, conRegistros) {
+    const msg = conRegistros
+        ? `¿Eliminar el corte "${nombre}" Y TODOS SUS REGISTROS?\n\nEsta acción no se puede deshacer.`
+        : `¿Eliminar el corte "${nombre}"?\nLos registros quedarán sin corte asignado.`;
+    if (!confirm(msg)) return;
+    const url = `/api/he/cortes/${id}${conRegistros ? "?eliminar_registros=true" : ""}`;
+    const r = await fetch(url, { method:"DELETE" });
     const d = await r.json();
-    if (d.ok) { cortesCargadosNeo = false; cargarCortesNeo(); }
-    else alert(d.error || d.msg || "Error al eliminar");
+    if (d.ok) {
+        cortesCargadosNeo = false;
+        cargarCortesNeo();
+        if (conRegistros && d.registros_eliminados > 0)
+            alert(`Corte y ${d.registros_eliminados} registro(s) eliminados correctamente.`);
+    } else alert(d.error || d.msg || "Error al eliminar");
 }
 
 async function verCorteNeo(id, nombre) {
