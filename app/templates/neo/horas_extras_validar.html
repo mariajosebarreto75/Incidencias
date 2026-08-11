@@ -462,6 +462,15 @@ body { background:var(--c-bg); }
 
     <!-- ══════════════════ PANEL 3: CORTES ══════════════════ -->
     <div class="he-panel" id="panel-cortes">
+        <!-- Selector de corte para KPIs -->
+        <div class="he-filtros" style="margin-bottom:10px;">
+            <div>
+                <label>Corte</label>
+                <select id="ckCorte" onchange="cargarKpisCortesNeo()" style="min-width:220px;">
+                    <option value="">Todos los cortes</option>
+                </select>
+            </div>
+        </div>
         <!-- KPIs cortes NEO -->
         <div class="he-kpi-row" id="cortesKpiRowNeo">
             <div class="he-kpi-card primary"><div class="he-kpi-val" id="ck-total">—</div><div class="he-kpi-lbl">Total Registros</div></div>
@@ -664,7 +673,9 @@ function cambiarTab(nombre, btn) {
 
 async function cargarKpisCortesNeo() {
     try {
-        const r = await fetch("/api/he/kpis");
+        const corte = document.getElementById("ckCorte")?.value ?? "";
+        const url = corte ? `/api/he/kpis?corte_id=${corte}` : "/api/he/kpis";
+        const r = await fetch(url);
         const d = await r.json();
         document.getElementById("ck-total").textContent     = (d.total||0).toLocaleString("es-CO");
         document.getElementById("ck-hrs-rep").textContent   = (+d.hrs_reportadas  ||0).toFixed(0);
@@ -1513,6 +1524,15 @@ async function cargarCortesNeo() {
     const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
     const r = await fetch(url);
     const cortes = await r.json();
+    // Poblar selector de corte para KPIs
+    const ckCorte = document.getElementById("ckCorte");
+    if (ckCorte) {
+        const prevVal = ckCorte.value;
+        ckCorte.innerHTML = '<option value="">Todos los cortes</option>' +
+            cortes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+        if (cortes.find(c => String(c.id) === prevVal)) ckCorte.value = prevVal;
+    }
+    cargarKpisCortesNeo();
     const container = document.getElementById("cortesList");
     if (!cortes.length) {
         container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:48px 0;">
