@@ -1574,10 +1574,14 @@ async function eliminarCorteNeo(id, nombre) {
 }
 
 async function verCorteNeo(id, nombre) {
-    // Ir a tab Historial y cargar registros de ese corte
+    // Marcar como cargado ANTES de cambiarTab para que no dispare cargarHistorial() sin id
+    historialCargado = true;
     const tab = document.querySelectorAll(".he-tab")[1]; // tab Historial
     cambiarTab("historial", tab);
-    historialCargado = true;
+    // Poblar selector y seleccionar el corte
+    await actualizarCortesHistorial();
+    const sel = document.getElementById("hCorte");
+    if (sel) { sel.value = String(id); sincronizarFechasHistorial(); }
     _htHistColFilters = {};
     cargarHistorial(id);
 }

@@ -1215,14 +1215,21 @@ async function cerrarCorte(id) {
 }
 
 async function verCorte(id, nombre) {
-    const r = await fetch(`/api/he/cortes/${id}`);
-    const d = await r.json();
-    // Cambiar a tab validación y cargar registros de ese corte
+    // Marcar como cargado ANTES de cambiarTab para que no dispare cargarHistorial() sin id
+    validacionCargada = true;
     const tab = document.querySelector(".he-tab:nth-child(2)");
     cambiarTab("validacion", tab);
-    // Usar URL del corte para cargar en Tabulator
+    // Actualizar selector de corte
+    await actualizarCortesCoor();
+    const sel = document.getElementById("fCorte");
+    if (sel) { sel.value = String(id); sincronizarFechasCoor(); }
+    // Cargar datos del corte en la tabla
     const url = `/api/he/registros?corte_id=${id}`;
-    if (tabla) { tabla.setData(url); }
+    if (tabla) {
+        tabla.setData(url);
+    } else {
+        cargarHistorial(id);
+    }
     mostrarToast(`Mostrando corte: ${nombre}`, "success");
 }
 
