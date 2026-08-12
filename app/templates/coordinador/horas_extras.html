@@ -784,6 +784,7 @@ async function onContratoChange() {
     }
     // Cargar supervisores del contrato
     try {
+        const cid = document.getElementById("gridContrato").value;
         const url = cid ? `/api/he/supervisores?contrato_id=${cid}` : "/api/he/supervisores";
         const r = await fetch(url);
         supervisoresActuales = await r.json();
@@ -977,15 +978,15 @@ function fmtFechaCoor(v) {
     return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : v;
 }
 
-function estadoRendererCoor(hot, td, row, col, prop, value) {
+function estadoRendererCoor(instance, td, row, col, prop, value) {
     Handsontable.renderers.TextRenderer.apply(this, arguments);
     const v = (value || "").trim();
-    const col_map = { "PENDIENTE":"#fff3cd;color:#856404", "CONFORME":"#d1e7dd;color:#0a3622",
-                      "NO CONFORME":"#f8d7da;color:#842029", "DESCONTADA":"#ede9fe;color:#5b21b6" };
-    if (col_map[v]) td.innerHTML = `<span style="background:${col_map[v].split(';')[0].replace('background:','')};${col_map[v].split(';')[1]};padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700;">${v}</span>`;
+    const BG = { "PENDIENTE":"#fff3cd", "CONFORME":"#d1e7dd", "NO CONFORME":"#f8d7da", "DESCONTADA":"#ede9fe" };
+    const FG = { "PENDIENTE":"#856404", "CONFORME":"#0a3622", "NO CONFORME":"#842029", "DESCONTADA":"#5b21b6" };
+    if (BG[v]) td.innerHTML = `<span style="background:${BG[v]};color:${FG[v]};padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700;">${v}</span>`;
 }
 
-function accionRendererCoor(hot, td, row, col, prop, value) {
+function accionRendererCoor(instance, td, row, col, prop, value) {
     const id     = _currentValIds[row];
     const estado = (hotVal ? hotVal.getDataAtCell(row, V_ESTADO) : "") || "";
     td.innerHTML = "";
