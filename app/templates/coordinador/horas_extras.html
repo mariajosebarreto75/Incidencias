@@ -242,6 +242,11 @@ body { background:var(--c-bg); }
 #htFilterPopupC .fp-actions {
     display:flex;gap:6px;padding:8px 10px;border-top:1px solid #eee;margin-top:6px;
 }
+#htFilterPopupC .fp-sort-row { display:flex;gap:4px;padding:0 10px 0; }
+#htFilterPopupC .fp-sort-btn { flex:1;font-size:.72rem;padding:5px 4px;border:1px solid #dee2e6;border-radius:5px;background:#f8f9fa;color:#0d3b66;cursor:pointer;display:flex;align-items:center;gap:4px;justify-content:center;font-weight:600; }
+#htFilterPopupC .fp-sort-btn:hover { background:#e8f4f5;border-color:#007d8a; }
+#htFilterPopupC .fp-sort-btn.active { background:#007d8a;color:#fff;border-color:#007d8a; }
+#htFilterPopupC .fp-sort-sep { border:none;border-top:1px solid #e2e8f0;margin:6px 0 4px; }
 /* ── Panel Cortes ── */
 .he-cortes-empty {
     display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -607,6 +612,11 @@ body { background:var(--c-bg); }
 </div>
 <!-- Popup filtro columna Handsontable -->
 <div id="htFilterPopupC">
+  <div class="fp-sort-row">
+    <button class="fp-sort-btn" id="fpSortAscC"  onclick="_sortColumnCoor('asc')">&#9650; Menor a mayor</button>
+    <button class="fp-sort-btn" id="fpSortDescC" onclick="_sortColumnCoor('desc')">&#9660; Mayor a menor</button>
+  </div>
+  <hr class="fp-sort-sep" style="margin:6px 10px 4px;">
   <input class="fp-search" id="fpSearchC" type="text" placeholder="Buscar…">
   <div class="fp-list" id="fpListC"></div>
   <div class="fp-actions">
@@ -695,6 +705,8 @@ let hot = null, hotVal = null;
 let _currentValIds = [];
 let _fullValData = [], _fullValIds = [], _htValFilters = {};
 let _fullRegData = [], _htRegFilters = {};
+let _regSortState = null;  // {col, dir:'asc'|'desc'} o null
+let _valSortState = null;
 let cedulaTimers = {};
 let salariosPorFila = {};
 let supervisoresActuales = [];
@@ -1715,6 +1727,19 @@ function _openFilterPopupC(htInst, col, anchorBtn, isVal) {
     popup._allVals = allVals;
     document.getElementById('fpSearchC').value = '';
     document.getElementById('fpSearchC').focus();
+
+    // Marcar botón de orden activo
+    const sortSt = isVal ? _valSortState : _regSortState;
+    document.getElementById('fpSortAscC').classList.toggle('active',  !!(sortSt && sortSt.col === col && sortSt.dir === 'asc'));
+    document.getElementById('fpSortDescC').classList.toggle('active', !!(sortSt && sortSt.col === col && sortSt.dir === 'desc'));
+}
+
+function _sortColumnCoor(dir) {
+    const cur  = _fpCIsVal ? _valSortState : _regSortState;
+    const next = (cur && cur.col === _fpCCol && cur.dir === dir) ? null : { col: _fpCCol, dir };
+    if (_fpCIsVal) _valSortState = next; else _regSortState = next;
+    document.getElementById('htFilterPopupC').style.display = 'none';
+    _applyAllFiltersCoor();
 }
 
 function _renderPopupListC(vals) {
@@ -1769,26 +1794,38 @@ function _applyAllFiltersCoor() {
         const ids  = _fullValIds;
         const fmap = _htValFilters;
         const cols = Object.keys(fmap).map(Number);
-        let filtData = src, filtIds = ids;
+        let pairs = src.map((row, i) => [row, ids[i]]);
         if (cols.length > 0) {
-            const pairs = src.map((row, i) => [row, ids[i]]);
-            const filtered = pairs.filter(([row]) => cols.every(c => fmap[c].has(String(row[c] ?? ''))));
-            filtData = filtered.map(([r]) => r);
-            filtIds  = filtered.map(([,id]) => id);
+            pairs = pairs.filter(([row]) => cols.every(c => fmap[c].has(String(row[c] ?? ''))));
         }
-        _currentValIds = filtIds;
-        hotVal.loadData(filtData);
+        if (_valSortState) {
+            const { col, dir } = _valSortState;
+            pairs = pairs.slice().sort(([ra], [rb]) => {
+                const cmp = String(ra[col] ?? '').localeCompare(String(rb[col] ?? ''), 'es', { sensitivity:'base', numeric:true });
+                return dir === 'asc' ? cmp : -cmp;
+            });
+        }
+        _currentValIds = pairs.map(([, id]) => id);
+        hotVal.loadData(pairs.map(([r]) => r));
         setTimeout(() => _refreshFilterBtnsC(hotVal), 0);
-        _actualizarKpisCoor(filtData);
+        _actualizarKpisCoor(pairs.map(([r]) => r));
     }
     // Filtrar registro
     if (hot && _fullRegData.length) {
         const src  = _fullRegData;
         const fmap = _htRegFilters;
         const cols = Object.keys(fmap).map(Number);
-        hot.loadData(cols.length > 0
+        let rows = cols.length > 0
             ? src.filter(row => cols.every(c => fmap[c].has(String(row[c] ?? ''))))
-            : src);
+            : src.slice();
+        if (_regSortState) {
+            const { col, dir } = _regSortState;
+            rows = rows.slice().sort((ra, rb) => {
+                const cmp = String(ra[col] ?? '').localeCompare(String(rb[col] ?? ''), 'es', { sensitivity:'base', numeric:true });
+                return dir === 'asc' ? cmp : -cmp;
+            });
+        }
+        hot.loadData(rows);
         setTimeout(() => _refreshFilterBtnsC(hot), 0);
     }
 }

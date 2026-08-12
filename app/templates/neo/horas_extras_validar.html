@@ -143,6 +143,11 @@ body { background:var(--c-bg); }
 }
 #htFilterPopup .fp-btn.ok  { background: #007d8a; color: #fff; }
 #htFilterPopup .fp-btn.clr { background: #f1f5f9; color: #495057; }
+#htFilterPopup .fp-sort-row { display:flex; gap:4px; margin-bottom:6px; }
+#htFilterPopup .fp-sort-btn { flex:1; font-size:.72rem; padding:5px 4px; border:1px solid #dee2e6; border-radius:5px; background:#f8f9fa; color:#0d3b66; cursor:pointer; display:flex; align-items:center; gap:4px; justify-content:center; font-weight:600; }
+#htFilterPopup .fp-sort-btn:hover { background:#e8f4f5; border-color:#007d8a; }
+#htFilterPopup .fp-sort-btn.active { background:#007d8a; color:#fff; border-color:#007d8a; }
+#htFilterPopup .fp-sort-sep { border:none; border-top:1px solid #e2e8f0; margin:2px 0 8px; }
 
 /* ── Filtros + Grid ── */
 .he-filtros { background:#fff; border-radius:10px; padding:10px 14px; box-shadow:0 1px 6px rgba(0,0,0,.07);
@@ -509,6 +514,11 @@ body { background:var(--c-bg); }
 <!-- ── Modal Nuevo Corte NEO ── -->
 <!-- Popup filtro columnas Handsontable -->
 <div id="htFilterPopup">
+    <div class="fp-sort-row">
+        <button class="fp-sort-btn" id="fpSortAsc"  onclick="_sortColumnNeo('asc')">&#9650; Menor a mayor</button>
+        <button class="fp-sort-btn" id="fpSortDesc" onclick="_sortColumnNeo('desc')">&#9660; Mayor a menor</button>
+    </div>
+    <hr class="fp-sort-sep">
     <input class="fp-search" placeholder="Buscar…" id="fpSearch">
     <div class="fp-list" id="fpList"></div>
     <div class="fp-actions">
@@ -659,6 +669,8 @@ let hot = null, hotHistorial = null;
 let registrosIds = [];
 let _fullData = [], _fullIds = [], _htColFilters = {};
 let _fullHistData = [], _fullHistIds = [], _htHistColFilters = {};
+let _neoSortState = null;   // {col, dir:'asc'|'desc'} o null
+let _histSortState = null;
 let saveTimer = null;
 let historialCargado = false;
 let cortesCargadosNeo = false;
@@ -1108,6 +1120,21 @@ function _openFilterPopup(htInst, col, anchorBtn) {
 
     // Guardar lista completa para búsqueda
     popup._allVals = allVals;
+
+    // Marcar botón de orden activo
+    const sortSt = (htInst === hotHistorial) ? _histSortState : _neoSortState;
+    document.getElementById('fpSortAsc').classList.toggle('active',  !!(sortSt && sortSt.col === col && sortSt.dir === 'asc'));
+    document.getElementById('fpSortDesc').classList.toggle('active', !!(sortSt && sortSt.col === col && sortSt.dir === 'desc'));
+}
+
+function _sortColumnNeo(dir) {
+    const hist = _fpHot === hotHistorial;
+    const cur  = hist ? _histSortState : _neoSortState;
+    // Clic en la dirección activa = quitar orden
+    const next = (cur && cur.col === _fpCol && cur.dir === dir) ? null : { col: _fpCol, dir };
+    if (hist) _histSortState = next; else _neoSortState = next;
+    document.getElementById('htFilterPopup').style.display = 'none';
+    _applyAllFilters(_fpHot);
 }
 
 function _renderPopupList(vals) {
@@ -1200,22 +1227,28 @@ function _clearFilter() {
 }
 
 function _applyAllFilters(htInst) {
-    const hist = htInst && hotHistorial && htInst === hotHistorial;
-    const src   = hist ? _fullHistData : _fullData;
-    const ids   = hist ? _fullHistIds  : _fullIds;
-    const fmap  = hist ? _htHistColFilters : _htColFilters;
-    const cols  = Object.keys(fmap).map(Number);
+    const hist   = htInst && hotHistorial && htInst === hotHistorial;
+    const src    = hist ? _fullHistData : _fullData;
+    const ids    = hist ? _fullHistIds  : _fullIds;
+    const fmap   = hist ? _htHistColFilters : _htColFilters;
+    const sortSt = hist ? _histSortState : _neoSortState;
+    const cols   = Object.keys(fmap).map(Number);
 
-    let filteredData = src;
-    let filteredIds  = ids;
+    let pairs = src.map((row, i) => [row, ids[i]]);
     if (cols.length > 0) {
-        const pairs = src.map((row, i) => [row, ids[i]]);
-        const filtered = pairs.filter(([row]) =>
-            cols.every(col => fmap[col].has(String(row[col] ?? '')))
-        );
-        filteredData = filtered.map(([row]) => row);
-        filteredIds  = filtered.map(([,id]) => id);
+        pairs = pairs.filter(([row]) => cols.every(col => fmap[col].has(String(row[col] ?? ''))));
     }
+    if (sortSt) {
+        const { col, dir } = sortSt;
+        pairs = pairs.slice().sort(([ra], [rb]) => {
+            const va = String(ra[col] ?? '');
+            const vb = String(rb[col] ?? '');
+            const cmp = va.localeCompare(vb, 'es', { sensitivity: 'base', numeric: true });
+            return dir === 'asc' ? cmp : -cmp;
+        });
+    }
+    const filteredData = pairs.map(([r]) => r);
+    const filteredIds  = pairs.map(([, id]) => id);
 
     if (hist) {
         hotHistorial.loadData(filteredData);
@@ -1224,7 +1257,6 @@ function _applyAllFilters(htInst) {
         registrosIds = filteredIds;
         hot.loadData(filteredData);
         setTimeout(() => _refreshFilterBtns(hot), 0);
-        // Actualizar tarjetas con los datos visibles tras filtrar columnas
         _actualizarKpisDesdeFiltered(filteredData);
     }
 }
