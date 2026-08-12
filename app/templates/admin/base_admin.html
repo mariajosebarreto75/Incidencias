@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Admin{% endblock %} â€” Panel Administrador</title>
+    <title>{% block title %}Admin{% endblock %} — Panel Administrador</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin.css') }}">
@@ -18,7 +18,7 @@
         <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="HESEGO">
         <div>
             <div class="adm-brand-title">Panel Admin</div>
-            <div class="adm-brand-sub">ParametrizaciÃ³n del sistema</div>
+            <div class="adm-brand-sub">Parametrización del sistema</div>
         </div>
     </div>
 
@@ -41,7 +41,7 @@
             <i class="bi bi-clipboard2-data"></i> Reportes
         </a>
 
-        <div class="adm-nav-section">ParametrizaciÃ³n</div>
+        <div class="adm-nav-section">Parametrización</div>
 
         <a href="{{ url_for('admin_bp.contratos') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.contratos' %}active{% endif %}">
@@ -60,7 +60,7 @@
 
         <a href="{{ url_for('admin_bp.personas') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.personas' %}active{% endif %}">
-            <i class="bi bi-person-vcard"></i> Personas / CÃ©dulas
+            <i class="bi bi-person-vcard"></i> Personas / Cédulas
         </a>
 
         <a href="{{ url_for('admin_bp.metas') }}"
@@ -68,7 +68,7 @@
             <i class="bi bi-graph-up-arrow"></i> Meta Operativa
         </a>
 
-        <div class="adm-nav-section">CatÃ¡logos Coordinador</div>
+        <div class="adm-nav-section">Catálogos Coordinador</div>
 
         <a href="{{ url_for('admin_bp.supervisores') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.supervisores' %}active{% endif %}">
@@ -92,19 +92,19 @@
 
         <a href="{{ url_for('admin_bp.parametros_coordinador') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.parametros_coordinador' %}active{% endif %}">
-            <i class="bi bi-sliders2"></i> ParÃ¡metros
+            <i class="bi bi-sliders2"></i> Parámetros
         </a>
 
-        <div class="adm-nav-section">CatÃ¡logos NEO</div>
+        <div class="adm-nav-section">Catálogos NEO</div>
 
         <a href="{{ url_for('admin_bp.desvios') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.desvios' %}active{% endif %}">
-            <i class="bi bi-exclamation-triangle"></i> Tipos de DesvÃ­o
+            <i class="bi bi-exclamation-triangle"></i> Tipos de Desvío
         </a>
 
         <a href="{{ url_for('admin_bp.parametros') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.parametros' %}active{% endif %}">
-            <i class="bi bi-sliders"></i> ParÃ¡metros NEO
+            <i class="bi bi-sliders"></i> Parámetros NEO
         </a>
 
         <a href="{{ url_for('admin_bp.recursos_neo') }}"
@@ -130,7 +130,7 @@
             </div>
         </div>
         <a href="{{ url_for('auth.logout') }}" class="adm-btn-logout">
-            <i class="bi bi-box-arrow-right"></i> Cerrar sesiÃ³n
+            <i class="bi bi-box-arrow-right"></i> Cerrar sesión
         </a>
     </div>
 
@@ -144,7 +144,7 @@
 <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
 
 <script>
-/* Limpiar inputs de bÃºsqueda al cargar (evita autocompletado del navegador) */
+/* Limpiar inputs de búsqueda al cargar (evita autocompletado del navegador) */
 document.addEventListener("DOMContentLoaded", function() {
     function limpiarBuscadores() {
         document.querySelectorAll(".adm-search input[type=text]").forEach(function(inp) {
@@ -154,11 +154,11 @@ document.addEventListener("DOMContentLoaded", function() {
         if (document.getElementById("tbody")) filtrarTabla("", "tbody");
     }
     limpiarBuscadores();
-    /* Segundo intento tras 400ms por si el navegador autorrellena despuÃ©s del DOM */
+    /* Segundo intento tras 400ms por si el navegador autorrellena después del DOM */
     setTimeout(limpiarBuscadores, 400);
 });
 
-/* BÃºsqueda genÃ©rica en tablas admin */
+/* Búsqueda genérica en tablas admin */
 function filtrarTabla(q, tbodyId) {
     q = (q || "").toLowerCase();
     document.querySelectorAll("#" + tbodyId + " tr").forEach(function(tr) {
@@ -191,7 +191,7 @@ async function apiFetch(url, method, body) {
         const data = await r.json();
         return data;
     } catch (e) {
-        return { success: false, mensaje: "Error de comunicaciÃ³n con el servidor: " + e.message };
+        return { success: false, mensaje: "Error de comunicación con el servidor: " + e.message };
     }
 }
 </script>

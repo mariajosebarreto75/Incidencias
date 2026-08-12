@@ -73,7 +73,7 @@ def parsear_meta(valor):
     if not valor:
         return None
     try:
-        # "2.457.051" â†’ quitar puntos de miles â†’ float
+        # "2.457.051" → quitar puntos de miles → float
         return float(str(valor).strip().replace(".", "").replace(",", "."))
     except Exception:
         return None
@@ -83,10 +83,10 @@ def formatear_coordenada(valor, posicion_coma):
     """
     Normaliza coordenadas al formato con coma decimal.
     Casos:
-      - Ya tiene coma            â†’ devuelve tal cual
-      - Tiene punto real decimal â†’ reemplaza punto por coma  (-74.638 â†’ -74,638)
-      - Float .0 de pandas       â†’ trata como entero         (-4493839.0 â†’ -44,93839)
-      - Entero puro              â†’ inserta coma en posiciÃ³n   36364567 â†’ 3,6364567
+      - Ya tiene coma            → devuelve tal cual
+      - Tiene punto real decimal → reemplaza punto por coma  (-74.638 → -74,638)
+      - Float .0 de pandas       → trata como entero         (-4493839.0 → -44,93839)
+      - Entero puro              → inserta coma en posición   36364567 → 3,6364567
     """
     if not valor:
         return ""
@@ -103,7 +103,7 @@ def formatear_coordenada(valor, posicion_coma):
         partes = s.split(".")
         decimal = partes[1].rstrip("0")
         if not decimal:
-            # Es X.0 o X.000 â†’ tratar como entero
+            # Es X.0 o X.000 → tratar como entero
             s = partes[0]
         else:
             # Decimal real: reemplazar punto por coma
@@ -253,7 +253,7 @@ def panel_reportes():
 @coordinador.route("/coordinador/plan/sincronizar", methods=["POST"])
 @login_required
 def sincronizar_plan_gps():
-    """Sincroniza el plan del dÃ­a desde GPS Monitor para la fecha solicitada."""
+    """Sincroniza el plan del día desde GPS Monitor para la fecha solicitada."""
     from app.services.sincronizar_plan import sincronizar_plan
     datos = request.get_json(silent=True) or {}
     from_date = datos.get("desde") or datos.get("fecha") or None
@@ -503,7 +503,7 @@ def crear_persona():
         if existe:
             return jsonify({
                 "success": False,
-                "mensaje": f"La cÃ©dula {documento} ya estÃ¡ registrada."
+                "mensaje": f"La cédula {documento} ya está registrada."
             }), 400
 
         salario = None
@@ -557,7 +557,7 @@ def detalle_reporte(id):
     acciones_db    = [a.accion for a in AccionTomar.query.order_by(AccionTomar.accion).all()]
     parametros_db  = [p.parametro for p in ParametroCoor.query.order_by(ParametroCoor.parametro).all()]
 
-    # Nombre completo del usuario que reportÃ³
+    # Nombre completo del usuario que reportó
     reportador = User.query.filter_by(username=reporte.reportado_por).first()
     nombre_reportado = reportador.nombre_completo.title() if reportador else reporte.reportado_por
 
@@ -585,7 +585,7 @@ def responder_reporte(id):
     requeridos = {
         "respuesta":          "Respuesta",
         "estado_conformidad": "Estado de conformidad",
-        "accion_a_tomar":     "AcciÃ³n a tomar",
+        "accion_a_tomar":     "Acción a tomar",
         "evidencia_coor_1":   "Evidencia 1 del coordinador",
     }
 
@@ -612,7 +612,7 @@ def responder_reporte(id):
 
     try:
         db.session.commit()
-        # Notificar al NEO que reportÃ³
+        # Notificar al NEO que reportó
         crear_notificacion(reporte.reportado_por, "reporte_respondido", reporte)
         db.session.commit()
         return jsonify({
@@ -660,7 +660,7 @@ def editar_respuesta(id):
     requeridos = {
         "respuesta":          "Respuesta",
         "estado_conformidad": "Estado de conformidad",
-        "accion_a_tomar":     "AcciÃ³n a tomar",
+        "accion_a_tomar":     "Acción a tomar",
         "evidencia_coor_1":   "Evidencia 1 del coordinador",
     }
 
@@ -760,7 +760,7 @@ def subir_evidencia_coor():
     archivo = request.files.get("archivo")
 
     if not archivo or not archivo.filename:
-        return jsonify({"success": False, "mensaje": "No se recibiÃ³ archivo."}), 400
+        return jsonify({"success": False, "mensaje": "No se recibió archivo."}), 400
 
     if not _ext_ok_coor(archivo.filename):
         return jsonify({
