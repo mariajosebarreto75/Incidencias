@@ -1660,7 +1660,9 @@ function _showFilterBtnC(htInst, col, TH, isVal) {
     btn.addEventListener('click', function(e) {
         e.stopPropagation();
         _fpCIsVal = isVal;
-        _openFilterPopupC(htInst, col, btn, isVal);
+        // Convertir índice visual → físico
+        const physCol = (htInst && htInst.toPhysicalColumn) ? htInst.toPhysicalColumn(col) : col;
+        _openFilterPopupC(htInst, physCol, btn, isVal);
     });
     const span = TH.querySelector('.colHeader') || TH;
     span.parentNode ? span.after(btn) : TH.appendChild(btn);
@@ -1804,7 +1806,9 @@ function _refreshFilterBtnsC(htInst) {
     if (!htInst || !htInst.rootElement) return;
     const fmap = (htInst === hotVal) ? _htValFilters : _htRegFilters;
     htInst.rootElement.querySelectorAll('.ht-col-filter-btn').forEach(b => {
-        b.classList.toggle('active', parseInt(b.dataset.col) in fmap);
+        const visCol  = parseInt(b.dataset.col);
+        const physCol = htInst.toPhysicalColumn ? htInst.toPhysicalColumn(visCol) : visCol;
+        b.classList.toggle('active', physCol in fmap);
     });
 }
 

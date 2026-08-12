@@ -755,7 +755,6 @@ function iniciarGrid() {
         height: 520,
         stretchH: "none",
         manualColumnResize: true,
-        manualColumnMove: true,
         filters: true,
         dropdownMenu: false,
         fixedColumnsLeft: 0,
@@ -1046,8 +1045,10 @@ function _showFilterBtn(col, TH) {
     btn.setAttribute('data-col', col);
     btn.addEventListener('click', function(e) {
         e.stopPropagation();
-        const htInst = TH.closest('.ht_master, .handsontable') ? _getHotFromTH(TH) : null;
-        _openFilterPopup(htInst || hot, col, btn);
+        const htInst = _getHotFromTH(TH);
+        // Convertir índice visual → físico para que coincida con _fullData
+        const physCol = htInst ? (htInst.toPhysicalColumn ? htInst.toPhysicalColumn(col) : col) : col;
+        _openFilterPopup(htInst || hot, physCol, btn);
     });
     // Insertar junto al texto del encabezado
     const span = TH.querySelector('.colHeader') || TH;
@@ -1247,8 +1248,9 @@ function _refreshFilterBtns(htInst) {
     const hist = htInst === hotHistorial;
     const fmap = hist ? _htHistColFilters : _htColFilters;
     htInst.rootElement.querySelectorAll('.ht-col-filter-btn').forEach(b => {
-        const col = parseInt(b.dataset.col);
-        b.classList.toggle('active', col in fmap);
+        const visCol = parseInt(b.dataset.col);
+        const physCol = htInst.toPhysicalColumn ? htInst.toPhysicalColumn(visCol) : visCol;
+        b.classList.toggle('active', physCol in fmap);
     });
 }
 
