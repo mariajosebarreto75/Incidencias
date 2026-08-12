@@ -158,6 +158,26 @@ def api_he_registros():
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
 
+# ── DASHBOARD HE ─────────────────────────────────────────────────────────────
+@he_bp.route("/he/dashboard")
+@login_required
+def he_dashboard():
+    rol = current_user.rol.lower()
+    if not (rol == "admin" or current_user.tiene_permiso("dashboard_he")):
+        abort(403)
+    contratos = _contratos_del_usuario() if rol == "admin" else _contratos_del_usuario()
+    cortes    = HeCorte.query.order_by(HeCorte.fecha_inicio.desc()).all()
+    if rol in ("coordinador",):
+        base_template = "coordinador/navbarcoor.html"
+    elif rol == "neo":
+        base_template = "neo/navbNeo.html"
+    else:
+        base_template = "neo/navbNeo.html"
+    return render_template("horas_extras/dashboard_he.html",
+                           contratos=contratos, cortes=cortes,
+                           base_template=base_template)
+
+
 # ── HUB: página de selección de módulo ───────────────────────────────────────
 @he_bp.route("/horas-extras")
 @login_required

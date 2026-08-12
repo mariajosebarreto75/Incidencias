@@ -1,0 +1,282 @@
+{% extends base_template %}
+{% block title %}Dashboard Horas Extras{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root { --dh-bg: #0f172a; --dh-card: #1e293b; --dh-border: #334155; --dh-text: #e2e8f0; --dh-sub: #94a3b8; }
+.dh-wrap       { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+.dh-header     { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.8rem; margin-bottom:1.2rem; }
+.dh-title      { font-size:1.25rem; font-weight:700; color:var(--dh-text); margin:0; }
+.dh-sub        { font-size:.8rem; color:var(--dh-sub); margin:2px 0 0; }
+.dh-card       { background:var(--dh-card); border:1px solid var(--dh-border); border-radius:10px; }
+.dh-filters    { display:flex; gap:.7rem; flex-wrap:wrap; align-items:flex-end; padding:14px 18px; }
+.dh-filter-lbl { font-size:.72rem; color:var(--dh-sub); display:block; margin-bottom:3px; }
+.dh-select     { background:#0f172a; color:var(--dh-text); border:1px solid var(--dh-border); border-radius:6px; padding:5px 10px; font-size:.8rem; }
+.dh-kpis       { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:.8rem; margin-bottom:1rem; }
+.dh-kpi        { background:var(--dh-card); border:1px solid var(--dh-border); border-radius:10px; padding:16px 18px; }
+.dh-kpi-val    { font-size:1.7rem; font-weight:800; color:var(--dh-text); line-height:1; }
+.dh-kpi-lbl    { font-size:.72rem; color:var(--dh-sub); margin-top:4px; }
+.dh-kpi-icon   { font-size:1.2rem; margin-bottom:6px; }
+.dh-grid2      { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+.dh-grid3      { display:grid; grid-template-columns:3fr 2fr; gap:1rem; margin-bottom:1rem; }
+.dh-card-hdr   { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--dh-border); }
+.dh-card-ttl   { font-size:.85rem; font-weight:700; color:var(--dh-text); }
+.dh-table      { width:100%; border-collapse:collapse; font-size:.78rem; }
+.dh-table th   { background:#0f172a; color:#64748b; font-weight:600; text-transform:uppercase; font-size:.68rem; letter-spacing:.04em; padding:8px 12px; text-align:left; }
+.dh-table td   { padding:7px 12px; border-bottom:1px solid #1e293b; color:var(--dh-sub); }
+.dh-table tr:last-child td { border-bottom:none; }
+.dh-table tr:hover td { background:#0f172a33; }
+.badge-estado  { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.68rem; font-weight:700; }
+.dh-top-tag    { background:#1d4ed8; color:#bfdbfe; padding:3px 10px; border-radius:999px; font-size:.72rem; font-weight:600; }
+.alerta-row    { background:#450a0a22 !important; }
+.alerta-row td { color:#f87171 !important; }
+.warn-row      { background:#451a0322 !important; }
+.warn-row td   { color:#fcd34d !important; }
+.dh-btn        { background:#1d4ed8; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:.8rem; cursor:pointer; }
+.dh-btn:hover  { background:#1e40af; }
+.dh-btn-sec    { background:#1e293b; color:#94a3b8; border:1px solid #334155; border-radius:6px; padding:6px 14px; font-size:.8rem; cursor:pointer; }
+.chart-wrap    { padding:14px 18px; height:260px; position:relative; }
+@media(max-width:768px){ .dh-grid2,.dh-grid3{ grid-template-columns:1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dh-wrap">
+    <!-- HEADER -->
+    <div class="dh-header">
+        <div>
+            <h1 class="dh-title"><i class="bi bi-speedometer2 me-2" style="color:#38bdf8"></i>Dashboard — Horas Extras</h1>
+            <p class="dh-sub">Indicadores en tiempo real del módulo de horas extras</p>
+        </div>
+        <button class="dh-btn" onclick="cargar()"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="dh-card dh-filters" style="margin-bottom:1rem">
+        <div>
+            <span class="dh-filter-lbl">Contrato</span>
+            <select id="fContrato" class="dh-select" style="min-width:200px">
+                <option value="">Todos</option>
+                {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <span class="dh-filter-lbl">Corte</span>
+            <select id="fCorte" class="dh-select" style="min-width:190px">
+                <option value="">Todos</option>
+                {% for c in cortes %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <span class="dh-filter-lbl">Mes</span>
+            <input id="fMes" type="month" class="dh-select">
+        </div>
+        <div>
+            <span class="dh-filter-lbl">Desde</span>
+            <input id="fDesde" type="date" class="dh-select">
+        </div>
+        <div>
+            <span class="dh-filter-lbl">Hasta</span>
+            <input id="fHasta" type="date" class="dh-select">
+        </div>
+        <button class="dh-btn" onclick="cargar()"><i class="bi bi-search me-1"></i>Consultar</button>
+        <button class="dh-btn-sec" onclick="limpiar()"><i class="bi bi-x me-1"></i>Limpiar</button>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="dh-kpis" id="kpiRow">
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#38bdf8">📋</div><div class="dh-kpi-val" id="k_total">—</div><div class="dh-kpi-lbl">Total registros</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#a78bfa">⏱</div><div class="dh-kpi-val" id="k_rep">—</div><div class="dh-kpi-lbl">Hrs reportadas</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#4ade80">✅</div><div class="dh-kpi-val" id="k_auth">—</div><div class="dh-kpi-lbl">Hrs autorizadas</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#f87171">❌</div><div class="dh-kpi-val" id="k_noconf">—</div><div class="dh-kpi-lbl">Hrs no conformes</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#fcd34d">💸</div><div class="dh-kpi-val" id="k_desc">—</div><div class="dh-kpi-lbl">Hrs descontadas</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#94a3b8">⏳</div><div class="dh-kpi-val" id="k_pend">—</div><div class="dh-kpi-lbl">Pendientes</div></div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="dh-grid2" style="margin-bottom:1rem">
+        <!-- Por tipo de HE -->
+        <div class="dh-card">
+            <div class="dh-card-hdr">
+                <span class="dh-card-ttl"><i class="bi bi-bar-chart-horizontal me-1"></i>Horas por tipo de HE</span>
+                <span id="topTipoTag" class="dh-top-tag" style="display:none"></span>
+            </div>
+            <div class="chart-wrap"><canvas id="chartTipo"></canvas></div>
+        </div>
+        <!-- Por día -->
+        <div class="dh-card">
+            <div class="dh-card-hdr">
+                <span class="dh-card-ttl"><i class="bi bi-graph-up me-1"></i>Horas extras por día</span>
+            </div>
+            <div class="chart-wrap"><canvas id="chartDia"></canvas></div>
+        </div>
+    </div>
+
+    <!-- LÍMITE LEGAL + SUPERVISORES -->
+    <div class="dh-grid3">
+        <!-- Límite legal 48h -->
+        <div class="dh-card">
+            <div class="dh-card-hdr">
+                <span class="dh-card-ttl"><i class="bi bi-exclamation-triangle me-1" style="color:#f87171"></i>Límite legal 48h/mes — HE puras (03,04,05,06)</span>
+            </div>
+            <div style="overflow-x:auto;max-height:320px;overflow-y:auto">
+                <table class="dh-table" id="tblLimite">
+                    <thead><tr><th>Colaborador</th><th>Contrato</th><th>Mes</th><th style="text-align:right">Hrs HE</th><th>Estado</th></tr></thead>
+                    <tbody id="tbodyLimite"><tr><td colspan="5" style="text-align:center;padding:20px;color:#475569">Sin datos</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Supervisores autorizantes -->
+        <div class="dh-card">
+            <div class="dh-card-hdr">
+                <span class="dh-card-ttl"><i class="bi bi-person-badge me-1"></i>Supervisores autorizantes</span>
+            </div>
+            <div style="overflow-x:auto;max-height:320px;overflow-y:auto">
+                <table class="dh-table" id="tblSup">
+                    <thead><tr><th>Supervisor</th><th style="text-align:right">Registros</th><th style="text-align:right">Hrs Rep.</th><th style="text-align:right">Hrs Aut.</th></tr></thead>
+                    <tbody id="tbodySup"><tr><td colspan="4" style="text-align:center;padding:20px;color:#475569">Sin datos</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let chartTipo = null, chartDia = null;
+const fmt = n => (n||0).toLocaleString('es-CO');
+
+function limpiar() {
+    ['fContrato','fCorte'].forEach(id=>document.getElementById(id).value='');
+    ['fMes','fDesde','fHasta'].forEach(id=>document.getElementById(id).value='');
+    cargar();
+}
+
+function buildParams() {
+    const p = new URLSearchParams();
+    const c = document.getElementById('fContrato').value;
+    const k = document.getElementById('fCorte').value;
+    const m = document.getElementById('fMes').value;
+    const d = document.getElementById('fDesde').value;
+    const h = document.getElementById('fHasta').value;
+    if (c) p.set('contrato_id', c);
+    if (k) p.set('corte_id', k);
+    if (m && !d && !h) p.set('mes', m);
+    if (d) p.set('fecha_desde', d);
+    if (h) p.set('fecha_hasta', h);
+    return p;
+}
+
+async function cargar() {
+    const params = buildParams();
+    const data = await fetch('/admin/api/he/dashboard-data?' + params).then(r=>r.json());
+    if (data.error) { console.error(data.error); return; }
+    renderKpis(data.kpis);
+    renderChartTipo(data.por_tipo);
+    renderChartDia(data.por_dia);
+    renderLimite(data.limite_legal);
+    renderSupervisores(data.supervisores);
+    // Top tipo
+    if (data.top_tipo) {
+        const tag = document.getElementById('topTipoTag');
+        tag.style.display = '';
+        tag.textContent = '★ Más frecuente: ' + data.top_tipo.codigo + ' (' + data.top_tipo.hrs_reportadas + 'h)';
+    }
+}
+
+function renderKpis(k) {
+    document.getElementById('k_total').textContent  = fmt(k.total);
+    document.getElementById('k_rep').textContent    = fmt(k.hrs_reportadas) + 'h';
+    document.getElementById('k_auth').textContent   = fmt(k.hrs_autorizadas) + 'h';
+    document.getElementById('k_noconf').textContent = fmt(k.hrs_no_conforme) + 'h';
+    document.getElementById('k_desc').textContent   = fmt(k.hrs_descontadas) + 'h';
+    document.getElementById('k_pend').textContent   = fmt(k.pendientes);
+}
+
+function renderChartTipo(tipos) {
+    const ctx = document.getElementById('chartTipo').getContext('2d');
+    if (chartTipo) chartTipo.destroy();
+    const labels = tipos.map(t => t.codigo + ' – ' + (t.tipo||'').slice(0,22));
+    const vals   = tipos.map(t => t.hrs_reportadas);
+    const colors = ['#38bdf8','#818cf8','#34d399','#fb923c','#f472b6','#facc15','#a78bfa'];
+    chartTipo = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Hrs reportadas', data: vals,
+            backgroundColor: tipos.map((_,i)=>colors[i%colors.length]), borderRadius: 4 }] },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10} } },
+                y: { grid: { display: false }, ticks: { color: '#94a3b8', font:{size:10} } }
+            }
+        }
+    });
+}
+
+function renderChartDia(dias) {
+    const ctx = document.getElementById('chartDia').getContext('2d');
+    if (chartDia) chartDia.destroy();
+    chartDia = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dias.map(d=>d.fecha),
+            datasets: [{
+                label: 'Horas', data: dias.map(d=>d.horas),
+                borderColor: '#38bdf8', backgroundColor: '#38bdf822',
+                fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor:'#38bdf8'
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:9}, maxTicksLimit: 12 } },
+                y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10} } }
+            }
+        }
+    });
+}
+
+function renderLimite(lista) {
+    const tbody = document.getElementById('tbodyLimite');
+    if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#4ade80"><i class="bi bi-check-circle me-1"></i>Todos dentro del límite legal</td></tr>';
+        return;
+    }
+    tbody.innerHTML = lista.map(r => {
+        const cls = r.excede ? 'alerta-row' : 'warn-row';
+        const badge = r.excede
+            ? '<span class="badge-estado" style="background:#450a0a;color:#f87171">⚠ EXCEDE 48h</span>'
+            : '<span class="badge-estado" style="background:#451a03;color:#fcd34d">⚡ En riesgo</span>';
+        return `<tr class="${cls}">
+            <td><strong>${r.nombre}</strong><br><span style="font-size:.68rem;opacity:.7">${r.cedula}</span></td>
+            <td style="font-size:.72rem">${r.contrato}</td>
+            <td style="font-size:.72rem">${r.mes}</td>
+            <td style="text-align:right;font-weight:700;font-size:.9rem">${r.horas}h</td>
+            <td>${badge}</td>
+        </tr>`;
+    }).join('');
+}
+
+function renderSupervisores(lista) {
+    const tbody = document.getElementById('tbodySup');
+    if (!lista.length) { tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:#475569">Sin datos</td></tr>'; return; }
+    tbody.innerHTML = lista.map(s=>`
+        <tr>
+            <td style="color:#e2e8f0">${s.nombre}</td>
+            <td style="text-align:right">${fmt(s.registros)}</td>
+            <td style="text-align:right;color:#a78bfa">${fmt(s.hrs_reportadas)}h</td>
+            <td style="text-align:right;color:#4ade80;font-weight:600">${fmt(s.hrs_autorizadas)}h</td>
+        </tr>`).join('');
+}
+
+// Cargar al abrir con mes actual por defecto
+const hoy = new Date();
+document.getElementById('fMes').value = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
+cargar();
+</script>
+{% endblock %}

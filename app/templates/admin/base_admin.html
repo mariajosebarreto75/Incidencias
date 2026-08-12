@@ -114,6 +114,14 @@
 
         <div class="adm-nav-section">Horas Extras</div>
 
+        <a href="{{ url_for('he_bp.he_dashboard') }}"
+           class="adm-nav-link {% if request.endpoint == 'he_bp.he_dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i> Dashboard HE
+        </a>
+        <a href="{{ url_for('admin_bp.he_dashboard_acceso') }}"
+           class="adm-nav-link {% if request.endpoint == 'admin_bp.he_dashboard_acceso' %}active{% endif %}">
+            <i class="bi bi-person-check"></i> Acceso Dashboard HE
+        </a>
         <a href="{{ url_for('admin_bp.he_kpis') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.he_kpis' %}active{% endif %}">
             <i class="bi bi-bar-chart-fill"></i> KPIs / Resumen

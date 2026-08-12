@@ -1536,6 +1536,13 @@ def api_set_contratos_usuario(id):
 # HE Configuración
 # ──────────────────────────────────────────────────────────────
 
+@admin_bp.route("/he/dashboard-acceso")
+@admin_required
+def he_dashboard_acceso():
+    usuarios = User.query.filter_by(activo=True).order_by(User.nombre_completo).all()
+    return render_template("admin/he_dashboard_acceso.html", usuarios=usuarios)
+
+
 @admin_bp.route("/he/kpis")
 @admin_required
 def he_kpis():
@@ -1559,6 +1566,130 @@ def he_registros():
     cortes    = HeCorte.query.order_by(HeCorte.fecha_inicio.desc()).all()
     return render_template("admin/he_registros.html",
                            contratos=contratos, cortes=cortes, conceptos=CONCEPTOS_HE)
+
+
+@admin_bp.route("/api/he/dashboard-data")
+@login_required
+def api_he_dashboard_data():
+    if not (current_user.rol.lower() == "admin" or current_user.tiene_permiso("dashboard_he")):
+        return jsonify({"error": "Sin permiso"}), 403
+
+    # Códigos que son HE puras (cuentan para límite legal de 48h)
+    CODIGOS_HE = {"03", "04", "05", "06"}
+
+    q = HoraExtra.query
+    contrato_id = request.args.get("contrato_id", type=int)
+    corte_id    = request.args.get("corte_id", type=int)
+    fecha_desde = request.args.get("fecha_desde", "")
+    fecha_hasta = request.args.get("fecha_hasta", "")
+    mes         = request.args.get("mes", "")
+
+    if contrato_id:
+        q = q.filter(HoraExtra.contrato_id == contrato_id)
+    if corte_id:
+        co = HeCorte.query.get(corte_id)
+        if co:
+            from sqlalchemy import or_ as sa_or
+            q = q.filter(sa_or(HoraExtra.corte_id == corte_id,
+                db.and_(HoraExtra.fecha_labor >= co.fecha_inicio, HoraExtra.fecha_labor <= co.fecha_fin)))
+    if not corte_id:
+        if fecha_desde:
+            try: q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde))
+            except Exception: pass
+        if fecha_hasta:
+            try: q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
+            except Exception: pass
+        if mes and not fecha_desde and not fecha_hasta:
+            try:
+                yr, mo = mes.split("-")
+                q = q.filter(db.extract("year", HoraExtra.fecha_labor)==int(yr),
+                              db.extract("month", HoraExtra.fecha_labor)==int(mo))
+            except Exception: pass
+
+    registros = q.order_by(HoraExtra.fecha_labor).all()
+
+    # ── KPIs ─────────────────────────────────────────────────────────────────
+    total            = len(registros)
+    hrs_reportadas   = sum(r.horas_reportadas or 0 for r in registros)
+    hrs_autorizadas  = sum((r.horas_autorizadas or 0) for r in registros if r.horas_autorizadas is not None)
+    hrs_descontadas  = sum(r.horas_autorizadas or 0 for r in registros if r.estado == "DESCONTADA")
+    hrs_no_conforme  = sum(r.horas_reportadas or 0 for r in registros if r.estado == "NO CONFORME")
+    hrs_conformes    = sum(r.horas_autorizadas or 0 for r in registros if r.estado == "CONFORME")
+    pendientes       = sum(1 for r in registros if r.estado == "PENDIENTE")
+
+    # ── Por tipo de HE ───────────────────────────────────────────────────────
+    por_tipo = {}
+    for r in registros:
+        k = r.id_concepto
+        label = CONCEPTOS_HE.get(k, k)
+        if k not in por_tipo:
+            por_tipo[k] = {"codigo": k, "tipo": label, "registros": 0,
+                           "hrs_reportadas": 0, "hrs_autorizadas": 0}
+        por_tipo[k]["registros"]      += 1
+        por_tipo[k]["hrs_reportadas"] += r.horas_reportadas or 0
+        por_tipo[k]["hrs_autorizadas"]+= r.horas_autorizadas or 0
+    tipos_lista = sorted(por_tipo.values(), key=lambda x: -x["hrs_reportadas"])
+    top_tipo = tipos_lista[0] if tipos_lista else None
+
+    # ── Horas por día ────────────────────────────────────────────────────────
+    por_dia = {}
+    for r in registros:
+        d_str = r.fecha_labor.isoformat() if r.fecha_labor else ""
+        if not d_str: continue
+        if d_str not in por_dia:
+            por_dia[d_str] = 0
+        por_dia[d_str] += r.horas_reportadas or 0
+    dias = sorted(por_dia.items())
+
+    # ── Límite legal 48h (solo HE puras 03,04,05,06) por persona/mes ────────
+    from collections import defaultdict
+    he_por_persona_mes = defaultdict(lambda: {"nombre":"","contrato":"","horas":0})
+    for r in registros:
+        if r.id_concepto not in CODIGOS_HE: continue
+        if not r.fecha_labor: continue
+        llave = (r.cedula, r.fecha_labor.strftime("%Y-%m"),
+                 r.contrato.contrato if r.contrato else "")
+        he_por_persona_mes[llave]["nombre"]   = r.nombre or r.cedula
+        he_por_persona_mes[llave]["contrato"] = r.contrato.contrato if r.contrato else ""
+        he_por_persona_mes[llave]["horas"]   += r.horas_reportadas or 0
+    limite_legal = []
+    for (ced, mes_str, contrato), info in he_por_persona_mes.items():
+        if info["horas"] >= 36:  # mostrar desde 36h (alerta 75%)
+            limite_legal.append({
+                "cedula":   ced,
+                "nombre":   info["nombre"],
+                "contrato": info["contrato"],
+                "mes":      mes_str,
+                "horas":    info["horas"],
+                "excede":   info["horas"] >= 48,
+            })
+    limite_legal.sort(key=lambda x: -x["horas"])
+
+    # ── Supervisores autorizantes ─────────────────────────────────────────────
+    sup_map = defaultdict(lambda: {"registros": 0, "hrs_reportadas": 0, "hrs_autorizadas": 0})
+    for r in registros:
+        sup = (r.autorizacion_sup or "Sin especificar").strip()
+        sup_map[sup]["registros"]      += 1
+        sup_map[sup]["hrs_reportadas"] += r.horas_reportadas or 0
+        sup_map[sup]["hrs_autorizadas"]+= r.horas_autorizadas or 0
+    supervisores = sorted(
+        [{"nombre": k, **v} for k, v in sup_map.items()],
+        key=lambda x: -x["hrs_autorizadas"]
+    )
+
+    return jsonify({
+        "kpis": {
+            "total": total, "hrs_reportadas": hrs_reportadas,
+            "hrs_autorizadas": hrs_autorizadas, "hrs_descontadas": hrs_descontadas,
+            "hrs_no_conforme": hrs_no_conforme, "hrs_conformes": hrs_conformes,
+            "pendientes": pendientes,
+        },
+        "por_tipo":      tipos_lista,
+        "top_tipo":      top_tipo,
+        "por_dia":       [{"fecha": d, "horas": h} for d, h in dias],
+        "limite_legal":  limite_legal,
+        "supervisores":  supervisores,
+    })
 
 
 @admin_bp.route("/api/he/kpis-concepto")
