@@ -769,7 +769,7 @@ function iniciarGrid() {
         copyPaste: true,
         undo: true,
         licenseKey: "non-commercial-and-evaluation",
-        afterGetColHeader: function(col, TH) { _showFilterBtnC(hot, col, TH, false); },
+        afterGetColHeader: function(col, TH) { _showFilterBtnC(hot, col, TH, false); _colorearHeaderCoor(hot, col, TH, false); },
         afterChange: function(changes, source) {
             if (!changes || source === "loadData" || source === "auto") return;
             changes.forEach(([row, col, , newVal]) => {
@@ -1147,7 +1147,7 @@ async function cargarHistorial(corteId) {
                 stretchH: "none",
                 manualColumnResize: true,
                 licenseKey: "non-commercial-and-evaluation",
-                afterGetColHeader: function(col, TH) { _showFilterBtnC(hotVal, col, TH, true); },
+                afterGetColHeader: function(col, TH) { _showFilterBtnC(hotVal, col, TH, true); _colorearHeaderCoor(hotVal, col, TH, true); },
                 afterChange: async function(changes, source) {
                     if (!changes || source === "loadData" || source === "auto") return;
                     const FIELD_MAP = {
@@ -1687,6 +1687,32 @@ function exportarExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Horas Extras");
     XLSX.writeFile(wb, "horas_extras_coordinador.xlsx");
+}
+
+// ── Colores de encabezados de columna ────────────────────────────────────────
+const _HDR_NEUTRAL_C = '#4b5563';
+const _HDR_RED_C     = '#dc2626';
+const _HDR_ORANGE_C  = '#d97706';
+const _HDR_BLUE_C    = '#0284c7';
+
+function _colorearHeaderCoor(htInst, col, TH, isVal) {
+    if (col < 0) return;
+    const phys = htInst && htInst.toPhysicalColumn ? htInst.toPhysicalColumn(col) : col;
+    let bg = _HDR_NEUTRAL_C;
+    if (isVal) {
+        // Validación: V_HRS=5, V_COMP=8, V_HAUTH=13, V_NEOAUTH=14, V_OBSNEO=15
+        if      (phys === V_HRS)                                              bg = _HDR_RED_C;
+        else if (phys === V_COMP)                                             bg = _HDR_ORANGE_C;
+        else if (phys === V_HAUTH || phys === V_NEOAUTH || phys === V_OBSNEO) bg = _HDR_BLUE_C;
+    } else {
+        // Registro: C_HRS=5, C_COMP=10
+        if      (phys === C_HRS)  bg = _HDR_RED_C;
+        else if (phys === C_COMP) bg = _HDR_ORANGE_C;
+    }
+    TH.style.background = bg;
+    TH.style.color      = '#fff';
+    TH.style.fontWeight = '700';
+    TH.style.fontSize   = '.72rem';
 }
 
 // ── Sistema filtros teal Handsontable ─────────────────────────────────────────
