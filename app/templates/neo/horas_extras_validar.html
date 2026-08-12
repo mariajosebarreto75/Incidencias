@@ -1082,25 +1082,28 @@ let _fpHot = null, _fpCol = -1, _fpSelected = new Set();
 // Inyecta botón ▾ en cada TH
 function _showFilterBtn(col, TH) {
     if (col < 0) return;
-    // Eliminar botón previo: Handsontable reutiliza TH al hacer scroll horizontal,
-    // por lo que el botón antiguo tendría el col incorrecto en su closure.
-    const old = TH.querySelector('.ht-col-filter-btn');
-    if (old) old.remove();
-    const btn = document.createElement('button');
-    btn.className = 'ht-col-filter-btn';
-    btn.innerHTML = '▾';
-    btn.title = 'Filtrar';
+    // Handsontable reutiliza TH al hacer scroll horizontal: siempre actualizar
+    // el data-col; si ya existe el botón solo actualizamos el atributo.
+    let btn = TH.querySelector('.ht-col-filter-btn');
+    if (!btn) {
+        btn = document.createElement('button');
+        btn.className = 'ht-col-filter-btn';
+        btn.innerHTML = '▾';
+        btn.title = 'Filtrar';
+        // El handler lee data-col en el momento del click → nunca queda stale
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const visCol  = parseInt(this.dataset.col);
+            const thEl    = this.closest('th');
+            const htInst  = _getHotFromTH(thEl);
+            const physCol = htInst && htInst.toPhysicalColumn ? htInst.toPhysicalColumn(visCol) : visCol;
+            _openFilterPopup(htInst || hot, physCol, this);
+        });
+        const span = TH.querySelector('.colHeader') || TH;
+        span.parentNode ? span.after(btn) : TH.appendChild(btn);
+    }
+    // Siempre sincronizar el col visual actual (crucial cuando TH es reutilizado)
     btn.setAttribute('data-col', col);
-    btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const htInst = _getHotFromTH(TH);
-        // Convertir índice visual → físico para que coincida con _fullData
-        const physCol = htInst ? (htInst.toPhysicalColumn ? htInst.toPhysicalColumn(col) : col) : col;
-        _openFilterPopup(htInst || hot, physCol, btn);
-    });
-    // Insertar junto al texto del encabezado
-    const span = TH.querySelector('.colHeader') || TH;
-    span.parentNode ? span.after(btn) : TH.appendChild(btn);
 }
 
 function _getHotFromTH(TH) {
