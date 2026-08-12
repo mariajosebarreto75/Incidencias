@@ -1,0 +1,174 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}KPIs Horas Extras{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-bar-chart-fill me-2" style="color:var(--adm-accent)"></i>KPIs — Horas Extras</h1>
+        <p class="adm-page-sub">Resumen de horas extras por contrato y estado</p>
+    </div>
+    <button class="btn-adm-primary" onclick="cargar()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+</div>
+
+<!-- FILTROS -->
+<div class="adm-card" style="margin-bottom:1rem">
+    <div style="padding:14px 20px;display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-end">
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Contrato</label>
+            <select id="fContrato" class="form-select form-select-sm" style="min-width:200px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+                <option value="">Todos</option>
+                {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Corte</label>
+            <select id="fCorte" class="form-select form-select-sm" style="min-width:200px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+                <option value="">Todos los cortes</option>
+                {% for c in cortes %}<option value="{{ c.id }}">{{ c.nombre }} ({{ c.estado }})</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Desde</label>
+            <input id="fDesde" type="date" class="form-control form-control-sm" style="background:#0f172a;color:#e2e8f0;border-color:#334155">
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Hasta</label>
+            <input id="fHasta" type="date" class="form-control form-control-sm" style="background:#0f172a;color:#e2e8f0;border-color:#334155">
+        </div>
+        <button class="btn-adm-primary" onclick="cargar()" style="align-self:flex-end"><i class="bi bi-search"></i> Consultar</button>
+        <button class="btn-adm-secondary" onclick="limpiarFiltros()" style="align-self:flex-end"><i class="bi bi-x"></i> Limpiar</button>
+    </div>
+</div>
+
+<!-- KPI CARDS -->
+<div id="kpiCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.2rem"></div>
+
+<!-- RESUMEN POR CONTRATO -->
+<div class="adm-card" style="margin-bottom:1rem">
+    <div class="adm-card-header"><span class="adm-card-title"><i class="bi bi-building me-1"></i>Resumen por contrato</span></div>
+    <div class="adm-table-wrap">
+        <table class="adm-table" id="tblResumen">
+            <thead>
+                <tr>
+                    <th>Contrato</th>
+                    <th style="text-align:right">Registros</th>
+                    <th style="text-align:right">Hrs Reportadas</th>
+                    <th style="text-align:right">Hrs Autorizadas</th>
+                    <th style="text-align:right">Conformes</th>
+                    <th style="text-align:right">No Conformes</th>
+                    <th style="text-align:right">Descontadas</th>
+                    <th style="text-align:right">Pendientes</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyResumen"><tr><td colspan="8" class="adm-empty"><i class="bi bi-hourglass"></i>Cargando...</td></tr></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- RESUMEN POR TIPO HE -->
+<div class="adm-card">
+    <div class="adm-card-header"><span class="adm-card-title"><i class="bi bi-list-ul me-1"></i>Resumen por tipo de hora extra</span></div>
+    <div class="adm-table-wrap">
+        <table class="adm-table" id="tblConcepto">
+            <thead>
+                <tr>
+                    <th>Código</th><th>Tipo</th>
+                    <th style="text-align:right">Registros</th>
+                    <th style="text-align:right">Hrs Reportadas</th>
+                    <th style="text-align:right">Hrs Autorizadas</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyConcepto"><tr><td colspan="5" class="adm-empty"><i class="bi bi-hourglass"></i>Cargando...</td></tr></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ESTADOS_COLOR = {
+    CONFORME:     '#4ade80',
+    'NO CONFORME':'#f87171',
+    DESCONTADA:   '#fcd34d',
+    PENDIENTE:    '#94a3b8'
+};
+
+function fmt(n) { return (n||0).toLocaleString('es-CO'); }
+
+function limpiarFiltros() {
+    ['fContrato','fCorte'].forEach(id => document.getElementById(id).value='');
+    ['fDesde','fHasta'].forEach(id => document.getElementById(id).value='');
+    cargar();
+}
+
+async function cargar() {
+    const params = new URLSearchParams();
+    const c = document.getElementById('fContrato').value;
+    const k = document.getElementById('fCorte').value;
+    const d = document.getElementById('fDesde').value;
+    const h = document.getElementById('fHasta').value;
+    if (c) params.set('contrato_id', c);
+    if (k) params.set('corte_id', k);
+    if (d) params.set('fecha_desde', d);
+    if (h) params.set('fecha_hasta', h);
+
+    const [kpis, resumen, conceptos] = await Promise.all([
+        fetch('/api/he/kpis?' + params).then(r=>r.json()),
+        fetch('/api/he/resumen?' + params).then(r=>r.json()),
+        fetch('/admin/api/he/kpis-concepto?' + params).then(r=>r.json()),
+    ]);
+    renderKpis(kpis);
+    renderResumen(resumen);
+    renderConceptos(Array.isArray(conceptos) ? conceptos : []);
+}
+
+function renderKpis(k) {
+    const cards = [
+        { label:'Total registros',       val: fmt(k.total),            icon:'bi-list-check',      color:'#7dd3fc' },
+        { label:'Hrs reportadas',         val: fmt(k.hrs_reportadas),   icon:'bi-clock',            color:'#a78bfa' },
+        { label:'Hrs autorizadas',        val: fmt(k.hrs_autorizadas),  icon:'bi-check-circle',     color:'#4ade80' },
+        { label:'Conformes',              val: fmt(k.conformes),        icon:'bi-patch-check-fill', color:'#4ade80' },
+        { label:'No conformes',           val: fmt(k.no_conformes),     icon:'bi-x-circle-fill',    color:'#f87171' },
+        { label:'Descontadas',            val: fmt(k.descontadas),      icon:'bi-dash-circle-fill', color:'#fcd34d' },
+        { label:'Pendientes',             val: fmt(k.pendientes),       icon:'bi-hourglass-split',  color:'#94a3b8' },
+    ];
+    document.getElementById('kpiCards').innerHTML = cards.map(c=>`
+        <div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:16px 20px">
+            <div style="color:${c.color};font-size:1.4rem;margin-bottom:4px"><i class="bi ${c.icon}"></i></div>
+            <div style="font-size:1.5rem;font-weight:700;color:#f1f5f9">${c.val}</div>
+            <div style="font-size:.75rem;color:#64748b;margin-top:2px">${c.label}</div>
+        </div>`).join('');
+}
+
+function renderResumen(data) {
+    const tbody = document.getElementById('tbodyResumen');
+    if (!data.length) { tbody.innerHTML='<tr><td colspan="8" class="adm-empty">Sin datos</td></tr>'; return; }
+    tbody.innerHTML = data.map(r=>`
+        <tr>
+            <td><strong style="color:#e2e8f0">${r.contrato}</strong></td>
+            <td style="text-align:right">${fmt(r.total)}</td>
+            <td style="text-align:right;color:#a78bfa">${fmt(r.hrs_reportadas)}</td>
+            <td style="text-align:right;color:#4ade80">${fmt(r.hrs_autorizadas)}</td>
+            <td style="text-align:right;color:#4ade80">${fmt(r.conformes)}</td>
+            <td style="text-align:right;color:#f87171">${fmt(r.no_conformes)}</td>
+            <td style="text-align:right;color:#fcd34d">${fmt(r.descontadas)}</td>
+            <td style="text-align:right;color:#94a3b8">${fmt(r.pendientes)}</td>
+        </tr>`).join('');
+}
+
+function renderConceptos(data) {
+    const tbody = document.getElementById('tbodyConcepto');
+    if (!data.length) { tbody.innerHTML='<tr><td colspan="5" class="adm-empty">Sin datos</td></tr>'; return; }
+    tbody.innerHTML = data.map(c=>`
+        <tr>
+            <td><code>${c.codigo}</code></td>
+            <td style="font-size:.8rem">${c.tipo}</td>
+            <td style="text-align:right">${fmt(c.registros)}</td>
+            <td style="text-align:right;color:#a78bfa">${fmt(c.hrs_reportadas)}</td>
+            <td style="text-align:right;color:#4ade80">${fmt(c.hrs_autorizadas)}</td>
+        </tr>`).join('');
+}
+
+cargar();
+</script>
+{% endblock %}

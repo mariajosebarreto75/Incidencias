@@ -28,7 +28,8 @@ from app.models.placa_contrato import PlacaContrato
 from app.models.user_contrato import UserContrato
 from app.models.supervisor import Supervisor
 from app.models.he_config import HeConfig
-from app.models.hora_extra import HoraExtra
+from app.models.hora_extra import HoraExtra, CONCEPTOS_HE
+from app.models.he_corte import HeCorte
 
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
@@ -1534,6 +1535,142 @@ def api_set_contratos_usuario(id):
 # ──────────────────────────────────────────────────────────────
 # HE Configuración
 # ──────────────────────────────────────────────────────────────
+
+@admin_bp.route("/he/kpis")
+@admin_required
+def he_kpis():
+    contratos = Contrato.query.order_by(Contrato.contrato).all()
+    cortes    = HeCorte.query.order_by(HeCorte.fecha_inicio.desc()).all()
+    return render_template("admin/he_kpis.html",
+                           contratos=contratos, cortes=cortes, conceptos=CONCEPTOS_HE)
+
+
+@admin_bp.route("/he/cortes")
+@admin_required
+def he_cortes():
+    contratos = Contrato.query.order_by(Contrato.contrato).all()
+    return render_template("admin/he_cortes.html", contratos=contratos)
+
+
+@admin_bp.route("/he/registros")
+@admin_required
+def he_registros():
+    contratos = Contrato.query.order_by(Contrato.contrato).all()
+    cortes    = HeCorte.query.order_by(HeCorte.fecha_inicio.desc()).all()
+    return render_template("admin/he_registros.html",
+                           contratos=contratos, cortes=cortes, conceptos=CONCEPTOS_HE)
+
+
+@admin_bp.route("/api/he/kpis-concepto")
+@admin_required
+def api_he_kpis_concepto():
+    q = HoraExtra.query
+    contrato_id = request.args.get("contrato_id", type=int)
+    corte_id    = request.args.get("corte_id", type=int)
+    fecha_desde = request.args.get("fecha_desde", "")
+    fecha_hasta = request.args.get("fecha_hasta", "")
+    if contrato_id:
+        q = q.filter(HoraExtra.contrato_id == contrato_id)
+    if corte_id:
+        corte_obj = HeCorte.query.get(corte_id)
+        if corte_obj:
+            from sqlalchemy import or_ as sa_or
+            q = q.filter(sa_or(
+                HoraExtra.corte_id == corte_id,
+                db.and_(HoraExtra.fecha_labor >= corte_obj.fecha_inicio,
+                        HoraExtra.fecha_labor <= corte_obj.fecha_fin)))
+    if fecha_desde:
+        try: q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde))
+        except Exception: pass
+    if fecha_hasta:
+        try: q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
+        except Exception: pass
+    rows = (
+        q.with_entities(
+            HoraExtra.id_concepto,
+            HoraExtra.tipo_he,
+            db.func.count(HoraExtra.id).label("cnt"),
+            db.func.coalesce(db.func.sum(HoraExtra.horas_reportadas), 0).label("hrs_rep"),
+            db.func.coalesce(db.func.sum(HoraExtra.horas_autorizadas), 0).label("hrs_auth"),
+        )
+        .group_by(HoraExtra.id_concepto, HoraExtra.tipo_he)
+        .order_by(HoraExtra.id_concepto)
+        .all()
+    )
+    return jsonify([{
+        "codigo": r.id_concepto,
+        "tipo":   r.tipo_he or CONCEPTOS_HE.get(r.id_concepto, r.id_concepto),
+        "registros":      int(r.cnt),
+        "hrs_reportadas": float(r.hrs_rep),
+        "hrs_autorizadas":float(r.hrs_auth),
+    } for r in rows])
+
+
+@admin_bp.route("/api/he/registros/export")
+@admin_required
+def api_he_registros_export():
+    import pandas as pd
+    from sqlalchemy import or_ as sa_or
+    q = HoraExtra.query
+    contrato_id = request.args.get("contrato_id", type=int)
+    corte_id    = request.args.get("corte_id", type=int)
+    estado      = request.args.get("estado", "")
+    fecha_desde = request.args.get("fecha_desde", "")
+    fecha_hasta = request.args.get("fecha_hasta", "")
+    id_concepto = request.args.get("id_concepto", "")
+    if contrato_id:
+        q = q.filter(HoraExtra.contrato_id == contrato_id)
+    if corte_id:
+        corte_obj = HeCorte.query.get(corte_id)
+        if corte_obj:
+            q = q.filter(sa_or(
+                HoraExtra.corte_id == corte_id,
+                db.and_(HoraExtra.fecha_labor >= corte_obj.fecha_inicio,
+                        HoraExtra.fecha_labor <= corte_obj.fecha_fin)))
+        else:
+            q = q.filter(HoraExtra.corte_id == corte_id)
+    if fecha_desde:
+        try: q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde))
+        except Exception: pass
+    if fecha_hasta:
+        try: q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
+        except Exception: pass
+    if estado:
+        q = q.filter(HoraExtra.estado == estado)
+    if id_concepto:
+        q = q.filter(HoraExtra.id_concepto == id_concepto)
+    registros = q.order_by(HoraExtra.fecha_labor.desc()).all()
+    rows = []
+    for r in registros:
+        rows.append({
+            "Fecha":           r.fecha_labor.isoformat() if r.fecha_labor else "",
+            "Contrato":        r.contrato.contrato if r.contrato else "",
+            "Cédula":          r.cedula,
+            "Nombre":          r.nombre or "",
+            "Recurso":         r.recurso or "",
+            "Tipo HE":         r.tipo_he or "",
+            "Hrs Reportadas":  r.horas_reportadas or 0,
+            "Hrs Autorizadas": r.horas_autorizadas if r.horas_autorizadas is not None else "",
+            "Estado":          r.estado or "",
+            "Placa":           r.placa or "",
+            "Hora Inicio":     r.hora_inicio or "",
+            "Hora Fin":        r.hora_fin or "",
+            "Supervisor":      r.autorizacion_sup or "",
+            "Justificación":   r.justificacion or "",
+            "Obs. Coordinador":r.observacion or "",
+            "Obs. NEO":        r.obs_neo or "",
+            "Reportado por":   r.reportado_por.nombre_completo if r.reportado_por else "",
+            "Fecha Reporte":   r.fecha_reporte.strftime("%Y-%m-%d %H:%M") if r.fecha_reporte else "",
+            "Validado por":    r.validado_por.nombre_completo if r.validado_por else "",
+            "Fecha Validación":r.fecha_validacion.strftime("%Y-%m-%d %H:%M") if r.fecha_validacion else "",
+        })
+    df  = pd.DataFrame(rows)
+    buf = io.BytesIO()
+    df.to_excel(buf, index=False)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name="he_registros.xlsx",
+                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
 
 @admin_bp.route("/he-configuracion")
 @admin_required

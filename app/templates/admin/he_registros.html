@@ -1,0 +1,174 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Registros HE{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-table me-2" style="color:var(--adm-accent)"></i>Registros — Horas Extras</h1>
+        <p class="adm-page-sub" id="subHeader">Todos los registros del sistema</p>
+    </div>
+    <a id="btnExport" href="#" class="btn-adm-secondary" style="text-decoration:none">
+        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </a>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<!-- FILTROS -->
+<div class="adm-card" style="margin-bottom:1rem">
+    <div style="padding:14px 20px;display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-end">
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Contrato</label>
+            <select id="fContrato" class="form-select form-select-sm" style="min-width:200px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+                <option value="">Todos</option>
+                {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Corte</label>
+            <select id="fCorte" class="form-select form-select-sm" style="min-width:200px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+                <option value="">Todos</option>
+                {% for c in cortes %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Estado</label>
+            <select id="fEstado" class="form-select form-select-sm" style="min-width:140px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+                <option value="">Todos</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="CONFORME">Conforme</option>
+                <option value="NO CONFORME">No conforme</option>
+                <option value="DESCONTADA">Descontada</option>
+            </select>
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Tipo HE</label>
+            <select id="fConcepto" class="form-select form-select-sm" style="min-width:160px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+                <option value="">Todos</option>
+                {% for cod, nom in conceptos.items() %}<option value="{{ cod }}">{{ cod }} – {{ nom[:30] }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Desde</label>
+            <input id="fDesde" type="date" class="form-control form-control-sm" style="background:#0f172a;color:#e2e8f0;border-color:#334155">
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Hasta</label>
+            <input id="fHasta" type="date" class="form-control form-control-sm" style="background:#0f172a;color:#e2e8f0;border-color:#334155">
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Buscar</label>
+            <input id="fBuscar" type="text" class="form-control form-control-sm" placeholder="Cédula o nombre..." style="min-width:160px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+        </div>
+        <button class="btn-adm-primary" onclick="cargar()" style="align-self:flex-end"><i class="bi bi-search"></i> Consultar</button>
+        <button class="btn-adm-secondary" onclick="limpiarFiltros()" style="align-self:flex-end"><i class="bi bi-x"></i> Limpiar</button>
+    </div>
+</div>
+
+<!-- TABLA -->
+<div class="adm-card">
+    <div class="adm-card-header">
+        <span class="adm-card-title"><i class="bi bi-table me-1"></i>Resultados</span>
+        <span id="cntRegistros" style="font-size:.78rem;color:#64748b;margin-left:auto"></span>
+    </div>
+    <div class="adm-table-wrap" style="max-height:65vh;overflow-y:auto">
+        <table class="adm-table" style="font-size:.78rem">
+            <thead style="position:sticky;top:0;z-index:2">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Contrato</th>
+                    <th>Cédula</th>
+                    <th>Nombre</th>
+                    <th>Recurso</th>
+                    <th>Tipo HE</th>
+                    <th style="text-align:right">Hrs Rep.</th>
+                    <th style="text-align:right">Hrs Aut.</th>
+                    <th>Estado</th>
+                    <th>Corte</th>
+                    <th>Reportado por</th>
+                    <th>Validado por</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyRegs">
+                <tr><td colspan="12" class="adm-empty"><i class="bi bi-search"></i>Aplica filtros y haz clic en Consultar</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ESTADO_COLOR = {
+    'CONFORME':    {bg:'#14532d',color:'#4ade80'},
+    'NO CONFORME': {bg:'#450a0a',color:'#f87171'},
+    'DESCONTADA':  {bg:'#451a03',color:'#fcd34d'},
+    'PENDIENTE':   {bg:'#1e293b',color:'#94a3b8'}
+};
+
+function estadoBadge(e) {
+    const s = ESTADO_COLOR[e] || ESTADO_COLOR['PENDIENTE'];
+    return `<span style="background:${s.bg};color:${s.color};padding:1px 7px;border-radius:999px;font-size:.7rem;font-weight:600;white-space:nowrap">${e}</span>`;
+}
+
+function buildParams() {
+    const p = new URLSearchParams();
+    const c = document.getElementById('fContrato').value;
+    const k = document.getElementById('fCorte').value;
+    const e = document.getElementById('fEstado').value;
+    const t = document.getElementById('fConcepto').value;
+    const d = document.getElementById('fDesde').value;
+    const h = document.getElementById('fHasta').value;
+    if (c) p.set('contrato_id', c);
+    if (k) p.set('corte_id', k);
+    if (e) p.set('estado', e);
+    if (t) p.set('id_concepto', t);
+    if (d) p.set('fecha_desde', d);
+    if (h) p.set('fecha_hasta', h);
+    return p;
+}
+
+function limpiarFiltros() {
+    ['fContrato','fCorte','fEstado','fConcepto'].forEach(id=>document.getElementById(id).value='');
+    ['fDesde','fHasta','fBuscar'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('tbodyRegs').innerHTML='<tr><td colspan="12" class="adm-empty"><i class="bi bi-search"></i>Aplica filtros y haz clic en Consultar</td></tr>';
+    document.getElementById('cntRegistros').textContent='';
+    document.getElementById('btnExport').href='#';
+}
+
+async function cargar() {
+    const tbody = document.getElementById('tbodyRegs');
+    tbody.innerHTML='<tr><td colspan="12" class="adm-empty"><i class="bi bi-hourglass-split"></i>Cargando...</td></tr>';
+    const params = buildParams();
+    document.getElementById('btnExport').href = '/admin/api/he/registros/export?' + params;
+
+    let data = await fetch('/api/he/registros?' + params).then(r=>r.json());
+    if (!Array.isArray(data)) { tbody.innerHTML='<tr><td colspan="12" class="adm-empty">Error al cargar datos</td></tr>'; return; }
+
+    // Filtro local por búsqueda (cédula/nombre)
+    const buscar = document.getElementById('fBuscar').value.trim().toLowerCase();
+    if (buscar) data = data.filter(r=>(r.cedula||'').toLowerCase().includes(buscar)||(r.nombre||'').toLowerCase().includes(buscar));
+
+    document.getElementById('cntRegistros').textContent = `${data.length.toLocaleString('es-CO')} registro(s)`;
+    document.getElementById('subHeader').textContent = `${data.length.toLocaleString('es-CO')} registro(s) encontrado(s)`;
+
+    if (!data.length) { tbody.innerHTML='<tr><td colspan="12" class="adm-empty"><i class="bi bi-inbox"></i>Sin resultados con los filtros aplicados</td></tr>'; return; }
+
+    tbody.innerHTML = data.map(r=>`
+        <tr>
+            <td style="white-space:nowrap">${r.fecha_labor||''}</td>
+            <td style="color:#7dd3fc;white-space:nowrap">${r.contrato||''}</td>
+            <td><code style="font-size:.72rem">${r.cedula||''}</code></td>
+            <td style="white-space:nowrap">${r.nombre||'<span style="color:#475569;font-style:italic">—</span>'}</td>
+            <td style="color:#64748b;white-space:nowrap;font-size:.72rem">${r.recurso||''}</td>
+            <td style="color:#94a3b8;font-size:.72rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.tipo_he||''}">${r.tipo_he||''}</td>
+            <td style="text-align:right;color:#a78bfa;font-weight:600">${r.horas_reportadas||0}</td>
+            <td style="text-align:right;color:#4ade80;font-weight:600">${r.horas_autorizadas!==null&&r.horas_autorizadas!==undefined?r.horas_autorizadas:'—'}</td>
+            <td>${estadoBadge(r.estado||'PENDIENTE')}</td>
+            <td style="color:#64748b;font-size:.72rem;white-space:nowrap">${r.corte_id?'#'+r.corte_id:''}</td>
+            <td style="color:#64748b;font-size:.72rem;white-space:nowrap">${r.reportado_por||''}</td>
+            <td style="color:#64748b;font-size:.72rem;white-space:nowrap">${r.validado_por||''}</td>
+        </tr>`).join('');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Cortes HE{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-scissors me-2" style="color:var(--adm-accent)"></i>Cortes — Horas Extras</h1>
+        <p class="adm-page-sub">Gestión de períodos de liquidación</p>
+    </div>
+    <button class="btn-adm-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoCorte">
+        <i class="bi bi-plus-lg"></i> Nuevo corte
+    </button>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<!-- FILTRO CONTRATO -->
+<div style="display:flex;gap:.8rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+    <select id="fContrato" class="form-select form-select-sm" style="max-width:260px;background:#0f172a;color:#e2e8f0;border-color:#334155" onchange="cargar()">
+        <option value="">Todos los contratos</option>
+        {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+    </select>
+    <button class="btn-adm-secondary" onclick="cargar()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+</div>
+
+<div class="adm-card">
+    <div class="adm-table-wrap">
+        <table class="adm-table" id="tblCortes">
+            <thead>
+                <tr>
+                    <th>Nombre del corte</th>
+                    <th>Contrato</th>
+                    <th>Fecha inicio</th>
+                    <th>Fecha fin</th>
+                    <th>Estado</th>
+                    <th style="text-align:right">Registros</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyCortes">
+                <tr><td colspan="7" class="adm-empty"><i class="bi bi-hourglass"></i>Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL NUEVO CORTE -->
+<div class="modal fade" id="modalNuevoCorte" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nuevo Corte</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertaNuevo" class="adm-alert"></div>
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Nombre del corte *</label>
+            <input id="ncNombre" class="form-control" placeholder="Ej: 1 Jul – 15 Jul 2025">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Fecha inicio *</label>
+            <input id="ncDesde" type="date" class="form-control">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Fecha fin *</label>
+            <input id="ncHasta" type="date" class="form-control">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Contrato (opcional — vacío = todos)</label>
+            <select id="ncContrato" class="form-select">
+              <option value="">Todos los contratos</option>
+              {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Observación</label>
+            <textarea id="ncObs" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+        <div id="ncInfo" style="display:none;background:#0a1628;border:1px solid #1e293b;border-radius:6px;padding:.8rem;margin-top:.8rem;font-size:.8rem;color:#94a3b8"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn-adm-primary" onclick="crearCorte()"><i class="bi bi-check-lg"></i> Crear corte</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR CERRAR -->
+<div class="modal fade" id="modalCerrar" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-lock me-2"></i>Cerrar corte</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:.85rem;color:#94a3b8">
+            ¿Confirmas cerrar el corte <strong id="cerrarNombre" style="color:#e2e8f0"></strong>?<br>
+            Una vez cerrado, los coordinadores necesitarán la contraseña para verlo.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-sm" style="background:#dc2626;color:#fff;border:none" onclick="confirmarCerrar()">
+            <i class="bi bi-lock-fill"></i> Cerrar corte
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _pendCerrarId = null;
+
+async function cargar() {
+    const cid = document.getElementById('fContrato').value;
+    const url = '/api/he/cortes' + (cid ? '?contrato_id='+cid : '');
+    const data = await fetch(url).then(r=>r.json());
+    renderTabla(Array.isArray(data) ? data : (data.cortes || []));
+}
+
+function estadoBadge(e) {
+    if (e === 'ABIERTO')  return '<span style="background:#14532d;color:#4ade80;padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:600">● ABIERTO</span>';
+    if (e === 'CERRADO')  return '<span style="background:#450a0a;color:#f87171;padding:2px 8px;border-radius:999px;font-size:.72rem;font-weight:600">🔒 CERRADO</span>';
+    return e;
+}
+
+function renderTabla(cortes) {
+    const tbody = document.getElementById('tbodyCortes');
+    if (!cortes.length) { tbody.innerHTML='<tr><td colspan="7" class="adm-empty"><i class="bi bi-inbox"></i>Sin cortes registrados</td></tr>'; return; }
+    tbody.innerHTML = cortes.map(c=>`
+        <tr>
+            <td><strong style="color:#e2e8f0">${c.nombre}</strong></td>
+            <td style="font-size:.78rem;color:#64748b">${c.contrato || '<em>Todos</em>'}</td>
+            <td style="font-size:.8rem">${c.fecha_inicio||''}</td>
+            <td style="font-size:.8rem">${c.fecha_fin||''}</td>
+            <td>${estadoBadge(c.estado)}</td>
+            <td style="text-align:right;font-size:.85rem">${(c.total_registros||0).toLocaleString('es-CO')}</td>
+            <td class="actions">
+                ${c.estado==='ABIERTO' ? `<button class="btn-edit" onclick="abrirCerrar(${c.id},'${(c.nombre||'').replace(/'/g,"\\'")}')"><i class="bi bi-lock"></i> Cerrar</button>` : ''}
+                <button class="btn-del" onclick="eliminarCorte(${c.id},'${(c.nombre||'').replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
+            </td>
+        </tr>`).join('');
+}
+
+async function crearCorte() {
+    const data = {
+        nombre:      document.getElementById('ncNombre').value.trim(),
+        fecha_inicio:document.getElementById('ncDesde').value,
+        fecha_fin:   document.getElementById('ncHasta').value,
+        contrato_id: document.getElementById('ncContrato').value || null,
+        observacion: document.getElementById('ncObs').value.trim()
+    };
+    if (!data.nombre || !data.fecha_inicio || !data.fecha_fin) {
+        mostrarAlerta('alertaNuevo','Nombre, fecha inicio y fecha fin son requeridos.','danger'); return;
+    }
+    const r = await apiFetch('/api/he/cortes','POST',data);
+    if (r.success || r.id) {
+        const info = document.getElementById('ncInfo');
+        info.style.display = 'block';
+        info.innerHTML = `<i class="bi bi-check-circle text-success"></i> Corte creado. Se asignaron <strong>${r.asignados||0}</strong> registros existentes dentro del período.`;
+        setTimeout(()=>{ bootstrap.Modal.getInstance(document.getElementById('modalNuevoCorte')).hide(); cargar(); },1800);
+    } else {
+        mostrarAlerta('alertaNuevo', r.mensaje||'Error al crear','danger');
+    }
+}
+
+function abrirCerrar(id, nombre) {
+    _pendCerrarId = id;
+    document.getElementById('cerrarNombre').textContent = nombre;
+    abrirModal('modalCerrar');
+}
+
+async function confirmarCerrar() {
+    const r = await apiFetch(`/api/he/cortes/${_pendCerrarId}/cerrar`,'POST',{});
+    bootstrap.Modal.getInstance(document.getElementById('modalCerrar')).hide();
+    if (r.success) { mostrarAlerta('alerta','Corte cerrado correctamente.','success'); cargar(); }
+    else mostrarAlerta('alerta', r.mensaje||'Error','danger');
+}
+
+async function eliminarCorte(id, nombre) {
+    if (!confirm(`¿Eliminar el corte "${nombre}"?\nLos registros HE quedarán sin corte asignado (no se eliminan).`)) return;
+    const r = await apiFetch(`/api/he/cortes/${id}`,'DELETE',{eliminar_registros:false});
+    if (r.success) { mostrarAlerta('alerta','Corte eliminado.','success'); cargar(); }
+    else mostrarAlerta('alerta', r.mensaje||'Error','danger');
+}
+
+cargar();
+</script>
+{% endblock %}
