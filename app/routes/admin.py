@@ -28,9 +28,27 @@ from app.models.placa_contrato import PlacaContrato
 from app.models.user_contrato import UserContrato
 from app.models.supervisor import Supervisor
 from app.models.he_config import HeConfig
+from app.models.hora_extra import HoraExtra
 
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
+
+
+def _sync_nombres_desde_personas():
+    """Rellena HoraExtra.nombre donde está vacío usando la tabla personas."""
+    personas_map = {p.Documento: p.Nombre for p in Persona.query.all()}
+    registros = HoraExtra.query.filter(
+        db.or_(HoraExtra.nombre == None, HoraExtra.nombre == "")
+    ).all()
+    actualizados = 0
+    for he in registros:
+        nombre_nuevo = personas_map.get(he.cedula)
+        if nombre_nuevo:
+            he.nombre = nombre_nuevo
+            actualizados += 1
+    if actualizados:
+        db.session.commit()
+    return actualizados
 
 
 def admin_required(f):
@@ -401,7 +419,20 @@ def api_importar_personas():
                 db.session.add(Persona(Documento=doc, Nombre=nombre, Cargo=cargo, Salario=salario))
                 insertados += 1
         db.session.commit()
-        return jsonify({"success": True, "insertados": insertados, "actualizados": actualizados})
+        nombres_sync = _sync_nombres_desde_personas()
+        return jsonify({"success": True, "insertados": insertados,
+                        "actualizados": actualizados, "nombres_sync": nombres_sync})
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"success": False, "mensaje": str(exc)}), 400
+
+
+@admin_bp.route("/api/sync-nombres", methods=["POST"])
+@admin_required
+def api_sync_nombres():
+    try:
+        count = _sync_nombres_desde_personas()
+        return jsonify({"success": True, "actualizados": count})
     except Exception as exc:
         db.session.rollback()
         return jsonify({"success": False, "mensaje": str(exc)}), 400
