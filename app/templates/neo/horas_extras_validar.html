@@ -412,6 +412,10 @@ body { background:var(--c-bg); }
                 <div class="he-kpi-val" id="hkv-total">—</div>
                 <div class="he-kpi-lbl">Total Registros</div>
             </div>
+            <div class="he-kpi-card" style="border-top:3px solid #f59e0b;background:#fffbeb;">
+                <div class="he-kpi-val" id="hkv-pendientes" style="color:#b45309;">—</div>
+                <div class="he-kpi-lbl">Pendientes por revisar</div>
+            </div>
             <div class="he-kpi-card info">
                 <div class="he-kpi-val" id="hk-hrs-rep">—</div>
                 <div class="he-kpi-lbl">Hrs Reportadas</div>
@@ -478,6 +482,7 @@ body { background:var(--c-bg); }
         <!-- KPIs cortes NEO -->
         <div class="he-kpi-row" id="cortesKpiRowNeo">
             <div class="he-kpi-card primary"><div class="he-kpi-val" id="ck-total">—</div><div class="he-kpi-lbl">Total Registros</div></div>
+            <div class="he-kpi-card" style="border-top:3px solid #f59e0b;background:#fffbeb;"><div class="he-kpi-val" id="ck-pendientes" style="color:#b45309;">—</div><div class="he-kpi-lbl">Pendientes por revisar</div></div>
             <div class="he-kpi-card info">   <div class="he-kpi-val" id="ck-hrs-rep">—</div><div class="he-kpi-lbl">Hrs Reportadas</div></div>
             <div class="he-kpi-card success"><div class="he-kpi-val" id="ck-hrs-auth">—</div><div class="he-kpi-lbl">Hrs Autorizadas</div></div>
             <div class="he-kpi-card danger"> <div class="he-kpi-val" id="ck-hrs-noauth">—</div><div class="he-kpi-lbl">Hrs No Autorizadas</div></div>
@@ -681,11 +686,12 @@ async function cargarKpisCortesNeo() {
         const url = corte ? `/api/he/kpis?corte_id=${corte}` : "/api/he/kpis";
         const r = await fetch(url);
         const d = await r.json();
-        document.getElementById("ck-total").textContent     = (d.total||0).toLocaleString("es-CO");
-        document.getElementById("ck-hrs-rep").textContent   = (+d.hrs_reportadas  ||0).toFixed(0);
-        document.getElementById("ck-hrs-auth").textContent  = (+d.hrs_autorizadas ||0).toFixed(0);
-        document.getElementById("ck-hrs-noauth").textContent= (+d.hrs_no_conformes||0).toFixed(0);
-        document.getElementById("ck-hrs-desc").textContent  = (+d.hrs_descontadas ||0).toFixed(0);
+        document.getElementById("ck-total").textContent      = (d.total||0).toLocaleString("es-CO");
+        document.getElementById("ck-pendientes").textContent = (d.pendientes||0).toLocaleString("es-CO");
+        document.getElementById("ck-hrs-rep").textContent    = (+d.hrs_reportadas  ||0).toFixed(0);
+        document.getElementById("ck-hrs-auth").textContent   = (+d.hrs_autorizadas ||0).toFixed(0);
+        document.getElementById("ck-hrs-noauth").textContent = (+d.hrs_no_conformes||0).toFixed(0);
+        document.getElementById("ck-hrs-desc").textContent   = (+d.hrs_descontadas ||0).toFixed(0);
     } catch(e) {}
 }
 
@@ -945,11 +951,12 @@ async function cargarKpisHistorial() {
         document.getElementById("hk-noconf").textContent     = d.no_conformes ?? "—";
         document.getElementById("hk-desc").textContent       = d.descontadas ?? "—";
         // Tarjetas grandes historial
-        document.getElementById("hkv-total").textContent     = (d.total || 0).toLocaleString("es-CO");
-        document.getElementById("hk-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
-        document.getElementById("hk-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
-        document.getElementById("hk-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
-        document.getElementById("hk-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
+        document.getElementById("hkv-total").textContent      = (d.total || 0).toLocaleString("es-CO");
+        document.getElementById("hkv-pendientes").textContent = (d.pendientes || 0).toLocaleString("es-CO");
+        document.getElementById("hk-hrs-rep").textContent     = (+d.hrs_reportadas   || 0).toFixed(0);
+        document.getElementById("hk-hrs-auth").textContent    = (+d.hrs_autorizadas  || 0).toFixed(0);
+        document.getElementById("hk-hrs-noconf").textContent  = (+d.hrs_no_conformes || 0).toFixed(0);
+        document.getElementById("hk-hrs-desc").textContent    = (+d.hrs_descontadas  || 0).toFixed(0);
     } catch(e) {
         ["hk-total","hk-pend","hk-conf","hk-noconf","hk-desc"].forEach(id => {
             const el = document.getElementById(id); if (el) el.textContent = "!";

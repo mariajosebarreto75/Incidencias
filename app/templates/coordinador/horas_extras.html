@@ -416,6 +416,7 @@ body { background:var(--c-bg); }
 
         <!-- Métricas de horas -->
         <div class="he-hrs-row">
+            <div class="he-hrs-card" style="border-top:2px solid #f59e0b;"><div class="hv" id="kv-pend-val" style="color:#b45309;">—</div><div class="hl">Pendientes</div></div>
             <div class="he-hrs-card"><div class="hv" id="k-hrs-rep" style="color:#0d3b66;">—</div><div class="hl">Hrs Reportadas</div></div>
             <div class="he-hrs-card"><div class="hv" id="k-hrs-conf" style="color:#22c55e;">—</div><div class="hl">Hrs Conformes</div></div>
             <div class="he-hrs-card"><div class="hv" id="k-hrs-noconf" style="color:#ef4444;">—</div><div class="hl">Hrs No Conformes</div></div>
@@ -454,6 +455,14 @@ body { background:var(--c-bg); }
             <button class="btn btn-sm btn-primary fw-semibold" onclick="abrirNuevoCorte()" style="border-radius:7px;">
                 <i class="bi bi-plus-lg me-1"></i>Nuevo corte
             </button>
+        </div>
+        <!-- KPIs resumen cortes -->
+        <div class="he-hrs-row" style="margin-bottom:18px;">
+            <div class="he-hrs-card"><div class="hv" id="coor-ck-total" style="color:#0d3b66;">—</div><div class="hl">Total Registros</div></div>
+            <div class="he-hrs-card" style="border-top:2px solid #f59e0b;"><div class="hv" id="coor-ck-pend" style="color:#b45309;">—</div><div class="hl">Pendientes</div></div>
+            <div class="he-hrs-card"><div class="hv" id="coor-ck-rep" style="color:#0ea5e9;">—</div><div class="hl">Hrs Reportadas</div></div>
+            <div class="he-hrs-card"><div class="hv" id="coor-ck-auth" style="color:#22c55e;">—</div><div class="hl">Hrs Autorizadas</div></div>
+            <div class="he-hrs-card"><div class="hv" id="coor-ck-noauth" style="color:#ef4444;">—</div><div class="hl">Hrs No Autorizadas</div></div>
         </div>
         <div id="cortesList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;">
             <div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:48px 0;">
@@ -1424,7 +1433,21 @@ async function cambiarTab(nombre, btn) {
     }
 }
 
+async function cargarKpisCortesCoor() {
+    try {
+        const cid = document.getElementById("gridContrato").value;
+        const url = cid ? `/api/he/kpis?contrato_id=${cid}` : "/api/he/kpis";
+        const d = await (await fetch(url)).json();
+        document.getElementById("coor-ck-total").textContent  = (d.total||0).toLocaleString("es-CO");
+        document.getElementById("coor-ck-pend").textContent   = (d.pendientes||0).toLocaleString("es-CO");
+        document.getElementById("coor-ck-rep").textContent    = (+d.hrs_reportadas||0).toFixed(0);
+        document.getElementById("coor-ck-auth").textContent   = (+d.hrs_autorizadas||0).toFixed(0);
+        document.getElementById("coor-ck-noauth").textContent = (+d.hrs_no_conformes||0).toFixed(0);
+    } catch(e) {}
+}
+
 async function cargarCortes() {
+    cargarKpisCortesCoor();
     const cid = document.getElementById("gridContrato").value;
     const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
     const r = await fetch(url);
@@ -1787,6 +1810,7 @@ function _actualizarKpisCoor(rows) {
     document.getElementById("k-noconf").textContent      = noconf;
     document.getElementById("k-desc").textContent        = desc;
     document.getElementById("tb-pend").textContent       = pend;
+    document.getElementById("kv-pend-val").textContent   = pend.toLocaleString("es-CO");
     document.getElementById("k-hrs-rep").textContent     = hrsRep.toFixed(0);
     document.getElementById("k-hrs-conf").textContent    = hrsConf.toFixed(0);
     document.getElementById("k-hrs-noconf").textContent  = hrsNoconf.toFixed(0);
