@@ -122,11 +122,7 @@
            class="adm-nav-link {% if request.endpoint == 'admin_bp.he_cortes' %}active{% endif %}">
             <i class="bi bi-scissors"></i> Cortes
         </a>
-        <a href="{{ url_for('admin_bp.he_registros') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.he_registros' %}active{% endif %}">
-            <i class="bi bi-table"></i> Registros HE
-        </a>
-        <a href="{{ url_for('admin_bp.he_configuracion') }}"
+<a href="{{ url_for('admin_bp.he_configuracion') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.he_configuracion' %}active{% endif %}">
             <i class="bi bi-gear"></i> Configuración HE
         </a>
