@@ -721,8 +721,17 @@ let validacionCargada = false;
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
     iniciarGrid();
-    actualizarCortesCoor();
-    cargarKpis();
+    actualizarCortesCoor().then(() => {
+        const corteAbierto = Array.isArray(_cortesCacheCoor)
+            ? _cortesCacheCoor.find(c => c.estado === "ABIERTO")
+            : null;
+        if (corteAbierto) {
+            const sel = document.getElementById("fCorte");
+            if (sel) { sel.value = String(corteAbierto.id); sincronizarFechasCoor(); }
+        }
+        cargarHistorial();
+        cargarKpis();
+    });
     const cid = document.getElementById("gridContrato").value;
     if (cid) onContratoChange();
     else cargarResumen();
