@@ -315,6 +315,22 @@ def api_eliminar_persona(id):
     return jsonify({"success": True})
 
 
+@admin_bp.route("/api/personas/bulk-delete", methods=["POST"])
+@admin_required
+def api_bulk_delete_personas():
+    data = request.get_json() or {}
+    ids = data.get("ids", [])
+    if not ids:
+        return jsonify({"success": False, "mensaje": "No se enviaron IDs"}), 400
+    try:
+        count = Persona.query.filter(Persona.id.in_(ids)).delete(synchronize_session=False)
+        db.session.commit()
+        return jsonify({"success": True, "eliminados": count})
+    except Exception as exc:
+        db.session.rollback()
+        return jsonify({"success": False, "mensaje": str(exc)}), 400
+
+
 @admin_bp.route("/api/personas/export")
 @admin_required
 def api_exportar_personas():
@@ -343,26 +359,31 @@ def api_importar_personas():
     try:
         df = pd.read_excel(io.BytesIO(archivo.read()))
         df.columns = [str(c).strip() for c in df.columns]
-        insertados = 0
-        omitidos   = 0
+        insertados  = 0
+        actualizados = 0
         for _, row in df.iterrows():
             doc    = str(row.get("Documento", "")).strip()
             nombre = str(row.get("Nombre",    "")).strip()
             cargo  = str(row.get("Cargo",     "")).strip()
             if not doc or not nombre or not cargo or doc.lower() == "nan":
                 continue
-            if Persona.query.filter_by(Documento=doc).first():
-                omitidos += 1
-                continue
             sal_raw = row.get("Salario")
             try:
                 salario = float(sal_raw) if sal_raw and not pd.isna(sal_raw) else None
             except (ValueError, TypeError):
                 salario = None
-            db.session.add(Persona(Documento=doc, Nombre=nombre, Cargo=cargo, Salario=salario))
-            insertados += 1
+            existente = Persona.query.filter_by(Documento=doc).first()
+            if existente:
+                existente.Nombre = nombre
+                existente.Cargo  = cargo
+                if salario is not None:
+                    existente.Salario = salario
+                actualizados += 1
+            else:
+                db.session.add(Persona(Documento=doc, Nombre=nombre, Cargo=cargo, Salario=salario))
+                insertados += 1
         db.session.commit()
-        return jsonify({"success": True, "insertados": insertados, "omitidos": omitidos})
+        return jsonify({"success": True, "insertados": insertados, "actualizados": actualizados})
     except Exception as exc:
         db.session.rollback()
         return jsonify({"success": False, "mensaje": str(exc)}), 400

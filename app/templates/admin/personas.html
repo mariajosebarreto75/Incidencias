@@ -25,7 +25,7 @@
 <div class="adm-card">
     <div class="adm-card-header" style="flex-wrap:wrap;gap:.6rem">
         <span class="adm-card-title">Directorio de personas</span>
-        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto">
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-left:auto;align-items:center">
             <div class="adm-search" style="min-width:190px">
                 <i class="bi bi-search"></i>
                 <input id="fNombre" type="text" placeholder="Nombre..." oninput="filtrar()" autocomplete="off">
@@ -40,16 +40,28 @@
             </div>
             <button class="btn btn-sm" style="background:#1e293b;color:#64748b;border:1px solid #334155;font-size:.75rem"
                 onclick="limpiarFiltros()"><i class="bi bi-x"></i> Limpiar</button>
+            <button id="btnEliminarSel" class="btn btn-sm" onclick="eliminarSeleccionados()"
+                style="display:none;background:#7f1d1d;color:#fca5a5;border:1px solid #991b1b;font-size:.75rem">
+                <i class="bi bi-trash"></i> Eliminar seleccionados (<span id="cntSel">0</span>)
+            </button>
         </div>
     </div>
     <div class="adm-table-wrap">
         <table class="adm-table">
             <thead>
-                <tr><th>#</th><th>Cédula</th><th>Nombre</th><th>Cargo</th><th>Salario</th><th>Acciones</th></tr>
+                <tr>
+                    <th style="width:36px;text-align:center">
+                        <input type="checkbox" id="chkAll" title="Seleccionar todos" onchange="toggleAll(this)">
+                    </th>
+                    <th>#</th><th>Cédula</th><th>Nombre</th><th>Cargo</th><th>Salario</th><th>Acciones</th>
+                </tr>
             </thead>
             <tbody id="tbody">
             {% for p in personas %}
             <tr>
+                <td style="text-align:center">
+                    <input type="checkbox" class="chk-row" data-id="{{ p.id }}" onchange="actualizarBtnSel()">
+                </td>
                 <td style="color:#94a3b8">{{ loop.index }}</td>
                 <td><code style="font-size:.78rem">{{ p.Documento }}</code></td>
                 <td>{{ p.Nombre }}</td>
@@ -73,7 +85,7 @@
                 </td>
             </tr>
             {% else %}
-            <tr><td colspan="6" class="adm-empty"><i class="bi bi-inbox"></i>Sin personas registradas</td></tr>
+            <tr><td colspan="7" class="adm-empty"><i class="bi bi-inbox"></i>Sin personas registradas</td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -150,7 +162,8 @@
         <div style="background:#0a1628;border:1px solid #1e293b;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.82rem;color:#94a3b8">
             <strong style="color:#7dd3fc"><i class="bi bi-info-circle me-1"></i>Formato del Excel:</strong>
             El archivo debe tener las columnas: <code>Documento</code>, <code>Nombre</code>, <code>Cargo</code>, <code>Salario</code> (opcional).<br>
-            Las personas que ya existan por número de documento <strong style="color:#fcd34d">serán omitidas</strong> — no se duplican ni se sobreescriben.
+            <span style="color:#4ade80"><i class="bi bi-arrow-repeat me-1"></i>Si la cédula ya existe, se <strong>actualizan</strong> Nombre y Cargo</span> — y el Salario si viene en el archivo.<br>
+            Si la cédula no existe, se <strong>inserta como nueva</strong>.
         </div>
         <div class="mb-3">
             <label class="form-label">Archivo Excel (.xlsx)</label>
@@ -177,21 +190,57 @@ function filtrar() {
     const fC = document.getElementById('fCargo').value.toLowerCase();
     document.querySelectorAll('#tbody tr').forEach(function(tr) {
         const cells = tr.querySelectorAll('td');
-        if (!cells.length) return;
-        const doc    = cells[1].textContent.toLowerCase();
-        const nombre = cells[2].textContent.toLowerCase();
-        const cargo  = cells[3].textContent.toLowerCase();
+        if (cells.length < 4) return;
+        // cols: 0=chk, 1=#, 2=cedula, 3=nombre, 4=cargo
+        const doc    = cells[2].textContent.toLowerCase();
+        const nombre = cells[3].textContent.toLowerCase();
+        const cargo  = cells[4].textContent.toLowerCase();
         tr.style.display = (
             (!fN || nombre.includes(fN)) &&
             (!fD || doc.includes(fD))    &&
             (!fC || cargo.includes(fC))
         ) ? '' : 'none';
     });
+    actualizarBtnSel();
 }
 
 function limpiarFiltros() {
     ['fNombre','fDoc','fCargo'].forEach(function(id) { document.getElementById(id).value = ''; });
     filtrar();
+}
+
+function toggleAll(chk) {
+    document.querySelectorAll('#tbody .chk-row').forEach(function(c) {
+        const tr = c.closest('tr');
+        if (tr.style.display !== 'none') c.checked = chk.checked;
+    });
+    actualizarBtnSel();
+}
+
+function actualizarBtnSel() {
+    const sel = document.querySelectorAll('#tbody .chk-row:checked').length;
+    const btn = document.getElementById('btnEliminarSel');
+    document.getElementById('cntSel').textContent = sel;
+    btn.style.display = sel > 0 ? '' : 'none';
+    // sync select-all checkbox
+    const total  = document.querySelectorAll('#tbody .chk-row').length;
+    const chkAll = document.getElementById('chkAll');
+    chkAll.indeterminate = sel > 0 && sel < total;
+    chkAll.checked = sel > 0 && sel === total;
+}
+
+async function eliminarSeleccionados() {
+    const checks = document.querySelectorAll('#tbody .chk-row:checked');
+    const ids = Array.from(checks).map(function(c) { return parseInt(c.dataset.id); });
+    if (!ids.length) return;
+    if (!confirm('¿Eliminar ' + ids.length + ' persona(s) seleccionada(s)? Esta acción no se puede deshacer.')) return;
+    const r = await apiFetch('/admin/api/personas/bulk-delete', 'POST', { ids: ids });
+    if (r.success) {
+        mostrarAlerta('alerta', 'Se eliminaron ' + r.eliminados + ' persona(s).', 'success');
+        setTimeout(function() { location.reload(); }, 1200);
+    } else {
+        mostrarAlerta('alerta', r.mensaje || 'Error al eliminar', 'danger');
+    }
 }
 
 function abrirEditar(btn) {
@@ -251,10 +300,10 @@ async function importarPersonas() {
             div.innerHTML = `
                 <div style="color:#4ade80;margin-bottom:.4rem"><i class="bi bi-check-circle me-1"></i><strong>Importación completada</strong></div>
                 <div style="color:#94a3b8">
-                    <span style="color:#4ade80">✓ Insertadas: <strong>${r.insertados}</strong></span> &nbsp;|&nbsp;
-                    <span style="color:#fcd34d">⊘ Omitidas (ya existen): <strong>${r.omitidos}</strong></span>
+                    <span style="color:#4ade80">✓ Insertadas nuevas: <strong>${r.insertados}</strong></span> &nbsp;|&nbsp;
+                    <span style="color:#7dd3fc">↻ Actualizadas: <strong>${r.actualizados}</strong></span>
                 </div>`;
-            if (r.insertados > 0) setTimeout(function() { location.reload(); }, 2000);
+            if (r.insertados > 0 || r.actualizados > 0) setTimeout(function() { location.reload(); }, 2000);
         } else {
             mostrarAlerta("alertaImport", r.mensaje || "Error en importación", "danger");
         }
