@@ -338,45 +338,26 @@ body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:1
         </a>
         {% endif %}
 
-        {# ── Si solo puede ingresar, muestra tarjetas info sobre validación ── #}
+        {# ── Si solo puede ingresar: tarjeta Cortes Pasados habilitada ── #}
         {% if puede_ingresar and not puede_validar %}
-        <div class="hub-card card-validar card-disabled">
-            <div class="hub-card-icon">
-                <i class="bi bi-patch-check"></i>
-            </div>
-            <div class="hub-card-tag">NEO</div>
-            <div class="hub-card-badge">
-                <i class="bi bi-lock"></i> Solo NEO
-            </div>
-            <div class="hub-card-title">Validar Horas</div>
-            <div class="hub-card-desc">
-                La validación de horas la realiza el equipo NEO. Una vez que envíes
-                tus registros aparecerán aquí para su revisión.
-            </div>
-            <div class="hub-card-cta">
-                <span>Sin acceso</span>
-                <i class="bi bi-lock"></i>
-            </div>
-        </div>
-
-        <div class="hub-card card-cortes card-disabled">
+        <a href="/coordinador/horas-extras?tab=cortes" class="hub-card card-cortes">
             <div class="hub-card-icon">
                 <i class="bi bi-archive"></i>
             </div>
             <div class="hub-card-tag">Histórico</div>
             <div class="hub-card-badge">
-                <i class="bi bi-lock"></i> Solo NEO
+                <i class="bi bi-person-badge"></i> Tu rol
             </div>
             <div class="hub-card-title">Cortes Pasados</div>
             <div class="hub-card-desc">
-                Acceso reservado para el equipo NEO para la revisión de períodos
-                anteriores de nómina.
+                Consulta los cortes de nómina de tus contratos y revisa los registros
+                de horas de períodos anteriores.
             </div>
             <div class="hub-card-cta">
-                <span>Sin acceso</span>
-                <i class="bi bi-lock"></i>
+                <span>Ver cortes</span>
+                <i class="bi bi-arrow-right"></i>
             </div>
-        </div>
+        </a>
         {% endif %}
 
     </div>

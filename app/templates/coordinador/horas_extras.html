@@ -661,6 +661,12 @@ let validacionCargada = false;
     const cid = document.getElementById("gridContrato").value;
     if (cid) onContratoChange();
     else cargarResumen();
+    // Abrir tab por parámetro URL (?tab=cortes)
+    const _tabParam = new URLSearchParams(window.location.search).get("tab");
+    if (_tabParam) {
+        const _tabBtn = document.querySelector(`.he-tab[onclick*="'${_tabParam}'"]`);
+        if (_tabBtn) setTimeout(() => cambiarTab(_tabParam, _tabBtn), 100);
+    }
 })();
 
 // ── Handsontable ──────────────────────────────────────────────────────────────
