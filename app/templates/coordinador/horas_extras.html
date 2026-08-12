@@ -362,6 +362,8 @@ body { background:var(--c-bg); }
                         <option value="3">3 cols</option>
                         <option value="4">4 cols</option>
                         <option value="5">5 cols</option>
+                        <option value="6">6 cols</option>
+                        <option value="7">7 cols</option>
                     </select>
                 </div>
                 <span style="font-size:.71rem;color:#6c757d;margin-left:4px;">
@@ -679,12 +681,13 @@ const CONCEPTOS   = {{ conceptos | tojson }};
 const FACTOR_HE   = { "03":1.25,"04":1.75,"05":2.05,"06":2.55,"07":0.80,"17":0.35,"19":1.15 };
 const CONCEPTO_KEYS = Object.keys(CONCEPTOS);
 // Índices columnas registro (entrada)
-const C_FECHA=0, C_CED=1, C_NOM=2, C_REC=3, C_PLACA=4, C_HINICIO=5, C_HFIN=6,
-      C_COD=7, C_TIPO=8, C_HRS=9, C_COMP=10, C_SUP=11, C_JUST=12, C_OBS=13;
+const C_FECHA=0, C_CED=1, C_NOM=2, C_REC=3, C_PLACA=4, C_HRS=5,
+      C_HINICIO=6, C_HFIN=7, C_COD=8, C_TIPO=9,
+      C_COMP=10, C_SUP=11, C_JUST=12, C_OBS=13;
 const N_COLS = 14;
 // Índices columnas validación (historial)
-const V_FECHA=0, V_CED=1, V_NOM=2, V_REC=3, V_PLACA=4, V_COD=5, V_TIPO=6,
-      V_HRS=7, V_COMP=8, V_SUP=9, V_JUST=10, V_OBS=11,
+const V_FECHA=0, V_CED=1, V_NOM=2, V_REC=3, V_PLACA=4, V_HRS=5,
+      V_COD=6, V_TIPO=7, V_COMP=8, V_SUP=9, V_JUST=10, V_OBS=11,
       V_ESTADO=12, V_HAUTH=13, V_NEOAUTH=14, V_OBSNEO=15;
 
 const FILAS = 40;
@@ -724,8 +727,8 @@ function iniciarGrid() {
         rowHeaders: true,
         colHeaders: [
             "Fecha Labor","Cédula","Nombre","Recurso",
-            "Placa","Hora Inicio","Hora Fin",
-            "Id Concepto","Tipo HE","#Hrs Reportadas","#Hrs Compensadas",
+            "Placa","#Hrs Reportadas","Hora Inicio","Hora Fin",
+            "Id Concepto","Tipo HE","#Hrs Compensadas",
             "Autorización(supervisor)","Justificación","Observación"
         ],
         columns: [
@@ -734,17 +737,17 @@ function iniciarGrid() {
             { type:"text",         readOnly:true },
             { type:"text" },
             { type:"text" },
+            { type:"numeric" },
             { type:"time", timeFormat:"HH:mm", correctFormat:true },
             { type:"time", timeFormat:"HH:mm", correctFormat:true },
             { type:"dropdown",     source: CONCEPTO_KEYS },
             { type:"text",         readOnly:true },
             { type:"numeric" },
-            { type:"numeric" },
             { type:"autocomplete", source: function(q, cb){ cb(supervisoresActuales); }, strict:false, allowInvalid:true },
             { type:"text" },
             { type:"text" },
         ],
-        colWidths: [115,105,185,135, 90,90,90, 110,200,110,110, 175,175,175],
+        colWidths: [115,105,185,135, 90,105,90,90, 110,200,110, 175,175,175],
         fixedColumnsLeft: 0,
         height: 480,
         stretchH: "none",
@@ -1078,9 +1081,9 @@ async function cargarHistorial(corteId) {
             reg.nombre || "",
             reg.recurso || "",
             reg.placa || "",
+            reg.horas_reportadas ?? "",
             reg.id_concepto || "",
             reg.tipo_he || "",
-            reg.horas_reportadas ?? "",
             reg.horas_compensadas ?? "",
             reg.autorizacion_sup || "",
             reg.justificacion || "",
@@ -1098,7 +1101,7 @@ async function cargarHistorial(corteId) {
                 rowHeaders: true,
                 colHeaders: [
                     "Fecha Labor","Cédula","Nombre","Recurso","Placa",
-                    "Id Concepto","Tipo HE","#Hrs Rep.","#Hrs Comp.",
+                    "#Hrs Rep.","Id Concepto","Tipo HE","#Hrs Comp.",
                     "Autorización Sup.","Justificación","Observación",
                     "Estado","Hrs Auth.","Auth NEO","Obs NEO","Acciones"
                 ],
@@ -1108,9 +1111,9 @@ async function cargarHistorial(corteId) {
                     { type:"text", readOnly:true },   // V_NOM
                     { type:"text" },                  // V_REC (editable PEND)
                     { type:"text" },                  // V_PLACA (editable PEND)
+                    { type:"numeric", readOnly:true },// V_HRS
                     { type:"text", readOnly:true },   // V_COD
                     { type:"text", readOnly:true },   // V_TIPO
-                    { type:"numeric", readOnly:true },// V_HRS
                     { type:"numeric" },               // V_COMP (siempre editable)
                     { type:"text" },                  // V_SUP (editable PEND)
                     { type:"text" },                  // V_JUST (editable PEND)
@@ -1127,7 +1130,7 @@ async function cargarHistorial(corteId) {
                     if (PEND_ONLY.includes(col) && estado !== "PENDIENTE") return { readOnly: true };
                     return {};
                 },
-                colWidths: [95,95,160,110,80,80,170,75,80,145,140,140,105,70,100,130,80],
+                colWidths: [95,95,160,110,80,100,80,170,75,80,145,140,140,105,70,100,130,80],
                 height: 420,
                 stretchH: "none",
                 manualColumnResize: true,

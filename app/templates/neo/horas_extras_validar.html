@@ -370,6 +370,8 @@ body { background:var(--c-bg); }
                         <option value="3">3 cols</option>
                         <option value="4">4 cols</option>
                         <option value="5">5 cols</option>
+                        <option value="6">6 cols</option>
+                        <option value="7">7 cols</option>
                     </select>
                 </div>
                 <span style="font-size:.71rem;color:#6c757d;margin-left:6px;">
@@ -637,9 +639,9 @@ body { background:var(--c-bg); }
 <script src="{{ url_for('static', filename='vendor/xlsx.full.min.js') }}"></script>
 <script>
 // Índices de columnas (orden según vista NEO)
-const C_FECHA=0, C_CONTRATO=1, C_REC=2, C_PLACA=3, C_HINICIO=4, C_HFIN=5,
-      C_CED=6, C_NOM=7, C_COD=8, C_TIPO=9,
-      C_HRS=10, C_COMP=11, C_SUP=12, C_JUST=13, C_OBS=14,
+const C_FECHA=0, C_CONTRATO=1, C_REC=2, C_PLACA=3, C_HRS=4,
+      C_HINICIO=5, C_HFIN=6, C_CED=7, C_NOM=8, C_COD=9, C_TIPO=10,
+      C_COMP=11, C_SUP=12, C_JUST=13, C_OBS=14,
       C_HAUTH=15, C_ESTADO=16, C_OBSNEO=17,
       C_FREPORTE=18, C_VALBY=19, C_VALFECHA=20;
 
@@ -731,9 +733,9 @@ function iniciarGrid() {
         data: [],
         rowHeaders: true,
         colHeaders: [
-            "Fecha Labor","Contrato","Recurso","Placa","Hora Inicio","Hora Fin",
-            "Cédula","Nombre","Id Concepto","Tipo HE",
-            "#Hrs Reportadas","#Hrs Compensadas","Autorización(supervisor)",
+            "Fecha Labor","Contrato","Recurso","Placa","#Hrs Reportadas",
+            "Hora Inicio","Hora Fin","Cédula","Nombre","Id Concepto","Tipo HE",
+            "#Hrs Compensadas","Autorización(supervisor)",
             "Justificación","Observación",
             "Hrs Autorizadas","Estado Neo","Obs Neo",
             "Fecha Reporte","Validado Por","Fecha Validación"
@@ -743,13 +745,13 @@ function iniciarGrid() {
             { type:"text", readOnly:true },   // 1  contrato
             { type:"text", readOnly:true },   // 2  recurso
             { type:"text", readOnly:true },   // 3  placa
-            { type:"text", readOnly:true },   // 4  hora_inicio
-            { type:"text", readOnly:true },   // 5  hora_fin
-            { type:"text", readOnly:true },   // 6  cedula
-            { type:"text", readOnly:true },   // 7  nombre
-            { type:"text", readOnly:true },   // 8  id_concepto
-            { type:"text", readOnly:true },   // 9  tipo_he
-            { type:"numeric", readOnly:true },// 10 horas_reportadas
+            { type:"numeric", readOnly:true },// 4  horas_reportadas
+            { type:"text", readOnly:true },   // 5  hora_inicio
+            { type:"text", readOnly:true },   // 6  hora_fin
+            { type:"text", readOnly:true },   // 7  cedula
+            { type:"text", readOnly:true },   // 8  nombre
+            { type:"text", readOnly:true },   // 9  id_concepto
+            { type:"text", readOnly:true },   // 10 tipo_he
             { type:"numeric", readOnly:true },// 11 horas_compensadas
             { type:"text", readOnly:true },   // 12 autorizacion_sup
             { type:"text", readOnly:true },   // 13 justificacion
@@ -761,7 +763,7 @@ function iniciarGrid() {
             { type:"text", readOnly:true },   // 19 validado_por
             { type:"text", readOnly:true },   // 20 fecha_validacion
         ],
-        colWidths: [105,155,125,80,90,80, 100,160,95,190, 110,115,165, 155,155, 110,120,170, 140,140,130],
+        colWidths: [105,155,125,80,110, 90,80,100,160,95,190, 115,165, 155,155, 110,120,170, 140,140,130],
         height: 520,
         stretchH: "none",
         manualColumnResize: true,
@@ -903,13 +905,13 @@ async function recargar() {
         reg.contrato,                      // 1  Contrato
         reg.recurso || "",                 // 2  Recurso
         reg.placa || "",                   // 3  Placa
-        reg.hora_inicio || "",             // 4  Hora Inicio
-        reg.hora_fin || "",                // 5  Hora Fin
-        reg.cedula,                        // 6  Cédula
-        reg.nombre || "",                  // 7  Nombre
-        reg.id_concepto,                   // 8  Id Concepto
-        reg.tipo_he || "",                 // 9  Tipo HE
-        reg.horas_reportadas,              // 10 #Hrs Reportadas
+        reg.horas_reportadas,              // 4  #Hrs Reportadas
+        reg.hora_inicio || "",             // 5  Hora Inicio
+        reg.hora_fin || "",                // 6  Hora Fin
+        reg.cedula,                        // 7  Cédula
+        reg.nombre || "",                  // 8  Nombre
+        reg.id_concepto,                   // 9  Id Concepto
+        reg.tipo_he || "",                 // 10 Tipo HE
         reg.horas_compensadas,             // 11 #Hrs Compensadas
         reg.autorizacion_sup || "",        // 12 Autorización(supervisor)
         reg.justificacion || "",           // 13 Justificación
