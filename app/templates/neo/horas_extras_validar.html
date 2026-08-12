@@ -766,7 +766,17 @@ function iniciarGrid() {
         },
         afterChange: function(changes, source) {
             if (!changes || source === "loadData") return;
-            changes.forEach(([row]) => autoGuardar(row));
+            // Sync edits back to _fullData so column filters don't overwrite user input
+            changes.forEach(([row, col, , newVal]) => {
+                const id = registrosIds[row];
+                const fi = _fullIds.indexOf(id);
+                if (fi !== -1) _fullData[fi][col] = newVal;
+            });
+            // Only trigger autoGuardar for user-editable columns (avoid cascade from setDataAtCell)
+            const EDIT_COLS = new Set([C_HAUTH, C_ESTADO, C_OBSNEO]);
+            const rows = new Set();
+            changes.forEach(([row, col]) => { if (EDIT_COLS.has(col)) rows.add(row); });
+            rows.forEach(row => autoGuardar(row));
         },
         afterGetColHeader: function(col, TH) { _showFilterBtn(col, TH); },
     });
@@ -1264,12 +1274,17 @@ function autoGuardar(row) {
             const r = await fetch(`/api/he/${id}/validar`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ autorizacion_neo: estado, horas_autorizadas: parseInt(hrs) || 0, obs_neo: obs }),
+                body: JSON.stringify({ autorizacion_neo: estado, horas_autorizadas: (hrs !== "" && hrs != null) ? parseInt(hrs) : null, obs_neo: obs }),
             });
             const d = await r.json();
             if (d.ok) {
                 hot.setDataAtCell(row, C_VALBY,    d.validado_por    || "", "auto");
                 hot.setDataAtCell(row, C_VALFECHA, d.fecha_validacion || "", "auto");
+                const _fi = _fullIds.indexOf(registrosIds[row]);
+                if (_fi !== -1) {
+                    _fullData[_fi][C_VALBY]    = d.validado_por    || "";
+                    _fullData[_fi][C_VALFECHA] = d.fecha_validacion || "";
+                }
                 cargarKpis();
             }
         } catch(e) {}
@@ -1589,7 +1604,7 @@ async function confirmarImportNeo() {
                 body: JSON.stringify({ filas: lote })
             });
             const d = await r.json();
-            console.log(`Lote ${Math.floor(i/LOTE)+1}: guardados=${d.guardados} omitidos=${d.omitidos} dup=${d.duplicados_omitidos}`, d);
+
             if (!d.ok) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-cloud-upload me-1"></i>Importar registros';

@@ -384,6 +384,13 @@ body { background:var(--c-bg); }
     <!-- ══════════════════ PANEL 2: VALIDACIÓN ══════════════════ -->
     <div class="he-panel" id="panel-validacion">
 
+        <!-- Volver a Cortes -->
+        <div style="margin-bottom:12px;">
+            <button class="btn btn-sm btn-outline-secondary" onclick="cambiarTab('cortes', document.querySelector('.he-tab[onclick*=\'cortes\']'))" style="font-size:.78rem;border-radius:7px;">
+                <i class="bi bi-arrow-left me-1"></i>Volver a Cortes
+            </button>
+        </div>
+
         <!-- Chips de filtro -->
         <div class="he-chips">
             <div class="he-chip ch-all active" onclick="filtrarChip('',this)">
@@ -1121,8 +1128,11 @@ async function cargarHistorial(corteId) {
                         [V_JUST]:"justificacion", [V_OBS]:"observacion"
                     };
                     for (const [row, col, , newVal] of changes) {
-                        if (!(col in FIELD_MAP)) continue;
+                        // Sync to _fullValData so column filters don't overwrite edits
                         const id = _currentValIds[row];
+                        const fi = _fullValIds.indexOf(id);
+                        if (fi !== -1) _fullValData[fi][col] = newVal;
+                        if (!(col in FIELD_MAP)) continue;
                         if (!id) continue;
                         try {
                             const resp = await fetch(`/api/he/${id}`, {
@@ -1392,7 +1402,13 @@ let cortesCargados = false;
 async function cambiarTab(nombre, btn) {
     document.querySelectorAll(".he-tab").forEach(t => t.classList.remove("active"));
     document.querySelectorAll(".he-panel").forEach(p => p.classList.remove("active"));
-    btn.classList.add("active");
+    // Si el panel es validación (tab oculto), marcar Cortes como activo visualmente
+    if (nombre === "validacion") {
+        const tabCortes = document.querySelector(".he-tab[onclick*=\"'cortes'\"]");
+        if (tabCortes) tabCortes.classList.add("active");
+    } else {
+        btn.classList.add("active");
+    }
     document.getElementById("panel-" + nombre).classList.add("active");
     if (nombre === "validacion" && !validacionCargada) {
         validacionCargada = true;
