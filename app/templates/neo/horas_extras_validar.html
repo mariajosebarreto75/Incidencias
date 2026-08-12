@@ -1082,7 +1082,10 @@ let _fpHot = null, _fpCol = -1, _fpSelected = new Set();
 // Inyecta botón ▾ en cada TH
 function _showFilterBtn(col, TH) {
     if (col < 0) return;
-    if (TH.querySelector('.ht-col-filter-btn')) return;
+    // Eliminar botón previo: Handsontable reutiliza TH al hacer scroll horizontal,
+    // por lo que el botón antiguo tendría el col incorrecto en su closure.
+    const old = TH.querySelector('.ht-col-filter-btn');
+    if (old) old.remove();
     const btn = document.createElement('button');
     btn.className = 'ht-col-filter-btn';
     btn.innerHTML = '▾';

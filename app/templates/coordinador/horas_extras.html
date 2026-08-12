@@ -1712,7 +1712,11 @@ function _colorearHeaderCoor(htInst, col, TH, isVal) {
 let _fpCHot = null, _fpCCol = -1, _fpCSelected = new Set(), _fpCIsVal = false;
 
 function _showFilterBtnC(htInst, col, TH, isVal) {
-    if (col < 0 || TH.querySelector('.ht-col-filter-btn')) return;
+    if (col < 0) return;
+    // Eliminar botón previo: Handsontable reutiliza TH al hacer scroll horizontal,
+    // por lo que el botón antiguo tendría el col incorrecto en su closure.
+    const _oldBtn = TH.querySelector('.ht-col-filter-btn');
+    if (_oldBtn) _oldBtn.remove();
     const btn = document.createElement('button');
     btn.className = 'ht-col-filter-btn';
     btn.innerHTML = '▾';
