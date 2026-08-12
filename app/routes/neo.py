@@ -308,10 +308,16 @@ def validar_reportes():
 
     reportes = q.order_by(ReporteOperacional.fecha_creado.desc()).all()
 
-    # Listas para los selectores de filtro (todos mis reportes, sin filtrar)
+    # Listas para los selectores de filtro — usar la misma visibilidad que el query principal
+    if asignados:
+        q_todos = ReporteOperacional.query.filter(
+            ReporteOperacional.contrato.in_(contratos_visibles)
+        )
+    else:
+        q_todos = ReporteOperacional.query.filter_by(reportado_por=current_user.username)
+
     todos = (
-        ReporteOperacional.query
-        .filter_by(reportado_por=current_user.username)
+        q_todos
         .with_entities(ReporteOperacional.contrato, ReporteOperacional.recurso)
         .distinct()
         .all()
