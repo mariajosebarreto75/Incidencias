@@ -86,7 +86,7 @@ class HoraExtra(db.Model):
             "valor_extra_nomina": float(self.valor_extra_nomina) if self.valor_extra_nomina else None,
             "valor_extra":        float(self.valor_extra) if self.valor_extra else None,
             "autorizacion_neo":   self.autorizacion_neo or "",
-            "horas_autorizadas":  int(self.horas_autorizadas) if self.horas_autorizadas else None,
+            "horas_autorizadas":  int(self.horas_autorizadas) if self.horas_autorizadas is not None else None,
             "obs_neo":            self.obs_neo or "",
             "estado":             self.estado or "PENDIENTE",
             "reportado_por":      self.reportado_por.nombre_completo if self.reportado_por else "",
