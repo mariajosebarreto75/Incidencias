@@ -1682,16 +1682,30 @@ function _actualizarKpisCoor(rows) {
         else if (est === "DESCONTADA") { desc++;   hrsDesc   += auth; }
         else                           { pend++;                      }
     }
-    document.getElementById("k-total").textContent    = total;
-    document.getElementById("k-pend").textContent     = pend;
-    document.getElementById("k-conf").textContent     = conf;
-    document.getElementById("k-noconf").textContent   = noconf;
-    document.getElementById("k-desc").textContent     = desc;
-    document.getElementById("tb-pend").textContent    = pend;
-    document.getElementById("k-hrs-rep").textContent  = hrsRep.toFixed(0);
-    document.getElementById("k-hrs-conf").textContent = hrsConf.toFixed(0);
-    document.getElementById("k-hrs-noconf").textContent = hrsNoconf.toFixed(0);
-    document.getElementById("k-hrs-desc").textContent = hrsDesc.toFixed(0);
+    // Chips y métricas del panel validación
+    document.getElementById("k-total").textContent       = total;
+    document.getElementById("k-pend").textContent        = pend;
+    document.getElementById("k-conf").textContent        = conf;
+    document.getElementById("k-noconf").textContent      = noconf;
+    document.getElementById("k-desc").textContent        = desc;
+    document.getElementById("tb-pend").textContent       = pend;
+    document.getElementById("k-hrs-rep").textContent     = hrsRep.toFixed(0);
+    document.getElementById("k-hrs-conf").textContent    = hrsConf.toFixed(0);
+    document.getElementById("k-hrs-noconf").textContent  = hrsNoconf.toFixed(0);
+    document.getElementById("k-hrs-desc").textContent    = hrsDesc.toFixed(0);
+    // Tarjetas grandes del dashboard superior
+    document.getElementById("rs-total").textContent      = total.toLocaleString("es-CO");
+    document.getElementById("rs-hrs-rep").textContent    = hrsRep.toFixed(0);
+    document.getElementById("rs-hrs-auth").textContent   = hrsConf.toFixed(0);
+    document.getElementById("rs-hrs-noauth").textContent = hrsNoconf.toFixed(0);
+    document.getElementById("rs-hrs-desc").textContent   = hrsDesc.toFixed(0);
+    // Mostrar el contenido del resumen si estaba oculto
+    const vacio    = document.getElementById("resumenVacio");
+    const contenido= document.getElementById("resumenContenido");
+    if (total > 0 && contenido) {
+        if (vacio) vacio.style.display = "none";
+        contenido.style.display = "";
+    }
 }
 
 function _refreshFilterBtnsC(htInst) {
