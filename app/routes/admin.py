@@ -358,16 +358,34 @@ def api_importar_personas():
         return jsonify({"success": False, "mensaje": "No se envió archivo"}), 400
     try:
         df = pd.read_excel(io.BytesIO(archivo.read()))
+        # Normalizar columnas: quitar espacios y pasar a minúsculas para búsqueda
+        col_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
         df.columns = [str(c).strip() for c in df.columns]
+        # Aliases aceptados por columna (en minúsculas)
+        def _col(aliases):
+            for a in aliases:
+                if a in col_map:
+                    return col_map[a]
+            return None
+        col_doc    = _col(["documento", "cedula", "cédula", "doc", "id"])
+        col_nombre = _col(["nombre", "nombre completo", "name"])
+        col_cargo  = _col(["cargo", "posicion", "posición", "position"])
+        col_sal    = _col(["salario", "sueldo", "salary"])
+        if not col_doc or not col_nombre or not col_cargo:
+            cols_found = list(df.columns)
+            return jsonify({"success": False,
+                "mensaje": f"No se encontraron las columnas requeridas. Columnas en el archivo: {cols_found}. "
+                           f"Se esperan: Documento (o Cedula), Nombre, Cargo."}), 400
         insertados  = 0
         actualizados = 0
         for _, row in df.iterrows():
-            doc    = str(row.get("Documento", "")).strip()
-            nombre = str(row.get("Nombre",    "")).strip()
-            cargo  = str(row.get("Cargo",     "")).strip()
-            if not doc or not nombre or not cargo or doc.lower() == "nan":
+            doc    = str(row.get(col_doc,    "")).strip()
+            nombre = str(row.get(col_nombre, "")).strip()
+            cargo  = str(row.get(col_cargo,  "")).strip()
+            if not doc or not nombre or not cargo or doc.lower() == "nan" \
+               or nombre.lower() == "nan" or cargo.lower() == "nan":
                 continue
-            sal_raw = row.get("Salario")
+            sal_raw = row.get(col_sal) if col_sal else None
             try:
                 salario = float(sal_raw) if sal_raw and not pd.isna(sal_raw) else None
             except (ValueError, TypeError):

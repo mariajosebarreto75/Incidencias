@@ -161,9 +161,10 @@
         <div id="alertaImport" class="adm-alert"></div>
         <div style="background:#0a1628;border:1px solid #1e293b;border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.82rem;color:#94a3b8">
             <strong style="color:#7dd3fc"><i class="bi bi-info-circle me-1"></i>Formato del Excel:</strong>
-            El archivo debe tener las columnas: <code>Documento</code>, <code>Nombre</code>, <code>Cargo</code>, <code>Salario</code> (opcional).<br>
-            <span style="color:#4ade80"><i class="bi bi-arrow-repeat me-1"></i>Si la cédula ya existe, se <strong>actualizan</strong> Nombre y Cargo</span> — y el Salario si viene en el archivo.<br>
-            Si la cédula no existe, se <strong>inserta como nueva</strong>.
+            Columnas requeridas: <code>Documento</code> (o <code>Cedula</code>), <code>Nombre</code>, <code>Cargo</code>. Opcional: <code>Salario</code>.<br>
+            Los nombres de columna pueden estar en mayúsculas o minúsculas.<br>
+            <span style="color:#4ade80"><i class="bi bi-arrow-repeat me-1"></i>Si la cédula ya existe → se <strong>actualizan</strong> Nombre y Cargo</span> (y Salario si viene).<br>
+            Si la cédula no existe → se <strong>inserta como nueva</strong>.
         </div>
         <div class="mb-3">
             <label class="form-label">Archivo Excel (.xlsx)</label>
