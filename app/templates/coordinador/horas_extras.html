@@ -396,10 +396,13 @@ body { background:var(--c-bg); }
     <div class="he-panel" id="panel-validacion">
 
         <!-- Volver a Cortes -->
-        <div style="margin-bottom:12px;">
+        <div style="margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <button class="btn btn-sm btn-outline-secondary" onclick="cambiarTab('cortes', document.querySelector('.he-tab[onclick*=\'cortes\']'))" style="font-size:.78rem;border-radius:7px;">
                 <i class="bi bi-arrow-left me-1"></i>Volver a Cortes
             </button>
+            <div id="bannerCorteCerrado" style="display:none;align-items:center;gap:6px;background:#fff3cd;border:1px solid #ffc107;border-radius:7px;padding:5px 12px;font-size:.78rem;color:#856404;font-weight:600;">
+                <i class="bi bi-lock-fill"></i> Corte cerrado — solo visualización, no se puede editar ni eliminar
+            </div>
         </div>
 
         <!-- Chips de filtro -->
@@ -707,6 +710,7 @@ let _fullValData = [], _fullValIds = [], _htValFilters = {};
 let _fullRegData = [], _htRegFilters = {};
 let _regSortState = null;  // {col, dir:'asc'|'desc'} o null
 let _valSortState = null;
+let _corteActualEstado = "ABIERTO"; // estado del corte visible en validación
 let cedulaTimers = {};
 let salariosPorFila = {};
 let supervisoresActuales = [];
@@ -1058,6 +1062,8 @@ function accionRendererCoor(instance, td, row, col, prop, value) {
     const estado = (hotVal ? hotVal.getDataAtCell(row, V_ESTADO) : "") || "";
     td.innerHTML = "";
     if (!id) return;
+    // Corte cerrado → solo lectura, sin botones de edición ni eliminación
+    if (_corteActualEstado === "CERRADO") return;
     if (estado === "PENDIENTE") {
         const btnE = document.createElement("button");
         btnE.innerHTML = '<i class="bi bi-pencil"></i>';
@@ -1137,6 +1143,8 @@ async function cargarHistorial(corteId) {
                     { data: 16, renderer: accionRendererCoor, readOnly:true, width:80 },
                 ],
                 cells: function(row, col) {
+                    // Corte cerrado → todo de solo lectura
+                    if (_corteActualEstado === "CERRADO") return { readOnly: true };
                     const estado = (hotVal ? hotVal.getDataAtCell(row, V_ESTADO) : "") || "";
                     const PEND_ONLY = [V_REC, V_PLACA, V_SUP, V_JUST];
                     if (PEND_ONLY.includes(col) && estado !== "PENDIENTE") return { readOnly: true };
@@ -1545,7 +1553,8 @@ async function cerrarCorte(id) {
     else mostrarToast(d.msg || "Error","danger");
 }
 
-async function _abrirCorteEnValidacion(id, nombre) {
+async function _abrirCorteEnValidacion(id, nombre, estado) {
+    _corteActualEstado = estado || "ABIERTO";
     validacionCargada = true;
     const tab = document.getElementById("tabValidacion");
     cambiarTab("validacion", tab);
@@ -1553,7 +1562,10 @@ async function _abrirCorteEnValidacion(id, nombre) {
     const sel = document.getElementById("fCorte");
     if (sel) { sel.value = String(id); sincronizarFechasCoor(); }
     cargarHistorial(id);
-    mostrarToast(`Mostrando corte: ${nombre}`, "success");
+    // Indicador visual de solo lectura cuando el corte está cerrado
+    const banner = document.getElementById("bannerCorteCerrado");
+    if (banner) banner.style.display = (_corteActualEstado === "CERRADO") ? "flex" : "none";
+    mostrarToast(`Mostrando corte: ${nombre}${_corteActualEstado === "CERRADO" ? " (solo lectura)" : ""}`, "success");
 }
 
 async function verCorte(id, nombre, estado) {
@@ -1566,23 +1578,24 @@ async function verCorte(id, nombre, estado) {
         });
         const checkD = await check.json();
         if (checkD.ok) {
-            // Sin contraseña configurada, acceso libre
-            await _abrirCorteEnValidacion(id, nombre);
+            // Sin contraseña configurada, acceso libre pero sigue siendo solo lectura
+            await _abrirCorteEnValidacion(id, nombre, estado);
             return;
         }
         // Mostrar modal de contraseña
-        _pendCorteId   = id;
-        _pendCorteNom  = nombre;
+        _pendCorteId    = id;
+        _pendCorteNom   = nombre;
+        _pendCorteEstado = estado;
         document.getElementById("inpCorteClave").value = "";
         document.getElementById("errCorteClave").style.display = "none";
         document.getElementById("modalCorteClave").classList.add("open");
         setTimeout(() => document.getElementById("inpCorteClave").focus(), 120);
     } else {
-        await _abrirCorteEnValidacion(id, nombre);
+        await _abrirCorteEnValidacion(id, nombre, estado);
     }
 }
 
-let _pendCorteId = null, _pendCorteNom = "";
+let _pendCorteId = null, _pendCorteNom = "", _pendCorteEstado = "ABIERTO";
 
 async function confirmarClaveCorre() {
     const clave = document.getElementById("inpCorteClave").value;
@@ -1594,7 +1607,7 @@ async function confirmarClaveCorre() {
     const d = await r.json();
     if (d.ok) {
         cerrarModal("modalCorteClave");
-        await _abrirCorteEnValidacion(_pendCorteId, _pendCorteNom);
+        await _abrirCorteEnValidacion(_pendCorteId, _pendCorteNom, _pendCorteEstado);
     } else {
         const err = document.getElementById("errCorteClave");
         err.textContent = "Contraseña incorrecta";
