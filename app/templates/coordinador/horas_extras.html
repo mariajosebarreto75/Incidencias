@@ -1448,11 +1448,39 @@ async function cambiarTab(nombre, btn) {
     document.getElementById("panel-" + nombre).classList.add("active");
     if (nombre === "validacion" && !validacionCargada) {
         validacionCargada = true;
-        cargarHistorial();
+        autoCargarCorteActual();
     }
     if (nombre === "cortes" && !cortesCargados) {
         cortesCargados = true;
         cargarCortes();
+    }
+}
+
+async function autoCargarCorteActual() {
+    try {
+        const cid = document.getElementById("gridContrato").value;
+        const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
+        const cortes = await fetch(url).then(r => r.json()).catch(() => []);
+        const corteAbierto = Array.isArray(cortes) ? cortes.find(c => c.estado === "ABIERTO") : null;
+        if (corteAbierto) {
+            _corteActualEstado = "ABIERTO";
+            await actualizarCortesCoor();
+            const sel = document.getElementById("fCorte");
+            if (sel) { sel.value = String(corteAbierto.id); sincronizarFechasCoor(); }
+            const banner = document.getElementById("bannerCorteCerrado");
+            if (banner) banner.style.display = "none";
+            cargarHistorial(corteAbierto.id);
+        } else {
+            // No hay corte abierto → tabla vacía lista para el próximo corte
+            _corteActualEstado = "ABIERTO";
+            const banner = document.getElementById("bannerCorteCerrado");
+            if (banner) banner.style.display = "none";
+            _fullValData = [];
+            _fullValIds  = [];
+            if (hotVal) hotVal.loadData([]);
+        }
+    } catch(e) {
+        cargarHistorial();
     }
 }
 
