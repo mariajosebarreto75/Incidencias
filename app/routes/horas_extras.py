@@ -10,6 +10,7 @@ from app.models.persona import Persona
 from app.models.user_contrato import UserContrato
 from app.models.supervisor import Supervisor
 from app.models.he_corte import HeCorte
+from app.models.he_config import HeConfig
 
 he_bp = Blueprint("he_bp", __name__)
 
@@ -741,6 +742,18 @@ def api_he_cortes_eliminar(corte_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"ok": False, "error": str(e), "trace": traceback.format_exc()}), 500
+
+
+@he_bp.route("/api/he/config/verificar-clave", methods=["POST"])
+@login_required
+def api_he_verificar_clave():
+    d = request.get_json() or {}
+    clave_enviada = d.get("clave", "")
+    password_guardada = HeConfig.get("password_corte_cerrado", "")
+    if not password_guardada:
+        return jsonify({"ok": True})  # sin contraseña configurada = libre
+    ok = clave_enviada == password_guardada
+    return jsonify({"ok": ok})
 
 
 @he_bp.route("/api/he/cortes/<int:corte_id>")

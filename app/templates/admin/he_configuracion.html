@@ -1,0 +1,82 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Configuración Horas Extras{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-gear-fill me-2" style="color:var(--adm-accent)"></i>Configuración Horas Extras</h1>
+        <p class="adm-page-sub">Parámetros globales del módulo de Horas Extras</p>
+    </div>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<div class="adm-card" style="max-width:560px;">
+    <div class="adm-card-header">
+        <span class="adm-card-title"><i class="bi bi-lock me-1"></i>Seguridad de Cortes</span>
+    </div>
+    <div style="padding:20px 24px;">
+        <label class="form-label fw-semibold" style="font-size:.85rem;">
+            Contraseña para ver cortes cerrados
+        </label>
+        <p style="font-size:.78rem;color:#6c757d;margin-bottom:10px;">
+            Los coordinadores deberán ingresar esta contraseña para acceder a los registros de un corte cerrado.
+            Deje en blanco para no solicitar contraseña.
+        </p>
+        <div class="input-group mb-3">
+            <input type="password" id="inpPassword" class="form-control" style="font-size:.85rem;"
+                   placeholder="••••••••"
+                   value="{{ config.password_corte_cerrado }}">
+            <button class="btn btn-outline-secondary" type="button" onclick="toggleVer()" style="font-size:.82rem;">
+                <i class="bi bi-eye" id="eyeIcon"></i>
+            </button>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn-adm-primary" onclick="guardar()">
+                <i class="bi bi-check-lg"></i> Guardar
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="limpiar()" style="font-size:.82rem;">
+                <i class="bi bi-x-lg"></i> Quitar contraseña
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleVer() {
+    const inp = document.getElementById("inpPassword");
+    const ico = document.getElementById("eyeIcon");
+    if (inp.type === "password") {
+        inp.type = "text";
+        ico.className = "bi bi-eye-slash";
+    } else {
+        inp.type = "password";
+        ico.className = "bi bi-eye";
+    }
+}
+
+function limpiar() {
+    document.getElementById("inpPassword").value = "";
+}
+
+async function guardar() {
+    const val = document.getElementById("inpPassword").value;
+    const r = await fetch("/admin/api/he/config", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({clave: "password_corte_cerrado", valor: val})
+    });
+    const d = await r.json();
+    const div = document.getElementById("alerta");
+    if (d.success) {
+        div.className = "adm-alert adm-alert-ok";
+        div.textContent = val ? "Contraseña guardada correctamente." : "Contraseña eliminada. Acceso libre.";
+    } else {
+        div.className = "adm-alert adm-alert-err";
+        div.textContent = d.mensaje || "Error al guardar.";
+    }
+    div.style.display = "block";
+    setTimeout(() => { div.style.display = "none"; }, 3500);
+}
+</script>
+{% endblock %}

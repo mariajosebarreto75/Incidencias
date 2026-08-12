@@ -27,6 +27,7 @@ from app.models.recurso_contrato import RecursoContrato
 from app.models.placa_contrato import PlacaContrato
 from app.models.user_contrato import UserContrato
 from app.models.supervisor import Supervisor
+from app.models.he_config import HeConfig
 
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
@@ -1458,3 +1459,29 @@ def api_set_contratos_usuario(id):
         db.session.add(UserContrato(user_id=id, contrato=contrato))
     db.session.commit()
     return jsonify({"success": True, "guardados": len(nuevos)})
+
+
+# ──────────────────────────────────────────────────────────────
+# HE Configuración
+# ──────────────────────────────────────────────────────────────
+
+@admin_bp.route("/he-configuracion")
+@admin_required
+def he_configuracion():
+    config = {
+        "password_corte_cerrado": HeConfig.get("password_corte_cerrado", ""),
+    }
+    return render_template("admin/he_configuracion.html", config=config)
+
+
+@admin_bp.route("/api/he/config", methods=["POST"])
+@admin_required
+def api_he_config_guardar():
+    d = request.get_json() or {}
+    clave  = (d.get("clave") or "").strip()
+    valor  = (d.get("valor") or "")
+    claves_permitidas = {"password_corte_cerrado"}
+    if clave not in claves_permitidas:
+        return jsonify({"success": False, "mensaje": "Clave no permitida"}), 400
+    HeConfig.set(clave, valor)
+    return jsonify({"success": True})

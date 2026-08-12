@@ -112,6 +112,13 @@
             <i class="bi bi-building"></i> Recursos NEO
         </a>
 
+        <div class="adm-nav-section">Horas Extras</div>
+
+        <a href="{{ url_for('admin_bp.he_configuracion') }}"
+           class="adm-nav-link {% if request.endpoint == 'admin_bp.he_configuracion' %}active{% endif %}">
+            <i class="bi bi-gear"></i> Configuración HE
+        </a>
+
     </nav>
 
     <div class="adm-footer">

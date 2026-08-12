@@ -285,12 +285,12 @@ body { background:var(--c-bg); }
             <button class="he-tab active" onclick="cambiarTab('registro',this)">
                 <i class="bi bi-pencil-square"></i> Registro de Horas
             </button>
-            <button class="he-tab" onclick="cambiarTab('validacion',this)">
-                <i class="bi bi-clipboard2-check"></i> Validación
-                <span class="tab-badge" id="tb-pend">—</span>
-            </button>
             <button class="he-tab" onclick="cambiarTab('cortes',this)">
                 <i class="bi bi-archive"></i> Cortes
+            </button>
+            <button id="tabValidacion" class="he-tab" onclick="cambiarTab('validacion',this)" style="display:none;">
+                <i class="bi bi-clipboard2-check"></i> Validación
+                <span class="tab-badge" id="tb-pend">—</span>
             </button>
         </div>
     </div>
@@ -593,6 +593,32 @@ body { background:var(--c-bg); }
   </div>
 </div>
 <datalist id="supList"></datalist>
+
+<!-- ── Modal Clave Corte Cerrado ── -->
+<div class="he-modal-overlay" id="modalCorteClave">
+  <div class="he-modal" style="max-width:380px;width:96%;">
+    <div class="he-modal-header" style="background:#0d3b66;">
+      <i class="bi bi-lock-fill"></i>
+      <h6>Corte cerrado — ingrese la contraseña</h6>
+      <button onclick="cerrarModal('modalCorteClave')">&times;</button>
+    </div>
+    <div class="he-modal-body" style="padding:20px;">
+      <p style="font-size:.83rem;color:#6c757d;margin-bottom:12px;">
+        Este corte está cerrado. Para ver sus registros ingrese la contraseña de acceso.
+      </p>
+      <input type="password" id="inpCorteClave" class="form-control form-control-sm mb-1"
+             placeholder="Contraseña"
+             onkeydown="if(event.key==='Enter') confirmarClaveCorre()">
+      <div id="errCorteClave" style="display:none;color:#dc3545;font-size:.78rem;margin-top:4px;"></div>
+    </div>
+    <div class="he-modal-footer" style="padding:12px 20px;">
+      <button class="btn btn-sm btn-secondary" onclick="cerrarModal('modalCorteClave')">Cancelar</button>
+      <button class="btn btn-sm btn-primary" onclick="confirmarClaveCorre()">
+        <i class="bi bi-unlock me-1"></i>Acceder
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Modal Duplicados ── -->
 <div class="he-modal-overlay" id="modalDuplicados" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;">
@@ -1184,7 +1210,7 @@ function cerrarModal(id) {
     document.getElementById(id).classList.remove("open");
 }
 document.addEventListener("click", e => {
-    ["modalEditar","modalImportar","modalNuevoCorte"].forEach(id => {
+    ["modalEditar","modalImportar","modalNuevoCorte","modalCorteClave"].forEach(id => {
         const el = document.getElementById(id);
         if (el && e.target === el) el.classList.remove("open");
     });
@@ -1402,7 +1428,7 @@ async function cargarCortes() {
             </div>
             ${c.estado === "CERRADO" ? `<div class="corte-card-meta"><i class="bi bi-person-check me-1"></i>Cerrado por ${c.cerrado_por} el ${c.fecha_cierre}</div>` : ""}
             <div style="display:flex;gap:6px;margin-top:4px;">
-                <button onclick="verCorte(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
+                <button onclick="verCorte(${c.id},'${c.nombre}','${c.estado}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-eye me-1"></i>Ver registros</button>
             </div>
         </div>`).join("");
@@ -1461,17 +1487,61 @@ async function cerrarCorte(id) {
     else mostrarToast(d.msg || "Error","danger");
 }
 
-async function verCorte(id, nombre) {
-    // Marcar como cargado ANTES de cambiarTab para que no dispare cargarHistorial() sin id
+async function _abrirCorteEnValidacion(id, nombre) {
     validacionCargada = true;
-    const tab = document.querySelector(".he-tab:nth-child(2)");
+    const tab = document.getElementById("tabValidacion");
     cambiarTab("validacion", tab);
-    // Actualizar selector de corte
     await actualizarCortesCoor();
     const sel = document.getElementById("fCorte");
     if (sel) { sel.value = String(id); sincronizarFechasCoor(); }
     cargarHistorial(id);
     mostrarToast(`Mostrando corte: ${nombre}`, "success");
+}
+
+async function verCorte(id, nombre, estado) {
+    if (estado === "CERRADO") {
+        // Verificar si hay contraseña configurada
+        const check = await fetch("/api/he/config/verificar-clave", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({clave: ""})
+        });
+        const checkD = await check.json();
+        if (checkD.ok) {
+            // Sin contraseña configurada, acceso libre
+            await _abrirCorteEnValidacion(id, nombre);
+            return;
+        }
+        // Mostrar modal de contraseña
+        _pendCorteId   = id;
+        _pendCorteNom  = nombre;
+        document.getElementById("inpCorteClave").value = "";
+        document.getElementById("errCorteClave").style.display = "none";
+        document.getElementById("modalCorteClave").classList.add("open");
+        setTimeout(() => document.getElementById("inpCorteClave").focus(), 120);
+    } else {
+        await _abrirCorteEnValidacion(id, nombre);
+    }
+}
+
+let _pendCorteId = null, _pendCorteNom = "";
+
+async function confirmarClaveCorre() {
+    const clave = document.getElementById("inpCorteClave").value;
+    const r = await fetch("/api/he/config/verificar-clave", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({clave})
+    });
+    const d = await r.json();
+    if (d.ok) {
+        cerrarModal("modalCorteClave");
+        await _abrirCorteEnValidacion(_pendCorteId, _pendCorteNom);
+    } else {
+        const err = document.getElementById("errCorteClave");
+        err.textContent = "Contraseña incorrecta";
+        err.style.display = "block";
+    }
 }
 
 async function confirmarImport() {
