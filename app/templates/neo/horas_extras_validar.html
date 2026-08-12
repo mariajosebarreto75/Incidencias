@@ -281,6 +281,10 @@ body { background:var(--c-bg); }
                 <div class="he-kpi-val" id="kv-total">—</div>
                 <div class="he-kpi-lbl">Total Registros</div>
             </div>
+            <div class="he-kpi-card" style="border-top:3px solid #f59e0b;background:#fffbeb;">
+                <div class="he-kpi-val" id="kv-pendientes" style="color:#b45309;">—</div>
+                <div class="he-kpi-lbl">Pendientes por revisar</div>
+            </div>
             <div class="he-kpi-card info">
                 <div class="he-kpi-val" id="kv-hrs-rep">—</div>
                 <div class="he-kpi-lbl">Hrs Reportadas</div>
@@ -1237,6 +1241,7 @@ function _actualizarKpisDesdeFiltered(rows) {
     document.getElementById("k-desc").textContent        = desc;
     document.getElementById("tb-pend").textContent       = pend;
     document.getElementById("kv-total").textContent      = total.toLocaleString("es-CO");
+    document.getElementById("kv-pendientes").textContent = pend.toLocaleString("es-CO");
     document.getElementById("kv-hrs-rep").textContent    = hrsRep.toFixed(0);
     document.getElementById("kv-hrs-auth").textContent   = hrsAuth.toFixed(0);
     document.getElementById("kv-hrs-noconf").textContent = hrsNoconf.toFixed(0);
@@ -1318,11 +1323,12 @@ async function cargarKpis() {
         document.getElementById("k-desc").textContent       = d.descontadas ?? "—";
         document.getElementById("tb-pend").textContent      = d.pendientes ?? "—";
         // Tarjetas grandes
-        document.getElementById("kv-total").textContent     = (d.total || 0).toLocaleString("es-CO");
-        document.getElementById("kv-hrs-rep").textContent   = (+d.hrs_reportadas   || 0).toFixed(0);
-        document.getElementById("kv-hrs-auth").textContent  = (+d.hrs_autorizadas  || 0).toFixed(0);
-        document.getElementById("kv-hrs-noconf").textContent= (+d.hrs_no_conformes || 0).toFixed(0);
-        document.getElementById("kv-hrs-desc").textContent  = (+d.hrs_descontadas  || 0).toFixed(0);
+        document.getElementById("kv-total").textContent      = (d.total || 0).toLocaleString("es-CO");
+        document.getElementById("kv-pendientes").textContent = (d.pendientes || 0).toLocaleString("es-CO");
+        document.getElementById("kv-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
+        document.getElementById("kv-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
+        document.getElementById("kv-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
+        document.getElementById("kv-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
         // Desglose por concepto (solo si hay contrato_id)
         if (cid) {
             try {

@@ -308,6 +308,10 @@ body { background:var(--c-bg); }
                     <div class="he-stat-val" id="rs-total">—</div>
                     <div class="he-stat-lbl">Total Registros</div>
                 </div>
+                <div class="he-stat-card warning">
+                    <div class="he-stat-val" id="rs-pendientes">—</div>
+                    <div class="he-stat-lbl">Pendientes por revisar</div>
+                </div>
                 <div class="he-stat-card info">
                     <div class="he-stat-val" id="rs-hrs-rep">—</div>
                     <div class="he-stat-lbl">Hrs Reportadas</div>
@@ -320,8 +324,8 @@ body { background:var(--c-bg); }
                     <div class="he-stat-val" id="rs-hrs-noauth">—</div>
                     <div class="he-stat-lbl">Hrs No Autorizadas</div>
                 </div>
-                <div class="he-stat-card warning">
-                    <div class="he-stat-val" id="rs-hrs-desc">—</div>
+                <div class="he-stat-card warning" style="border-top-color:#8b5cf6;">
+                    <div class="he-stat-val" id="rs-hrs-desc" style="color:#5b21b6;">—</div>
                     <div class="he-stat-lbl">Hrs Descontadas</div>
                 </div>
             </div>
@@ -1789,6 +1793,7 @@ function _actualizarKpisCoor(rows) {
     document.getElementById("k-hrs-desc").textContent    = hrsDesc.toFixed(0);
     // Tarjetas grandes del dashboard superior
     document.getElementById("rs-total").textContent      = total.toLocaleString("es-CO");
+    document.getElementById("rs-pendientes").textContent = pend.toLocaleString("es-CO");
     document.getElementById("rs-hrs-rep").textContent    = hrsRep.toFixed(0);
     document.getElementById("rs-hrs-auth").textContent   = hrsConf.toFixed(0);
     document.getElementById("rs-hrs-noauth").textContent = hrsNoconf.toFixed(0);
