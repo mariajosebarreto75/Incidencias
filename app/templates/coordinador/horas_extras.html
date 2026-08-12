@@ -1068,7 +1068,7 @@ async function cargarHistorial(corteId) {
                     { type:"numeric", readOnly:true },// V_HAUTH
                     { type:"text", readOnly:true },   // V_NEOAUTH
                     { type:"text", readOnly:true },   // V_OBSNEO
-                    { data: null, renderer: accionRendererCoor, readOnly:true, width:80 },
+                    { data: 16, renderer: accionRendererCoor, readOnly:true, width:80 },
                 ],
                 cells: function(row, col) {
                     const estado = (hotVal ? hotVal.getDataAtCell(row, V_ESTADO) : "") || "";
