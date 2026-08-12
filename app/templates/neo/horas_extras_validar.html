@@ -1057,31 +1057,23 @@ async function cargarHistorial(corteId) {
 }
 
 // ── Colores de encabezados de columna ────────────────────────────────────────
-const _HDR_NEUTRAL = '#4b5563';
-const _HDR_RED     = '#dc2626';
-const _HDR_ORANGE  = '#d97706';
-const _HDR_BLUE    = '#0284c7';
-
 function _colorearHeaderNeo(htInst, col, TH) {
     if (col < 0) return;
     const phys = htInst && htInst.toPhysicalColumn ? htInst.toPhysicalColumn(col) : col;
     const isHist = htInst === hotHistorial;
-    let bg = _HDR_NEUTRAL;
+    let bg = '#4b5563';
     if (isHist) {
-        // Historial: Hrs Rep.=9, Hrs Auth.=10, Estado=11
-        if      (phys === 9)  bg = _HDR_RED;
-        else if (phys === 10) bg = _HDR_BLUE;
-        else if (phys === 11) bg = _HDR_BLUE;
+        if      (phys === 9)  bg = '#dc2626';
+        else if (phys === 10 || phys === 11) bg = '#0284c7';
     } else {
-        // Principal: C_HRS=4, C_COMP=11, C_HAUTH=15, C_ESTADO=16, C_OBSNEO=17
-        if      (phys === C_HRS)                                      bg = _HDR_RED;
-        else if (phys === C_COMP)                                     bg = _HDR_ORANGE;
-        else if (phys === C_HAUTH || phys === C_ESTADO || phys === C_OBSNEO) bg = _HDR_BLUE;
+        if      (phys === C_HRS)  bg = '#dc2626';
+        else if (phys === C_COMP) bg = '#d97706';
+        else if (phys === C_HAUTH || phys === C_ESTADO || phys === C_OBSNEO) bg = '#0284c7';
     }
-    TH.style.background  = bg;
-    TH.style.color       = '#fff';
-    TH.style.fontWeight  = '700';
-    TH.style.fontSize    = '.72rem';
+    TH.style.background = bg;
+    TH.style.color      = '#fff';
+    TH.style.fontWeight = '700';
+    TH.style.fontSize   = '.72rem';
 }
 
 // ── Sistema de filtro propio para Handsontable ───────────────────────────────

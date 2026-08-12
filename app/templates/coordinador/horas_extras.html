@@ -1690,24 +1690,17 @@ function exportarExcel() {
 }
 
 // ── Colores de encabezados de columna ────────────────────────────────────────
-const _HDR_NEUTRAL_C = '#4b5563';
-const _HDR_RED_C     = '#dc2626';
-const _HDR_ORANGE_C  = '#d97706';
-const _HDR_BLUE_C    = '#0284c7';
-
 function _colorearHeaderCoor(htInst, col, TH, isVal) {
     if (col < 0) return;
     const phys = htInst && htInst.toPhysicalColumn ? htInst.toPhysicalColumn(col) : col;
-    let bg = _HDR_NEUTRAL_C;
+    let bg = '#4b5563';
     if (isVal) {
-        // Validación: V_HRS=5, V_COMP=8, V_HAUTH=13, V_NEOAUTH=14, V_OBSNEO=15
-        if      (phys === V_HRS)                                              bg = _HDR_RED_C;
-        else if (phys === V_COMP)                                             bg = _HDR_ORANGE_C;
-        else if (phys === V_HAUTH || phys === V_NEOAUTH || phys === V_OBSNEO) bg = _HDR_BLUE_C;
+        if      (phys === V_HRS)  bg = '#dc2626';
+        else if (phys === V_COMP) bg = '#d97706';
+        else if (phys === V_HAUTH || phys === V_NEOAUTH || phys === V_OBSNEO) bg = '#0284c7';
     } else {
-        // Registro: C_HRS=5, C_COMP=10
-        if      (phys === C_HRS)  bg = _HDR_RED_C;
-        else if (phys === C_COMP) bg = _HDR_ORANGE_C;
+        if      (phys === C_HRS)  bg = '#dc2626';
+        else if (phys === C_COMP) bg = '#d97706';
     }
     TH.style.background = bg;
     TH.style.color      = '#fff';
