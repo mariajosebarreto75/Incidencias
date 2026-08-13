@@ -325,17 +325,17 @@ def api_he_guardar():
         return jsonify({"ok": False, "msg": "Sin registros válidos"}), 400
 
     # ── Validación de duplicados ──────────────────────────────────────────────
-    # 1) Duplicados contra BD
+    # Clave: contrato + cédula + concepto + fecha (sin horas, para tolerar campos vacíos)
     from sqlalchemy import tuple_ as sa_tuple
     claves_bd = sa_tuple(
         HoraExtra.contrato_id, HoraExtra.cedula,
-        HoraExtra.id_concepto, HoraExtra.fecha_labor, HoraExtra.horas_reportadas
+        HoraExtra.id_concepto, HoraExtra.fecha_labor
     )
-    buscar = [(r["contrato_id"], r["cedula"], r["id_concepto"],
-               r["fecha_labor"], r["horas_reportadas"]) for r in registros]
+    buscar = [(r["contrato_id"], r["cedula"], r["id_concepto"], r["fecha_labor"])
+              for r in registros]
     existentes = HoraExtra.query.filter(claves_bd.in_(buscar)).all()
     existentes_set = {
-        (e.contrato_id, e.cedula, e.id_concepto, str(e.fecha_labor), e.horas_reportadas)
+        (e.contrato_id, e.cedula, e.id_concepto, str(e.fecha_labor))
         for e in existentes
     }
 
@@ -344,8 +344,7 @@ def api_he_guardar():
     registros_ok = []
     duplicados = []
     for i, r in enumerate(registros):
-        k = (r["contrato_id"], r["cedula"], r["id_concepto"],
-             str(r["fecha_labor"]), r["horas_reportadas"])
+        k = (r["contrato_id"], r["cedula"], r["id_concepto"], str(r["fecha_labor"]))
         if k in lote_keys:
             duplicados.append({
                 "fila": i + 1, "cedula": r["cedula"], "concepto": r["id_concepto"],
