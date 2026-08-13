@@ -90,12 +90,32 @@
                     </li>
 
                     <!-- HORAS EXTRAS (solo si tiene permiso) -->
-                    {% if current_user.tiene_permiso('horas_extras') %}
-                    <li class="nav-item">
-                        <a class="nav-link neo-nav-link"
-                           href="/horas-extras">
+                    {% if current_user.tiene_permiso('horas_extras') or current_user.rol.lower() == 'admin' or current_user.tiene_permiso('dashboard_he') %}
+                    <li class="nav-item{% if current_user.tiene_permiso('horas_extras') and current_user.tiene_permiso('dashboard_he') or current_user.rol.lower() == 'admin' %} dropdown{% endif %}">
+                        {% if (current_user.tiene_permiso('horas_extras') and current_user.tiene_permiso('dashboard_he')) or current_user.rol.lower() == 'admin' %}
+                        <a class="nav-link neo-nav-link dropdown-toggle" href="#"
+                           data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-clock-history me-1"></i>Horas Extras
                         </a>
+                        <ul class="dropdown-menu">
+                            {% if current_user.tiene_permiso('horas_extras') or current_user.rol.lower() == 'admin' %}
+                            <li><a class="dropdown-item" href="/horas-extras">
+                                <i class="bi bi-pencil-square me-1"></i>Registro / Validación
+                            </a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item" href="{{ url_for('he_bp.he_dashboard') }}">
+                                <i class="bi bi-bar-chart-line me-1"></i>Dashboard HE
+                            </a></li>
+                        </ul>
+                        {% elif current_user.tiene_permiso('horas_extras') %}
+                        <a class="nav-link neo-nav-link" href="/horas-extras">
+                            <i class="bi bi-clock-history me-1"></i>Horas Extras
+                        </a>
+                        {% else %}
+                        <a class="nav-link neo-nav-link" href="{{ url_for('he_bp.he_dashboard') }}">
+                            <i class="bi bi-bar-chart-line me-1"></i>Dashboard HE
+                        </a>
+                        {% endif %}
                     </li>
                     {% endif %}
 

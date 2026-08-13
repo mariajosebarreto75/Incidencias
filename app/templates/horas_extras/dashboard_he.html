@@ -246,27 +246,67 @@ function renderChartTipo(tipos) {
     });
 }
 
+// Convierte "2026-07-19" → "19-Jul"
+function fmtFecha(iso) {
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const [, m, d] = (iso||'').split('-');
+    return d && m ? d + '-' + (meses[+m-1]||m) : iso;
+}
+
 function renderChartDia(dias) {
     const ctx = document.getElementById('chartDia').getContext('2d');
     if (chartDia) chartDia.destroy();
+    const labels = dias.map(d => fmtFecha(d.fecha));
+    const vals   = dias.map(d => Math.round(d.horas));
     chartDia = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: dias.map(d=>d.fecha),
+            labels,
             datasets: [{
-                label: 'Horas', data: dias.map(d=>d.horas),
+                label: 'Horas', data: vals,
                 borderColor: '#38bdf8', backgroundColor: '#38bdf822',
-                fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor:'#38bdf8'
+                fill: true, tension: 0.3,
+                pointRadius: 4, pointBackgroundColor: '#38bdf8',
+                datalabels: { display: false }
             }]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => fmtHrs(ctx.parsed.y) + 'h'
+                    }
+                }
+            },
             scales: {
-                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:9}, maxTicksLimit: 12 } },
-                y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10} } }
+                x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font:{size:10}, maxRotation: 45 } },
+                y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10},
+                    callback: v => fmtHrs(v) + 'h' } }
             }
-        }
+        },
+        plugins: [{
+            id: 'lineValues',
+            afterDatasetsDraw(chart) {
+                const { ctx: c, scales: { x, y } } = chart;
+                const ds = chart.data.datasets[0];
+                const meta = chart.getDatasetMeta(0);
+                // Solo mostrar si hay pocos puntos para no saturar
+                if (ds.data.length > 20) return;
+                meta.data.forEach((pt, i) => {
+                    const val = ds.data[i];
+                    if (!val) return;
+                    c.save();
+                    c.font = 'bold 10px sans-serif';
+                    c.fillStyle = '#e2e8f0';
+                    c.textAlign = 'center';
+                    c.textBaseline = 'bottom';
+                    c.fillText(fmtHrs(val) + 'h', pt.x, pt.y - 6);
+                    c.restore();
+                });
+            }
+        }]
     });
 }
 
