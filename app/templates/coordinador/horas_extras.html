@@ -719,7 +719,7 @@ let hot = null, hotVal = null;
 let _rowIds = [];        // _rowIds[fila] = id de BD o null si es nueva
 let _corteActualRegId = null; // ID del corte cargado en la grilla de registro
 let _currentValIds = [];
-let _fullValData = [], _fullValIds = [], _htValFilters = {};
+let _fullValData = [], _fullValIds = [], _fullValRecords = [], _htValFilters = {};
 let _fullRegData = [], _fullRegIds = [], _fullRegRecords = [], _htRegFilters = {};
 let _regSortState = null;  // {col, dir:'asc'|'desc'} o null
 let _valSortState = null;
@@ -1198,7 +1198,8 @@ async function cargarHistorial(corteId) {
     try {
         const r = await fetch(url);
         const regs = await r.json();
-        _fullValIds  = regs.map(reg => reg.id);
+        _fullValIds      = regs.map(reg => reg.id);
+        _fullValRecords  = regs;   // registros completos del API para exportar
         _fullValData = regs.map(reg => [
             fmtFechaCoor(reg.fecha_labor),
             reg.cedula || "",
@@ -1823,17 +1824,42 @@ async function confirmarImport() {
 }
 
 function exportarExcel() {
-    if (!_fullValData.length) { mostrarToast("No hay datos para exportar","warning"); return; }
-    const HEADERS = ["FECHA LABOR","CEDULA","NOMBRE","RECURSO","PLACA","ID CONCEPTO",
-        "TIPO HE","# HORAS REPORTADAS","# HORAS COMPENSADAS","AUTORIZACIÓN(SUPERVISOR)",
-        "JUSTIFICACIÓN","OBSERVACIÓN","ESTADO","HRS AUTORIZADAS","AUTH NEO","OBS NEO"];
-    // Exportar datos actuales (filtrados si hay filtro)
-    const rows = hotVal ? hotVal.getData() : _fullValData;
-    const data = [HEADERS, ...rows.map(r => r.slice(0, 16))];
-    const ws = XLSX.utils.aoa_to_sheet(data);
+    const recs = _fullValRecords;
+    if (!recs || !recs.length) { mostrarToast("No hay datos para exportar","warning"); return; }
+    const HEADERS = [
+        "CONTRATO","FECHA LABOR","CÉDULA","NOMBRE","RECURSO","PLACA",
+        "ID CONCEPTO","# HORAS REPORTADAS","# HORAS COMPENSADAS",
+        "AUTORIZACIÓN SUPERVISOR","JUSTIFICACIÓN","OBSERVACIÓN",
+        "TIPO HE","VALOR EXTRA NÓMINA","VALOR EXTRA",
+        "AUTORIZACIÓN NEO","HORAS AUTORIZADAS"
+    ];
+    const rows = recs.map(r => [
+        r.contrato              || "",
+        r.fecha_labor           || "",
+        r.cedula                || "",
+        r.nombre                || "",
+        r.recurso               || "",
+        r.placa                 || "",
+        (r.id_concepto||"").toString().padStart(2,"0"),
+        r.horas_reportadas      ?? "",
+        r.horas_compensadas     ?? "",
+        r.autorizacion_sup      || "",
+        r.justificacion         || "",
+        r.observacion           || "",
+        r.tipo_he               || "",
+        r.valor_extra_nomina    ?? "",
+        r.valor_extra           ?? "",
+        r.autorizacion_neo      || "",
+        r.horas_autorizadas     ?? "",
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...rows]);
+    // Ancho de columnas automático
+    ws['!cols'] = HEADERS.map((h, i) => ({
+        wch: Math.max(h.length, ...rows.map(r => String(r[i]||'').length)) + 2
+    }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Horas Extras");
-    XLSX.writeFile(wb, "horas_extras_coordinador.xlsx");
+    XLSX.writeFile(wb, "horas_extras.xlsx");
 }
 
 // ── Colores de encabezados de columna ────────────────────────────────────────

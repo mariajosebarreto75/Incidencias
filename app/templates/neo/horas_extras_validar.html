@@ -667,7 +667,7 @@ function estadoRenderer(hotInstance, td, row, col, prop, value) {
 
 let hot = null, hotHistorial = null;
 let registrosIds = [];
-let _fullData = [], _fullIds = [], _htColFilters = {};
+let _fullData = [], _fullIds = [], _fullRecords = [], _htColFilters = {};
 let _fullHistData = [], _fullHistIds = [], _htHistColFilters = {};
 let _neoSortState = null;   // {col, dir:'asc'|'desc'} o null
 let _histSortState = null;
@@ -935,9 +935,10 @@ async function recargar() {
         reg.validado_por || "",            // 19 Validado Por
         reg.fecha_validacion || "",        // 20 Fecha Validación
     ]);
-    // Guardar copia completa para filtros de columna
-    _fullData = filas;
-    _fullIds  = _ids;
+    // Guardar copia completa para filtros de columna y exportar
+    _fullData    = filas;
+    _fullIds     = _ids;
+    _fullRecords = registros;
     registrosIds = _ids;
     hot.loadData(filas);
     _htColFilters = {};  // resetear filtros al recargar
@@ -1432,44 +1433,51 @@ async function cargarKpis() {
 }
 
 // ── Exportar ──────────────────────────────────────────────────────────────────
-function exportarExcel() {
-    // Export NEO: orden y headers en mayúsculas según especificación
-    // Columnas: CONTRATO | FECHA LABOR | CEDULA | NOMBRE | RECURSO | ID CONCEPTO |
-    //           # HORAS REPORTADAS | # HORAS COMPENSADAS | AUTORIZACIÓN(SUPERVISOR) |
-    //           JUSTIFICACIÓN | OBSERVACIÓN | TIPO HE | VALOR EXTRA NOMINA | $ VALOR EXTRA |
-    //           AUTORIZACIÓN NEO | # HORAS AUTORIZADAS | FECHA REPORTE | VALIDADO POR | FECHA VALIDACIÓN
-    const NEO_HEADERS = [
-        "CONTRATO","FECHA LABOR","CEDULA","NOMBRE","RECURSO","ID CONCEPTO",
-        "# HORAS REPORTADAS","# HORAS COMPENSADAS","AUTORIZACIÓN(SUPERVISOR)",
-        "JUSTIFICACIÓN","OBSERVACIÓN","TIPO HE","VALOR EXTRA NOMINA","$ VALOR EXTRA",
-        "AUTORIZACIÓN NEO","# HORAS AUTORIZADAS","FECHA REPORTE","VALIDADO POR","FECHA VALIDACIÓN"
+const HE_EXPORT_HEADERS = [
+    "CONTRATO","FECHA LABOR","CÉDULA","NOMBRE","RECURSO","PLACA",
+    "ID CONCEPTO","# HORAS REPORTADAS","# HORAS COMPENSADAS",
+    "AUTORIZACIÓN SUPERVISOR","JUSTIFICACIÓN","OBSERVACIÓN",
+    "TIPO HE","VALOR EXTRA NÓMINA","VALOR EXTRA",
+    "AUTORIZACIÓN NEO","HORAS AUTORIZADAS"
+];
+
+function _heRowDesdeRecord(r) {
+    return [
+        r.contrato              || "",
+        r.fecha_labor           || "",
+        r.cedula                || "",
+        r.nombre                || "",
+        r.recurso               || "",
+        r.placa                 || "",
+        (r.id_concepto||"").toString().padStart(2,"0"),
+        r.horas_reportadas      ?? "",
+        r.horas_compensadas     ?? "",
+        r.autorizacion_sup      || "",
+        r.justificacion         || "",
+        r.observacion           || "",
+        r.tipo_he               || "",
+        r.valor_extra_nomina    ?? "",
+        r.valor_extra           ?? "",
+        r.autorizacion_neo      || "",
+        r.horas_autorizadas     ?? "",
     ];
-    const gridData = hot.getData();
-    const rows = gridData.map(r => [
-        r[C_CONTRATO],  // CONTRATO
-        r[C_FECHA],     // FECHA LABOR
-        r[C_CED],       // CEDULA
-        r[C_NOM],       // NOMBRE
-        r[C_REC],       // RECURSO
-        r[C_COD],       // ID CONCEPTO
-        r[C_HRS],       // # HORAS REPORTADAS
-        r[C_COMP],      // # HORAS COMPENSADAS
-        r[C_SUP],       // AUTORIZACIÓN(SUPERVISOR)
-        r[C_JUST],      // JUSTIFICACIÓN
-        r[C_OBS],       // OBSERVACIÓN
-        r[C_TIPO],      // TIPO HE
-        "",             // VALOR EXTRA NOMINA (en blanco)
-        "",             // $ VALOR EXTRA (en blanco)
-        r[C_ESTADO],    // AUTORIZACIÓN NEO
-        r[C_HAUTH],     // # HORAS AUTORIZADAS
-        r[C_FREPORTE],  // FECHA REPORTE
-        r[C_VALBY],     // VALIDADO POR
-        r[C_VALFECHA],  // FECHA VALIDACIÓN
-    ]);
-    const ws = XLSX.utils.aoa_to_sheet([NEO_HEADERS, ...rows]);
+}
+
+function _exportarXlsx(rows, sheetName, fileName) {
+    const ws = XLSX.utils.aoa_to_sheet([HE_EXPORT_HEADERS, ...rows]);
+    ws['!cols'] = HE_EXPORT_HEADERS.map((h, i) => ({
+        wch: Math.max(h.length, ...rows.map(r => String(r[i]||'').length)) + 2
+    }));
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Horas Extras NEO");
-    XLSX.writeFile(wb, "he_validacion_neo.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, fileName);
+}
+
+function exportarExcel() {
+    if (!_fullRecords || !_fullRecords.length) {
+        mostrarToastNeo("No hay datos para exportar", "warning"); return;
+    }
+    _exportarXlsx(_fullRecords.map(_heRowDesdeRecord), "Horas Extras", "horas_extras.xlsx");
 }
 
 // ── Importar Excel (NEO) ──────────────────────────────────────────────────────
@@ -1905,23 +1913,8 @@ async function verCorteNeo(id, nombre) {
 
 async function exportarCorteNeo(id, nombre) {
     const data = await (await fetch(`/api/he/cortes/${id}`)).json();
-    const registros = data.registros;
-    const NEO_HEADERS = [
-        "CONTRATO","FECHA LABOR","CEDULA","NOMBRE","RECURSO","ID CONCEPTO",
-        "# HORAS REPORTADAS","# HORAS COMPENSADAS","AUTORIZACIÓN(SUPERVISOR)",
-        "JUSTIFICACIÓN","OBSERVACIÓN","TIPO HE","VALOR EXTRA NOMINA","$ VALOR EXTRA",
-        "AUTORIZACIÓN NEO","# HORAS AUTORIZADAS","FECHA REPORTE","VALIDADO POR","FECHA VALIDACIÓN"
-    ];
-    const rows = registros.map(r => [
-        r.contrato, r.fecha_labor, r.cedula, r.nombre, r.recurso, r.id_concepto,
-        r.horas_reportadas, r.horas_compensadas, r.autorizacion_sup,
-        r.justificacion, r.observacion, r.tipo_he, "", "",
-        r.autorizacion_neo, r.horas_autorizadas, r.fecha_reporte, r.validado_por, r.fecha_validacion
-    ]);
-    const ws = XLSX.utils.aoa_to_sheet([NEO_HEADERS, ...rows]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Corte");
-    XLSX.writeFile(wb, `corte_${nombre.replace(/\s/g,"_")}.xlsx`);
+    const registros = data.registros || [];
+    _exportarXlsx(registros.map(_heRowDesdeRecord), "Corte", `corte_${nombre.replace(/\s/g,"_")}.xlsx`);
 }
 </script>
 {% endblock %}
