@@ -275,7 +275,7 @@ def api_he_guardar():
         except Exception:
             fl = date.today()
 
-        concepto = str(f.get("id_concepto") or "").strip()
+        concepto = str(f.get("id_concepto") or "").strip().zfill(2) if str(f.get("id_concepto") or "").strip() else ""
         tipo_he  = str(f.get("tipo_he") or CONCEPTOS_HE.get(concepto, "")).strip()
         auth_neo = str(f.get("autorizacion_neo") or "").strip().upper()
         hrs_auth = f.get("horas_autorizadas")
@@ -422,7 +422,8 @@ def api_he_actualizar(id):
                 he.observacion = f["observacion"]
             db.session.commit()
             return jsonify({"ok": True})
-    concepto = f.get("id_concepto", he.id_concepto)
+    concepto = str(f.get("id_concepto") or he.id_concepto or "").strip()
+    concepto = concepto.zfill(2) if concepto else concepto
     he.fecha_labor        = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else he.fecha_labor
     he.cedula             = f.get("cedula", he.cedula)
     he.nombre             = f.get("nombre", he.nombre)
