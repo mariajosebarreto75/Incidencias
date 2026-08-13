@@ -1738,6 +1738,19 @@ def api_he_kpis_concepto():
 
 
 
+@admin_bp.route("/he/borrar-agosto-2026")
+@admin_required
+def he_borrar_agosto_2026():
+    from datetime import date as _date
+    from flask import Response
+    eliminados = HoraExtra.query.filter(
+        HoraExtra.fecha_labor >= _date(2026, 8, 1),
+        HoraExtra.fecha_labor <= _date(2026, 8, 31)
+    ).delete(synchronize_session=False)
+    db.session.commit()
+    return Response(f"<h2>✅ Eliminados {eliminados} registros de agosto 2026</h2>", mimetype="text/html")
+
+
 @admin_bp.route("/api/he/registros/bulk-delete", methods=["POST"])
 @admin_required
 def api_he_bulk_delete():
