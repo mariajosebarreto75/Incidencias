@@ -227,16 +227,27 @@ def api_he_guardar():
     ids_permitidos = _ids_contratos_usuario() if current_user.rol.lower() == "coordinador" else None
 
     # Pre-cargar contratos y cortes en memoria (evita N+1 queries)
-    todos_contratos = {c.contrato.strip().lower(): c.id for c in Contrato.query.all()}
-    todos_cortes    = HeCorte.query.all()
-    ahora           = datetime.utcnow()
-    uid             = current_user.id
+    _contratos_lista = Contrato.query.all()
+    todos_contratos  = {c.contrato.strip().lower(): c.id for c in _contratos_lista}
+    todos_cortes     = HeCorte.query.all()
+    ahora            = datetime.utcnow()
+    uid              = current_user.id
 
     def _cid(f):
         v = f.get("contrato_id")
         if v:
             return int(v)
-        return todos_contratos.get(str(f.get("contrato") or "").strip().lower())
+        nombre = str(f.get("contrato") or "").strip().lower()
+        # 1) Coincidencia exacta
+        cid = todos_contratos.get(nombre)
+        if cid:
+            return cid
+        # 2) Búsqueda parcial: el nombre del Excel está contenido en el nombre de la BD
+        #    o viceversa (ej. "MTTO CHAPARRAL" ↔ "Tolima Mantenimiento (014) - MTTO - Chaparral")
+        for bd_nombre, bd_id in todos_contratos.items():
+            if nombre in bd_nombre or bd_nombre in nombre:
+                return bd_id
+        return None
 
     def _corte(cid, fl):
         if not fl:
