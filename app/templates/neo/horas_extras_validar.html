@@ -1557,16 +1557,20 @@ function procesarImportNeo(input) {
         const iRecurso   = headerRow ? colIdx(["recurso"])                                    : 4;
         const iPlaca     = headerRow ? colIdx(["placa"])                                      : 5;
         const iConcepto  = headerRow ? colIdx(["concepto","id con"])                          : 6;
-        const iHrsRep    = headerRow ? colIdx(["hrs rep","horas rep","# hora","#hora","reporta"]) : 7;
-        const iHrsComp   = headerRow ? colIdx(["comp","compensad"])                           : 8;
-        const iAuthSup   = headerRow ? colIdx(["autoriza","sup"])                             : 9;
-        const iJust      = headerRow ? colIdx(["justif"])                                     : 10;
-        const iObs       = headerRow ? colIdx(["observ"])                                     : 11;
-        const iTipo      = headerRow ? colIdx(["tipo"])                                       : 12;
-        const iVlrNom    = headerRow ? colIdx(["nómin","nomin","vlr ext nom","extra nom"])    : 13;
-        const iVlrExt    = headerRow ? colIdx(["valor extra","vlr ext","$ valor"])            : 14;
-        const iAuthNeo   = headerRow ? colIdx(["auth neo","autorización neo","autorizacion neo"]) : 15;
-        const iHrsAuth   = headerRow ? colIdx(["hrs auth","horas auth","autorizadas"])        : 16;
+        const iHrsRep    = headerRow ? colIdx(["# horas rep","horas rep","hrs rep","# hora rep","reportada"]) : 7;
+        const iHrsComp   = headerRow ? colIdx(["# horas comp","horas comp","hrs comp","compensad"])          : 8;
+        // Autorización supervisor: columna que dice "autorización" pero NO "neo"
+        const iAuthSup   = headerRow ? (() => {
+            const i = headerRow.findIndex(h => h.includes("autoriza") && !h.includes("neo"));
+            return i !== -1 ? i : 9;
+        })() : 9;
+        const iJust      = headerRow ? colIdx(["justif"])                                                    : 10;
+        const iObs       = headerRow ? colIdx(["observ"])                                                    : 11;
+        const iTipo      = headerRow ? colIdx(["tipo"])                                                      : 12;
+        const iVlrNom    = headerRow ? colIdx(["extra nómin","extra nomin","vlr ext nom","nómina","nomina"]) : 13;
+        const iVlrExt    = headerRow ? colIdx(["$ valor","vlr ext","valor extra"])                           : 14;
+        const iAuthNeo   = headerRow ? colIdx(["autorización neo","autorizacion neo","auth neo"])             : 15;
+        const iHrsAuth   = headerRow ? colIdx(["# horas autori","horas autori","hrs autori","autorizadas"])  : 16;
 
         const get = (r, i, def="") => i >= 0 && i < r.length ? r[i] : def;
 
