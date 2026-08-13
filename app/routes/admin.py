@@ -1738,6 +1738,39 @@ def api_he_kpis_concepto():
 
 
 
+@admin_bp.route("/he/resumen-agosto-2026")
+@admin_required
+def he_resumen_agosto_2026():
+    from datetime import date as _date
+    from flask import Response
+    regs = HoraExtra.query.filter(
+        HoraExtra.fecha_labor >= _date(2026, 8, 1),
+        HoraExtra.fecha_labor <= _date(2026, 8, 31)
+    ).all()
+    total = len(regs)
+    hrs   = sum(r.horas_reportadas or 0 for r in regs)
+    cero  = sum(1 for r in regs if (r.horas_reportadas or 0) == 0)
+    por_contrato = {}
+    for r in regs:
+        c = r.contrato.contrato if r.contrato else "Sin contrato"
+        if c not in por_contrato:
+            por_contrato[c] = {"regs": 0, "hrs": 0, "cero": 0}
+        por_contrato[c]["regs"] += 1
+        por_contrato[c]["hrs"]  += r.horas_reportadas or 0
+        if (r.horas_reportadas or 0) == 0:
+            por_contrato[c]["cero"] += 1
+    filas = "".join(
+        f"<tr><td>{c}</td><td>{v['regs']}</td><td><b>{v['hrs']}</b></td><td style='color:red'>{v['cero']}</td></tr>"
+        for c, v in sorted(por_contrato.items())
+    )
+    html = f"""<h2>Agosto 2026 — {total} registros | {hrs} horas | {cero} con horas=0</h2>
+    <table border=1 cellpadding=5>
+    <tr><th>Contrato</th><th>Registros</th><th>Horas</th><th>Con 0 horas</th></tr>
+    {filas}
+    </table>"""
+    return Response(html, mimetype="text/html")
+
+
 @admin_bp.route("/he/borrar-agosto-2026")
 @admin_required
 def he_borrar_agosto_2026():
