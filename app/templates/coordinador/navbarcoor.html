@@ -113,11 +113,25 @@
                     </li>
 
                     <!-- HORAS EXTRAS -->
-                    <li class="nav-item">
-                        <a class="nav-link coor-nav-link"
-                           href="/horas-extras">
+                    <li class="nav-item{% if current_user.rol.lower() == 'admin' or current_user.tiene_permiso('dashboard_he') %} dropdown{% endif %}">
+                        {% if current_user.rol.lower() == 'admin' or current_user.tiene_permiso('dashboard_he') %}
+                        <a class="nav-link coor-nav-link dropdown-toggle" href="#"
+                           data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-clock-history me-1"></i>Horas Extras
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-coor">
+                            <li><a class="dropdown-item" href="/horas-extras">
+                                <i class="bi bi-pencil-square me-1"></i>Registro / Validación
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('he_bp.he_dashboard') }}">
+                                <i class="bi bi-bar-chart-line me-1"></i>Dashboard HE
+                            </a></li>
+                        </ul>
+                        {% else %}
+                        <a class="nav-link coor-nav-link" href="/horas-extras">
+                            <i class="bi bi-clock-history me-1"></i>Horas Extras
+                        </a>
+                        {% endif %}
                     </li>
 
                     <!-- GPS dropdown -->
