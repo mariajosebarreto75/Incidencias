@@ -256,6 +256,8 @@ body { background:var(--c-bg); }
 .he-cortes-empty i { font-size:3.5rem; opacity:.35; }
 .he-cortes-empty h5 { margin:0; font-size:1rem; font-weight:700; color:#64748b; }
 .he-cortes-empty p { margin:0; font-size:.82rem; text-align:center; max-width:320px; }
+.row-guardada td.htCore { background: #f0fdf4 !important; }
+.row-guardada td { background: #f0fdf4 !important; }
 </style>
 {% endblock %}
 
@@ -348,6 +350,7 @@ body { background:var(--c-bg); }
             <div class="he-entry-head">
                 <i class="bi bi-table" style="font-size:1.1rem;opacity:.8;"></i>
                 <h6>Ingreso de Horas Extras</h6>
+                <span id="lblRegistrosCorte" style="font-size:.75rem;color:#6b7280;margin-left:.8rem;font-weight:400"></span>
             </div>
             <div class="he-toolbar">
                 <button onclick="agregarFilas(10)" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.75rem;">
@@ -704,7 +707,10 @@ const V_FECHA=0, V_CED=1, V_NOM=2, V_REC=3, V_PLACA=4, V_HRS=5,
       V_ESTADO=12, V_HAUTH=13, V_NEOAUTH=14, V_OBSNEO=15;
 
 const FILAS = 40;
+const FILAS_EXTRA = 20; // filas vacías al final para ingresar nuevos registros
 let hot = null, hotVal = null;
+let _rowIds = [];        // _rowIds[fila] = id de BD o null si es nueva
+let _corteActualRegId = null; // ID del corte cargado en la grilla de registro
 let _currentValIds = [];
 let _fullValData = [], _fullValIds = [], _htValFilters = {};
 let _fullRegData = [], _htRegFilters = {};
@@ -728,6 +734,7 @@ let validacionCargada = false;
         if (corteAbierto) {
             const sel = document.getElementById("fCorte");
             if (sel) { sel.value = String(corteAbierto.id); sincronizarFechasCoor(); }
+            cargarRegistrosCorteActual(corteAbierto.id);
         }
         cargarHistorial();
         cargarKpis();
@@ -782,6 +789,10 @@ function iniciarGrid() {
         copyPaste: true,
         undo: true,
         licenseKey: "non-commercial-and-evaluation",
+        cells: function(row) {
+            if (_rowIds[row]) return { className: 'row-guardada' };
+            return {};
+        },
         afterGetColHeader: function(col, TH) { _showFilterBtnC(hot, col, TH, false); _colorearHeaderCoor(hot, col, TH, false); },
         afterChange: function(changes, source) {
             if (!changes || source === "loadData" || source === "auto") return;
@@ -843,6 +854,60 @@ function fijarColumnas(n) {
     hot.updateSettings({ fixedColumnsLeft: parseInt(n) || 0 });
 }
 
+// Convierte YYYY-MM-DD (backend) → DD-MM-YY (grid)
+function fechaBackendAGrid(iso) {
+    if (!iso) return "";
+    const [y, m, d] = iso.split("-");
+    return `${d}-${m}-${y.slice(2)}`;
+}
+
+// Carga los registros de un corte en la grilla de ingreso
+async function cargarRegistrosCorteActual(corteId) {
+    _corteActualRegId = corteId || null;
+    const contratoId = document.getElementById("gridContrato").value;
+    let registros = [];
+    if (corteId && contratoId) {
+        try {
+            const r = await fetch(`/api/he/registros?corte_id=${corteId}&contrato_id=${contratoId}`);
+            registros = await r.json();
+            if (!Array.isArray(registros)) registros = [];
+        } catch(e) { registros = []; }
+    }
+
+    // Construir filas para el grid
+    const filasSalvadas = registros.map(reg => [
+        fechaBackendAGrid(reg.fecha_labor),
+        reg.cedula        || "",
+        reg.nombre        || "",
+        reg.recurso       || "",
+        reg.placa         || "",
+        reg.horas_reportadas || 0,
+        reg.hora_inicio   || "",
+        reg.hora_fin      || "",
+        reg.id_concepto   || "",
+        reg.tipo_he       || "",
+        reg.horas_compensadas || 0,
+        reg.autorizacion_sup || "",
+        reg.justificacion || "",
+        reg.observacion   || "",
+    ]);
+
+    // Guardar IDs: _rowIds[i] = id de BD para filas existentes
+    _rowIds = registros.map(r => r.id);
+    // Agregar filas vacías al final para nuevas entradas
+    const filasVacias = Array.from({length: FILAS_EXTRA}, () => Array(N_COLS).fill(""));
+    _rowIds = _rowIds.concat(Array(FILAS_EXTRA).fill(null));
+
+    hot.loadData([...filasSalvadas, ...filasVacias]);
+    hot.render();
+
+    // Indicador en el header de cuántos registros hay
+    const lbl = document.getElementById("lblRegistrosCorte");
+    if (lbl) lbl.textContent = registros.length > 0
+        ? `${registros.length} registro(s) guardados en este corte`
+        : "Sin registros en este corte — ingrese las primeras horas";
+}
+
 // Convierte DD-MM-YY → YYYY-MM-DD para el backend
 function fechaParaBackend(val) {
     if (!val) return null;
@@ -855,8 +920,23 @@ function fechaParaBackend(val) {
 async function onContratoChange() {
     validacionCargada = false;
     cargarResumen();
-    actualizarCortesCoor();
+    await actualizarCortesCoor();
     cargarKpis();
+    // Recargar registros del corte abierto del nuevo contrato
+    const corteAbierto = Array.isArray(_cortesCacheCoor)
+        ? _cortesCacheCoor.find(c => c.estado === "ABIERTO") : null;
+    if (corteAbierto) {
+        const sel = document.getElementById("fCorte");
+        if (sel) { sel.value = String(corteAbierto.id); sincronizarFechasCoor(); }
+        cargarRegistrosCorteActual(corteAbierto.id);
+    } else {
+        // Sin corte abierto → limpiar grilla
+        _rowIds = Array(FILAS).fill(null);
+        _corteActualRegId = null;
+        hot.loadData(Array.from({length: FILAS}, () => Array(N_COLS).fill("")));
+        const lbl = document.getElementById("lblRegistrosCorte");
+        if (lbl) lbl.textContent = "";
+    }
     // Solo recargar historial si la tab de validación está activa
     if (document.getElementById("panel-validacion").classList.contains("active")) {
         validacionCargada = true;
@@ -879,6 +959,7 @@ async function guardarGrid() {
     const rows  = hot.getData();
     const filas = [];
     for (let i = 0; i < rows.length; i++) {
+        if (_rowIds[i]) continue; // fila ya guardada en BD, no re-enviar
         const row = rows[i];
         const fechaRaw = row[C_FECHA];
         const ced      = (row[C_CED] || "").trim();
@@ -916,8 +997,8 @@ async function guardarGrid() {
     btn.disabled = false; btn.innerHTML = '<i class="bi bi-save me-1"></i>Guardar horas';
     if (d.ok) {
         mostrarToast(`✓ ${d.guardados} registro(s) guardados`,"success");
-        hot.loadData(Array.from({length: hot.countRows()}, () => Array(N_COLS).fill("")));
         salariosPorFila = {};
+        await cargarRegistrosCorteActual(_corteActualRegId);
         cargarHistorial(); cargarKpis();
     } else if (d.duplicados) {
         mostrarDuplicados(d.msg, d.detalle);
