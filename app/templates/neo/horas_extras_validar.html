@@ -1517,11 +1517,8 @@ function procesarImportNeo(input) {
         const OBLIGATORIOS = [
             { raw: 1,  nombre: "Fecha Labor",       check: v => !!neoFmtFechaImport(v) },
             { raw: 2,  nombre: "Cédula",             check: v => String(v||"").trim() !== "" },
-            { raw: 6,  nombre: "Id Concepto",        check: v => String(v||"").trim() !== "" },
+            { raw: 2,  nombre: "Cédula",             check: v => String(v||"").trim() !== "" },
             { raw: 7,  nombre: "Horas Reportadas",   check: v => parseFloat(v) > 0 },
-            { raw: 9,  nombre: "Autorización Sup.",  check: v => String(v||"").trim() !== "" },
-            { raw: 10, nombre: "Justificación",      check: v => String(v||"").trim() !== "" },
-            { raw: 12, nombre: "Tipo HE",            check: v => String(v||"").trim() !== "" },
         ];
         // Contrato obligatorio solo si no hay contrato fijo seleccionado
         if (!usaContratoFijo) {
