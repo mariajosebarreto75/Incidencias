@@ -621,9 +621,13 @@ body { background:var(--c-bg); }
 </div>
 <!-- Popup filtro columna Handsontable -->
 <div id="htFilterPopupC">
-  <div class="fp-sort-row">
+  <div class="fp-sort-row" id="fpSortNumRow">
     <button class="fp-sort-btn" id="fpSortAscC"  onclick="_sortColumnCoor('asc')">&#9650; Menor a mayor</button>
     <button class="fp-sort-btn" id="fpSortDescC" onclick="_sortColumnCoor('desc')">&#9660; Mayor a menor</button>
+  </div>
+  <div class="fp-sort-row" id="fpSortDateRow" style="display:none">
+    <button class="fp-sort-btn" id="fpSortDateAscC"  onclick="_sortColumnCoor('asc')">&#128336; Más antiguo</button>
+    <button class="fp-sort-btn" id="fpSortDateDescC" onclick="_sortColumnCoor('desc')">&#9889; Más nuevo</button>
   </div>
   <hr class="fp-sort-sep" style="margin:6px 10px 4px;">
   <input class="fp-search" id="fpSearchC" type="text" placeholder="Buscar…">
@@ -716,7 +720,7 @@ let _rowIds = [];        // _rowIds[fila] = id de BD o null si es nueva
 let _corteActualRegId = null; // ID del corte cargado en la grilla de registro
 let _currentValIds = [];
 let _fullValData = [], _fullValIds = [], _htValFilters = {};
-let _fullRegData = [], _htRegFilters = {};
+let _fullRegData = [], _fullRegIds = [], _fullRegRecords = [], _htRegFilters = {};
 let _regSortState = null;  // {col, dir:'asc'|'desc'} o null
 let _valSortState = null;
 let _corteActualEstado = "ABIERTO"; // estado del corte visible en validación
@@ -879,7 +883,7 @@ async function cargarRegistrosCorteActual(corteId) {
         } catch(e) { registros = []; }
     }
 
-    // Construir filas para el grid
+    // Construir filas para el grid y poblar arrays de filtro
     const filasSalvadas = registros.map(reg => [
         fechaBackendAGrid(reg.fecha_labor),
         reg.cedula        || "",
@@ -897,14 +901,21 @@ async function cargarRegistrosCorteActual(corteId) {
         reg.observacion   || "",
     ]);
 
-    // Guardar IDs: _rowIds[i] = id de BD para filas existentes
-    _rowIds = registros.map(r => r.id);
-    // Agregar filas vacías al final para nuevas entradas
-    const filasVacias = Array.from({length: FILAS_EXTRA}, () => Array(N_COLS).fill(""));
-    _rowIds = _rowIds.concat(Array(FILAS_EXTRA).fill(null));
+    // Fuente de verdad para filtros teal y KPIs
+    _fullRegData    = filasSalvadas;
+    _fullRegIds     = registros.map(r => r.id);
+    _fullRegRecords = registros;
+    _htRegFilters   = {};
+    _regSortState   = null;
 
+    // Cargar en hot: filas guardadas + filas vacías al final
+    const filasVacias = Array.from({length: FILAS_EXTRA}, () => Array(N_COLS).fill(""));
+    _rowIds = [..._fullRegIds, ...Array(FILAS_EXTRA).fill(null)];
     hot.loadData([...filasSalvadas, ...filasVacias]);
     hot.render();
+
+    // Actualizar tarjetas con los datos del corte
+    _actualizarKpisCoorReg(registros);
 
     // Indicador en el header de cuántos registros hay
     const lbl = document.getElementById("lblRegistrosCorte");
@@ -1892,10 +1903,19 @@ function _openFilterPopupC(htInst, col, anchorBtn, isVal) {
     document.getElementById('fpSearchC').value = '';
     document.getElementById('fpSearchC').focus();
 
+    // Mostrar fila de sort según tipo de columna (fecha vs numérica)
+    const isDateCol = !isVal && col === C_FECHA;
+    document.getElementById('fpSortNumRow').style.display  = isDateCol ? 'none'  : '';
+    document.getElementById('fpSortDateRow').style.display = isDateCol ? ''      : 'none';
+
     // Marcar botón de orden activo
     const sortSt = isVal ? _valSortState : _regSortState;
-    document.getElementById('fpSortAscC').classList.toggle('active',  !!(sortSt && sortSt.col === col && sortSt.dir === 'asc'));
-    document.getElementById('fpSortDescC').classList.toggle('active', !!(sortSt && sortSt.col === col && sortSt.dir === 'desc'));
+    const isAsc  = !!(sortSt && sortSt.col === col && sortSt.dir === 'asc');
+    const isDesc = !!(sortSt && sortSt.col === col && sortSt.dir === 'desc');
+    document.getElementById('fpSortAscC').classList.toggle('active',      isAsc);
+    document.getElementById('fpSortDescC').classList.toggle('active',     isDesc);
+    document.getElementById('fpSortDateAscC').classList.toggle('active',  isAsc);
+    document.getElementById('fpSortDateDescC').classList.toggle('active', isDesc);
 }
 
 function _sortColumnCoor(dir) {
@@ -1976,22 +1996,53 @@ function _applyAllFiltersCoor() {
     }
     // Filtrar registro
     if (hot && _fullRegData.length) {
-        const src  = _fullRegData;
         const fmap = _htRegFilters;
         const cols = Object.keys(fmap).map(Number);
-        let rows = cols.length > 0
-            ? src.filter(row => cols.every(c => fmap[c].has(String(row[c] ?? ''))))
-            : src.slice();
+        let pairs = _fullRegData.map((row, i) => [row, _fullRegIds[i], _fullRegRecords[i]]);
+        if (cols.length > 0) {
+            pairs = pairs.filter(([row]) => cols.every(c => fmap[c].has(String(row[c] ?? ''))));
+        }
         if (_regSortState) {
             const { col, dir } = _regSortState;
-            rows = rows.slice().sort((ra, rb) => {
+            pairs = pairs.slice().sort(([ra], [rb]) => {
+                // Fecha (col 0) en formato DD-MM-YY → comparar como fecha
+                if (col === C_FECHA) {
+                    const toDate = v => { const p=(v||'').split('-'); return p.length===3?`20${p[2]}-${p[1]}-${p[0]}`:''; };
+                    const cmp = toDate(ra[col]).localeCompare(toDate(rb[col]));
+                    return dir === 'asc' ? cmp : -cmp;
+                }
                 const cmp = String(ra[col] ?? '').localeCompare(String(rb[col] ?? ''), 'es', { sensitivity:'base', numeric:true });
                 return dir === 'asc' ? cmp : -cmp;
             });
         }
-        hot.loadData(rows);
+        const filasFiltradas = pairs.map(([r]) => r);
+        const idsFiltrados   = pairs.map(([, id]) => id);
+        const recsFiltrados  = pairs.map(([,, rec]) => rec);
+        // Mantener filas vacías al final para nuevas entradas
+        const filasVacias = Array.from({length: FILAS_EXTRA}, () => Array(N_COLS).fill(""));
+        _rowIds = [...idsFiltrados, ...Array(FILAS_EXTRA).fill(null)];
+        hot.loadData([...filasFiltradas, ...filasVacias]);
         setTimeout(() => _refreshFilterBtnsC(hot), 0);
+        _actualizarKpisCoorReg(recsFiltrados);
     }
+}
+
+// Actualiza las tarjetas KPI del panel de registro a partir de los registros filtrados
+function _actualizarKpisCoorReg(registros) {
+    let total = registros.length, pend = 0, hrsRep = 0, hrsAuth = 0, hrsNoAuth = 0;
+    for (const r of registros) {
+        const est  = (r.estado || "").trim().toUpperCase();
+        hrsRep  += r.horas_reportadas || 0;
+        if (est === "PENDIENTE") pend++;
+        if (est === "CONFORME" || est === "DESCONTADA") hrsAuth += r.horas_autorizadas || 0;
+        if (est === "NO CONFORME") hrsNoAuth += r.horas_reportadas || 0;
+    }
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set("coor-ck-total",  total.toLocaleString("es-CO"));
+    set("coor-ck-pend",   pend.toLocaleString("es-CO"));
+    set("coor-ck-rep",    hrsRep.toFixed(0));
+    set("coor-ck-auth",   hrsAuth.toFixed(0));
+    set("coor-ck-noauth", hrsNoAuth.toFixed(0));
 }
 
 function _actualizarKpisCoor(rows) {
