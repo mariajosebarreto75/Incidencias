@@ -1518,7 +1518,6 @@ function procesarImportNeo(input) {
             { raw: 1,  nombre: "Fecha Labor",       check: v => !!neoFmtFechaImport(v) },
             { raw: 2,  nombre: "Cédula",             check: v => String(v||"").trim() !== "" },
             { raw: 2,  nombre: "Cédula",             check: v => String(v||"").trim() !== "" },
-            { raw: 7,  nombre: "Horas Reportadas",   check: v => parseFloat(v) > 0 },
         ];
         // Contrato obligatorio solo si no hay contrato fijo seleccionado
         if (!usaContratoFijo) {
