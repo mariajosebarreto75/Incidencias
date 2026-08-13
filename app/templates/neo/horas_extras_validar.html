@@ -1533,63 +1533,81 @@ function procesarImportNeo(input) {
         const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:"" });
         if (!rows.length) return;
 
-        const first = rows[0].map(v => String(v).toLowerCase());
-        const isHeader = first.some(v => v.includes("fecha") || v.includes("ced") || v.includes("hrs") || v.includes("hora"));
-        const dataRows = isHeader ? rows.slice(1) : rows;
+        const firstRow = rows[0].map(v => String(v).toLowerCase().trim());
+        const isHeader = firstRow.some(v =>
+            v.includes("fecha") || v.includes("ced") || v.includes("hrs") || v.includes("hora") || v.includes("contr")
+        );
+        const headerRow = isHeader ? firstRow : null;
+        const dataRows  = isHeader ? rows.slice(1) : rows;
+
+        // Mapeo flexible por nombre de columna (acepta variantes)
+        function colIdx(aliases) {
+            if (!headerRow) return -1;
+            for (const a of aliases) {
+                const i = headerRow.findIndex(h => h.includes(a));
+                if (i !== -1) return i;
+            }
+            return -1;
+        }
+        // Índices detectados por encabezado; si no hay encabezado usa posición fija
+        const iContrato  = headerRow ? colIdx(["contrato"])                                  : 0;
+        const iFecha     = headerRow ? colIdx(["fecha labor","fecha_labor","fecha lab"])      : 1;
+        const iCedula    = headerRow ? colIdx(["céd","ced","cedula","cédula","documento"])    : 2;
+        const iNombre    = headerRow ? colIdx(["nombre"])                                     : 3;
+        const iRecurso   = headerRow ? colIdx(["recurso"])                                    : 4;
+        const iPlaca     = headerRow ? colIdx(["placa"])                                      : 5;
+        const iConcepto  = headerRow ? colIdx(["concepto","id con"])                          : 6;
+        const iHrsRep    = headerRow ? colIdx(["hrs rep","horas rep","# hora","#hora","reporta"]) : 7;
+        const iHrsComp   = headerRow ? colIdx(["comp","compensad"])                           : 8;
+        const iAuthSup   = headerRow ? colIdx(["autoriza","sup"])                             : 9;
+        const iJust      = headerRow ? colIdx(["justif"])                                     : 10;
+        const iObs       = headerRow ? colIdx(["observ"])                                     : 11;
+        const iTipo      = headerRow ? colIdx(["tipo"])                                       : 12;
+        const iVlrNom    = headerRow ? colIdx(["nómin","nomin","vlr ext nom","extra nom"])    : 13;
+        const iVlrExt    = headerRow ? colIdx(["valor extra","vlr ext","$ valor"])            : 14;
+        const iAuthNeo   = headerRow ? colIdx(["auth neo","autorización neo","autorizacion neo"]) : 15;
+        const iHrsAuth   = headerRow ? colIdx(["hrs auth","horas auth","autorizadas"])        : 16;
+
+        const get = (r, i, def="") => i >= 0 && i < r.length ? r[i] : def;
 
         const usaContratoFijo = !!document.getElementById("neoImportContrato").value;
 
-        // Opcionales: Nombre(3), Recurso(4), Placa(5), Hrs Compensadas(8),
-        //             Vlr Extra Nom.(13), Vlr Extra(14), Auth NEO(15), Hrs Auth.(16)
-        const OBLIGATORIOS = [
-            { raw: 1,  nombre: "Fecha Labor",       check: v => !!neoFmtFechaImport(v) },
-            { raw: 2,  nombre: "Cédula",             check: v => String(v||"").trim() !== "" },
-            { raw: 2,  nombre: "Cédula",             check: v => String(v||"").trim() !== "" },
-        ];
-        // Contrato obligatorio solo si no hay contrato fijo seleccionado
-        if (!usaContratoFijo) {
-            OBLIGATORIOS.push({ raw: 0, nombre: "Contrato", check: v => String(v||"").trim() !== "" });
-        }
-
-        const errores = [];   // { fila (1-based), campo, valor }
+        const errores = [];
         const filasParsed = [];
 
         dataRows.forEach((r, idx) => {
             if (!r.some(v => v !== "")) return; // fila completamente vacía → ignorar
-            const filaNum = idx + (isHeader ? 2 : 1); // número de fila en Excel
+            const filaNum = idx + (isHeader ? 2 : 1);
 
-            const camposError = [];
-            for (const ob of OBLIGATORIOS) {
-                if (!ob.check(r[ob.raw])) {
-                    camposError.push({ campo: ob.nombre, valor: String(r[ob.raw] ?? "").trim() });
-                }
+            const cedula = String(get(r, iCedula) || "").trim();
+            if (!cedula) {
+                errores.push({ fila: filaNum, campo: "Cédula", valor: "(vacío)" });
+                return;
+            }
+            if (!usaContratoFijo && !String(get(r, iContrato) || "").trim()) {
+                errores.push({ fila: filaNum, campo: "Contrato", valor: "(vacío)" });
+                return;
             }
 
-            if (camposError.length > 0) {
-                for (const ce of camposError) {
-                    errores.push({ fila: filaNum, ...ce });
-                }
-            } else {
-                filasParsed.push({
-                    contrato:          String(r[0]  || "").trim(),
-                    fecha_labor:       neoFmtFechaImport(r[1]),
-                    cedula:            String(r[2]  || "").trim(),
-                    nombre:            String(r[3]  || "").trim(),
-                    recurso:           String(r[4]  || "").trim(),
-                    placa:             String(r[5]  || "").trim(),
-                    id_concepto:       String(r[6]  || "").trim(),
-                    horas_reportadas:  parseFloat(r[7])  || 0,
-                    horas_compensadas: parseFloat(r[8])  || 0,
-                    autorizacion_sup:  String(r[9]  || "").trim(),
-                    justificacion:     String(r[10] || "").trim(),
-                    observacion:       String(r[11] || "").trim(),
-                    tipo_he:           String(r[12] || "").trim(),
-                    valor_extra_nomina:String(r[13] || "").trim(),
-                    valor_extra:       String(r[14] || "").trim(),
-                    autorizacion_neo:  String(r[15] || "").trim(),
-                    horas_autorizadas: r[16] !== "" && r[16] != null ? parseFloat(r[16]) : "",
-                });
-            }
+            filasParsed.push({
+                contrato:          String(get(r, iContrato)  || "").trim(),
+                fecha_labor:       neoFmtFechaImport(get(r, iFecha)),
+                cedula,
+                nombre:            String(get(r, iNombre)    || "").trim(),
+                recurso:           String(get(r, iRecurso)   || "").trim(),
+                placa:             String(get(r, iPlaca)     || "").trim(),
+                id_concepto:       String(get(r, iConcepto)  || "").trim(),
+                horas_reportadas:  parseFloat(get(r, iHrsRep))  || 0,
+                horas_compensadas: parseFloat(get(r, iHrsComp)) || 0,
+                autorizacion_sup:  String(get(r, iAuthSup)   || "").trim(),
+                justificacion:     String(get(r, iJust)      || "").trim(),
+                observacion:       String(get(r, iObs)       || "").trim(),
+                tipo_he:           String(get(r, iTipo)      || "").trim(),
+                valor_extra_nomina:String(get(r, iVlrNom)    || "").trim(),
+                valor_extra:       String(get(r, iVlrExt)    || "").trim(),
+                autorizacion_neo:  String(get(r, iAuthNeo)   || "").trim(),
+                horas_autorizadas: get(r, iHrsAuth) !== "" && get(r, iHrsAuth) != null ? parseFloat(get(r, iHrsAuth)) : "",
+            });
         });
 
         const wrap = document.getElementById("neoImportPreviewWrap");
