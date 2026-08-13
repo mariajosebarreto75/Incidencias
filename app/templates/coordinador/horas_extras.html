@@ -1398,24 +1398,47 @@ function procesarImport(input) {
 
         const first = rows[0].map(v => String(v).toLowerCase());
         const isHeader = first.some(v => v.includes("fecha") || v.includes("ced") || v.includes("hrs") || v.includes("hora"));
-        const dataRows = isHeader ? rows.slice(1) : rows;
+        const headerRow = isHeader ? first : null;
+        const dataRows  = isHeader ? rows.slice(1) : rows;
+
+        // Detección de columnas por nombre de encabezado
+        function colIdx(aliases) {
+            if (!headerRow) return -1;
+            for (const a of aliases) {
+                const i = headerRow.findIndex(h => h.includes(a));
+                if (i !== -1) return i;
+            }
+            return -1;
+        }
+        const iContrato  = colIdx(["contrato"]) !== -1          ? colIdx(["contrato"])          : 0;
+        const iFecha     = colIdx(["fecha labor","fecha lab"])   !== -1 ? colIdx(["fecha labor","fecha lab"]) : 1;
+        const iCedula    = colIdx(["ced"])       !== -1          ? colIdx(["ced"])               : 2;
+        const iNombre    = colIdx(["nombre"])    !== -1          ? colIdx(["nombre"])            : 3;
+        const iRecurso   = colIdx(["recurso"])   !== -1          ? colIdx(["recurso"])           : 4;
+        const iPlaca     = colIdx(["placa"])     !== -1          ? colIdx(["placa"])             : 5;
+        const iConcepto  = colIdx(["concepto","id con"]) !== -1  ? colIdx(["concepto","id con"]) : 6;
+        const iHrsRep    = colIdx(["# horas rep","horas rep","hrs rep","reportada"]) !== -1
+                           ? colIdx(["# horas rep","horas rep","hrs rep","reportada"]) : 7;
+        const iHrsComp   = colIdx(["compens"]) !== -1            ? colIdx(["compens"])           : 8;
+        const iAuthSup   = (() => {
+            const i = headerRow ? headerRow.findIndex(h => h.includes("autoriza") && !h.includes("neo")) : -1;
+            return i !== -1 ? i : 9;
+        })();
+        const iJust      = colIdx(["justif"]) !== -1             ? colIdx(["justif"])            : 10;
+        const iObs       = colIdx(["observa"]) !== -1            ? colIdx(["observa"])           : 11;
+        const iTipo      = colIdx(["tipo"]) !== -1               ? colIdx(["tipo"])              : 12;
+        const iVlrNom    = colIdx(["valor extra n","vlr extra n","extra nom"]) !== -1
+                           ? colIdx(["valor extra n","vlr extra n","extra nom"]) : 13;
+        const iVlrExtra  = colIdx(["$ valor","valor extra"]) !== -1
+                           ? colIdx(["$ valor","valor extra"])  : 14;
+        const iAuthNeo   = (() => {
+            const i = headerRow ? headerRow.findIndex(h => h.includes("autoriza") && h.includes("neo")) : -1;
+            return i !== -1 ? i : 15;
+        })();
+        const iHrsAuth   = colIdx(["horas autor","hrs autor","autorizad"]) !== -1
+                           ? colIdx(["horas autor","hrs autor","autorizad"]) : 16;
 
         const usaContratoFijo = !!document.getElementById("importContrato").value;
-
-        // Campos obligatorios (misma lógica que NEO)
-        // Opcionales: Nombre(3), Recurso(4), Placa(5), Hrs Comp(8), Vlr Extra Nom(13), Vlr Extra(14), Auth NEO(15), Hrs Auth(16)
-        const OBLIGATORIOS = [
-            { raw: 1,  nombre: "Fecha Labor",      check: v => !!fmtFechaImport(v) },
-            { raw: 2,  nombre: "Cédula",            check: v => String(v||"").trim() !== "" },
-            { raw: 6,  nombre: "Id Concepto",       check: v => String(v||"").trim() !== "" },
-            { raw: 7,  nombre: "Horas Reportadas",  check: v => parseFloat(v) > 0 },
-            { raw: 9,  nombre: "Autorización Sup.", check: v => String(v||"").trim() !== "" },
-            { raw: 10, nombre: "Justificación",     check: v => String(v||"").trim() !== "" },
-            { raw: 12, nombre: "Tipo HE",           check: v => String(v||"").trim() !== "" },
-        ];
-        if (!usaContratoFijo) {
-            OBLIGATORIOS.push({ raw: 0, nombre: "Contrato", check: v => String(v||"").trim() !== "" });
-        }
 
         const errores = [];
         const filasParsed = [];
@@ -1423,31 +1446,30 @@ function procesarImport(input) {
         dataRows.forEach((r, idx) => {
             if (!r.some(v => v !== "")) return;
             const filaNum = idx + (isHeader ? 2 : 1);
-            const camposError = OBLIGATORIOS.filter(ob => !ob.check(r[ob.raw]))
-                                            .map(ob => ({ campo: ob.nombre, valor: String(r[ob.raw] ?? "").trim() }));
-            if (camposError.length > 0) {
-                camposError.forEach(ce => errores.push({ fila: filaNum, ...ce }));
-            } else {
-                filasParsed.push({
-                    contrato:          String(r[0]  || "").trim(),
-                    fecha_labor:       fmtFechaImport(r[1]),
-                    cedula:            String(r[2]  || "").trim(),
-                    nombre:            String(r[3]  || "").trim(),
-                    recurso:           String(r[4]  || "").trim(),
-                    placa:             String(r[5]  || "").trim(),
-                    id_concepto:       String(r[6]  || "").trim(),
-                    horas_reportadas:  parseFloat(r[7])  || 0,
-                    horas_compensadas: parseFloat(r[8])  || 0,
-                    autorizacion_sup:  String(r[9]  || "").trim(),
-                    justificacion:     String(r[10] || "").trim(),
-                    observacion:       String(r[11] || "").trim(),
-                    tipo_he:           String(r[12] || "").trim(),
-                    valor_extra_nomina:String(r[13] || "").trim(),
-                    valor_extra:       String(r[14] || "").trim(),
-                    autorizacion_neo:  String(r[15] || "").trim(),
-                    horas_autorizadas: r[16] !== "" && r[16] != null ? parseFloat(r[16]) : "",
-                });
+            const cedula = String(r[iCedula] || "").trim();
+            if (!cedula) {
+                errores.push({ fila: filaNum, campo: "Cédula", valor: "" });
+                return;
             }
+            filasParsed.push({
+                contrato:          String(r[iContrato]  || "").trim(),
+                fecha_labor:       fmtFechaImport(r[iFecha]),
+                cedula,
+                nombre:            String(r[iNombre]    || "").trim(),
+                recurso:           String(r[iRecurso]   || "").trim(),
+                placa:             String(r[iPlaca]     || "").trim(),
+                id_concepto:       String(r[iConcepto]  || "").trim(),
+                horas_reportadas:  parseFloat(r[iHrsRep])  || 0,
+                horas_compensadas: parseFloat(r[iHrsComp]) || 0,
+                autorizacion_sup:  String(r[iAuthSup]   || "").trim(),
+                justificacion:     String(r[iJust]      || "").trim(),
+                observacion:       String(r[iObs]       || "").trim(),
+                tipo_he:           String(r[iTipo]      || "").trim(),
+                valor_extra_nomina:String(r[iVlrNom]    || "").trim(),
+                valor_extra:       String(r[iVlrExtra]  || "").trim(),
+                autorizacion_neo:  String(r[iAuthNeo]   || "").trim(),
+                horas_autorizadas: r[iHrsAuth] !== "" && r[iHrsAuth] != null ? parseFloat(r[iHrsAuth]) : "",
+            });
         });
 
         const wrap    = document.getElementById("importPreviewWrap");
