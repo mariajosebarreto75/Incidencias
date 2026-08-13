@@ -1,7 +1,7 @@
 {% extends base_template %}
 {% block title %}Dashboard Horas Extras{% endblock %}
 
-{% block extra_head %}
+{% block head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root { --dh-bg: #0f172a; --dh-card: #1e293b; --dh-border: #334155; --dh-text: #e2e8f0; --dh-sub: #94a3b8; }
@@ -86,12 +86,12 @@
 
     <!-- KPI CARDS -->
     <div class="dh-kpis" id="kpiRow">
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#38bdf8">📋</div><div class="dh-kpi-val" id="k_total">—</div><div class="dh-kpi-lbl">Total registros</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#a78bfa">⏱</div><div class="dh-kpi-val" id="k_rep">—</div><div class="dh-kpi-lbl">Hrs reportadas</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#4ade80">✅</div><div class="dh-kpi-val" id="k_auth">—</div><div class="dh-kpi-lbl">Hrs autorizadas</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#f87171">❌</div><div class="dh-kpi-val" id="k_noconf">—</div><div class="dh-kpi-lbl">Hrs no conformes</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#fcd34d">💸</div><div class="dh-kpi-val" id="k_desc">—</div><div class="dh-kpi-lbl">Hrs descontadas</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#94a3b8">⏳</div><div class="dh-kpi-val" id="k_pend">—</div><div class="dh-kpi-lbl">Pendientes</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#38bdf8"><i class="bi bi-clipboard2-data"></i></div><div class="dh-kpi-val" id="k_total">—</div><div class="dh-kpi-lbl">Total registros</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#a78bfa"><i class="bi bi-clock-history"></i></div><div class="dh-kpi-val" id="k_rep">—</div><div class="dh-kpi-lbl">Hrs reportadas</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#4ade80"><i class="bi bi-check-circle-fill"></i></div><div class="dh-kpi-val" id="k_auth">—</div><div class="dh-kpi-lbl">Hrs autorizadas</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#f87171"><i class="bi bi-x-circle-fill"></i></div><div class="dh-kpi-val" id="k_noconf">—</div><div class="dh-kpi-lbl">Hrs no conformes</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#fcd34d"><i class="bi bi-dash-circle-fill"></i></div><div class="dh-kpi-val" id="k_desc">—</div><div class="dh-kpi-lbl">Hrs descontadas</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#94a3b8"><i class="bi bi-hourglass-split"></i></div><div class="dh-kpi-val" id="k_pend">—</div><div class="dh-kpi-lbl">Pendientes</div></div>
     </div>
 
     <!-- CHARTS ROW -->
