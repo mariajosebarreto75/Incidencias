@@ -1620,7 +1620,7 @@ def api_he_dashboard_data():
     # ── Por tipo de HE ───────────────────────────────────────────────────────
     por_tipo = {}
     for r in registros:
-        k = r.id_concepto
+        k = (r.id_concepto or "").strip().zfill(2)  # normalizar a 2 dígitos: "3" → "03"
         label = CONCEPTOS_HE.get(k, k)
         if k not in por_tipo:
             por_tipo[k] = {"codigo": k, "tipo": label, "registros": 0,
@@ -1645,7 +1645,7 @@ def api_he_dashboard_data():
     from collections import defaultdict
     he_por_persona_mes = defaultdict(lambda: {"nombre":"","contrato":"","horas":0})
     for r in registros:
-        if r.id_concepto not in CODIGOS_HE: continue
+        if (r.id_concepto or "").strip().zfill(2) not in CODIGOS_HE: continue
         if not r.fecha_labor: continue
         llave = (r.cedula, r.fecha_labor.strftime("%Y-%m"),
                  r.contrato.contrato if r.contrato else "")

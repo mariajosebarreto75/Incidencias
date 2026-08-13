@@ -146,7 +146,8 @@
 {% block scripts %}
 <script>
 let chartTipo = null, chartDia = null;
-const fmt = n => (n||0).toLocaleString('es-CO');
+const fmt    = n => (n||0).toLocaleString('es-CO');
+const fmtHrs = n => Math.round(n||0).toLocaleString('es-CO');
 
 function limpiar() {
     ['fContrato','fCorte'].forEach(id=>document.getElementById(id).value='');
@@ -182,27 +183,53 @@ async function cargar() {
     if (data.top_tipo) {
         const tag = document.getElementById('topTipoTag');
         tag.style.display = '';
-        tag.textContent = '★ Más frecuente: ' + data.top_tipo.codigo + ' (' + data.top_tipo.hrs_reportadas + 'h)';
+        tag.textContent = '★ Más frecuente: ' + data.top_tipo.codigo + ' (' + fmtHrs(data.top_tipo.hrs_reportadas) + 'h)';
     }
 }
 
 function renderKpis(k) {
     document.getElementById('k_total').textContent  = fmt(k.total);
-    document.getElementById('k_rep').textContent    = fmt(k.hrs_reportadas) + 'h';
-    document.getElementById('k_auth').textContent   = fmt(k.hrs_autorizadas) + 'h';
-    document.getElementById('k_noconf').textContent = fmt(k.hrs_no_conforme) + 'h';
-    document.getElementById('k_desc').textContent   = fmt(k.hrs_descontadas) + 'h';
+    document.getElementById('k_rep').textContent    = fmtHrs(k.hrs_reportadas) + 'h';
+    document.getElementById('k_auth').textContent   = fmtHrs(k.hrs_autorizadas) + 'h';
+    document.getElementById('k_noconf').textContent = fmtHrs(k.hrs_no_conforme) + 'h';
+    document.getElementById('k_desc').textContent   = fmtHrs(k.hrs_descontadas) + 'h';
     document.getElementById('k_pend').textContent   = fmt(k.pendientes);
 }
+
+// Plugin inline: dibuja el valor al final de cada barra horizontal
+const barValuePlugin = {
+    id: 'barValues',
+    afterDatasetsDraw(chart) {
+        const { ctx, scales: { x, y } } = chart;
+        chart.data.datasets.forEach((ds, di) => {
+            chart.getDatasetMeta(di).data.forEach((bar, i) => {
+                const val = ds.data[i];
+                if (val == null) return;
+                const txt = val.toLocaleString('es-CO') + 'h';
+                ctx.save();
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillStyle = '#e2e8f0';
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'left';
+                ctx.fillText(txt, bar.x + 6, bar.y);
+                ctx.restore();
+            });
+        });
+    }
+};
 
 function renderChartTipo(tipos) {
     const ctx = document.getElementById('chartTipo').getContext('2d');
     if (chartTipo) chartTipo.destroy();
-    const labels = tipos.map(t => t.codigo + ' – ' + (t.tipo||'').slice(0,22));
-    const vals   = tipos.map(t => t.hrs_reportadas);
+    const labels = tipos.map(t => {
+        const nombre = (t.tipo && t.tipo !== t.codigo) ? t.tipo : '';
+        return nombre ? t.codigo + ' – ' + nombre : t.codigo;
+    });
+    const vals   = tipos.map(t => Math.round(t.hrs_reportadas));
     const colors = ['#38bdf8','#818cf8','#34d399','#fb923c','#f472b6','#facc15','#a78bfa'];
     chartTipo = new Chart(ctx, {
         type: 'bar',
+        plugins: [barValuePlugin],
         data: { labels, datasets: [{ label: 'Hrs reportadas', data: vals,
             backgroundColor: tipos.map((_,i)=>colors[i%colors.length]), borderRadius: 4 }] },
         options: {
@@ -210,9 +237,11 @@ function renderChartTipo(tipos) {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10} } },
-                y: { grid: { display: false }, ticks: { color: '#94a3b8', font:{size:10} } }
-            }
+                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10},
+                    callback: v => v.toLocaleString('es-CO') } },
+                y: { grid: { display: false }, ticks: { color: '#e2e8f0', font:{size:11} } }
+            },
+            layout: { padding: { right: 90 } }
         }
     });
 }
