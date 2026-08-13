@@ -1737,6 +1737,29 @@ def api_he_kpis_concepto():
     } for r in rows])
 
 
+@admin_bp.route("/api/he/registros/bulk-delete", methods=["POST"])
+@admin_required
+def api_he_bulk_delete():
+    """Elimina registros HE en un rango de fecha_labor."""
+    d = request.get_json() or {}
+    desde = d.get("fecha_desde")
+    hasta = d.get("fecha_hasta")
+    if not desde or not hasta:
+        return jsonify({"ok": False, "msg": "fecha_desde y fecha_hasta son requeridos"}), 400
+    try:
+        from datetime import date as _date
+        f_desde = _date.fromisoformat(desde)
+        f_hasta = _date.fromisoformat(hasta)
+    except ValueError:
+        return jsonify({"ok": False, "msg": "Formato de fecha inválido (YYYY-MM-DD)"}), 400
+    eliminados = HoraExtra.query.filter(
+        HoraExtra.fecha_labor >= f_desde,
+        HoraExtra.fecha_labor <= f_hasta
+    ).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({"ok": True, "eliminados": eliminados})
+
+
 @admin_bp.route("/api/he/registros/export")
 @admin_required
 def api_he_registros_export():
