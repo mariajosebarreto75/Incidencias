@@ -278,9 +278,12 @@ body { background:var(--c-bg); }
                     <select id="gridContrato" onchange="onContratoChange()"
                         style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);
                                border-radius:8px;padding:6px 12px;font-size:.82rem;outline:none;min-width:280px;">
+                        {% if contratos|length != 1 %}
                         <option value="" style="background:#0d3b66;">— Seleccione un contrato —</option>
+                        {% endif %}
                         {% for c in contratos %}
-                        <option value="{{ c.id }}" style="background:#0d3b66;">{{ c.contrato }}</option>
+                        <option value="{{ c.id }}" style="background:#0d3b66;"
+                            {% if contratos|length == 1 %}selected{% endif %}>{{ c.contrato }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -866,9 +869,11 @@ async function cargarRegistrosCorteActual(corteId) {
     _corteActualRegId = corteId || null;
     const contratoId = document.getElementById("gridContrato").value;
     let registros = [];
-    if (corteId && contratoId) {
+    if (corteId) {
         try {
-            const r = await fetch(`/api/he/registros?corte_id=${corteId}&contrato_id=${contratoId}`);
+            let url = `/api/he/registros?corte_id=${corteId}`;
+            if (contratoId) url += `&contrato_id=${contratoId}`;
+            const r = await fetch(url);
             registros = await r.json();
             if (!Array.isArray(registros)) registros = [];
         } catch(e) { registros = []; }
