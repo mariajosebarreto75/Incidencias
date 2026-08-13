@@ -514,9 +514,13 @@ body { background:var(--c-bg); }
 <!-- ── Modal Nuevo Corte NEO ── -->
 <!-- Popup filtro columnas Handsontable -->
 <div id="htFilterPopup">
-    <div class="fp-sort-row">
+    <div class="fp-sort-row" id="fpSortNumRow">
         <button class="fp-sort-btn" id="fpSortAsc"  onclick="_sortColumnNeo('asc')">&#9650; Menor a mayor</button>
         <button class="fp-sort-btn" id="fpSortDesc" onclick="_sortColumnNeo('desc')">&#9660; Mayor a menor</button>
+    </div>
+    <div class="fp-sort-row" id="fpSortDateRow" style="display:none">
+        <button class="fp-sort-btn" id="fpSortDateAsc"  onclick="_sortColumnNeo('asc')">&#128336; Más antiguo</button>
+        <button class="fp-sort-btn" id="fpSortDateDesc" onclick="_sortColumnNeo('desc')">&#9889; Más nuevo</button>
     </div>
     <hr class="fp-sort-sep">
     <input class="fp-search" placeholder="Buscar…" id="fpSearch">
@@ -1148,10 +1152,20 @@ function _openFilterPopup(htInst, col, anchorBtn) {
     // Guardar lista completa para búsqueda
     popup._allVals = allVals;
 
+    // Mostrar fila de sort según tipo de columna
+    const DATE_COLS = new Set([C_FECHA, C_FREPORTE, C_VALFECHA]);
+    const isDateCol = DATE_COLS.has(col);
+    document.getElementById('fpSortNumRow').style.display  = isDateCol ? 'none' : '';
+    document.getElementById('fpSortDateRow').style.display = isDateCol ? ''     : 'none';
+
     // Marcar botón de orden activo
     const sortSt = (htInst === hotHistorial) ? _histSortState : _neoSortState;
-    document.getElementById('fpSortAsc').classList.toggle('active',  !!(sortSt && sortSt.col === col && sortSt.dir === 'asc'));
-    document.getElementById('fpSortDesc').classList.toggle('active', !!(sortSt && sortSt.col === col && sortSt.dir === 'desc'));
+    const isAsc  = !!(sortSt && sortSt.col === col && sortSt.dir === 'asc');
+    const isDesc = !!(sortSt && sortSt.col === col && sortSt.dir === 'desc');
+    document.getElementById('fpSortAsc').classList.toggle('active',      isAsc);
+    document.getElementById('fpSortDesc').classList.toggle('active',     isDesc);
+    document.getElementById('fpSortDateAsc').classList.toggle('active',  isAsc);
+    document.getElementById('fpSortDateDesc').classList.toggle('active', isDesc);
 }
 
 function _sortColumnNeo(dir) {
@@ -1267,9 +1281,22 @@ function _applyAllFilters(htInst) {
     }
     if (sortSt) {
         const { col, dir } = sortSt;
+        const DATE_COLS = new Set([C_FECHA, C_FREPORTE, C_VALFECHA]);
         pairs = pairs.slice().sort(([ra], [rb]) => {
-            const va = String(ra[col] ?? '');
-            const vb = String(rb[col] ?? '');
+            let va = String(ra[col] ?? '');
+            let vb = String(rb[col] ?? '');
+            if (DATE_COLS.has(col)) {
+                // Fecha en formato DD/MM/YYYY o DD-MM-YY → convertir a YYYY-MM-DD para ordenar
+                const toIso = v => {
+                    const p = v.split(/[\/\-]/);
+                    if (p.length === 3) {
+                        const y = p[2].length === 2 ? '20' + p[2] : p[2];
+                        return `${y}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+                    }
+                    return v;
+                };
+                va = toIso(va); vb = toIso(vb);
+            }
             const cmp = va.localeCompare(vb, 'es', { sensitivity: 'base', numeric: true });
             return dir === 'asc' ? cmp : -cmp;
         });
