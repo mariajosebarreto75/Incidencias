@@ -325,17 +325,25 @@ def api_he_guardar():
         return jsonify({"ok": False, "msg": "Sin registros válidos"}), 400
 
     # ── Validación de duplicados ──────────────────────────────────────────────
-    # Clave: contrato + cédula + concepto + fecha (sin horas, para tolerar campos vacíos)
+    # Clave: contrato + cédula + concepto (normalizado 2 dígitos) + fecha + horas
     from sqlalchemy import tuple_ as sa_tuple
     claves_bd = sa_tuple(
         HoraExtra.contrato_id, HoraExtra.cedula,
-        HoraExtra.id_concepto, HoraExtra.fecha_labor
+        HoraExtra.id_concepto, HoraExtra.fecha_labor, HoraExtra.horas_reportadas
     )
-    buscar = [(r["contrato_id"], r["cedula"], r["id_concepto"], r["fecha_labor"])
-              for r in registros]
-    existentes = HoraExtra.query.filter(claves_bd.in_(buscar)).all()
+    # Normalizar concepto para comparar: "3" → "03"
+    def _norm_concepto(v):
+        return str(v or "").strip().zfill(2)
+
+    buscar = [(r["contrato_id"], r["cedula"], _norm_concepto(r["id_concepto"]),
+               r["fecha_labor"], r["horas_reportadas"]) for r in registros]
+    existentes = HoraExtra.query.filter(claves_bd.in_(
+        [(r["contrato_id"], r["cedula"], r["id_concepto"],
+          r["fecha_labor"], r["horas_reportadas"]) for r in registros]
+    )).all()
     existentes_set = {
-        (e.contrato_id, e.cedula, e.id_concepto, str(e.fecha_labor))
+        (e.contrato_id, e.cedula, _norm_concepto(e.id_concepto),
+         str(e.fecha_labor), e.horas_reportadas)
         for e in existentes
     }
 
@@ -344,7 +352,8 @@ def api_he_guardar():
     registros_ok = []
     duplicados = []
     for i, r in enumerate(registros):
-        k = (r["contrato_id"], r["cedula"], r["id_concepto"], str(r["fecha_labor"]))
+        k = (r["contrato_id"], r["cedula"], _norm_concepto(r["id_concepto"]),
+             str(r["fecha_labor"]), r["horas_reportadas"])
         if k in lote_keys:
             duplicados.append({
                 "fila": i + 1, "cedula": r["cedula"], "concepto": r["id_concepto"],
