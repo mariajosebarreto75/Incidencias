@@ -240,7 +240,7 @@
                         <td style="width:160px;">
                             <div class="dg-bar-track">
                                 <div class="dg-bar-fill dg-bar-fill-orange"
-                                     style="width:{{ ((row.horas / max_horas * 100) if max_horas else 0)|round(1) }}%"></div>
+                                     data-pct="{{ ((row.horas / max_horas * 100) if max_horas else 0)|round(1) }}"></div>
                             </div>
                         </td>
                     </tr>
@@ -274,7 +274,7 @@
                         {% endif %}
                         <div class="dg-bar-track">
                             <div class="dg-bar-fill {{ color_class }}"
-                                 style="width:{{ ((fila.cantidad / serie.maximo * 100) if serie.maximo else 0)|round(1) }}%"></div>
+                                 data-pct="{{ ((fila.cantidad / serie.maximo * 100) if serie.maximo else 0)|round(1) }}"></div>
                         </div>
                         <span class="dg-bar-value">{{ fila.cantidad }}</span>
                     </div>
@@ -323,7 +323,7 @@
                         <span class="dg-bar-label">{{ fila.etiqueta }}</span>
                         {% endif %}
                         <div class="dg-bar-track">
-                            <div class="dg-bar-fill" style="width:{{ fila.valor }}%"></div>
+                            <div class="dg-bar-fill" data-pct="{{ fila.valor }}"></div>
                         </div>
                         <span class="dg-bar-value">{{ fila.valor }}%</span>
                     </div>
@@ -342,8 +342,7 @@
             <div class="dg-card-header"><i class="bi bi-pie-chart-fill me-1"></i>% Conformidad NEO</div>
             <div class="dg-card-body dg-pie-body">
                 {% if conformidad_pie.total_conformes + conformidad_pie.total_no_conformes > 0 %}
-                <div class="dg-pie"
-                     style="background:conic-gradient(#10b981 0deg {{ conformidad_pie.grados_conforme }}deg,#ef4444 {{ conformidad_pie.grados_conforme }}deg 360deg);">
+                <div class="dg-pie" data-pie-deg="{{ conformidad_pie.grados_conforme }}">
                     <div class="dg-pie-hole">
                         <span class="dg-pie-hole-value">{{ conformidad_pie.pct_conforme }}%</span>
                         <span class="dg-pie-hole-label">Conforme</span>
@@ -383,7 +382,7 @@
                     <span class="dg-col-value">{{ cantidad }}</span>
                     <div class="dg-col-track">
                         <div class="dg-col-fill"
-                             style="height:{{ ((cantidad / reportes_por_dia.maximo * 100) if reportes_por_dia.maximo else 0)|round(1) }}%"></div>
+                             data-hpct="{{ ((cantidad / reportes_por_dia.maximo * 100) if reportes_por_dia.maximo else 0)|round(1) }}"></div>
                     </div>
                     <span class="dg-col-label">{{ etiqueta }}</span>
                 </div>
@@ -398,5 +397,18 @@
 </div>
 
 <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+<script>
+document.querySelectorAll('[data-pct]').forEach(function(el) {
+    el.style.width = el.getAttribute('data-pct') + '%';
+});
+document.querySelectorAll('[data-hpct]').forEach(function(el) {
+    el.style.height = el.getAttribute('data-hpct') + '%';
+});
+var pie = document.querySelector('[data-pie-deg]');
+if (pie) {
+    var deg = pie.getAttribute('data-pie-deg');
+    pie.style.background = 'conic-gradient(#10b981 0deg ' + deg + 'deg,#ef4444 ' + deg + 'deg 360deg)';
+}
+</script>
 </body>
 </html>
