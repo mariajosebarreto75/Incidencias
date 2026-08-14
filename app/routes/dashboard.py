@@ -65,14 +65,13 @@ _COLUMNA_POR_DIMENSION = {
 }
 
 
-def _formato_dias_horas(total_horas):
-    """Convierte un total de horas (float) a un texto compacto 'Xd Yh'/'Xh Ym'."""
+def _formato_horas(total_horas):
+    """Muestra el total de horas como '1,234h 30m'."""
     total_minutos = round((total_horas or 0) * 60)
-    dias, resto = divmod(total_minutos, 24 * 60)
-    horas, minutos = divmod(resto, 60)
-    if dias > 0:
-        return f"{dias}d {horas}h"
-    return f"{horas}h {minutos}m"
+    horas, minutos = divmod(total_minutos, 60)
+    if minutos:
+        return f"{horas:,}h {minutos}m"
+    return f"{horas:,}h"
 
 
 @dashboard.route("/dashboard-gerencial")
@@ -188,17 +187,24 @@ def indicadores():
             except ValueError: pass
         return filtros
 
-    def _query(excluir=None):
-        q = db.session.query(ReporteOperacional)
+    def _aplicar(q, excluir=None):
         for f in _filtros_sql(excluir):
             q = q.filter(f)
         return q
 
+    def _query(excluir=None):
+        return _aplicar(db.session.query(ReporteOperacional), excluir)
+
     def _contar(columna, excluir=None):
-        q = db.session.query(columna, func.count(ReporteOperacional.id))
-        for f in _filtros_sql(excluir):
-            q = q.filter(f)
-        return q.group_by(columna).all()
+        return _aplicar(
+            db.session.query(columna, func.count(ReporteOperacional.id)), excluir
+        ).group_by(columna).all()
+
+    def _es_activo(dimension, valor):
+        v = activos.get(dimension)
+        if isinstance(v, list):
+            return bool(valor) and valor in v
+        return bool(valor) and v == valor
 
     def _serie(pares, dimension, etiquetas=None, label_vacio="Sin dato"):
         """pares: [(valor, cantidad), ...]. `etiquetas` opcional: valor -> texto a mostrar."""
@@ -213,7 +219,7 @@ def indicadores():
                 "etiqueta": etiqueta,
                 "cantidad": cantidad,
                 "url": _url_toggle(dimension, valor) if valor else None,
-                "activo": bool(valor) and activos.get(dimension) == valor,
+                "activo": _es_activo(dimension, valor),
             })
         if resto:
             filas.append({
@@ -230,16 +236,14 @@ def indicadores():
     total_no_conformes = _query().filter(ReporteOperacional.conformidad_neo == "No conforme").count()
     total_cerrados = _query().filter(ReporteOperacional.estado == "Cerrado").count()
 
-    suma_horas = (
+    suma_horas = _aplicar(
         db.session.query(func.sum(ReporteOperacional.horas_afectadas))
-        .filter(*_filtros_sql()).scalar()
-    ) or 0
-    tiempo_desviacion_txt = _formato_dias_horas(suma_horas)
+    ).scalar() or 0
+    tiempo_desviacion_txt = _formato_horas(suma_horas)
 
-    suma_afectacion = (
+    suma_afectacion = _aplicar(
         db.session.query(func.sum(ReporteOperacional.afectacion_economica))
-        .filter(*_filtros_sql()).scalar()
-    ) or 0
+    ).scalar() or 0
 
     # ---- Series (cada una excluye su propia dimensión para poder cambiar la selección) ----
     reportes_por_contrato = _serie(
@@ -253,12 +257,11 @@ def indicadores():
     )
 
     # Afectación económica por tipo de incidencia
-    afect_por_tipo_raw = (
+    afect_por_tipo_raw = _aplicar(
         db.session.query(ReporteOperacional.tipo_incidencia,
-                         func.sum(ReporteOperacional.afectacion_economica))
-        .filter(*_filtros_sql(excluir="tipo"))
-        .group_by(ReporteOperacional.tipo_incidencia).all()
-    )
+                         func.sum(ReporteOperacional.afectacion_economica)),
+        excluir="tipo"
+    ).group_by(ReporteOperacional.tipo_incidencia).all()
     afect_por_tipo = {(t or ""): round(a or 0) for t, a in afect_por_tipo_raw}
 
     # Listas de valores para los filtros desplegables
@@ -273,13 +276,12 @@ def indicadores():
     lista_conformidades = ["Conforme", "No conforme"]
 
     # Horas afectadas y afectación económica por contrato
-    horas_por_contrato_raw = (
+    horas_por_contrato_raw = _aplicar(
         db.session.query(ReporteOperacional.contrato,
                          func.sum(ReporteOperacional.horas_afectadas),
-                         func.sum(ReporteOperacional.afectacion_economica))
-        .filter(*_filtros_sql(excluir="contrato"))
-        .group_by(ReporteOperacional.contrato).all()
-    )
+                         func.sum(ReporteOperacional.afectacion_economica)),
+        excluir="contrato"
+    ).group_by(ReporteOperacional.contrato).all()
     horas_por_contrato = []
     for contrato, hrs, afect in sorted(horas_por_contrato_raw, key=lambda x: -(x[1] or 0)):
         horas_por_contrato.append({
@@ -292,26 +294,27 @@ def indicadores():
     max_horas = max((r["horas"] for r in horas_por_contrato), default=1) or 1
 
     pendientes_por_contrato = _serie(
-        db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
-        .filter(ReporteOperacional.estado == "Abierto")
-        .filter(*_filtros_sql(excluir="contrato"))
-        .group_by(ReporteOperacional.contrato)
-        .all(),
+        _aplicar(
+            db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
+            .filter(ReporteOperacional.estado == "Abierto"),
+            excluir="contrato"
+        ).group_by(ReporteOperacional.contrato).all(),
         "contrato", abrev_por_contrato
     )
 
     # ---- % de respuesta por contrato (excluye el filtro de contrato) ----
-    filtros_sin_contrato = _filtros_sql(excluir="contrato")
     total_por_contrato = dict(
-        db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
-        .filter(*filtros_sin_contrato).group_by(ReporteOperacional.contrato).all()
+        _aplicar(
+            db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id)),
+            excluir="contrato"
+        ).group_by(ReporteOperacional.contrato).all()
     )
     respondido_por_contrato = dict(
-        db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
-        .filter(ReporteOperacional.estado != "Abierto")
-        .filter(*filtros_sin_contrato)
-        .group_by(ReporteOperacional.contrato)
-        .all()
+        _aplicar(
+            db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
+            .filter(ReporteOperacional.estado != "Abierto"),
+            excluir="contrato"
+        ).group_by(ReporteOperacional.contrato).all()
     )
     pct_respuesta_datos = []
     for contrato, total in total_por_contrato.items():
@@ -327,17 +330,16 @@ def indicadores():
     pct_respuesta_por_contrato = {"datos": pct_respuesta_datos}
 
     # ---- % Conformidad NEO (torta — excluye su propio filtro) ----
-    filtros_sin_conf = _filtros_sql(excluir="conformidad")
-    conf_conformes = (
+    conf_conformes = _aplicar(
         db.session.query(func.count(ReporteOperacional.id))
-        .filter(ReporteOperacional.conformidad_neo == "Conforme")
-        .filter(*filtros_sin_conf).scalar()
-    ) or 0
-    conf_no_conformes = (
+        .filter(ReporteOperacional.conformidad_neo == "Conforme"),
+        excluir="conformidad"
+    ).scalar() or 0
+    conf_no_conformes = _aplicar(
         db.session.query(func.count(ReporteOperacional.id))
-        .filter(ReporteOperacional.conformidad_neo == "No conforme")
-        .filter(*filtros_sin_conf).scalar()
-    ) or 0
+        .filter(ReporteOperacional.conformidad_neo == "No conforme"),
+        excluir="conformidad"
+    ).scalar() or 0
     total_calificados = conf_conformes + conf_no_conformes
     pct_conforme = round(conf_conformes / total_calificados * 100, 1) if total_calificados else 0
     pct_no_conforme = round(100 - pct_conforme, 1) if total_calificados else 0
@@ -354,13 +356,9 @@ def indicadores():
     }
 
     # ---- Reportes por día (últimos 30 días con datos; aplica todos los filtros) ----
-    por_dia_raw = (
+    por_dia_raw = _aplicar(
         db.session.query(ReporteOperacional.fecha_reporte, func.count(ReporteOperacional.id))
-        .filter(*_filtros_sql())
-        .group_by(ReporteOperacional.fecha_reporte)
-        .order_by(ReporteOperacional.fecha_reporte)
-        .all()
-    )[-30:]
+    ).group_by(ReporteOperacional.fecha_reporte).order_by(ReporteOperacional.fecha_reporte).all()[-30:]
     maximo_dia = max((c for _, c in por_dia_raw), default=0)
     reportes_por_dia = {
         "datos": [(f.strftime("%d/%m") if f else "Sin fecha", c) for f, c in por_dia_raw],

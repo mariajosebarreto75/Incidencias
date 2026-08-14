@@ -306,7 +306,7 @@ body { background: var(--c-bg); color: var(--c-text); font-family: system-ui,-ap
 <div class="page">
 
   <!-- FILTROS -->
-  <form id="filter-form" method="get">
+  <form id="filter-form" method="get" action="{{ url_for('dashboard.indicadores') }}">
     <div class="filter-bar">
 
       <div class="filter-group">
