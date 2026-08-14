@@ -11,8 +11,9 @@ from flask_login import (
     current_user
 )
 
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from urllib.parse import urlencode
+from datetime import date as _date
 
 from app.extensions import db
 from app.models.contrato import Contrato
@@ -99,6 +100,17 @@ def indicadores():
         for c in Contrato.query.all()
     }
 
+    # ---- Filtros de mes/año ----
+    anio_filtro = request.args.get("anio", "").strip()
+    mes_filtro  = request.args.get("mes",  "").strip()
+    anio_actual = _date.today().year
+    lista_anios = list(range(anio_actual, anio_actual - 5, -1))
+    meses_nombres = {
+        "1": "Enero", "2": "Febrero", "3": "Marzo", "4": "Abril",
+        "5": "Mayo", "6": "Junio", "7": "Julio", "8": "Agosto",
+        "9": "Septiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre",
+    }
+
     # ---- Filtros activos (cross-filter estilo Power BI) ----
     activos = {}
     for dim in _DIMENSIONES:
@@ -108,11 +120,11 @@ def indicadores():
         activos[dim] = valor
 
     def _url_toggle(dimension, valor):
-        """Construye la URL con el filtro invertido (clic = aplicar, clic de nuevo = quitar),
-        conservando el resto de filtros activos."""
         nuevos = dict(activos)
         nuevos[dimension] = "" if activos.get(dimension) == valor else valor
         params = {k: v for k, v in nuevos.items() if v}
+        if anio_filtro: params["anio"] = anio_filtro
+        if mes_filtro:  params["mes"]  = mes_filtro
         base = url_for("dashboard.indicadores")
         return base + ("?" + urlencode(params) if params else "")
 
@@ -120,6 +132,17 @@ def indicadores():
         nuevos = dict(activos)
         nuevos[dimension] = ""
         params = {k: v for k, v in nuevos.items() if v}
+        if anio_filtro: params["anio"] = anio_filtro
+        if mes_filtro:  params["mes"]  = mes_filtro
+        base = url_for("dashboard.indicadores")
+        return base + ("?" + urlencode(params) if params else "")
+
+    def _url_toggle_base(dimension, valor):
+        nuevos = dict(activos)
+        nuevos[dimension] = "" if activos.get(dimension) == valor else valor
+        params = {k: v for k, v in nuevos.items() if v}
+        if anio_filtro: params["anio"] = anio_filtro
+        if mes_filtro:  params["mes"]  = mes_filtro
         base = url_for("dashboard.indicadores")
         return base + ("?" + urlencode(params) if params else "")
 
@@ -130,6 +153,12 @@ def indicadores():
         for dim, valor in activos.items():
             if valor and dim != excluir:
                 filtros.append(_COLUMNA_POR_DIMENSION[dim] == valor)
+        if anio_filtro:
+            try: filtros.append(extract("year",  ReporteOperacional.fecha_reporte) == int(anio_filtro))
+            except ValueError: pass
+        if mes_filtro:
+            try: filtros.append(extract("month", ReporteOperacional.fecha_reporte) == int(mes_filtro))
+            except ValueError: pass
         return filtros
 
     def _query(excluir=None):
@@ -192,6 +221,25 @@ def indicadores():
     reportes_por_recurso = _serie(_contar(ReporteOperacional.recurso, excluir="recurso"), "recurso")
     reportes_por_tipo = _serie(_contar(ReporteOperacional.tipo_incidencia, excluir="tipo"), "tipo")
     reportes_por_accion = _serie(_contar(ReporteOperacional.accion_a_tomar, excluir="accion"), "accion")
+
+    # Horas afectadas y afectación económica por contrato
+    horas_por_contrato_raw = (
+        db.session.query(ReporteOperacional.contrato,
+                         func.sum(ReporteOperacional.horas_afectadas),
+                         func.sum(ReporteOperacional.afectacion_economica))
+        .filter(*_filtros_sql(excluir="contrato"))
+        .group_by(ReporteOperacional.contrato).all()
+    )
+    horas_por_contrato = []
+    for contrato, hrs, afect in sorted(horas_por_contrato_raw, key=lambda x: -(x[1] or 0)):
+        horas_por_contrato.append({
+            "etiqueta": abrev_por_contrato.get(contrato, contrato) if contrato else "Sin dato",
+            "horas": round(hrs or 0, 1),
+            "afectacion": round(afect or 0),
+            "url": _url_toggle("contrato", contrato) if contrato else None,
+            "activo": bool(contrato) and activos.get("contrato") == contrato,
+        })
+    max_horas = max((r["horas"] for r in horas_por_contrato), default=1) or 1
 
     pendientes_por_contrato = _serie(
         db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
@@ -300,6 +348,10 @@ def indicadores():
         contrato_filtro=activos["contrato"],
         filtros_activos=filtros_activos,
         url_limpiar_todo=url_for("dashboard.indicadores"),
+        anio_filtro=anio_filtro,
+        mes_filtro=mes_filtro,
+        lista_anios=lista_anios,
+        meses_nombres=meses_nombres,
         kpis={
             "total_reportes":       total_reportes,
             "total_pendientes":     total_pendientes,
@@ -308,6 +360,7 @@ def indicadores():
             "total_cerrados":       total_cerrados,
             "tiempo_desviacion":    tiempo_desviacion_txt,
             "afectacion_economica": suma_afectacion,
+            "horas_afectadas":      round(suma_horas, 1),
         },
         reportes_por_contrato=reportes_por_contrato,
         pendientes_por_contrato=pendientes_por_contrato,
@@ -317,5 +370,7 @@ def indicadores():
         pct_respuesta_por_contrato=pct_respuesta_por_contrato,
         conformidad_pie=conformidad_pie,
         reportes_por_dia=reportes_por_dia,
+        horas_por_contrato=horas_por_contrato,
+        max_horas=max_horas,
         home_endpoint=home_por_rol.get(rol),
     )

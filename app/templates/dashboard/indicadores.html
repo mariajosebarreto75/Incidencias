@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -7,6 +7,94 @@
 <link href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_gerencial.css') }}">
+<style>
+.dg-filtro-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin-bottom:18px;}
+.dg-filtro-bar label{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:3px;display:block;}
+.dg-filtro-bar select{font-size:.82rem;border:1px solid #cbd5e1;border-radius:6px;padding:5px 10px;background:#fff;color:#1e293b;min-width:130px;}
+.dg-filtro-bar .dg-btn-filtrar{background:#0d6b73;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:.82rem;font-weight:600;cursor:pointer;}
+.dg-filtro-bar .dg-btn-limpiar{background:#fff;color:#64748b;border:1px solid #cbd5e1;border-radius:6px;padding:6px 14px;font-size:.82rem;cursor:pointer;text-decoration:none;}
+
+.dg-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+.dg-kpi{background:#fff;border-radius:10px;padding:16px 18px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.dg-kpi-hero{border-left:4px solid #0d6b73;}
+.dg-kpi-warn{border-left:4px solid #f59e0b;}
+.dg-kpi-good{border-left:4px solid #10b981;}
+.dg-kpi-bad{border-left:4px solid #ef4444;}
+.dg-kpi-accent{border-left:4px solid #8b5cf6;}
+.dg-kpi-hrs{border-left:4px solid #0ea5e9;}
+.dg-kpi-cash{border-left:4px solid #f97316;}
+.dg-kpi-label{font-size:.72rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.dg-kpi-value{font-size:1.7rem;font-weight:800;color:#1e293b;line-height:1;}
+.dg-kpi-value-sm{font-size:1.15rem;}
+
+.dg-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin:22px 0 10px;}
+
+.dg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.dg-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
+@media(max-width:900px){.dg-grid-2,.dg-grid-3{grid-template-columns:1fr;}}
+
+.dg-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden;}
+.dg-card-header{background:#f8fafc;padding:10px 16px;font-size:.8rem;font-weight:700;color:#334155;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:6px;}
+.dg-card-body{padding:14px 16px;}
+
+/* Barras horizontales */
+.dg-bars{display:flex;flex-direction:column;gap:7px;}
+.dg-bar-row{display:grid;grid-template-columns:160px 1fr 80px;align-items:center;gap:8px;}
+.dg-bar-row-activo .dg-bar-label{color:#0d6b73;font-weight:700;}
+.dg-bar-label{font-size:.76rem;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;}
+.dg-bar-label-link:hover{color:#0d6b73;text-decoration:underline;}
+.dg-bar-track{height:14px;background:#f1f5f9;border-radius:7px;overflow:hidden;}
+.dg-bar-fill{height:100%;background:linear-gradient(90deg,#0d6b73,#38bdf8);border-radius:7px;transition:width .4s;}
+.dg-bar-fill-red{background:linear-gradient(90deg,#ef4444,#fca5a5);}
+.dg-bar-fill-orange{background:linear-gradient(90deg,#f97316,#fed7aa);}
+.dg-bar-track-link{display:contents;}
+.dg-bar-value{font-size:.75rem;font-weight:700;color:#475569;text-align:right;}
+
+/* Tabla horas por contrato */
+.dg-tbl{width:100%;border-collapse:collapse;font-size:.78rem;}
+.dg-tbl th{background:#f8fafc;padding:7px 10px;text-align:left;font-weight:700;color:#64748b;border-bottom:2px solid #e2e8f0;white-space:nowrap;}
+.dg-tbl td{padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#334155;}
+.dg-tbl tr:hover td{background:#f8fafc;}
+.dg-tbl tr.activo td{background:#e0f7f7;font-weight:700;}
+.dg-tbl a{color:#0d6b73;text-decoration:none;}
+.dg-tbl a:hover{text-decoration:underline;}
+.dg-cash{color:#f97316;font-weight:700;}
+.dg-hrs{color:#0ea5e9;font-weight:700;}
+
+/* Gráfico de columnas (días) */
+.dg-cols{display:flex;gap:4px;align-items:flex-end;height:120px;overflow-x:auto;padding-bottom:4px;}
+.dg-col{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:32px;}
+.dg-col-track{flex:1;width:100%;display:flex;align-items:flex-end;background:#f1f5f9;border-radius:4px 4px 0 0;overflow:hidden;}
+.dg-col-fill{width:100%;background:linear-gradient(180deg,#0d6b73,#38bdf8);border-radius:4px 4px 0 0;}
+.dg-col-value{font-size:.62rem;font-weight:700;color:#475569;}
+.dg-col-label{font-size:.6rem;color:#94a3b8;white-space:nowrap;}
+
+/* Torta */
+.dg-pie-body{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+.dg-pie{width:110px;height:110px;border-radius:50%;position:relative;flex-shrink:0;}
+.dg-pie-hole{position:absolute;inset:20px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.dg-pie-hole-value{font-size:1.1rem;font-weight:800;color:#1e293b;}
+.dg-pie-hole-label{font-size:.6rem;color:#64748b;}
+.dg-pie-legend{display:flex;flex-direction:column;gap:8px;}
+.dg-legend-item{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#334155;text-decoration:none;}
+.dg-legend-item:hover{color:#0d6b73;}
+.dg-legend-item-activo{font-weight:700;color:#0d6b73;}
+.dg-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.dg-pie-legend-hint{font-size:.68rem;color:#94a3b8;}
+
+.dg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center;}
+.dg-chips-label{font-size:.72rem;color:#64748b;font-weight:600;}
+.dg-chip{display:inline-flex;align-items:center;gap:5px;background:#e0f7f7;color:#0d6b73;border-radius:20px;padding:3px 10px;font-size:.75rem;font-weight:600;text-decoration:none;border:1px solid #a7e8eb;}
+.dg-chip:hover{background:#c4f0f3;}
+.dg-chip-clear{background:#f1f5f9;color:#64748b;border-color:#cbd5e1;}
+.dg-chip-clear:hover{background:#e2e8f0;}
+
+.dg-table-toggle{margin-top:10px;}
+.dg-table-toggle summary{font-size:.72rem;color:#64748b;cursor:pointer;}
+.dg-table{width:100%;border-collapse:collapse;font-size:.75rem;margin-top:6px;}
+.dg-table th{background:#f8fafc;padding:5px 8px;text-align:left;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0;}
+.dg-table td{padding:4px 8px;border-bottom:1px solid #f1f5f9;}
+</style>
 </head>
 <body>
 
@@ -30,23 +118,55 @@
 
 <div class="dg-container">
 
-    <!-- FILTRO -->
-    <form class="dg-filtro" method="get">
-        <label><i class="bi bi-funnel me-1"></i>Contrato</label>
-        <select name="contrato" onchange="this.form.submit()">
-            <option value="">— Todos los contratos —</option>
-            {% for c in lista_contratos %}
-            <option value="{{ c }}" {% if c == contrato_filtro %}selected{% endif %}>
-                {{ abrev_por_contrato.get(c, c) }}
-            </option>
-            {% endfor %}
-        </select>
-        <span class="dg-filtro-hint">
-            <i class="bi bi-info-circle me-1"></i>Clic en cualquier barra o el gráfico circular para filtrar todo el tablero por esa categoría
+    <!-- FILTROS -->
+    <form class="dg-filtro-bar" method="get">
+        <div>
+            <label>Contrato</label>
+            <select name="contrato">
+                <option value="">— Todos —</option>
+                {% for c in lista_contratos %}
+                <option value="{{ c }}" {% if c == contrato_filtro %}selected{% endif %}>
+                    {{ abrev_por_contrato.get(c, c) }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Año</label>
+            <select name="anio">
+                <option value="">— Todos —</option>
+                {% for a in lista_anios %}
+                <option value="{{ a }}" {% if anio_filtro == a|string %}selected{% endif %}>{{ a }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Mes</label>
+            <select name="mes">
+                <option value="">— Todos —</option>
+                {% for num, nombre in meses_nombres.items() %}
+                <option value="{{ num }}" {% if mes_filtro == num %}selected{% endif %}>{{ nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% for dim in ['tipo','accion','recurso','conformidad'] %}
+            {% if activos[dim] %}<input type="hidden" name="{{ dim }}" value="{{ activos[dim] }}">{% endif %}
+        {% endfor %}
+        <div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:1px;">
+            <button type="submit" class="dg-btn-filtrar"><i class="bi bi-funnel me-1"></i>Filtrar</button>
+            <a href="{{ url_for('dashboard.indicadores') }}" class="dg-btn-limpiar"><i class="bi bi-x me-1"></i>Limpiar</a>
+        </div>
+        {% if anio_filtro or mes_filtro or contrato_filtro %}
+        <span style="font-size:.75rem;color:#0d6b73;font-weight:600;align-self:flex-end;padding-bottom:6px;">
+            <i class="bi bi-funnel-fill me-1"></i>
+            {% if contrato_filtro %}{{ abrev_por_contrato.get(contrato_filtro, contrato_filtro) }}{% endif %}
+            {% if mes_filtro %}· {{ meses_nombres.get(mes_filtro, mes_filtro) }}{% endif %}
+            {% if anio_filtro %}· {{ anio_filtro }}{% endif %}
         </span>
+        {% endif %}
     </form>
 
-    <!-- CHIPS DE FILTROS ACTIVOS -->
+    <!-- CHIPS filtros de dimensión activos -->
     {% if filtros_activos %}
     <div class="dg-chips">
         <span class="dg-chips-label">Filtros activos:</span>
@@ -55,21 +175,18 @@
             <strong>{{ f.dimension }}:</strong> {{ f.texto }} <i class="bi bi-x-lg"></i>
         </a>
         {% endfor %}
-        <a href="{{ url_limpiar_todo }}" class="dg-chip dg-chip-clear">
-            <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar todos
-        </a>
     </div>
     {% endif %}
 
     <!-- KPIs -->
-    <div class="dg-section-title">Resumen general</div>
+    <div class="dg-section-title"><i class="bi bi-speedometer2 me-1"></i>Resumen general</div>
     <div class="dg-kpi-row">
         <div class="dg-kpi dg-kpi-hero">
             <div class="dg-kpi-label"><i class="bi bi-clipboard-data me-1"></i>Total reportes</div>
             <div class="dg-kpi-value">{{ kpis.total_reportes }}</div>
         </div>
         <div class="dg-kpi dg-kpi-warn">
-            <div class="dg-kpi-label"><i class="bi bi-hourglass-split me-1"></i>Pendientes de respuesta</div>
+            <div class="dg-kpi-label"><i class="bi bi-hourglass-split me-1"></i>Sin respuesta</div>
             <div class="dg-kpi-value">{{ kpis.total_pendientes }}</div>
         </div>
         <div class="dg-kpi dg-kpi-good">
@@ -81,109 +198,182 @@
             <div class="dg-kpi-value">{{ kpis.total_no_conformes }}</div>
         </div>
         <div class="dg-kpi dg-kpi-accent">
-            <div class="dg-kpi-label"><i class="bi bi-lock me-1"></i>Cerrados (apelados)</div>
+            <div class="dg-kpi-label"><i class="bi bi-lock me-1"></i>Cerrados</div>
             <div class="dg-kpi-value">{{ kpis.total_cerrados }}</div>
         </div>
-        <div class="dg-kpi">
-            <div class="dg-kpi-label"><i class="bi bi-clock-history me-1"></i>Tiempo total en desviaciones</div>
+        <div class="dg-kpi dg-kpi-hrs">
+            <div class="dg-kpi-label"><i class="bi bi-clock-history me-1"></i>Hrs en desviaciones</div>
             <div class="dg-kpi-value dg-kpi-value-sm">{{ kpis.tiempo_desviacion }}</div>
         </div>
-        <div class="dg-kpi">
-            <div class="dg-kpi-label"><i class="bi bi-cash-coin me-1"></i>$ en desviaciones</div>
+        <div class="dg-kpi dg-kpi-cash">
+            <div class="dg-kpi-label"><i class="bi bi-cash-coin me-1"></i>$ afectación</div>
             <div class="dg-kpi-value dg-kpi-value-sm">${{ "{:,.0f}".format(kpis.afectacion_economica) }}</div>
         </div>
     </div>
 
-    {% macro bar_chart(titulo, icono, serie, unidad="") %}
-    <div class="dg-card">
-        <div class="dg-card-header"><i class="bi {{ icono }} me-2"></i>{{ titulo }}</div>
-        <div class="dg-card-body">
-            {% if serie.datos %}
-            <div class="dg-bars">
-                {% for fila in serie.datos %}
-                <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
-                    {% if fila.url %}
-                    <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="Filtrar por «{{ fila.etiqueta }}»">
-                        {% if fila.activo %}<i class="bi bi-check-circle-fill me-1"></i>{% endif %}{{ fila.etiqueta }}
-                    </a>
-                    {% else %}
-                    <span class="dg-bar-label" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</span>
-                    {% endif %}
-                    <a href="{{ fila.url }}" class="dg-bar-track-link {% if not fila.url %}dg-bar-track-link-disabled{% endif %}">
-                        <div class="dg-bar-track">
-                            <div class="dg-bar-fill"
-                                 style="width: {{ ((fila.cantidad / serie.maximo * 100) if serie.maximo else 0) | round(1) }}%;"></div>
-                        </div>
-                    </a>
-                    <span class="dg-bar-value">{{ fila.cantidad }}{{ unidad }}</span>
-                </div>
-                {% endfor %}
-            </div>
-            <details class="dg-table-toggle">
-                <summary>Ver tabla</summary>
-                <table class="dg-table">
-                    <thead><tr><th>Categoría</th><th>Cantidad</th></tr></thead>
-                    <tbody>
-                        {% for fila in serie.datos %}
-                        <tr><td>{{ fila.etiqueta }}</td><td>{{ fila.cantidad }}</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </details>
-            {% else %}
-            <p class="text-muted small mb-0">Sin datos para este filtro.</p>
-            {% endif %}
-        </div>
-    </div>
-    {% endmacro %}
-
-    {% macro pct_bar_chart(titulo, icono, serie) %}
-    <div class="dg-card">
-        <div class="dg-card-header"><i class="bi {{ icono }} me-2"></i>{{ titulo }}</div>
-        <div class="dg-card-body">
-            {% if serie.datos %}
-            <div class="dg-bars">
-                {% for fila in serie.datos %}
-                <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
-                    {% if fila.url %}
-                    <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="Filtrar por «{{ fila.etiqueta }}»">
-                        {% if fila.activo %}<i class="bi bi-check-circle-fill me-1"></i>{% endif %}{{ fila.etiqueta }}
-                    </a>
-                    {% else %}
-                    <span class="dg-bar-label" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</span>
-                    {% endif %}
-                    <a href="{{ fila.url }}" class="dg-bar-track-link {% if not fila.url %}dg-bar-track-link-disabled{% endif %}">
-                        <div class="dg-bar-track">
-                            <div class="dg-bar-fill" style="width: {{ fila.valor }}%;"></div>
-                        </div>
-                    </a>
-                    <span class="dg-bar-value">{{ fila.valor }}%</span>
-                </div>
-                {% endfor %}
-            </div>
-            <details class="dg-table-toggle">
-                <summary>Ver tabla</summary>
-                <table class="dg-table">
-                    <thead><tr><th>Contrato</th><th>% respondido</th></tr></thead>
-                    <tbody>
-                        {% for fila in serie.datos %}
-                        <tr><td>{{ fila.etiqueta }}</td><td>{{ fila.valor }}%</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </details>
-            {% else %}
-            <p class="text-muted small mb-0">Sin datos para este filtro.</p>
-            {% endif %}
-        </div>
-    </div>
-    {% endmacro %}
-
-    <!-- REPORTES POR DIA -->
-    <div class="dg-section-title">Tendencia</div>
+    <!-- HORAS Y AFECTACIÓN POR CONTRATO -->
+    <div class="dg-section-title"><i class="bi bi-building me-1"></i>Impacto por contrato</div>
     <div class="dg-card mb-3">
-        <div class="dg-card-header"><i class="bi bi-calendar3 me-2"></i>Cantidad de reportes por día
-            <span class="dg-card-header-sub">últimos {{ reportes_por_dia.datos|length }} días con reportes</span>
+        <div class="dg-card-header"><i class="bi bi-table me-1"></i>Horas afectadas y afectación económica por contrato</div>
+        <div class="dg-card-body" style="padding:0;overflow-x:auto;">
+            {% if horas_por_contrato %}
+            <table class="dg-tbl">
+                <thead>
+                    <tr>
+                        <th>Contrato</th>
+                        <th style="text-align:right">Reportes</th>
+                        <th style="text-align:right">Hrs afectadas</th>
+                        <th style="text-align:right">$ Afectación</th>
+                        <th>Barra hrs</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in horas_por_contrato %}
+                    <tr class="{% if row.activo %}activo{% endif %}">
+                        <td>
+                            {% if row.url %}<a href="{{ row.url }}">{{ row.etiqueta }}</a>
+                            {% else %}{{ row.etiqueta }}{% endif %}
+                        </td>
+                        <td style="text-align:right">—</td>
+                        <td style="text-align:right" class="dg-hrs">{{ row.horas }}h</td>
+                        <td style="text-align:right" class="dg-cash">${{ "{:,.0f}".format(row.afectacion) }}</td>
+                        <td style="width:160px;">
+                            <div class="dg-bar-track">
+                                <div class="dg-bar-fill dg-bar-fill-orange"
+                                     style="width:{{ ((row.horas / max_horas * 100) if max_horas else 0)|round(1) }}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted small p-3 mb-0">Sin datos para este filtro.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- TIPOS DE DESVÍO Y ACCIONES -->
+    <div class="dg-section-title"><i class="bi bi-exclamation-triangle me-1"></i>Tipos de desvío y acciones</div>
+    <div class="dg-grid-2">
+
+        {% macro bar_chart(titulo, icono, serie, color_class="") %}
+        <div class="dg-card">
+            <div class="dg-card-header"><i class="bi {{ icono }} me-1"></i>{{ titulo }}</div>
+            <div class="dg-card-body">
+                {% if serie.datos %}
+                <div class="dg-bars">
+                    {% for fila in serie.datos %}
+                    <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
+                        {% if fila.url %}
+                        <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="{{ fila.etiqueta }}">
+                            {% if fila.activo %}<i class="bi bi-check-circle-fill me-1"></i>{% endif %}{{ fila.etiqueta }}
+                        </a>
+                        {% else %}
+                        <span class="dg-bar-label" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</span>
+                        {% endif %}
+                        <div class="dg-bar-track">
+                            <div class="dg-bar-fill {{ color_class }}"
+                                 style="width:{{ ((fila.cantidad / serie.maximo * 100) if serie.maximo else 0)|round(1) }}%"></div>
+                        </div>
+                        <span class="dg-bar-value">{{ fila.cantidad }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <details class="dg-table-toggle">
+                    <summary>Ver tabla</summary>
+                    <table class="dg-table">
+                        <thead><tr><th>Categoría</th><th>Cantidad</th></tr></thead>
+                        <tbody>{% for f in serie.datos %}<tr><td>{{ f.etiqueta }}</td><td>{{ f.cantidad }}</td></tr>{% endfor %}</tbody>
+                    </table>
+                </details>
+                {% else %}
+                <p class="text-muted small mb-0">Sin datos.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endmacro %}
+
+        {{ bar_chart("Tipos de desvío", "bi-exclamation-triangle", reportes_por_tipo, "dg-bar-fill-red") }}
+        {{ bar_chart("Acciones a tomar", "bi-arrow-right-circle", reportes_por_accion) }}
+    </div>
+
+    <!-- REPORTES POR CONTRATO Y PENDIENTES -->
+    <div class="dg-section-title"><i class="bi bi-bar-chart me-1"></i>Reportes por contrato</div>
+    <div class="dg-grid-2">
+        {{ bar_chart("Cantidad de reportes por contrato", "bi-building", reportes_por_contrato) }}
+        {{ bar_chart("Pendientes por contrato", "bi-hourglass-split", pendientes_por_contrato, "dg-bar-fill-orange") }}
+    </div>
+
+    <!-- CONFORMIDAD Y % RESPUESTA -->
+    <div class="dg-section-title"><i class="bi bi-patch-check me-1"></i>Conformidad y cumplimiento</div>
+    <div class="dg-grid-2">
+
+        {% macro pct_bar_chart(titulo, icono, serie) %}
+        <div class="dg-card">
+            <div class="dg-card-header"><i class="bi {{ icono }} me-1"></i>{{ titulo }}</div>
+            <div class="dg-card-body">
+                {% if serie.datos %}
+                <div class="dg-bars">
+                    {% for fila in serie.datos %}
+                    <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
+                        {% if fila.url %}
+                        <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link">{{ fila.etiqueta }}</a>
+                        {% else %}
+                        <span class="dg-bar-label">{{ fila.etiqueta }}</span>
+                        {% endif %}
+                        <div class="dg-bar-track">
+                            <div class="dg-bar-fill" style="width:{{ fila.valor }}%"></div>
+                        </div>
+                        <span class="dg-bar-value">{{ fila.valor }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">Sin datos.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endmacro %}
+
+        {{ pct_bar_chart("% de respuesta por contrato", "bi-reply-fill", pct_respuesta_por_contrato) }}
+
+        <div class="dg-card">
+            <div class="dg-card-header"><i class="bi bi-pie-chart-fill me-1"></i>% Conformidad NEO</div>
+            <div class="dg-card-body dg-pie-body">
+                {% if conformidad_pie.total_conformes + conformidad_pie.total_no_conformes > 0 %}
+                <div class="dg-pie"
+                     style="background:conic-gradient(#10b981 0deg {{ conformidad_pie.grados_conforme }}deg,#ef4444 {{ conformidad_pie.grados_conforme }}deg 360deg);">
+                    <div class="dg-pie-hole">
+                        <span class="dg-pie-hole-value">{{ conformidad_pie.pct_conforme }}%</span>
+                        <span class="dg-pie-hole-label">Conforme</span>
+                    </div>
+                </div>
+                <div class="dg-pie-legend">
+                    <span class="dg-pie-legend-hint">Clic para filtrar</span>
+                    <a href="{{ conformidad_pie.url_conforme }}"
+                       class="dg-legend-item {% if conformidad_pie.activo_conforme %}dg-legend-item-activo{% endif %}">
+                        <span class="dg-legend-dot" style="background:#10b981"></span>
+                        Conforme — {{ conformidad_pie.total_conformes }} ({{ conformidad_pie.pct_conforme }}%)
+                    </a>
+                    <a href="{{ conformidad_pie.url_no_conforme }}"
+                       class="dg-legend-item {% if conformidad_pie.activo_no_conforme %}dg-legend-item-activo{% endif %}">
+                        <span class="dg-legend-dot" style="background:#ef4444"></span>
+                        No conforme — {{ conformidad_pie.total_no_conformes }} ({{ conformidad_pie.pct_no_conforme }}%)
+                    </a>
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">Aún no hay reportes validados.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- TENDENCIA -->
+    <div class="dg-section-title"><i class="bi bi-calendar3 me-1"></i>Tendencia diaria</div>
+    <div class="dg-card mb-3">
+        <div class="dg-card-header"><i class="bi bi-graph-up me-1"></i>Reportes por día
+            <span style="font-size:.72rem;font-weight:400;color:#94a3b8;margin-left:8px;">últimos {{ reportes_por_dia.datos|length }} días con reportes</span>
         </div>
         <div class="dg-card-body">
             {% if reportes_por_dia.datos %}
@@ -193,7 +383,7 @@
                     <span class="dg-col-value">{{ cantidad }}</span>
                     <div class="dg-col-track">
                         <div class="dg-col-fill"
-                             style="height: {{ ((cantidad / reportes_por_dia.maximo * 100) if reportes_por_dia.maximo else 0) | round(1) }}%;"></div>
+                             style="height:{{ ((cantidad / reportes_por_dia.maximo * 100) if reportes_por_dia.maximo else 0)|round(1) }}%"></div>
                     </div>
                     <span class="dg-col-label">{{ etiqueta }}</span>
                 </div>
@@ -205,58 +395,8 @@
         </div>
     </div>
 
-    <!-- % RESPUESTA POR CONTRATO + TORTA CONFORMIDAD -->
-    <div class="dg-section-title">Conformidad y cumplimiento</div>
-    <div class="dg-charts-grid mb-3">
-        {{ pct_bar_chart("% de respuesta por contrato", "bi-reply-fill", pct_respuesta_por_contrato) }}
-
-        <div class="dg-card">
-            <div class="dg-card-header"><i class="bi bi-pie-chart-fill me-2"></i>% Conformidad NEO</div>
-            <div class="dg-card-body dg-pie-body">
-                {% if conformidad_pie.total_conformes + conformidad_pie.total_no_conformes > 0 %}
-                <div class="dg-pie"
-                     style="background: conic-gradient(#0ca30c 0deg {{ conformidad_pie.grados_conforme }}deg,
-                                                        #d03b3b {{ conformidad_pie.grados_conforme }}deg 360deg);">
-                    <div class="dg-pie-hole">
-                        <span class="dg-pie-hole-value">{{ conformidad_pie.pct_conforme }}%</span>
-                        <span class="dg-pie-hole-label">Conforme</span>
-                    </div>
-                </div>
-                <div class="dg-pie-legend">
-                    <span class="dg-pie-legend-hint">Clic para filtrar</span>
-                    <a href="{{ conformidad_pie.url_conforme }}"
-                       class="dg-legend-item {% if conformidad_pie.activo_conforme %}dg-legend-item-activo{% endif %}">
-                        <span class="dg-legend-dot" style="background:#0ca30c"></span>
-                        Conforme — {{ conformidad_pie.total_conformes }} ({{ conformidad_pie.pct_conforme }}%)
-                        {% if conformidad_pie.activo_conforme %}<i class="bi bi-check-circle-fill ms-1"></i>{% endif %}
-                    </a>
-                    <a href="{{ conformidad_pie.url_no_conforme }}"
-                       class="dg-legend-item {% if conformidad_pie.activo_no_conforme %}dg-legend-item-activo{% endif %}">
-                        <span class="dg-legend-dot" style="background:#d03b3b"></span>
-                        No conforme — {{ conformidad_pie.total_no_conformes }} ({{ conformidad_pie.pct_no_conforme }}%)
-                        {% if conformidad_pie.activo_no_conforme %}<i class="bi bi-check-circle-fill ms-1"></i>{% endif %}
-                    </a>
-                </div>
-                {% else %}
-                <p class="text-muted small mb-0">Aún no hay reportes validados por NEO para este filtro.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- GRAFICOS -->
-    <div class="dg-section-title">Distribución</div>
-    <div class="dg-charts-grid">
-        {{ bar_chart("Reportes por contrato", "bi-building", reportes_por_contrato) }}
-        {{ bar_chart("Pendientes por respuesta por contrato", "bi-hourglass-split", pendientes_por_contrato) }}
-        {{ bar_chart("Reportes por recurso", "bi-truck", reportes_por_recurso) }}
-        {{ bar_chart("Tipos de incidencia", "bi-exclamation-triangle", reportes_por_tipo) }}
-        {{ bar_chart("Acciones a tomar", "bi-arrow-right-circle", reportes_por_accion) }}
-    </div>
-
 </div>
 
 <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
 </body>
 </html>
-
