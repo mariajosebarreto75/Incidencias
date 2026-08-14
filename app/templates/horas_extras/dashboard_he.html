@@ -347,5 +347,37 @@ function renderSupervisores(lista) {
 const hoy = new Date();
 document.getElementById('fMes').value = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
 cargar();
+
+/* ── AUTO-REFRESH ── */
+(function(){
+  var INTERVAL = 5 * 60;
+  var remaining = INTERVAL;
+  var paused = false;
+
+  var badge = document.createElement('div');
+  badge.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;align-items:center;gap:8px;background:#1e293b;border:1px solid #334155;border-radius:999px;padding:6px 14px 6px 10px;box-shadow:0 2px 10px rgba(0,0,0,.25);font-size:.75rem;font-weight:600;color:#94a3b8;cursor:pointer;user-select:none;';
+  badge.innerHTML = '<span id="ar-dot" style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;"></span><span id="ar-txt">Actualizando en 5:00</span>';
+  badge.title = 'Clic para pausar/reanudar';
+  document.body.appendChild(badge);
+
+  function fmt(s){ var m=Math.floor(s/60),r=s%60; return m+':'+(r<10?'0':'')+r; }
+  var txt = document.getElementById('ar-txt');
+  var dot = document.getElementById('ar-dot');
+
+  function tick(){
+    if(paused) return;
+    remaining--;
+    txt.textContent = 'Actualizando en ' + fmt(remaining);
+    if(remaining <= 0){ cargar(); remaining = INTERVAL; }
+  }
+
+  badge.addEventListener('click', function(){
+    paused = !paused;
+    dot.style.background = paused ? '#f59e0b' : '#10b981';
+    txt.textContent = paused ? 'Auto-refresh pausado' : 'Actualizando en ' + fmt(remaining);
+  });
+
+  setInterval(tick, 1000);
+})();
 </script>
 {% endblock %}

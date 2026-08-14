@@ -717,6 +717,41 @@ body { background: var(--c-bg); color: var(--c-text); font-family: system-ui,-ap
 
 <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
 <script>
+/* ── AUTO-REFRESH ── */
+(function(){
+  var INTERVAL = 5 * 60; // segundos (5 min)
+  var remaining = INTERVAL;
+  var paused = false;
+
+  var badge = document.createElement('div');
+  badge.id = 'ar-badge';
+  badge.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;align-items:center;gap:8px;background:var(--c-surface,#fff);border:1px solid var(--c-border,#e2e8f0);border-radius:999px;padding:6px 14px 6px 10px;box-shadow:0 2px 10px rgba(0,0,0,.12);font-size:.75rem;font-weight:600;color:var(--c-text2,#475569);cursor:pointer;user-select:none;transition:opacity .2s;';
+  badge.innerHTML = '<span id="ar-dot" style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;transition:background .3s;"></span><span id="ar-txt">Actualizando en 5:00</span>';
+  badge.title = 'Clic para pausar/reanudar';
+  document.body.appendChild(badge);
+
+  function fmt(s){ var m=Math.floor(s/60),r=s%60; return m+':'+(r<10?'0':'')+r; }
+
+  var txt = document.getElementById('ar-txt');
+  var dot = document.getElementById('ar-dot');
+
+  function tick(){
+    if(paused) return;
+    remaining--;
+    txt.textContent = 'Actualizando en ' + fmt(remaining);
+    if(remaining <= 0){ location.reload(); }
+  }
+
+  badge.addEventListener('click', function(){
+    paused = !paused;
+    dot.style.background = paused ? '#f59e0b' : '#10b981';
+    txt.textContent = paused ? 'Auto-refresh pausado' : 'Actualizando en ' + fmt(remaining);
+  });
+
+  setInterval(tick, 1000);
+})();
+</script>
+<script>
 // Aplicar anchos/altos desde data-* (evita errores CSS de VSCode con Jinja2)
 document.querySelectorAll('[data-pct]').forEach(function(el) {
   el.style.width = el.getAttribute('data-pct') + '%';
