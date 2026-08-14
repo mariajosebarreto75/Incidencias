@@ -3,439 +3,774 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dashboard Gerencial — Incidencias</title>
+<title>Dashboard Gerencial</title>
 <link href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_gerencial.css') }}">
 <style>
-.dg-filtro-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin-bottom:18px;}
-.dg-filtro-bar label{font-size:.78rem;font-weight:600;color:#475569;margin-bottom:3px;display:block;}
-.dg-filtro-bar select{font-size:.82rem;border:1px solid #cbd5e1;border-radius:6px;padding:5px 10px;background:#fff;color:#1e293b;min-width:130px;}
-.dg-filtro-bar .dg-btn-filtrar{background:#0d6b73;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:.82rem;font-weight:600;cursor:pointer;}
-.dg-filtro-bar .dg-btn-limpiar{background:#fff;color:#64748b;border:1px solid #cbd5e1;border-radius:6px;padding:6px 14px;font-size:.82rem;cursor:pointer;text-decoration:none;}
+/* ── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --c-bg:        #f0f4f8;
+  --c-surface:   #ffffff;
+  --c-border:    #e2e8f0;
+  --c-border2:   #cbd5e1;
+  --c-text:      #1e293b;
+  --c-text2:     #475569;
+  --c-muted:     #94a3b8;
+  --c-primary:   #0d6b73;
+  --c-primary-l: #e0f7f7;
+  --c-primary-d: #0a5259;
+  --c-sky:       #0ea5e9;
+  --c-green:     #10b981;
+  --c-amber:     #f59e0b;
+  --c-red:       #ef4444;
+  --c-orange:    #f97316;
+  --c-purple:    #8b5cf6;
+  --c-shadow:    0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+  --c-shadow-md: 0 4px 12px rgba(0,0,0,.08);
+  --radius:      10px;
+  --radius-sm:   6px;
+}
 
-.dg-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
-.dg-kpi{background:#fff;border-radius:10px;padding:16px 18px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.05);}
-.dg-kpi-hero{border-left:4px solid #0d6b73;}
-.dg-kpi-warn{border-left:4px solid #f59e0b;}
-.dg-kpi-good{border-left:4px solid #10b981;}
-.dg-kpi-bad{border-left:4px solid #ef4444;}
-.dg-kpi-accent{border-left:4px solid #8b5cf6;}
-.dg-kpi-hrs{border-left:4px solid #0ea5e9;}
-.dg-kpi-cash{border-left:4px solid #f97316;}
-.dg-kpi-label{font-size:.72rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
-.dg-kpi-value{font-size:1.7rem;font-weight:800;color:#1e293b;line-height:1;}
-.dg-kpi-value-sm{font-size:1.15rem;}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--c-bg); color: var(--c-text); font-family: system-ui,-apple-system,sans-serif; font-size: 14px; }
 
-.dg-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin:22px 0 10px;}
+/* ── TOPBAR ─────────────────────────────────────────────── */
+.topbar {
+  background: var(--c-primary);
+  padding: 0 24px;
+  display: flex; align-items: center; gap: 16px;
+  height: 56px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 8px rgba(13,107,115,.3);
+}
+.topbar img { height: 32px; filter: brightness(0) invert(1); opacity: .9; }
+.topbar-title { color: #fff; font-size: 1rem; font-weight: 700; flex: 1; }
+.topbar-sub  { color: rgba(255,255,255,.65); font-size: .75rem; }
+.topbar-actions { display: flex; gap: 8px; }
+.topbar-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.15); color: #fff;
+  border: 1px solid rgba(255,255,255,.25); border-radius: 6px;
+  padding: 5px 12px; font-size: .78rem; font-weight: 600;
+  text-decoration: none; cursor: pointer;
+  transition: background .15s;
+}
+.topbar-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
 
-.dg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-.dg-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px;}
-@media(max-width:900px){.dg-grid-2,.dg-grid-3{grid-template-columns:1fr;}}
+/* ── LAYOUT ─────────────────────────────────────────────── */
+.page { max-width: 1400px; margin: 0 auto; padding: 20px 20px 40px; }
 
-.dg-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden;}
-.dg-card-header{background:#f8fafc;padding:10px 16px;font-size:.8rem;font-weight:700;color:#334155;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:6px;}
-.dg-card-body{padding:14px 16px;}
+/* ── FILTER BAR ─────────────────────────────────────────── */
+.filter-bar {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  box-shadow: var(--c-shadow);
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+}
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-label {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--c-muted);
+}
+.filter-select {
+  border: 1px solid var(--c-border2); border-radius: var(--radius-sm);
+  padding: 6px 10px; font-size: .82rem; background: #fff;
+  color: var(--c-text); min-width: 140px; cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%2394a3b8' d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  padding-right: 28px;
+}
+.filter-select:focus { outline: 2px solid var(--c-primary); border-color: var(--c-primary); }
 
-/* Barras horizontales */
-.dg-bars{display:flex;flex-direction:column;gap:7px;}
-.dg-bar-row{display:grid;grid-template-columns:160px 1fr 80px;align-items:center;gap:8px;}
-.dg-bar-row-activo .dg-bar-label{color:#0d6b73;font-weight:700;}
-.dg-bar-label{font-size:.76rem;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;}
-.dg-bar-label-link:hover{color:#0d6b73;text-decoration:underline;}
-.dg-bar-track{height:14px;background:#f1f5f9;border-radius:7px;overflow:hidden;}
-.dg-bar-fill{height:100%;background:linear-gradient(90deg,#0d6b73,#38bdf8);border-radius:7px;transition:width .4s;}
-.dg-bar-fill-red{background:linear-gradient(90deg,#ef4444,#fca5a5);}
-.dg-bar-fill-orange{background:linear-gradient(90deg,#f97316,#fed7aa);}
-.dg-bar-track-link{display:contents;}
-.dg-bar-value{font-size:.75rem;font-weight:700;color:#475569;text-align:right;}
+/* Multi-select dropdown personalizado */
+.ms-wrap { position: relative; }
+.ms-btn {
+  border: 1px solid var(--c-border2); border-radius: var(--radius-sm);
+  padding: 6px 28px 6px 10px; font-size: .82rem; background: #fff;
+  color: var(--c-text); min-width: 180px; cursor: pointer;
+  text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%2394a3b8' d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+}
+.ms-btn.has-value { border-color: var(--c-primary); background-color: var(--c-primary-l); color: var(--c-primary); }
+.ms-dropdown {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 200;
+  background: #fff; border: 1px solid var(--c-border);
+  border-radius: var(--radius); box-shadow: var(--c-shadow-md);
+  min-width: 220px; max-height: 260px; overflow-y: auto;
+  display: none; padding: 6px 0;
+}
+.ms-dropdown.open { display: block; }
+.ms-opt {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px; cursor: pointer; font-size: .82rem;
+  transition: background .1s;
+}
+.ms-opt:hover { background: var(--c-primary-l); }
+.ms-opt input[type=checkbox] { accent-color: var(--c-primary); width: 14px; height: 14px; }
+.ms-opt.checked { color: var(--c-primary); font-weight: 600; }
+.ms-actions { display: flex; gap: 6px; padding: 6px 14px 4px; border-bottom: 1px solid var(--c-border); margin-bottom: 4px; }
+.ms-action-btn { font-size: .72rem; color: var(--c-primary); cursor: pointer; background: none; border: none; padding: 0; text-decoration: underline; }
 
-/* Tabla horas por contrato */
-.dg-tbl{width:100%;border-collapse:collapse;font-size:.78rem;}
-.dg-tbl th{background:#f8fafc;padding:7px 10px;text-align:left;font-weight:700;color:#64748b;border-bottom:2px solid #e2e8f0;white-space:nowrap;}
-.dg-tbl td{padding:7px 10px;border-bottom:1px solid #f1f5f9;color:#334155;}
-.dg-tbl tr:hover td{background:#f8fafc;}
-.dg-tbl tr.activo td{background:#e0f7f7;font-weight:700;}
-.dg-tbl a{color:#0d6b73;text-decoration:none;}
-.dg-tbl a:hover{text-decoration:underline;}
-.dg-cash{color:#f97316;font-weight:700;}
-.dg-hrs{color:#0ea5e9;font-weight:700;}
+.filter-actions { display: flex; gap: 8px; align-items: flex-end; }
+.btn-filter {
+  background: var(--c-primary); color: #fff; border: none;
+  border-radius: var(--radius-sm); padding: 7px 18px;
+  font-size: .82rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  transition: background .15s;
+}
+.btn-filter:hover { background: var(--c-primary-d); }
+.btn-clear {
+  background: #fff; color: var(--c-text2);
+  border: 1px solid var(--c-border2); border-radius: var(--radius-sm);
+  padding: 7px 14px; font-size: .82rem; cursor: pointer;
+  text-decoration: none; display: flex; align-items: center; gap: 4px;
+}
+.btn-clear:hover { background: #f8fafc; }
 
-/* Gráfico de columnas (días) */
-.dg-cols{display:flex;gap:4px;align-items:flex-end;height:120px;overflow-x:auto;padding-bottom:4px;}
-.dg-col{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:32px;}
-.dg-col-track{flex:1;width:100%;display:flex;align-items:flex-end;background:#f1f5f9;border-radius:4px 4px 0 0;overflow:hidden;}
-.dg-col-fill{width:100%;background:linear-gradient(180deg,#0d6b73,#38bdf8);border-radius:4px 4px 0 0;}
-.dg-col-value{font-size:.62rem;font-weight:700;color:#475569;}
-.dg-col-label{font-size:.6rem;color:#94a3b8;white-space:nowrap;}
+/* ── CHIPS ──────────────────────────────────────────────── */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; align-items: center; }
+.chips-label { font-size: .72rem; color: var(--c-muted); font-weight: 600; }
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--c-primary-l); color: var(--c-primary);
+  border-radius: 20px; padding: 3px 10px 3px 12px;
+  font-size: .75rem; font-weight: 600; text-decoration: none;
+  border: 1px solid #a7e8eb; transition: background .1s;
+}
+.chip:hover { background: #c4f0f3; color: var(--c-primary); }
+.chip-x { font-size: .65rem; opacity: .7; }
 
-/* Torta */
-.dg-pie-body{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
-.dg-pie{width:110px;height:110px;border-radius:50%;position:relative;flex-shrink:0;}
-.dg-pie-hole{position:absolute;inset:20px;background:#fff;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.dg-pie-hole-value{font-size:1.1rem;font-weight:800;color:#1e293b;}
-.dg-pie-hole-label{font-size:.6rem;color:#64748b;}
-.dg-pie-legend{display:flex;flex-direction:column;gap:8px;}
-.dg-legend-item{display:flex;align-items:center;gap:8px;font-size:.78rem;color:#334155;text-decoration:none;}
-.dg-legend-item:hover{color:#0d6b73;}
-.dg-legend-item-activo{font-weight:700;color:#0d6b73;}
-.dg-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.dg-pie-legend-hint{font-size:.68rem;color:#94a3b8;}
+/* ── SECTION HEADER ─────────────────────────────────────── */
+.section-title {
+  font-size: .68rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--c-muted);
+  margin: 22px 0 10px; display: flex; align-items: center; gap: 6px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--c-border); }
 
-.dg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center;}
-.dg-chips-label{font-size:.72rem;color:#64748b;font-weight:600;}
-.dg-chip{display:inline-flex;align-items:center;gap:5px;background:#e0f7f7;color:#0d6b73;border-radius:20px;padding:3px 10px;font-size:.75rem;font-weight:600;text-decoration:none;border:1px solid #a7e8eb;}
-.dg-chip:hover{background:#c4f0f3;}
-.dg-chip-clear{background:#f1f5f9;color:#64748b;border-color:#cbd5e1;}
-.dg-chip-clear:hover{background:#e2e8f0;}
+/* ── KPI ROW ────────────────────────────────────────────── */
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 4px; }
+.kpi {
+  background: var(--c-surface); border-radius: var(--radius);
+  padding: 16px 18px; border: 1px solid var(--c-border);
+  box-shadow: var(--c-shadow); position: relative; overflow: hidden;
+}
+.kpi::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 4px;
+}
+.kpi-primary::before   { background: var(--c-primary); }
+.kpi-amber::before     { background: var(--c-amber); }
+.kpi-green::before     { background: var(--c-green); }
+.kpi-red::before       { background: var(--c-red); }
+.kpi-purple::before    { background: var(--c-purple); }
+.kpi-sky::before       { background: var(--c-sky); }
+.kpi-orange::before    { background: var(--c-orange); }
+.kpi-icon {
+  font-size: 1.3rem; margin-bottom: 6px;
+  opacity: .18; position: absolute; right: 12px; top: 12px;
+}
+.kpi-label {
+  font-size: .68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--c-muted); margin-bottom: 4px;
+}
+.kpi-value { font-size: 1.75rem; font-weight: 800; color: var(--c-text); line-height: 1; }
+.kpi-value-sm { font-size: 1.1rem; }
 
-.dg-table-toggle{margin-top:10px;}
-.dg-table-toggle summary{font-size:.72rem;color:#64748b;cursor:pointer;}
-.dg-table{width:100%;border-collapse:collapse;font-size:.75rem;margin-top:6px;}
-.dg-table th{background:#f8fafc;padding:5px 8px;text-align:left;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0;}
-.dg-table td{padding:4px 8px;border-bottom:1px solid #f1f5f9;}
+/* ── CARD ───────────────────────────────────────────────── */
+.card {
+  background: var(--c-surface); border: 1px solid var(--c-border);
+  border-radius: var(--radius); box-shadow: var(--c-shadow); overflow: hidden;
+}
+.card-header {
+  padding: 12px 18px; border-bottom: 1px solid var(--c-border);
+  font-size: .8rem; font-weight: 700; color: var(--c-text);
+  display: flex; align-items: center; gap: 7px; background: #fafbfc;
+}
+.card-header i { color: var(--c-primary); }
+.card-body { padding: 16px 18px; }
+.card-body-flush { padding: 0; overflow-x: auto; }
+
+/* ── GRID ───────────────────────────────────────────────── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+@media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+/* ── BAR CHART ──────────────────────────────────────────── */
+.bars { display: flex; flex-direction: column; gap: 9px; }
+.bar-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.bar-label-line { display: flex; align-items: center; gap: 6px; min-width: 0; margin-bottom: 3px; }
+.bar-label {
+  font-size: .78rem; color: var(--c-text2); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; text-decoration: none;
+  transition: color .1s;
+}
+.bar-label:hover { color: var(--c-primary); }
+.bar-label.active { color: var(--c-primary); font-weight: 700; }
+.bar-active-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c-primary); flex-shrink: 0; }
+.bar-track { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; flex: 1; }
+.bar-fill { height: 100%; border-radius: 4px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.bar-fill-primary { background: linear-gradient(90deg, var(--c-primary), #38bdf8); }
+.bar-fill-red     { background: linear-gradient(90deg, var(--c-red), #fca5a5); }
+.bar-fill-orange  { background: linear-gradient(90deg, var(--c-orange), #fed7aa); }
+.bar-fill-amber   { background: linear-gradient(90deg, var(--c-amber), #fde68a); }
+.bar-count { font-size: .78rem; font-weight: 700; color: var(--c-text2); min-width: 28px; text-align: right; }
+.bar-extra { font-size: .7rem; color: var(--c-orange); font-weight: 600; text-align: right; }
+.bar-track-row { display: flex; align-items: center; gap: 8px; }
+
+/* ── TABLA IMPACTO ──────────────────────────────────────── */
+.impact-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.impact-table th {
+  padding: 9px 14px; text-align: left; font-weight: 700;
+  color: var(--c-muted); font-size: .68rem; text-transform: uppercase;
+  letter-spacing: .4px; border-bottom: 2px solid var(--c-border);
+  background: #fafbfc; white-space: nowrap;
+}
+.impact-table th.right { text-align: right; }
+.impact-table td { padding: 9px 14px; border-bottom: 1px solid #f1f5f9; }
+.impact-table td.right { text-align: right; }
+.impact-table tr:hover td { background: #f8fafc; }
+.impact-table tr.active td { background: #e0f7f7; }
+.impact-table a { color: var(--c-primary); text-decoration: none; font-weight: 600; }
+.impact-table a:hover { text-decoration: underline; }
+.val-hrs { color: var(--c-sky); font-weight: 700; }
+.val-cash { color: var(--c-orange); font-weight: 700; }
+.mini-bar-track { height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.mini-bar-fill  { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--c-orange), #fed7aa); }
+
+/* ── TORTA ──────────────────────────────────────────────── */
+.pie-wrap { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+.pie { width: 120px; height: 120px; border-radius: 50%; position: relative; flex-shrink: 0; }
+.pie-hole {
+  position: absolute; inset: 22px; background: #fff; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.pie-hole-val  { font-size: 1.25rem; font-weight: 800; color: var(--c-text); }
+.pie-hole-lbl  { font-size: .62rem; color: var(--c-muted); }
+.pie-legend    { display: flex; flex-direction: column; gap: 10px; }
+.pie-legend-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .8rem; text-decoration: none; color: var(--c-text2);
+  cursor: pointer;
+}
+.pie-legend-row:hover { color: var(--c-primary); }
+.pie-legend-row.active { color: var(--c-primary); font-weight: 700; }
+.pie-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.pie-legend-meta { font-size: .72rem; color: var(--c-muted); }
+
+/* ── BARRAS DIARIAS ─────────────────────────────────────── */
+.col-chart { display: flex; gap: 5px; align-items: flex-end; height: 110px; overflow-x: auto; padding-bottom: 2px; }
+.col-item  { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 30px; flex-shrink: 0; }
+.col-track { flex: 1; width: 100%; display: flex; align-items: flex-end; background: #f1f5f9; border-radius: 4px 4px 0 0; }
+.col-fill  { width: 100%; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, var(--c-primary) 0%, #38bdf8 100%); }
+.col-val   { font-size: .62rem; font-weight: 700; color: var(--c-text2); }
+.col-lbl   { font-size: .58rem; color: var(--c-muted); white-space: nowrap; }
+
+/* ── % RESPUESTA ────────────────────────────────────────── */
+.pct-row { display: grid; grid-template-columns: 120px 1fr 40px; align-items: center; gap: 8px; margin-bottom: 7px; }
+.pct-lbl { font-size: .76rem; color: var(--c-text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+.pct-lbl:hover { color: var(--c-primary); }
+.pct-lbl.active { color: var(--c-primary); font-weight: 700; }
+.pct-val { font-size: .76rem; font-weight: 700; color: var(--c-primary); }
+
+.mb-3 { margin-bottom: 12px; }
 </style>
 </head>
 <body>
 
-<div class="dg-topbar">
-    <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
-    <div>
-        <h1>Dashboard Gerencial</h1>
-        <span class="dg-sub">Indicadores de reportes operacionales · {{ current_user.nombre_completo }}</span>
-    </div>
-    <div class="dg-topbar-actions">
-        {% if home_endpoint %}
-        <a href="{{ url_for(home_endpoint) }}" class="dg-btn-top">
-            <i class="bi bi-arrow-left me-1"></i>Volver
-        </a>
-        {% endif %}
-        <a href="{{ url_for('auth.logout') }}" class="dg-btn-top">
-            <i class="bi bi-box-arrow-right me-1"></i>Salir
-        </a>
-    </div>
-</div>
-
-<div class="dg-container">
-
-    <!-- FILTROS -->
-    <form class="dg-filtro-bar" method="get">
-        <div>
-            <label>Contrato</label>
-            <select name="contrato">
-                <option value="">— Todos —</option>
-                {% for c in lista_contratos %}
-                <option value="{{ c }}" {% if c == contrato_filtro %}selected{% endif %}>
-                    {{ abrev_por_contrato.get(c, c) }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label>Año</label>
-            <select name="anio">
-                <option value="">— Todos —</option>
-                {% for a in lista_anios %}
-                <option value="{{ a }}" {% if anio_filtro == a|string %}selected{% endif %}>{{ a }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label>Mes</label>
-            <select name="mes">
-                <option value="">— Todos —</option>
-                {% for num, nombre in meses_nombres.items() %}
-                <option value="{{ num }}" {% if mes_filtro == num %}selected{% endif %}>{{ nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label>Tipo de desvío</label>
-            <select name="tipo">
-                <option value="">— Todos —</option>
-                {% for t in lista_tipos %}
-                <option value="{{ t }}" {% if activos.tipo == t %}selected{% endif %}>{{ t }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label>Acción a tomar <span style="font-size:.65rem;color:#94a3b8;font-weight:400;">(Ctrl+clic para varios)</span></label>
-            <select name="accion" multiple size="4" style="min-width:180px;height:auto;">
-                {% for a in lista_acciones %}
-                <option value="{{ a }}" {% if a in activos.accion %}selected{% endif %}>{{ a }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label>Conformidad</label>
-            <select name="conformidad">
-                <option value="">— Todas —</option>
-                {% for cf in lista_conformidades %}
-                <option value="{{ cf }}" {% if activos.conformidad == cf %}selected{% endif %}>{{ cf }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        {% if activos.recurso %}<input type="hidden" name="recurso" value="{{ activos.recurso }}">{% endif %}
-        <div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:1px;">
-            <button type="submit" class="dg-btn-filtrar"><i class="bi bi-funnel me-1"></i>Filtrar</button>
-            <a href="{{ url_for('dashboard.indicadores') }}" class="dg-btn-limpiar"><i class="bi bi-x me-1"></i>Limpiar</a>
-        </div>
-        {% if anio_filtro or mes_filtro or contrato_filtro %}
-        <span style="font-size:.75rem;color:#0d6b73;font-weight:600;align-self:flex-end;padding-bottom:6px;">
-            <i class="bi bi-funnel-fill me-1"></i>
-            {% if contrato_filtro %}{{ abrev_por_contrato.get(contrato_filtro, contrato_filtro) }}{% endif %}
-            {% if mes_filtro %}· {{ meses_nombres.get(mes_filtro, mes_filtro) }}{% endif %}
-            {% if anio_filtro %}· {{ anio_filtro }}{% endif %}
-        </span>
-        {% endif %}
-    </form>
-
-    <!-- CHIPS filtros de dimensión activos -->
-    {% if filtros_activos %}
-    <div class="dg-chips">
-        <span class="dg-chips-label">Filtros activos:</span>
-        {% for f in filtros_activos %}
-        <a href="{{ f.url_quitar }}" class="dg-chip">
-            <strong>{{ f.dimension }}:</strong> {{ f.texto }} <i class="bi bi-x-lg"></i>
-        </a>
-        {% endfor %}
-    </div>
+<!-- TOPBAR -->
+<div class="topbar">
+  <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+  <div style="flex:1">
+    <div class="topbar-title">Dashboard Gerencial</div>
+    <div class="topbar-sub">{{ current_user.nombre_completo }}</div>
+  </div>
+  <div class="topbar-actions">
+    {% if home_endpoint %}
+    <a href="{{ url_for(home_endpoint) }}" class="topbar-btn">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
     {% endif %}
-
-    <!-- KPIs -->
-    <div class="dg-section-title"><i class="bi bi-speedometer2 me-1"></i>Resumen general</div>
-    <div class="dg-kpi-row">
-        <div class="dg-kpi dg-kpi-hero">
-            <div class="dg-kpi-label"><i class="bi bi-clipboard-data me-1"></i>Total reportes</div>
-            <div class="dg-kpi-value">{{ kpis.total_reportes }}</div>
-        </div>
-        <div class="dg-kpi dg-kpi-warn">
-            <div class="dg-kpi-label"><i class="bi bi-hourglass-split me-1"></i>Sin respuesta</div>
-            <div class="dg-kpi-value">{{ kpis.total_pendientes }}</div>
-        </div>
-        <div class="dg-kpi dg-kpi-good">
-            <div class="dg-kpi-label"><i class="bi bi-check-circle me-1"></i>Conformes</div>
-            <div class="dg-kpi-value">{{ kpis.total_conformes }}</div>
-        </div>
-        <div class="dg-kpi dg-kpi-bad">
-            <div class="dg-kpi-label"><i class="bi bi-x-circle me-1"></i>No conformes</div>
-            <div class="dg-kpi-value">{{ kpis.total_no_conformes }}</div>
-        </div>
-        <div class="dg-kpi dg-kpi-accent">
-            <div class="dg-kpi-label"><i class="bi bi-lock me-1"></i>Cerrados</div>
-            <div class="dg-kpi-value">{{ kpis.total_cerrados }}</div>
-        </div>
-        <div class="dg-kpi dg-kpi-hrs">
-            <div class="dg-kpi-label"><i class="bi bi-clock-history me-1"></i>Hrs en desviaciones</div>
-            <div class="dg-kpi-value dg-kpi-value-sm">{{ kpis.tiempo_desviacion }}</div>
-        </div>
-        <div class="dg-kpi dg-kpi-cash">
-            <div class="dg-kpi-label"><i class="bi bi-cash-coin me-1"></i>$ afectación</div>
-            <div class="dg-kpi-value dg-kpi-value-sm">${{ "{:,.0f}".format(kpis.afectacion_economica) }}</div>
-        </div>
-    </div>
-
-    <!-- HORAS Y AFECTACIÓN POR CONTRATO -->
-    <div class="dg-section-title"><i class="bi bi-building me-1"></i>Impacto por contrato</div>
-    <div class="dg-card mb-3">
-        <div class="dg-card-header"><i class="bi bi-table me-1"></i>Horas afectadas y afectación económica por contrato</div>
-        <div class="dg-card-body" style="padding:0;overflow-x:auto;">
-            {% if horas_por_contrato %}
-            <table class="dg-tbl">
-                <thead>
-                    <tr>
-                        <th>Contrato</th>
-                        <th style="text-align:right">Hrs afectadas</th>
-                        <th style="text-align:right">$ Afectación</th>
-                        <th>Barra hrs</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for row in horas_por_contrato %}
-                    <tr class="{% if row.activo %}activo{% endif %}">
-                        <td>
-                            {% if row.url %}<a href="{{ row.url }}">{{ row.etiqueta }}</a>
-                            {% else %}{{ row.etiqueta }}{% endif %}
-                        </td>
-                        <td style="text-align:right" class="dg-hrs">{{ row.horas }}h</td>
-                        <td style="text-align:right" class="dg-cash">${{ "{:,.0f}".format(row.afectacion) }}</td>
-                        <td style="width:160px;">
-                            <div class="dg-bar-track">
-                                <div class="dg-bar-fill dg-bar-fill-orange"
-                                     data-pct="{{ ((row.horas / max_horas * 100) if max_horas else 0)|round(1) }}"></div>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p class="text-muted small p-3 mb-0">Sin datos para este filtro.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- TIPOS DE DESVÍO Y ACCIONES -->
-    <div class="dg-section-title"><i class="bi bi-exclamation-triangle me-1"></i>Tipos de desvío y acciones</div>
-    <div class="dg-grid-2">
-
-        {% macro bar_chart(titulo, icono, serie, color_class="", extras={}) %}
-        <div class="dg-card">
-            <div class="dg-card-header"><i class="bi {{ icono }} me-1"></i>{{ titulo }}</div>
-            <div class="dg-card-body">
-                {% if serie.datos %}
-                <div class="dg-bars">
-                    {% for fila in serie.datos %}
-                    <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
-                        {% if fila.url %}
-                        <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link" title="{{ fila.etiqueta }}">
-                            {% if fila.activo %}<i class="bi bi-check-circle-fill me-1"></i>{% endif %}{{ fila.etiqueta }}
-                        </a>
-                        {% else %}
-                        <span class="dg-bar-label" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</span>
-                        {% endif %}
-                        <div class="dg-bar-track">
-                            <div class="dg-bar-fill {{ color_class }}"
-                                 data-pct="{{ ((fila.cantidad / serie.maximo * 100) if serie.maximo else 0)|round(1) }}"></div>
-                        </div>
-                        <span class="dg-bar-value">{{ fila.cantidad }}</span>
-                    </div>
-                    {% if extras %}
-                    <div style="grid-column:2/-1;font-size:.7rem;color:#f97316;font-weight:600;padding-left:2px;margin-top:-4px;margin-bottom:2px;">
-                        ${{ "{:,.0f}".format(extras.get(fila.etiqueta, 0)) }}
-                    </div>
-                    {% endif %}
-                    {% endfor %}
-                </div>
-                <details class="dg-table-toggle">
-                    <summary>Ver tabla</summary>
-                    <table class="dg-table">
-                        <thead><tr><th>Categoría</th><th>Cantidad</th>{% if extras %}<th>$ Afectación</th>{% endif %}</tr></thead>
-                        <tbody>{% for f in serie.datos %}<tr><td>{{ f.etiqueta }}</td><td>{{ f.cantidad }}</td>{% if extras %}<td>${{ "{:,.0f}".format(extras.get(f.etiqueta, 0)) }}</td>{% endif %}</tr>{% endfor %}</tbody>
-                    </table>
-                </details>
-                {% else %}
-                <p class="text-muted small mb-0">Sin datos.</p>
-                {% endif %}
-            </div>
-        </div>
-        {% endmacro %}
-
-        {{ bar_chart("Tipos de desvío", "bi-exclamation-triangle", reportes_por_tipo, "dg-bar-fill-red", afect_por_tipo) }}
-        {{ bar_chart("Acciones a tomar", "bi-arrow-right-circle", reportes_por_accion) }}
-    </div>
-
-    <!-- REPORTES POR CONTRATO Y PENDIENTES -->
-    <div class="dg-section-title"><i class="bi bi-bar-chart me-1"></i>Reportes por contrato</div>
-    <div class="dg-grid-2">
-        {{ bar_chart("Cantidad de reportes por contrato", "bi-building", reportes_por_contrato) }}
-        {{ bar_chart("Pendientes por contrato", "bi-hourglass-split", pendientes_por_contrato, "dg-bar-fill-orange") }}
-    </div>
-
-    <!-- CONFORMIDAD Y % RESPUESTA -->
-    <div class="dg-section-title"><i class="bi bi-patch-check me-1"></i>Conformidad y cumplimiento</div>
-    <div class="dg-grid-2">
-
-        {% macro pct_bar_chart(titulo, icono, serie) %}
-        <div class="dg-card">
-            <div class="dg-card-header"><i class="bi {{ icono }} me-1"></i>{{ titulo }}</div>
-            <div class="dg-card-body">
-                {% if serie.datos %}
-                <div class="dg-bars">
-                    {% for fila in serie.datos %}
-                    <div class="dg-bar-row {% if fila.activo %}dg-bar-row-activo{% endif %}">
-                        {% if fila.url %}
-                        <a href="{{ fila.url }}" class="dg-bar-label dg-bar-label-link">{{ fila.etiqueta }}</a>
-                        {% else %}
-                        <span class="dg-bar-label">{{ fila.etiqueta }}</span>
-                        {% endif %}
-                        <div class="dg-bar-track">
-                            <div class="dg-bar-fill" data-pct="{{ fila.valor }}"></div>
-                        </div>
-                        <span class="dg-bar-value">{{ fila.valor }}%</span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-muted small mb-0">Sin datos.</p>
-                {% endif %}
-            </div>
-        </div>
-        {% endmacro %}
-
-        {{ pct_bar_chart("% de respuesta por contrato", "bi-reply-fill", pct_respuesta_por_contrato) }}
-
-        <div class="dg-card">
-            <div class="dg-card-header"><i class="bi bi-pie-chart-fill me-1"></i>% Conformidad NEO</div>
-            <div class="dg-card-body dg-pie-body">
-                {% if conformidad_pie.total_conformes + conformidad_pie.total_no_conformes > 0 %}
-                <div class="dg-pie" data-pie-deg="{{ conformidad_pie.grados_conforme }}">
-                    <div class="dg-pie-hole">
-                        <span class="dg-pie-hole-value">{{ conformidad_pie.pct_conforme }}%</span>
-                        <span class="dg-pie-hole-label">Conforme</span>
-                    </div>
-                </div>
-                <div class="dg-pie-legend">
-                    <span class="dg-pie-legend-hint">Clic para filtrar</span>
-                    <a href="{{ conformidad_pie.url_conforme }}"
-                       class="dg-legend-item {% if conformidad_pie.activo_conforme %}dg-legend-item-activo{% endif %}">
-                        <span class="dg-legend-dot" style="background:#10b981"></span>
-                        Conforme — {{ conformidad_pie.total_conformes }} ({{ conformidad_pie.pct_conforme }}%)
-                    </a>
-                    <a href="{{ conformidad_pie.url_no_conforme }}"
-                       class="dg-legend-item {% if conformidad_pie.activo_no_conforme %}dg-legend-item-activo{% endif %}">
-                        <span class="dg-legend-dot" style="background:#ef4444"></span>
-                        No conforme — {{ conformidad_pie.total_no_conformes }} ({{ conformidad_pie.pct_no_conforme }}%)
-                    </a>
-                </div>
-                {% else %}
-                <p class="text-muted small mb-0">Aún no hay reportes validados.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- TENDENCIA -->
-    <div class="dg-section-title"><i class="bi bi-calendar3 me-1"></i>Tendencia diaria</div>
-    <div class="dg-card mb-3">
-        <div class="dg-card-header"><i class="bi bi-graph-up me-1"></i>Reportes por día
-            <span style="font-size:.72rem;font-weight:400;color:#94a3b8;margin-left:8px;">últimos {{ reportes_por_dia.datos|length }} días con reportes</span>
-        </div>
-        <div class="dg-card-body">
-            {% if reportes_por_dia.datos %}
-            <div class="dg-cols">
-                {% for etiqueta, cantidad in reportes_por_dia.datos %}
-                <div class="dg-col" title="{{ etiqueta }}: {{ cantidad }}">
-                    <span class="dg-col-value">{{ cantidad }}</span>
-                    <div class="dg-col-track">
-                        <div class="dg-col-fill"
-                             data-hpct="{{ ((cantidad / reportes_por_dia.maximo * 100) if reportes_por_dia.maximo else 0)|round(1) }}"></div>
-                    </div>
-                    <span class="dg-col-label">{{ etiqueta }}</span>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-muted small mb-0">Sin datos para este filtro.</p>
-            {% endif %}
-        </div>
-    </div>
-
+    <a href="{{ url_for('auth.logout') }}" class="topbar-btn">
+      <i class="bi bi-box-arrow-right"></i> Salir
+    </a>
+  </div>
 </div>
+
+<div class="page">
+
+  <!-- FILTROS -->
+  <form id="filter-form" method="get">
+    <div class="filter-bar">
+
+      <div class="filter-group">
+        <span class="filter-label">Contrato</span>
+        <select name="contrato" class="filter-select">
+          <option value="">Todos los contratos</option>
+          {% for c in lista_contratos %}
+          <option value="{{ c }}" {% if c == contrato_filtro %}selected{% endif %}>
+            {{ abrev_por_contrato.get(c, c) }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Año</span>
+        <select name="anio" class="filter-select" style="min-width:90px">
+          <option value="">Todos</option>
+          {% for a in lista_anios %}
+          <option value="{{ a }}" {% if anio_filtro == a|string %}selected{% endif %}>{{ a }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Mes</span>
+        <select name="mes" class="filter-select" style="min-width:110px">
+          <option value="">Todos</option>
+          {% for num, nombre in meses_nombres.items() %}
+          <option value="{{ num }}" {% if mes_filtro == num %}selected{% endif %}>{{ nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Tipo de desvío</span>
+        <select name="tipo" class="filter-select">
+          <option value="">Todos</option>
+          {% for t in lista_tipos %}
+          <option value="{{ t }}" {% if activos.tipo == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Acciones a tomar</span>
+        <div class="ms-wrap" id="ms-accion">
+          <button type="button" class="ms-btn {% if activos.accion %}has-value{% endif %}" id="ms-accion-btn">
+            {% if activos.accion %}
+              {{ activos.accion|length }} accion(es) seleccionada(s)
+            {% else %}
+              Todas las acciones
+            {% endif %}
+          </button>
+          <div class="ms-dropdown" id="ms-accion-drop">
+            <div class="ms-actions">
+              <button type="button" class="ms-action-btn" id="ms-all">Seleccionar todas</button>
+              <button type="button" class="ms-action-btn" id="ms-none">Limpiar</button>
+            </div>
+            {% for a in lista_acciones %}
+            <label class="ms-opt {% if a in activos.accion %}checked{% endif %}">
+              <input type="checkbox" name="accion" value="{{ a }}"
+                     {% if a in activos.accion %}checked{% endif %}>
+              {{ a }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Conformidad</span>
+        <select name="conformidad" class="filter-select" style="min-width:120px">
+          <option value="">Todas</option>
+          {% for cf in lista_conformidades %}
+          <option value="{{ cf }}" {% if activos.conformidad == cf %}selected{% endif %}>{{ cf }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {% if activos.recurso %}<input type="hidden" name="recurso" value="{{ activos.recurso }}">{% endif %}
+
+      <div class="filter-actions" style="margin-left:auto">
+        <button type="submit" class="btn-filter">
+          <i class="bi bi-funnel-fill"></i> Aplicar
+        </button>
+        <a href="{{ url_for('dashboard.indicadores') }}" class="btn-clear">
+          <i class="bi bi-x-circle"></i> Limpiar
+        </a>
+      </div>
+    </div>
+  </form>
+
+  <!-- CHIPS -->
+  {% if filtros_activos %}
+  <div class="chips">
+    <span class="chips-label">Filtros activos:</span>
+    {% for f in filtros_activos %}
+    <a href="{{ f.url_quitar }}" class="chip">
+      <strong>{{ f.dimension }}:</strong>&nbsp;{{ f.texto }}
+      <span class="chip-x"><i class="bi bi-x-lg"></i></span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- KPIs -->
+  <div class="section-title"><i class="bi bi-speedometer2"></i> Resumen general</div>
+  <div class="kpi-row mb-3">
+    <div class="kpi kpi-primary">
+      <i class="bi bi-clipboard-data kpi-icon"></i>
+      <div class="kpi-label">Total reportes</div>
+      <div class="kpi-value">{{ kpis.total_reportes }}</div>
+    </div>
+    <div class="kpi kpi-amber">
+      <i class="bi bi-hourglass-split kpi-icon"></i>
+      <div class="kpi-label">Sin respuesta</div>
+      <div class="kpi-value">{{ kpis.total_pendientes }}</div>
+    </div>
+    <div class="kpi kpi-green">
+      <i class="bi bi-check-circle kpi-icon"></i>
+      <div class="kpi-label">Conformes</div>
+      <div class="kpi-value">{{ kpis.total_conformes }}</div>
+    </div>
+    <div class="kpi kpi-red">
+      <i class="bi bi-x-circle kpi-icon"></i>
+      <div class="kpi-label">No conformes</div>
+      <div class="kpi-value">{{ kpis.total_no_conformes }}</div>
+    </div>
+    <div class="kpi kpi-purple">
+      <i class="bi bi-lock kpi-icon"></i>
+      <div class="kpi-label">Cerrados</div>
+      <div class="kpi-value">{{ kpis.total_cerrados }}</div>
+    </div>
+    <div class="kpi kpi-sky">
+      <i class="bi bi-clock-history kpi-icon"></i>
+      <div class="kpi-label">Hrs en desviaciones</div>
+      <div class="kpi-value kpi-value-sm">{{ kpis.tiempo_desviacion }}</div>
+    </div>
+    <div class="kpi kpi-orange">
+      <i class="bi bi-cash-coin kpi-icon"></i>
+      <div class="kpi-label">$ Afectación</div>
+      <div class="kpi-value kpi-value-sm">${{ "{:,.0f}".format(kpis.afectacion_economica) }}</div>
+    </div>
+  </div>
+
+  <!-- IMPACTO POR CONTRATO -->
+  <div class="section-title"><i class="bi bi-building"></i> Impacto por contrato</div>
+  <div class="card mb-3">
+    <div class="card-header"><i class="bi bi-table"></i> Horas afectadas y afectación económica por contrato</div>
+    <div class="card-body-flush">
+      {% if horas_por_contrato %}
+      <table class="impact-table">
+        <thead>
+          <tr>
+            <th>Contrato</th>
+            <th class="right">Hrs afectadas</th>
+            <th class="right">$ Afectación</th>
+            <th style="min-width:140px">Proporción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in horas_por_contrato %}
+          <tr class="{% if row.activo %}active{% endif %}">
+            <td>
+              {% if row.url %}<a href="{{ row.url }}">{{ row.etiqueta }}</a>
+              {% else %}<span>{{ row.etiqueta }}</span>{% endif %}
+            </td>
+            <td class="right val-hrs">{{ row.horas }}h</td>
+            <td class="right val-cash">${{ "{:,.0f}".format(row.afectacion) }}</td>
+            <td style="padding-right:18px">
+              <div class="mini-bar-track">
+                <div class="mini-bar-fill" data-pct="{{ ((row.horas / max_horas * 100) if max_horas else 0)|round(1) }}"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="padding:20px;color:var(--c-muted);font-size:.82rem">Sin datos para este filtro.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- TIPOS DE DESVÍO Y ACCIONES -->
+  <div class="section-title"><i class="bi bi-exclamation-triangle"></i> Tipos de desvío y acciones</div>
+  <div class="grid-2">
+
+    <!-- Tipos de desvío -->
+    <div class="card">
+      <div class="card-header"><i class="bi bi-exclamation-triangle"></i> Tipos de desvío más frecuentes</div>
+      <div class="card-body">
+        {% if reportes_por_tipo.datos %}
+        <div class="bars">
+          {% for fila in reportes_por_tipo.datos %}
+          <div>
+            <div class="bar-label-line">
+              {% if fila.activo %}<span class="bar-active-dot"></span>{% endif %}
+              {% if fila.url %}
+              <a href="{{ fila.url }}" class="bar-label {% if fila.activo %}active{% endif %}" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</a>
+              {% else %}
+              <span class="bar-label">{{ fila.etiqueta }}</span>
+              {% endif %}
+            </div>
+            <div class="bar-track-row">
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-red" data-pct="{{ ((fila.cantidad / reportes_por_tipo.maximo * 100) if reportes_por_tipo.maximo else 0)|round(1) }}"></div>
+              </div>
+              <span class="bar-count">{{ fila.cantidad }}</span>
+              <span class="bar-extra">${{ "{:,.0f}".format(afect_por_tipo.get(fila.etiqueta, 0)) }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--c-muted);font-size:.82rem">Sin datos.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Acciones a tomar -->
+    <div class="card">
+      <div class="card-header"><i class="bi bi-arrow-right-circle"></i> Acciones a tomar</div>
+      <div class="card-body">
+        {% if reportes_por_accion.datos %}
+        <div class="bars">
+          {% for fila in reportes_por_accion.datos %}
+          <div>
+            <div class="bar-label-line">
+              {% if fila.activo %}<span class="bar-active-dot"></span>{% endif %}
+              {% if fila.url %}
+              <a href="{{ fila.url }}" class="bar-label {% if fila.activo %}active{% endif %}" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</a>
+              {% else %}
+              <span class="bar-label">{{ fila.etiqueta }}</span>
+              {% endif %}
+            </div>
+            <div class="bar-track-row">
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-primary" data-pct="{{ ((fila.cantidad / reportes_por_accion.maximo * 100) if reportes_por_accion.maximo else 0)|round(1) }}"></div>
+              </div>
+              <span class="bar-count">{{ fila.cantidad }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--c-muted);font-size:.82rem">Sin datos.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTES POR CONTRATO Y PENDIENTES -->
+  <div class="section-title"><i class="bi bi-bar-chart"></i> Reportes por contrato</div>
+  <div class="grid-2">
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-building"></i> Cantidad de reportes</div>
+      <div class="card-body">
+        {% if reportes_por_contrato.datos %}
+        <div class="bars">
+          {% for fila in reportes_por_contrato.datos %}
+          <div>
+            <div class="bar-label-line">
+              {% if fila.activo %}<span class="bar-active-dot"></span>{% endif %}
+              {% if fila.url %}
+              <a href="{{ fila.url }}" class="bar-label {% if fila.activo %}active{% endif %}" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</a>
+              {% else %}
+              <span class="bar-label">{{ fila.etiqueta }}</span>
+              {% endif %}
+            </div>
+            <div class="bar-track-row">
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-primary" data-pct="{{ ((fila.cantidad / reportes_por_contrato.maximo * 100) if reportes_por_contrato.maximo else 0)|round(1) }}"></div>
+              </div>
+              <span class="bar-count">{{ fila.cantidad }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--c-muted);font-size:.82rem">Sin datos.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-hourglass-split"></i> Pendientes sin respuesta</div>
+      <div class="card-body">
+        {% if pendientes_por_contrato.datos %}
+        <div class="bars">
+          {% for fila in pendientes_por_contrato.datos %}
+          <div>
+            <div class="bar-label-line">
+              {% if fila.activo %}<span class="bar-active-dot"></span>{% endif %}
+              {% if fila.url %}
+              <a href="{{ fila.url }}" class="bar-label {% if fila.activo %}active{% endif %}" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</a>
+              {% else %}
+              <span class="bar-label">{{ fila.etiqueta }}</span>
+              {% endif %}
+            </div>
+            <div class="bar-track-row">
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-amber" data-pct="{{ ((fila.cantidad / pendientes_por_contrato.maximo * 100) if pendientes_por_contrato.maximo else 0)|round(1) }}"></div>
+              </div>
+              <span class="bar-count">{{ fila.cantidad }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--c-muted);font-size:.82rem">Sin pendientes.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFORMIDAD Y % RESPUESTA -->
+  <div class="section-title"><i class="bi bi-patch-check"></i> Conformidad y cumplimiento</div>
+  <div class="grid-2">
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-reply-fill"></i> % de respuesta por contrato</div>
+      <div class="card-body">
+        {% if pct_respuesta_por_contrato.datos %}
+        {% for fila in pct_respuesta_por_contrato.datos %}
+        <div class="pct-row">
+          {% if fila.url %}
+          <a href="{{ fila.url }}" class="pct-lbl {% if fila.activo %}active{% endif %}" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</a>
+          {% else %}
+          <span class="pct-lbl">{{ fila.etiqueta }}</span>
+          {% endif %}
+          <div class="bar-track">
+            <div class="bar-fill bar-fill-primary" data-pct="{{ fila.valor }}"></div>
+          </div>
+          <span class="pct-val">{{ fila.valor }}%</span>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p style="color:var(--c-muted);font-size:.82rem">Sin datos.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><i class="bi bi-pie-chart-fill"></i> Conformidad NEO</div>
+      <div class="card-body">
+        {% if conformidad_pie.total_conformes + conformidad_pie.total_no_conformes > 0 %}
+        <div class="pie-wrap">
+          <div class="pie" data-pie-deg="{{ conformidad_pie.grados_conforme }}">
+            <div class="pie-hole">
+              <span class="pie-hole-val">{{ conformidad_pie.pct_conforme }}%</span>
+              <span class="pie-hole-lbl">conforme</span>
+            </div>
+          </div>
+          <div class="pie-legend">
+            <a href="{{ conformidad_pie.url_conforme }}" class="pie-legend-row {% if conformidad_pie.activo_conforme %}active{% endif %}">
+              <span class="pie-dot" style="background:var(--c-green)"></span>
+              <div>
+                <div>Conforme <strong>{{ conformidad_pie.total_conformes }}</strong></div>
+                <div class="pie-legend-meta">{{ conformidad_pie.pct_conforme }}% del total calificado</div>
+              </div>
+            </a>
+            <a href="{{ conformidad_pie.url_no_conforme }}" class="pie-legend-row {% if conformidad_pie.activo_no_conforme %}active{% endif %}">
+              <span class="pie-dot" style="background:var(--c-red)"></span>
+              <div>
+                <div>No conforme <strong>{{ conformidad_pie.total_no_conformes }}</strong></div>
+                <div class="pie-legend-meta">{{ conformidad_pie.pct_no_conforme }}% del total calificado</div>
+              </div>
+            </a>
+          </div>
+        </div>
+        {% else %}
+        <p style="color:var(--c-muted);font-size:.82rem">Aún no hay reportes calificados.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- TENDENCIA DIARIA -->
+  <div class="section-title"><i class="bi bi-graph-up"></i> Tendencia diaria</div>
+  <div class="card mb-3">
+    <div class="card-header">
+      <i class="bi bi-calendar3"></i> Reportes por día
+      <span style="font-size:.72rem;font-weight:400;color:var(--c-muted);margin-left:6px">— últimos {{ reportes_por_dia.datos|length }} días con actividad</span>
+    </div>
+    <div class="card-body">
+      {% if reportes_por_dia.datos %}
+      <div class="col-chart">
+        {% for etiqueta, cantidad in reportes_por_dia.datos %}
+        <div class="col-item" title="{{ etiqueta }}: {{ cantidad }} reporte(s)">
+          <span class="col-val">{{ cantidad }}</span>
+          <div class="col-track">
+            <div class="col-fill" data-hpct="{{ ((cantidad / reportes_por_dia.maximo * 100) if reportes_por_dia.maximo else 0)|round(1) }}"></div>
+          </div>
+          <span class="col-lbl">{{ etiqueta }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--c-muted);font-size:.82rem">Sin datos para este filtro.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div><!-- /page -->
 
 <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
 <script>
+// Aplicar anchos/altos desde data-* (evita errores CSS de VSCode con Jinja2)
 document.querySelectorAll('[data-pct]').forEach(function(el) {
-    el.style.width = el.getAttribute('data-pct') + '%';
+  el.style.width = el.getAttribute('data-pct') + '%';
 });
 document.querySelectorAll('[data-hpct]').forEach(function(el) {
-    el.style.height = el.getAttribute('data-hpct') + '%';
+  el.style.height = el.getAttribute('data-hpct') + '%';
 });
 var pie = document.querySelector('[data-pie-deg]');
 if (pie) {
-    var deg = pie.getAttribute('data-pie-deg');
-    pie.style.background = 'conic-gradient(#10b981 0deg ' + deg + 'deg,#ef4444 ' + deg + 'deg 360deg)';
+  var deg = pie.getAttribute('data-pie-deg');
+  pie.style.background = 'conic-gradient(#10b981 0deg ' + deg + 'deg,#ef4444 ' + deg + 'deg 360deg)';
 }
+
+// Multi-select de acciones
+(function() {
+  var btn  = document.getElementById('ms-accion-btn');
+  var drop = document.getElementById('ms-accion-drop');
+  if (!btn || !drop) return;
+
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    drop.classList.toggle('open');
+  });
+  document.addEventListener('click', function() { drop.classList.remove('open'); });
+  drop.addEventListener('click', function(e) { e.stopPropagation(); });
+
+  function updateBtn() {
+    var checked = drop.querySelectorAll('input[type=checkbox]:checked');
+    var opts = drop.querySelectorAll('.ms-opt');
+    opts.forEach(function(o) {
+      o.classList.toggle('checked', o.querySelector('input').checked);
+    });
+    if (checked.length === 0) {
+      btn.textContent = 'Todas las acciones';
+      btn.classList.remove('has-value');
+    } else {
+      btn.textContent = checked.length + ' acción(es) seleccionada(s)';
+      btn.classList.add('has-value');
+    }
+  }
+
+  drop.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+    cb.addEventListener('change', updateBtn);
+  });
+
+  document.getElementById('ms-all').addEventListener('click', function() {
+    drop.querySelectorAll('input[type=checkbox]').forEach(function(cb) { cb.checked = true; });
+    updateBtn();
+  });
+  document.getElementById('ms-none').addEventListener('click', function() {
+    drop.querySelectorAll('input[type=checkbox]').forEach(function(cb) { cb.checked = false; });
+    updateBtn();
+  });
+})();
 </script>
 </body>
 </html>
