@@ -145,9 +145,15 @@ def _parsear_float(valor):
     if not valor:
         return None
     try:
-        return float(
-            str(valor).replace(".", "").replace(",", ".")
-        )
+        s = str(valor).strip()
+        # Si tiene coma y punto: formato europeo 1.234,56 → quitar punto, cambiar coma
+        if "," in s and "." in s:
+            s = s.replace(".", "").replace(",", ".")
+        # Solo coma como separador decimal: 1234,56 → 1234.56
+        elif "," in s:
+            s = s.replace(",", ".")
+        # Solo puntos: ya es formato estándar (1234.56)
+        return float(s)
     except (ValueError, TypeError):
         return None
 
