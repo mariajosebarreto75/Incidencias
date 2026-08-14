@@ -372,5 +372,6 @@ def indicadores():
         reportes_por_dia=reportes_por_dia,
         horas_por_contrato=horas_por_contrato,
         max_horas=max_horas,
+        activos=activos,
         home_endpoint=home_por_rol.get(rol),
     )
