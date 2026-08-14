@@ -173,10 +173,10 @@ def indicadores():
             q = q.filter(f)
         return q.group_by(columna).all()
 
-    def _serie(pares, dimension, etiquetas=None):
+    def _serie(pares, dimension, etiquetas=None, label_vacio="Sin dato"):
         """pares: [(valor, cantidad), ...]. `etiquetas` opcional: valor -> texto a mostrar."""
         etiquetas = etiquetas or {}
-        limpio = [(v, (etiquetas.get(v, v) if v else "Sin dato"), c) for v, c in pares]
+        limpio = [(v, (etiquetas.get(v, v) if v else label_vacio), c) for v, c in pares]
         limpio.sort(key=lambda p: p[2], reverse=True)
         top = limpio[:_TOP_N]
         resto = limpio[_TOP_N:]
@@ -220,7 +220,30 @@ def indicadores():
     )
     reportes_por_recurso = _serie(_contar(ReporteOperacional.recurso, excluir="recurso"), "recurso")
     reportes_por_tipo = _serie(_contar(ReporteOperacional.tipo_incidencia, excluir="tipo"), "tipo")
-    reportes_por_accion = _serie(_contar(ReporteOperacional.accion_a_tomar, excluir="accion"), "accion")
+    reportes_por_accion = _serie(
+        _contar(ReporteOperacional.accion_a_tomar, excluir="accion"), "accion",
+        label_vacio="Sin Respuesta"
+    )
+
+    # Afectación económica por tipo de incidencia
+    afect_por_tipo_raw = (
+        db.session.query(ReporteOperacional.tipo_incidencia,
+                         func.sum(ReporteOperacional.afectacion_economica))
+        .filter(*_filtros_sql(excluir="tipo"))
+        .group_by(ReporteOperacional.tipo_incidencia).all()
+    )
+    afect_por_tipo = {(t or ""): round(a or 0) for t, a in afect_por_tipo_raw}
+
+    # Listas de valores para los filtros desplegables
+    lista_tipos = sorted(set(
+        r[0] for r in db.session.query(ReporteOperacional.tipo_incidencia).distinct().all()
+        if r[0]
+    ))
+    lista_acciones = sorted(set(
+        r[0] for r in db.session.query(ReporteOperacional.accion_a_tomar).distinct().all()
+        if r[0]
+    ))
+    lista_conformidades = ["Conforme", "No conforme"]
 
     # Horas afectadas y afectación económica por contrato
     horas_por_contrato_raw = (
@@ -372,6 +395,10 @@ def indicadores():
         reportes_por_dia=reportes_por_dia,
         horas_por_contrato=horas_por_contrato,
         max_horas=max_horas,
+        afect_por_tipo=afect_por_tipo,
+        lista_tipos=lista_tipos,
+        lista_acciones=lista_acciones,
+        lista_conformidades=lista_conformidades,
         activos=activos,
         home_endpoint=home_por_rol.get(rol),
     )

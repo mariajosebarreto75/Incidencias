@@ -149,9 +149,34 @@
                 {% endfor %}
             </select>
         </div>
-        {% for dim in ['tipo','accion','recurso','conformidad'] %}
-            {% if activos[dim] %}<input type="hidden" name="{{ dim }}" value="{{ activos[dim] }}">{% endif %}
-        {% endfor %}
+        <div>
+            <label>Tipo de desvío</label>
+            <select name="tipo">
+                <option value="">— Todos —</option>
+                {% for t in lista_tipos %}
+                <option value="{{ t }}" {% if activos.tipo == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Acción a tomar</label>
+            <select name="accion">
+                <option value="">— Todas —</option>
+                {% for a in lista_acciones %}
+                <option value="{{ a }}" {% if activos.accion == a %}selected{% endif %}>{{ a }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Conformidad</label>
+            <select name="conformidad">
+                <option value="">— Todas —</option>
+                {% for cf in lista_conformidades %}
+                <option value="{{ cf }}" {% if activos.conformidad == cf %}selected{% endif %}>{{ cf }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% if activos.recurso %}<input type="hidden" name="recurso" value="{{ activos.recurso }}">{% endif %}
         <div style="display:flex;gap:8px;align-items:flex-end;padding-bottom:1px;">
             <button type="submit" class="dg-btn-filtrar"><i class="bi bi-funnel me-1"></i>Filtrar</button>
             <a href="{{ url_for('dashboard.indicadores') }}" class="dg-btn-limpiar"><i class="bi bi-x me-1"></i>Limpiar</a>
@@ -221,7 +246,6 @@
                 <thead>
                     <tr>
                         <th>Contrato</th>
-                        <th style="text-align:right">Reportes</th>
                         <th style="text-align:right">Hrs afectadas</th>
                         <th style="text-align:right">$ Afectación</th>
                         <th>Barra hrs</th>
@@ -234,7 +258,6 @@
                             {% if row.url %}<a href="{{ row.url }}">{{ row.etiqueta }}</a>
                             {% else %}{{ row.etiqueta }}{% endif %}
                         </td>
-                        <td style="text-align:right">—</td>
                         <td style="text-align:right" class="dg-hrs">{{ row.horas }}h</td>
                         <td style="text-align:right" class="dg-cash">${{ "{:,.0f}".format(row.afectacion) }}</td>
                         <td style="width:160px;">
@@ -257,7 +280,7 @@
     <div class="dg-section-title"><i class="bi bi-exclamation-triangle me-1"></i>Tipos de desvío y acciones</div>
     <div class="dg-grid-2">
 
-        {% macro bar_chart(titulo, icono, serie, color_class="") %}
+        {% macro bar_chart(titulo, icono, serie, color_class="", extras={}) %}
         <div class="dg-card">
             <div class="dg-card-header"><i class="bi {{ icono }} me-1"></i>{{ titulo }}</div>
             <div class="dg-card-body">
@@ -278,13 +301,18 @@
                         </div>
                         <span class="dg-bar-value">{{ fila.cantidad }}</span>
                     </div>
+                    {% if extras %}
+                    <div style="grid-column:2/-1;font-size:.7rem;color:#f97316;font-weight:600;padding-left:2px;margin-top:-4px;margin-bottom:2px;">
+                        ${{ "{:,.0f}".format(extras.get(fila.etiqueta, 0)) }}
+                    </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
                 <details class="dg-table-toggle">
                     <summary>Ver tabla</summary>
                     <table class="dg-table">
-                        <thead><tr><th>Categoría</th><th>Cantidad</th></tr></thead>
-                        <tbody>{% for f in serie.datos %}<tr><td>{{ f.etiqueta }}</td><td>{{ f.cantidad }}</td></tr>{% endfor %}</tbody>
+                        <thead><tr><th>Categoría</th><th>Cantidad</th>{% if extras %}<th>$ Afectación</th>{% endif %}</tr></thead>
+                        <tbody>{% for f in serie.datos %}<tr><td>{{ f.etiqueta }}</td><td>{{ f.cantidad }}</td>{% if extras %}<td>${{ "{:,.0f}".format(extras.get(f.etiqueta, 0)) }}</td>{% endif %}</tr>{% endfor %}</tbody>
                     </table>
                 </details>
                 {% else %}
@@ -294,7 +322,7 @@
         </div>
         {% endmacro %}
 
-        {{ bar_chart("Tipos de desvío", "bi-exclamation-triangle", reportes_por_tipo, "dg-bar-fill-red") }}
+        {{ bar_chart("Tipos de desvío", "bi-exclamation-triangle", reportes_por_tipo, "dg-bar-fill-red", afect_por_tipo) }}
         {{ bar_chart("Acciones a tomar", "bi-arrow-right-circle", reportes_por_accion) }}
     </div>
 
