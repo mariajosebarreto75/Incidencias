@@ -57,6 +57,23 @@ body { background: var(--c-bg); color: var(--c-text); font-family: system-ui,-ap
 }
 .topbar-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
 
+/* ── DASH NAV ────────────────────────────────────────────── */
+.dash-nav {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(0,0,0,.15); border-radius: 8px;
+  padding: 4px;
+}
+.dash-nav-item {
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,.75); text-decoration: none;
+  font-size: .78rem; font-weight: 600;
+  padding: 5px 14px; border-radius: 6px;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.dash-nav-item:hover { background: rgba(255,255,255,.15); color: #fff; }
+.dash-nav-item.active { background: rgba(255,255,255,.2); color: #fff; }
+
 /* ── LAYOUT ─────────────────────────────────────────────── */
 .page { max-width: 1400px; margin: 0 auto; padding: 20px 20px 40px; }
 
@@ -291,6 +308,16 @@ body { background: var(--c-bg); color: var(--c-text); font-family: system-ui,-ap
     <div class="topbar-title">Dashboard Gerencial</div>
     <div class="topbar-sub">{{ current_user.nombre_completo }}</div>
   </div>
+  <!-- NAV DASHBOARDS -->
+  <nav class="dash-nav">
+    <a href="{{ url_for('dashboard.indicadores') }}" class="dash-nav-item active">
+      <i class="bi bi-speedometer2"></i> Indicadores NEO
+    </a>
+    <a href="{{ url_for('horas_extras.he_dashboard') }}" class="dash-nav-item">
+      <i class="bi bi-clock-history"></i> Horas Extras
+    </a>
+  </nav>
+
   <div class="topbar-actions">
     {% if home_endpoint %}
     <a href="{{ url_for(home_endpoint) }}" class="topbar-btn">

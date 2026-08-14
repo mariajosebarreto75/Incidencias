@@ -52,6 +52,16 @@
         <button class="dh-btn" onclick="cargar()"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
     </div>
 
+    <!-- NAV DASHBOARDS -->
+    <div style="display:flex;gap:4px;background:rgba(255,255,255,.05);border:1px solid var(--dh-border);border-radius:8px;padding:4px;margin-bottom:1rem;width:fit-content">
+        <a href="{{ url_for('dashboard.indicadores') }}" style="display:flex;align-items:center;gap:6px;color:rgba(255,255,255,.6);text-decoration:none;font-size:.78rem;font-weight:600;padding:5px 14px;border-radius:6px;transition:background .15s,color .15s;white-space:nowrap">
+            <i class="bi bi-speedometer2"></i> Indicadores NEO
+        </a>
+        <a href="{{ url_for('horas_extras.he_dashboard') }}" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);color:#fff;text-decoration:none;font-size:.78rem;font-weight:600;padding:5px 14px;border-radius:6px;white-space:nowrap">
+            <i class="bi bi-clock-history"></i> Horas Extras
+        </a>
+    </div>
+
     <!-- FILTROS -->
     <div class="dh-card dh-filters" style="margin-bottom:1rem">
         <div>
