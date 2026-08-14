@@ -886,7 +886,11 @@ def guardar_reporte():
             observacion         = datos.get("observacion")            or "",
             duracion            = datos.get("duracion")               or None,
             impacto             = datos.get("impacto")                or None,
-            horas_afectadas     = _parsear_float(datos.get("horas_afectadas")),
+            horas_afectadas     = (
+                round((datetime.combine(fecha, hora_fin) - datetime.combine(fecha, hora_inicio)).total_seconds() / 3600, 6)
+                if hora_inicio and hora_fin and hora_fin > hora_inicio else
+                _parsear_float(datos.get("horas_afectadas"))
+            ),
             afectacion_economica = _parsear_float(datos.get("afectacion")),
             evidencia_1         = datos["evidencia_1"],
             evidencia_2         = datos.get("evidencia_2") or None,
