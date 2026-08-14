@@ -961,6 +961,65 @@ def _codigos_contrato_usuario():
     return [c.codigo for c in contratos_obj if c.codigo]
 
 
+@neo.route("/neo/api/reportes/actualizar-cuadrilla", methods=["POST"])
+@login_required
+def api_actualizar_cuadrilla():
+    """Recibe JSON con lista de {id, tipo_cuadrilla}, actualiza cada reporte,
+    busca la meta operativa y recalcula horas_afectadas y afectacion_economica."""
+    from datetime import timedelta, date as _date
+    datos = request.get_json() or {}
+    filas = datos.get("filas", [])
+    if not filas:
+        return jsonify({"ok": False, "msg": "Sin datos"}), 400
+
+    # Precargar metas en memoria: clave = (contrato.lower(), tipo_cuadrilla.lower())
+    metas = MetaOperativa.query.all()
+    metas_map = {(m.contrato.strip().lower(), m.Tipo_cuadrilla.strip().lower()): m.Meta_Produccion
+                 for m in metas}
+
+    tarifas = {"Bajo": 20000, "Medio": 50000, "Alto": 100000}
+    actualizados = 0
+    no_encontrados = []
+
+    for f in filas:
+        rid = f.get("id")
+        tipo_cuadrilla = str(f.get("tipo_cuadrilla") or "").strip()
+        if not rid:
+            continue
+        reporte = ReporteOperacional.query.get(int(rid))
+        if not reporte:
+            no_encontrados.append(rid)
+            continue
+
+        reporte.tipo_cuadrilla = tipo_cuadrilla or reporte.tipo_cuadrilla
+
+        # Buscar meta operativa
+        clave = (reporte.contrato.strip().lower(), reporte.tipo_cuadrilla.strip().lower())
+        meta_val = metas_map.get(clave)
+        if meta_val is not None:
+            reporte.meta = meta_val
+
+        # Recalcular horas_afectadas desde hora_inicio y hora_fin
+        if reporte.hora_inicio and reporte.hora_fin:
+            dt_ini = datetime.combine(_date.today(), reporte.hora_inicio)
+            dt_fin = datetime.combine(_date.today(), reporte.hora_fin)
+            if dt_fin <= dt_ini:
+                dt_fin += timedelta(days=1)
+            diff_min = int((dt_fin - dt_ini).total_seconds() // 60)
+            h, m = divmod(diff_min, 60)
+            reporte.duracion = f"{h}h {m:02d}m"
+            reporte.horas_afectadas = round(diff_min / 60, 6)
+
+            # Recalcular afectación económica
+            if reporte.impacto and reporte.horas_afectadas:
+                reporte.afectacion_economica = tarifas.get(reporte.impacto, 0) * reporte.horas_afectadas
+
+        actualizados += 1
+
+    db.session.commit()
+    return jsonify({"ok": True, "actualizados": actualizados, "no_encontrados": no_encontrados})
+
+
 @neo.route("/neo/alertas")
 @login_required
 def alertas_gps():

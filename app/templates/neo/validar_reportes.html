@@ -2,6 +2,7 @@
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/neo/ValidarNeo.css') }}">
+<script src="{{ url_for('static', filename='vendor/xlsx.full.min.js') }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -156,6 +157,15 @@
         <button class="vr-btn-eliminar ms-auto" id="btnEliminar">
             <i class="bi bi-trash3-fill"></i> Eliminar seleccionados
         </button>
+    </div>
+
+    <!-- IMPORTAR TIPO CUADRILLA -->
+    <div class="mb-2 d-flex align-items-center gap-2">
+        <label class="btn btn-sm btn-outline-primary rounded-pill px-3 mb-0" style="cursor:pointer;">
+            <i class="bi bi-upload"></i> Actualizar tipo cuadrilla
+            <input type="file" id="inputCuadrilla" accept=".xlsx,.xls" style="display:none">
+        </label>
+        <span id="cuadrillaStatus" style="font-size:.8rem;color:#555;"></span>
     </div>
 
     <!-- BUSCADOR RÁPIDO -->
@@ -372,6 +382,61 @@
     }
 
     aplicarFiltros();
+
+    // ── Importar tipo cuadrilla ──────────────────────────────────────────────
+    document.getElementById("inputCuadrilla").addEventListener("change", async function() {
+        const file = this.files[0];
+        if (!file) return;
+        const status = document.getElementById("cuadrillaStatus");
+        status.textContent = "Leyendo archivo…";
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const wb = window.XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+                if (rows.length < 2) { status.textContent = "Archivo vacío."; return; }
+
+                const header = rows[0].map(v => String(v).toLowerCase().trim());
+                const iId    = header.findIndex(h => h === "#" || h === "id" || h === "# ");
+                const iTipo  = header.findIndex(h => h.includes("cuadrilla"));
+
+                if (iId === -1 || iTipo === -1) {
+                    status.textContent = "No se encontraron columnas # y Tipo Cuadrilla.";
+                    return;
+                }
+
+                const filas = rows.slice(1)
+                    .filter(r => r[iId] && String(r[iId]).trim() !== "")
+                    .map(r => ({
+                        id: parseInt(r[iId]),
+                        tipo_cuadrilla: String(r[iTipo] || "").trim()
+                    }));
+
+                if (!filas.length) { status.textContent = "Sin filas válidas."; return; }
+                status.textContent = `Actualizando ${filas.length} reportes…`;
+
+                const resp = await fetch("/neo/api/reportes/actualizar-cuadrilla", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ filas })
+                });
+                const d = await resp.json();
+                if (d.ok) {
+                    status.textContent = `✅ ${d.actualizados} reportes actualizados.`;
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    status.textContent = "❌ " + (d.msg || "Error.");
+                }
+            } catch(err) {
+                status.textContent = "❌ Error al procesar el archivo.";
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        this.value = "";
+    });
 
 })();
 </script>
