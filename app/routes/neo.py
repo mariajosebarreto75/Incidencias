@@ -994,7 +994,8 @@ def api_actualizar_cuadrilla():
         reporte.tipo_cuadrilla = tipo_cuadrilla or reporte.tipo_cuadrilla
 
         # Buscar meta operativa
-        clave = (reporte.contrato.strip().lower(), reporte.tipo_cuadrilla.strip().lower())
+        tc = (reporte.tipo_cuadrilla or "").strip().lower()
+        clave = (reporte.contrato.strip().lower(), tc)
         meta_val = metas_map.get(clave)
         if meta_val is not None:
             reporte.meta = meta_val
