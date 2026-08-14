@@ -112,46 +112,73 @@ def indicadores():
     }
 
     # ---- Filtros activos (cross-filter estilo Power BI) ----
+    # "accion" admite selección múltiple (lista); el resto son valores únicos.
     activos = {}
     for dim in _DIMENSIONES:
-        valor = request.args.get(dim, "").strip()
-        if dim == "contrato" and valor not in lista_contratos:
-            valor = ""
-        activos[dim] = valor
+        if dim == "accion":
+            vals = [v.strip() for v in request.args.getlist("accion") if v.strip()]
+            activos[dim] = vals
+        else:
+            valor = request.args.get(dim, "").strip()
+            if dim == "contrato" and valor not in lista_contratos:
+                valor = ""
+            activos[dim] = valor
+
+    def _params_base(excluir_dim=None, set_dim=None, set_val=None):
+        """Construye el dict de parámetros de URL respetando multivalor de accion."""
+        params = []
+        for k, v in activos.items():
+            if k == excluir_dim:
+                continue
+            if k == set_dim:
+                continue
+            if isinstance(v, list):
+                for item in v:
+                    params.append((k, item))
+            elif v:
+                params.append((k, v))
+        if set_dim and set_val:
+            if isinstance(set_val, list):
+                for item in set_val:
+                    params.append((set_dim, item))
+            else:
+                params.append((set_dim, set_val))
+        if anio_filtro: params.append(("anio", anio_filtro))
+        if mes_filtro:  params.append(("mes",  mes_filtro))
+        return params
 
     def _url_toggle(dimension, valor):
-        nuevos = dict(activos)
-        nuevos[dimension] = "" if activos.get(dimension) == valor else valor
-        params = {k: v for k, v in nuevos.items() if v}
-        if anio_filtro: params["anio"] = anio_filtro
-        if mes_filtro:  params["mes"]  = mes_filtro
+        if dimension == "accion":
+            lista = list(activos.get("accion") or [])
+            if valor in lista:
+                lista.remove(valor)
+            else:
+                lista.append(valor)
+            p = _params_base(excluir_dim="accion", set_dim="accion", set_val=lista)
+        else:
+            nuevo_val = "" if activos.get(dimension) == valor else valor
+            p = _params_base(excluir_dim=dimension)
+            if nuevo_val:
+                p.append((dimension, nuevo_val))
         base = url_for("dashboard.indicadores")
-        return base + ("?" + urlencode(params) if params else "")
+        return base + ("?" + urlencode(p) if p else "")
 
     def _url_quitar(dimension):
-        nuevos = dict(activos)
-        nuevos[dimension] = ""
-        params = {k: v for k, v in nuevos.items() if v}
-        if anio_filtro: params["anio"] = anio_filtro
-        if mes_filtro:  params["mes"]  = mes_filtro
+        p = _params_base(excluir_dim=dimension)
         base = url_for("dashboard.indicadores")
-        return base + ("?" + urlencode(params) if params else "")
-
-    def _url_toggle_base(dimension, valor):
-        nuevos = dict(activos)
-        nuevos[dimension] = "" if activos.get(dimension) == valor else valor
-        params = {k: v for k, v in nuevos.items() if v}
-        if anio_filtro: params["anio"] = anio_filtro
-        if mes_filtro:  params["mes"]  = mes_filtro
-        base = url_for("dashboard.indicadores")
-        return base + ("?" + urlencode(params) if params else "")
+        return base + ("?" + urlencode(p) if p else "")
 
     def _filtros_sql(excluir=None):
         filtros = []
         if contratos_restringidos is not None:
             filtros.append(ReporteOperacional.contrato.in_(contratos_restringidos))
         for dim, valor in activos.items():
-            if valor and dim != excluir:
+            if dim == excluir:
+                continue
+            if isinstance(valor, list):
+                if valor:
+                    filtros.append(_COLUMNA_POR_DIMENSION[dim].in_(valor))
+            elif valor:
                 filtros.append(_COLUMNA_POR_DIMENSION[dim] == valor)
         if anio_filtro:
             try: filtros.append(extract("year",  ReporteOperacional.fecha_reporte) == int(anio_filtro))
@@ -347,7 +374,14 @@ def indicadores():
     }
     filtros_activos = []
     for dim, valor in activos.items():
-        if valor:
+        if isinstance(valor, list):
+            for v in valor:
+                filtros_activos.append({
+                    "dimension": etiquetas_dimension[dim],
+                    "texto": v,
+                    "url_quitar": _url_toggle(dim, v),
+                })
+        elif valor:
             texto = abrev_por_contrato.get(valor, valor) if dim == "contrato" else valor
             filtros_activos.append({
                 "dimension": etiquetas_dimension[dim],

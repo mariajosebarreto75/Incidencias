@@ -159,11 +159,10 @@
             </select>
         </div>
         <div>
-            <label>Acción a tomar</label>
-            <select name="accion">
-                <option value="">— Todas —</option>
+            <label>Acción a tomar <span style="font-size:.65rem;color:#94a3b8;font-weight:400;">(Ctrl+clic para varios)</span></label>
+            <select name="accion" multiple size="4" style="min-width:180px;height:auto;">
                 {% for a in lista_acciones %}
-                <option value="{{ a }}" {% if activos.accion == a %}selected{% endif %}>{{ a }}</option>
+                <option value="{{ a }}" {% if a in activos.accion %}selected{% endif %}>{{ a }}</option>
                 {% endfor %}
             </select>
         </div>
