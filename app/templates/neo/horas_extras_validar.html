@@ -144,6 +144,7 @@ body { background:var(--c-bg); }
 #htFilterPopup .fp-btn.ok  { background: #007d8a; color: #fff; }
 #htFilterPopup .fp-btn.clr { background: #f1f5f9; color: #495057; }
 #htFilterPopup .fp-sort-row { display:flex; gap:4px; margin-bottom:6px; }
+#htFilterPopup #fpDateGroupRow { display:flex; gap:4px; margin-bottom:6px; }
 #htFilterPopup .fp-sort-btn { flex:1; font-size:.72rem; padding:5px 4px; border:1px solid #dee2e6; border-radius:5px; background:#f8f9fa; color:#0d3b66; cursor:pointer; display:flex; align-items:center; gap:4px; justify-content:center; font-weight:600; }
 #htFilterPopup .fp-sort-btn:hover { background:#e8f4f5; border-color:#007d8a; }
 #htFilterPopup .fp-sort-btn.active { background:#007d8a; color:#fff; border-color:#007d8a; }
@@ -521,6 +522,11 @@ body { background:var(--c-bg); }
     <div class="fp-sort-row" id="fpSortDateRow" style="display:none">
         <button class="fp-sort-btn" id="fpSortDateAsc"  onclick="_sortColumnNeo('asc')">&#128336; Más antiguo</button>
         <button class="fp-sort-btn" id="fpSortDateDesc" onclick="_sortColumnNeo('desc')">&#9889; Más nuevo</button>
+    </div>
+    <!-- Toggle día / mes (solo visible en columnas de fecha) -->
+    <div id="fpDateGroupRow" style="display:none;gap:4px;margin-bottom:6px;">
+        <button class="fp-sort-btn active" id="fpGrpDay"  onclick="_fpSetGroup('day')">📅 Por día</button>
+        <button class="fp-sort-btn"        id="fpGrpMonth" onclick="_fpSetGroup('month')">🗓️ Por mes</button>
     </div>
     <hr class="fp-sort-sep">
     <input class="fp-search" placeholder="Buscar…" id="fpSearch">
@@ -1084,6 +1090,40 @@ function _colorearHeaderNeo(htInst, col, TH) {
 
 // ── Sistema de filtro propio para Handsontable ───────────────────────────────
 let _fpHot = null, _fpCol = -1, _fpSelected = new Set();
+let _fpGroupMode = 'day'; // 'day' | 'month'
+
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function _fpSetGroup(mode) {
+    _fpGroupMode = mode;
+    document.getElementById('fpGrpDay').classList.toggle('active',   mode === 'day');
+    document.getElementById('fpGrpMonth').classList.toggle('active', mode === 'month');
+    const sourceData = (_fpHot === hotHistorial && typeof _fullHistData !== 'undefined') ? _fullHistData : _fullData;
+    const allVals = [...new Set(sourceData.map(r => {
+        const v = r[_fpCol];
+        return (v === null || v === undefined) ? '' : String(v);
+    }))].sort((a,b) => String(a).localeCompare(String(b), 'es', {sensitivity:'base'}));
+    _renderPopupList(allVals);
+}
+
+// Convierte fecha "DD/MM/YYYY" o "YYYY-MM-DD" a clave de mes "YYYY-MM"
+function _fechaToMesKey(v) {
+    if (!v) return '';
+    if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.substring(0,7);
+    const p = v.split('/');
+    if (p.length === 3) return `${p[2]}-${p[1].padStart(2,'0')}`;
+    return v;
+}
+
+function _mesKeyToLabel(key) {
+    if (!key) return '(Vacías)';
+    const p = key.split('-');
+    if (p.length === 2) {
+        const m = parseInt(p[1],10)-1;
+        return `${MESES_ES[m] || p[1]} ${p[0]}`;
+    }
+    return key;
+}
 
 // Inyecta botón ▾ en cada TH
 function _showFilterBtn(col, TH) {
@@ -1153,11 +1193,15 @@ function _openFilterPopup(htInst, col, anchorBtn) {
     // Guardar lista completa para búsqueda
     popup._allVals = allVals;
 
-    // Mostrar fila de sort según tipo de columna
+    // Mostrar fila de sort y toggle día/mes según tipo de columna
     const DATE_COLS = new Set([C_FECHA, C_FREPORTE, C_VALFECHA]);
     const isDateCol = DATE_COLS.has(col);
-    document.getElementById('fpSortNumRow').style.display  = isDateCol ? 'none' : '';
-    document.getElementById('fpSortDateRow').style.display = isDateCol ? ''     : 'none';
+    document.getElementById('fpSortNumRow').style.display    = isDateCol ? 'none' : '';
+    document.getElementById('fpSortDateRow').style.display   = isDateCol ? ''     : 'none';
+    document.getElementById('fpDateGroupRow').style.display  = isDateCol ? 'flex' : 'none';
+    if (!isDateCol) { _fpGroupMode = 'day'; }
+    document.getElementById('fpGrpDay').classList.toggle('active',   _fpGroupMode === 'day');
+    document.getElementById('fpGrpMonth').classList.toggle('active', _fpGroupMode === 'month');
 
     // Marcar botón de orden activo
     const sortSt = (htInst === hotHistorial) ? _histSortState : _neoSortState;
@@ -1181,6 +1225,74 @@ function _sortColumnNeo(dir) {
 
 function _renderPopupList(vals) {
     const list = document.getElementById('fpList');
+    const DATE_COLS = new Set([C_FECHA, C_FREPORTE, C_VALFECHA]);
+    const isDateCol = DATE_COLS.has(_fpCol);
+
+    if (isDateCol && _fpGroupMode === 'month') {
+        // Agrupar fechas por mes
+        const mesMap = {}; // clave "YYYY-MM" → [fecha1, fecha2, …]
+        vals.forEach(v => {
+            const k = _fechaToMesKey(v) || '__vacio__';
+            if (!mesMap[k]) mesMap[k] = [];
+            mesMap[k].push(String(v));
+        });
+        const mesKeys = Object.keys(mesMap).sort();
+        const allValsFlat = vals.map(String);
+        const allChecked = allValsFlat.length > 0 && allValsFlat.every(v => _fpSelected.has(v));
+
+        list.innerHTML = `
+            <div class="fp-item" id="fpSelAll">
+                <input type="checkbox" id="fpChkAll" ${allChecked ? 'checked' : ''}>
+                <label for="fpChkAll"><strong>(Seleccionar todo)</strong></label>
+            </div>
+            ${mesKeys.map((mk, mi) => {
+                const dias = mesMap[mk];
+                const label = mk === '__vacio__' ? '(Vacías)' : _mesKeyToLabel(mk);
+                const allMes = dias.every(d => _fpSelected.has(d));
+                const someMes = dias.some(d => _fpSelected.has(d));
+                return `
+                <div class="fp-item fp-mes-hdr" style="background:#f0fafb;font-weight:700;border-top:1px solid #e2e8f0;margin-top:2px;">
+                    <input type="checkbox" id="fpm${mi}" data-mes="${mk}" ${allMes ? 'checked' : ''} ${!allMes && someMes ? 'indeterminate' : ''}>
+                    <label for="fpm${mi}" style="font-size:.77rem;color:#007d8a;">📅 ${label} <span style="color:#94a3b8;font-weight:400">(${dias.length} día${dias.length>1?'s':''})</span></label>
+                </div>
+                ${dias.map((d,di) => `
+                <div class="fp-item" style="padding-left:20px;">
+                    <input type="checkbox" id="fpd${mi}_${di}" data-mes="${mk}" data-dia="${d}" ${_fpSelected.has(d) ? 'checked' : ''}>
+                    <label for="fpd${mi}_${di}" style="color:#475569;">${d}</label>
+                </div>`).join('')}`;
+            }).join('')}`;
+
+        list._fpVals = allValsFlat;
+        list._fpMesMap = mesMap;
+
+        list.onchange = function(e) {
+            const chk = e.target;
+            if (!chk || chk.type !== 'checkbox') return;
+            if (chk.id === 'fpChkAll') {
+                list.querySelectorAll('input[data-mes]').forEach(c => { c.checked = chk.checked; });
+                _fpSelected = chk.checked ? new Set(allValsFlat) : new Set();
+            } else if (chk.dataset.mes && !chk.dataset.dia) {
+                // Click en cabecera de mes
+                const dias = mesMap[chk.dataset.mes] || [];
+                dias.forEach(d => {
+                    if (chk.checked) _fpSelected.add(d); else _fpSelected.delete(d);
+                });
+                list.querySelectorAll(`input[data-mes="${chk.dataset.mes}"][data-dia]`).forEach(c => { c.checked = chk.checked; });
+            } else if (chk.dataset.dia) {
+                if (chk.checked) _fpSelected.add(chk.dataset.dia); else _fpSelected.delete(chk.dataset.dia);
+                // Actualizar checkbox de mes
+                const dias = mesMap[chk.dataset.mes] || [];
+                const allMes = dias.every(d => _fpSelected.has(d));
+                const mesChk = list.querySelector(`input[data-mes="${chk.dataset.mes}"]:not([data-dia])`);
+                if (mesChk) mesChk.checked = allMes;
+            }
+            const chkAll = list.querySelector('#fpChkAll');
+            if (chkAll) chkAll.checked = allValsFlat.every(v => _fpSelected.has(v));
+        };
+        return;
+    }
+
+    // Modo día (por defecto)
     const allChecked = vals.length > 0 && vals.every(v => _fpSelected.has(String(v)));
     list.innerHTML = `
         <div class="fp-item" id="fpSelAll">
@@ -1193,10 +1305,8 @@ function _renderPopupList(vals) {
             <label for="fpc${i}">${v === '' ? '(Vacías)' : String(v).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</label>
         </div>`).join('')}`;
 
-    // Guardar vals en el elemento para acceso desde el handler
     list._fpVals = vals.map(String);
 
-    // Delegación de eventos (un solo listener por render, evita listeners fantasma)
     list.onchange = function(e) {
         const chk = e.target;
         if (!chk || chk.type !== 'checkbox') return;
