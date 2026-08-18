@@ -439,6 +439,46 @@
     });
 
 })();
+
+// ── Persistencia de filtros en sessionStorage ─────────────────────────────
+(function() {
+    const STORAGE_KEY = 'neo_validar_filtros';
+    const form = document.getElementById('formFiltros');
+
+    // Al cargar: si la URL no tiene filtros propios pero hay guardados, redirigir
+    const params = new URLSearchParams(window.location.search);
+    const tieneFiltros = ['fecha_ini','fecha_fin','fecha_rep_ini','fecha_rep_fin','contrato','recurso']
+        .some(k => params.get(k));
+
+    if (!tieneFiltros) {
+        const guardados = sessionStorage.getItem(STORAGE_KEY);
+        if (guardados && guardados !== '?') {
+            // Restaurar URL con filtros guardados
+            window.location.replace(window.location.pathname + guardados);
+            return;
+        }
+    } else {
+        // Guardar filtros actuales
+        sessionStorage.setItem(STORAGE_KEY, window.location.search);
+    }
+
+    // Al enviar el formulario: limpiar storage si no hay valores
+    if (form) {
+        form.addEventListener('submit', function() {
+            const data = new FormData(form);
+            const hasValues = [...data.values()].some(v => v.trim() !== '');
+            if (!hasValues) sessionStorage.removeItem(STORAGE_KEY);
+        });
+    }
+
+    // Botón Limpiar: borrar storage
+    const btnLimpiar = document.querySelector('.vr-btn-limpiar');
+    if (btnLimpiar) {
+        btnLimpiar.addEventListener('click', function() {
+            sessionStorage.removeItem(STORAGE_KEY);
+        });
+    }
+})();
 </script>
 
 {% endblock %}
