@@ -680,9 +680,10 @@ body { background:var(--c-bg); }
           <thead style="background:#f8d7da;position:sticky;top:0;">
             <tr>
               <th style="padding:6px 10px;text-align:left;">Fila</th>
+              <th style="padding:6px 10px;text-align:left;">Contrato</th>
+              <th style="padding:6px 10px;text-align:left;">Fecha Labor</th>
               <th style="padding:6px 10px;text-align:left;">Cédula</th>
               <th style="padding:6px 10px;text-align:left;">Id Concepto</th>
-              <th style="padding:6px 10px;text-align:left;">Fecha Labor</th>
               <th style="padding:6px 10px;text-align:right;">Hrs Rep.</th>
               <th style="padding:6px 10px;text-align:left;">Motivo</th>
             </tr>
@@ -1027,10 +1028,11 @@ function mostrarDuplicados(msg, detalle) {
     document.getElementById("dupMsg").textContent = msg;
     document.getElementById("dupBody").innerHTML = (detalle || []).map(d => `
         <tr style="border-bottom:1px solid #f5c6cb;">
-            <td style="padding:5px 10px;font-weight:700;color:#dc3545;">Fila ${d.fila}</td>
-            <td style="padding:5px 10px;">${d.cedula}</td>
-            <td style="padding:5px 10px;">${d.concepto}</td>
+            <td style="padding:5px 10px;font-weight:700;color:#dc3545;">${d.fila}</td>
+            <td style="padding:5px 10px;">${d.contrato || ""}</td>
             <td style="padding:5px 10px;">${d.fecha}</td>
+            <td style="padding:5px 10px;">${d.cedula}</td>
+            <td style="padding:5px 10px;text-align:center;">${d.concepto}</td>
             <td style="padding:5px 10px;text-align:right;">${d.hrs}</td>
             <td style="padding:5px 10px;color:#856404;">${d.motivo}</td>
         </tr>`).join("");
@@ -1829,10 +1831,11 @@ async function confirmarImport() {
         document.getElementById("dupMsg").textContent = `Se importaron ${guardados} registro(s). Se saltaron ${dupDetalle.length} duplicado(s) automáticamente:`;
         document.getElementById("dupBody").innerHTML = dupDetalle.map(d => `
             <tr style="border-bottom:1px solid #f5c6cb;">
-                <td style="padding:5px 10px;font-weight:700;color:#dc3545;">Fila ${d.fila}</td>
-                <td style="padding:5px 10px;">${d.cedula}</td>
-                <td style="padding:5px 10px;">${d.concepto}</td>
+                <td style="padding:5px 10px;font-weight:700;color:#dc3545;">${d.fila}</td>
+                <td style="padding:5px 10px;">${d.contrato || ""}</td>
                 <td style="padding:5px 10px;">${d.fecha}</td>
+                <td style="padding:5px 10px;">${d.cedula}</td>
+                <td style="padding:5px 10px;text-align:center;">${d.concepto}</td>
                 <td style="padding:5px 10px;text-align:right;">${d.hrs}</td>
                 <td style="padding:5px 10px;color:#856404;">${d.motivo}</td>
             </tr>`).join("");

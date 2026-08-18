@@ -229,6 +229,7 @@ def api_he_guardar():
     # Pre-cargar contratos y cortes en memoria (evita N+1 queries)
     _contratos_lista = Contrato.query.all()
     todos_contratos  = {c.contrato.strip().lower(): c.id for c in _contratos_lista}
+    contratos_nombre = {c.id: c.contrato for c in _contratos_lista}
     todos_cortes     = HeCorte.query.all()
     ahora            = datetime.utcnow()
     uid              = current_user.id
@@ -367,13 +368,15 @@ def api_he_guardar():
              str(r["fecha_labor"]), r["horas_reportadas"])
         if k in lote_keys:
             duplicados.append({
-                "fila": i + 1, "cedula": r["cedula"], "concepto": r["id_concepto"],
+                "fila": i + 1, "contrato": contratos_nombre.get(r["contrato_id"], ""),
+                "cedula": r["cedula"], "concepto": r["id_concepto"],
                 "fecha": str(r["fecha_labor"]), "hrs": r["horas_reportadas"],
                 "motivo": f"Duplicado de fila {lote_keys[k] + 1} en este lote",
             })
         elif k in existentes_set:
             duplicados.append({
-                "fila": i + 1, "cedula": r["cedula"], "concepto": r["id_concepto"],
+                "fila": i + 1, "contrato": contratos_nombre.get(r["contrato_id"], ""),
+                "cedula": r["cedula"], "concepto": r["id_concepto"],
                 "fecha": str(r["fecha_labor"]), "hrs": r["horas_reportadas"],
                 "motivo": "Ya existe en la base de datos",
             })
