@@ -1775,12 +1775,15 @@ const HE_EXPORT_HEADERS = [
 
 function _fmtFechaExport(v) {
     if (!v) return "";
+    // limpiar parte de tiempo si viene como datetime
+    const s = String(v).split("T")[0].trim();
     let y, m, d;
-    if (v.includes("-")) { [y, m, d] = v.split("-").map(Number); }
-    else if (v.includes("/")) { [d, m, y] = v.split("/").map(Number); }
+    if (s.includes("-")) { [y, m, d] = s.split("-").map(Number); }
+    else if (s.includes("/")) { [d, m, y] = s.split("/").map(Number); }
     else return v;
     if (!y || !m || !d) return v;
-    return new Date(Date.UTC(y, m - 1, d));
+    // Mediodía UTC → sin ambigüedad de zona horaria en ningún lado del mundo
+    return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
 }
 
 function _heRowDesdeRecord(r) {
