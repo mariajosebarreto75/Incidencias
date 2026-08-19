@@ -2168,7 +2168,6 @@ function _getHistSelectedIds() {
 }
 
 function abrirEditarSeleccion() {
-    _histSelectedIds = _getHistSelectedIds();
     if (!_histSelectedIds.length) { _toastHist("Selecciona al menos una fila","warning"); return; }
     // Pre-cargar los cortes en el select del modal
     const sel = document.getElementById("editHistCorte");
@@ -2212,7 +2211,6 @@ async function confirmarEditarHist() {
 }
 
 async function eliminarSeleccion() {
-    _histSelectedIds = _getHistSelectedIds();
     if (!_histSelectedIds.length) { _toastHist("Selecciona al menos una fila","warning"); return; }
     if (!confirm(`¿Eliminar ${_histSelectedIds.length} registro${_histSelectedIds.length>1?"s":""}? Esta acción no se puede deshacer.`)) return;
     const r = await fetch("/api/he/bulk-delete", {
