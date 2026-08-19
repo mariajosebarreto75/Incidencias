@@ -1079,10 +1079,6 @@ async function cargarHistorial(corteId) {
             _histSelectedIds = _getHistSelectedIds();
             _actualizarBarraAcciones();
         },
-        afterDeselect: function() {
-            _histSelectedIds = [];
-            _actualizarBarraAcciones();
-        },
     });
 }
 
