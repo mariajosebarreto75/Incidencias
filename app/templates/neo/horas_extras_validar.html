@@ -468,9 +468,18 @@ body { background:var(--c-bg); }
                 <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;" title="Recargar">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-success ms-auto" onclick="exportarExcel()" style="border-radius:7px;font-size:.76rem;">
-                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar
-                </button>
+                <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
+                    <span id="histSelLabel" style="font-size:.72rem;color:#6c757d;display:none;"></span>
+                    <button id="btnEditarSel" class="btn btn-sm btn-outline-primary" onclick="abrirEditarSeleccion()" style="border-radius:7px;font-size:.76rem;display:none;">
+                        <i class="bi bi-pencil me-1"></i>Editar seleccionados
+                    </button>
+                    <button id="btnEliminarSel" class="btn btn-sm btn-outline-danger" onclick="eliminarSeleccion()" style="border-radius:7px;font-size:.76rem;display:none;">
+                        <i class="bi bi-trash me-1"></i>Eliminar seleccionados
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="exportarExcel()" style="border-radius:7px;font-size:.76rem;">
+                        <i class="bi bi-file-earmark-excel me-1"></i>Exportar
+                    </button>
+                </div>
             </div>
             <div style="overflow:auto;"><div id="gridHistorial"></div></div>
         </div>
@@ -1063,8 +1072,17 @@ async function cargarHistorial(corteId) {
         manualColumnResize: true,
         filters: true,
         dropdownMenu: false,
+        selectionMode: "multiple",
         licenseKey: "non-commercial-and-evaluation",
         afterGetColHeader: function(col, TH) { _showFilterBtn(col, TH); _colorearHeaderNeo(this, col, TH); },
+        afterSelectionEnd: function() {
+            _histSelectedIds = _getHistSelectedIds();
+            _actualizarBarraAcciones();
+        },
+        afterDeselect: function() {
+            _histSelectedIds = [];
+            _actualizarBarraAcciones();
+        },
     });
 }
 
@@ -2107,5 +2125,137 @@ async function exportarCorteNeo(id, nombre) {
     const registros = data.registros || [];
     _exportarXlsx(registros.map(_heRowDesdeRecord), "Corte", `corte_${nombre.replace(/\s/g,"_")}.xlsx`);
 }
+
+// ── Editar / Eliminar desde historial ─────────────────────────────────────────
+let _histSelectedIds = [];
+
+function _actualizarBarraAcciones() {
+    const n = _histSelectedIds.length;
+    const lbl = document.getElementById("histSelLabel");
+    const btnE = document.getElementById("btnEditarSel");
+    const btnD = document.getElementById("btnEliminarSel");
+    if (n > 0) {
+        lbl.textContent = `${n} fila${n>1?"s":""} seleccionada${n>1?"s":""}`;
+        lbl.style.display = "";
+        btnE.style.display = "";
+        btnD.style.display = "";
+    } else {
+        lbl.style.display = btnE.style.display = btnD.style.display = "none";
+    }
+}
+
+function _getHistSelectedIds() {
+    if (!hotHistorial) return [];
+    const sel = hotHistorial.getSelected();
+    if (!sel) return [];
+    const ids = new Set();
+    sel.forEach(([r1,,r2]) => {
+        const from = Math.min(r1,r2), to = Math.max(r1,r2);
+        for (let r = from; r <= to; r++) {
+            const physRow = hotHistorial.toPhysicalRow(r);
+            if (physRow != null && _fullHistIds[physRow] != null)
+                ids.add(_fullHistIds[physRow]);
+        }
+    });
+    return [...ids];
+}
+
+function abrirEditarSeleccion() {
+    _histSelectedIds = _getHistSelectedIds();
+    if (!_histSelectedIds.length) { mostrarToast("Selecciona al menos una fila","warning"); return; }
+    // Pre-cargar los cortes en el select del modal
+    const sel = document.getElementById("editHistCorte");
+    if (sel && (!sel.options.length || sel.options.length < 2)) {
+        fetch("/api/he/cortes").then(r=>r.json()).then(cs => {
+            sel.innerHTML = '<option value="">— Sin cambio de corte —</option>' +
+                cs.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join("");
+        });
+    }
+    document.getElementById("editHistFecha").value = "";
+    document.getElementById("editHistCorte").value = "";
+    document.getElementById("modalEditarHist").classList.add("open");
+    document.getElementById("editHistInfo").textContent =
+        `Editando ${_histSelectedIds.length} registro${_histSelectedIds.length>1?"s":""}`;
+}
+
+async function confirmarEditarHist() {
+    const fecha  = document.getElementById("editHistFecha").value;
+    const corteId = document.getElementById("editHistCorte").value;
+    if (!fecha && !corteId) { mostrarToast("Ingresa al menos un campo a modificar","warning"); return; }
+    const payload = {};
+    if (fecha)   payload.fecha_labor = fecha;
+    if (corteId) payload.corte_id    = parseInt(corteId);
+    let ok = 0, fail = 0;
+    for (const id of _histSelectedIds) {
+        try {
+            const r = await fetch(`/api/he/${id}`, {
+                method:"PUT", headers:{"Content-Type":"application/json"},
+                body: JSON.stringify(payload)
+            });
+            const d = await r.json();
+            if (d.ok) ok++; else fail++;
+        } catch { fail++; }
+    }
+    document.getElementById("modalEditarHist").classList.remove("open");
+    mostrarToast(`${ok} registro${ok>1?"s":""} actualizado${ok>1?"s":""}${fail?" · "+fail+" error(es)":""}`, fail?"warning":"success");
+    historialCargado = false;
+    cargarHistorial();
+    _histSelectedIds = [];
+    _actualizarBarraAcciones();
+}
+
+async function eliminarSeleccion() {
+    _histSelectedIds = _getHistSelectedIds();
+    if (!_histSelectedIds.length) { mostrarToast("Selecciona al menos una fila","warning"); return; }
+    if (!confirm(`¿Eliminar ${_histSelectedIds.length} registro${_histSelectedIds.length>1?"s":""}? Esta acción no se puede deshacer.`)) return;
+    const r = await fetch("/api/he/bulk-delete", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify(_histSelectedIds)
+    });
+    const d = await r.json();
+    if (d.ok) {
+        mostrarToast(`${d.eliminados} registro${d.eliminados>1?"s":""} eliminado${d.eliminados>1?"s":""}`, "success");
+        historialCargado = false;
+        cargarHistorial();
+        _histSelectedIds = [];
+        _actualizarBarraAcciones();
+    } else {
+        mostrarToast(d.msg || "Error al eliminar","danger");
+    }
+}
 </script>
+
+<!-- Modal editar registros historial -->
+<div class="he-modal-overlay" id="modalEditarHist">
+  <div class="he-modal" style="max-width:420px;">
+    <div class="he-modal-header">
+      <i class="bi bi-pencil-square"></i>
+      <h6>Editar registros</h6>
+      <button onclick="document.getElementById('modalEditarHist').classList.remove('open')">&times;</button>
+    </div>
+    <div class="he-modal-body">
+      <p id="editHistInfo" style="font-size:.82rem;color:#0d3b66;font-weight:600;margin-bottom:14px;"></p>
+      <div style="background:#fff8e1;border-radius:8px;padding:10px 14px;font-size:.8rem;color:#7c5e0a;margin-bottom:16px;">
+        Solo se aplicarán los campos que completes. Los campos vacíos no se modifican.
+      </div>
+      <div class="he-form-group" style="margin-bottom:14px;">
+        <label style="font-size:.78rem;font-weight:600;color:#374151;margin-bottom:4px;display:block;">Nueva fecha de labor</label>
+        <input type="date" id="editHistFecha" style="width:100%;border-radius:7px;border:1px solid #dee2e6;padding:6px 10px;font-size:.85rem;">
+      </div>
+      <div class="he-form-group">
+        <label style="font-size:.78rem;font-weight:600;color:#374151;margin-bottom:4px;display:block;">Mover al corte</label>
+        <select id="editHistCorte" style="width:100%;border-radius:7px;border:1px solid #dee2e6;padding:6px 10px;font-size:.85rem;">
+          <option value="">— Sin cambio de corte —</option>
+        </select>
+      </div>
+    </div>
+    <div class="he-modal-footer">
+      <button class="btn btn-sm btn-secondary" onclick="document.getElementById('modalEditarHist').classList.remove('open')">Cancelar</button>
+      <button class="btn btn-sm btn-primary fw-bold" onclick="confirmarEditarHist()">
+        <i class="bi bi-check2 me-1"></i>Guardar cambios
+      </button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

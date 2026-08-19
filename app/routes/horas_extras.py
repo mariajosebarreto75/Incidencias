@@ -439,6 +439,8 @@ def api_he_actualizar(id):
     concepto = str(f.get("id_concepto") or he.id_concepto or "").strip()
     concepto = concepto.zfill(2) if concepto else concepto
     he.fecha_labor        = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else he.fecha_labor
+    if "corte_id" in f:
+        he.corte_id = int(f["corte_id"]) if f["corte_id"] else None
     he.cedula             = f.get("cedula", he.cedula)
     he.nombre             = f.get("nombre", he.nombre)
     he.recurso            = f.get("recurso", he.recurso)
@@ -470,6 +472,20 @@ def api_he_eliminar(id):
     db.session.delete(he)
     db.session.commit()
     return jsonify({"ok": True})
+
+
+# ── API: eliminar múltiples registros (solo NEO) ─────────────────────────────
+@he_bp.route("/api/he/bulk-delete", methods=["POST"])
+@login_required
+def api_he_bulk_delete():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    ids = request.get_json(silent=True) or []
+    if not ids:
+        return jsonify({"ok": False, "msg": "Sin IDs"}), 400
+    deleted = HoraExtra.query.filter(HoraExtra.id.in_(ids)).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({"ok": True, "eliminados": deleted})
 
 
 # ── NEO: página de validación ─────────────────────────────────────────────────
