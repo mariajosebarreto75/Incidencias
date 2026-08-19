@@ -1774,19 +1774,13 @@ const HE_EXPORT_HEADERS = [
 ];
 
 function _fmtFechaExport(v) {
-    // Devuelve objeto Date para que Excel la reconozca como fecha real
     if (!v) return "";
-    // v puede ser "YYYY-MM-DD" o "DD/MM/YYYY"
     let y, m, d;
-    if (v.includes("-")) {
-        [y, m, d] = v.split("-").map(Number);
-    } else if (v.includes("/")) {
-        [d, m, y] = v.split("/").map(Number);
-    } else {
-        return v;
-    }
+    if (v.includes("-")) { [y, m, d] = v.split("-").map(Number); }
+    else if (v.includes("/")) { [d, m, y] = v.split("/").map(Number); }
+    else return v;
     if (!y || !m || !d) return v;
-    return new Date(y, m - 1, d);
+    return new Date(Date.UTC(y, m - 1, d));
 }
 
 function _heRowDesdeRecord(r) {
