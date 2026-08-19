@@ -1056,13 +1056,31 @@ async function cargarHistorial(corteId) {
     _fullHistIds  = registros.map(r => r.id);
     _htHistColFilters = {};
     if (hotHistorial) { hotHistorial.loadData(filas); _refreshFilterBtns(hotHistorial); return; }
+
+    function chkRenderer(hotInstance, TD, row, col, prop, value) {
+        TD.innerHTML = '';
+        TD.style.textAlign = 'center';
+        TD.style.verticalAlign = 'middle';
+        TD.style.padding = '0';
+        const chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = !!value;
+        chk.style.cssText = 'width:15px;height:15px;cursor:pointer;accent-color:#0d3b66;';
+        chk.addEventListener('change', function(e) {
+            e.stopPropagation();
+            hotInstance.setDataAtCell(row, col, chk.checked, 'chkClick');
+        });
+        chk.addEventListener('mousedown', e => e.stopPropagation());
+        TD.appendChild(chk);
+    }
+
     hotHistorial = new Handsontable(document.getElementById("gridHistorial"), {
         data: filas,
         rowHeaders: false,
         colHeaders: ["","Fecha Lab.","Fecha Reporte","Contrato","Coordinador","Cédula","Nombre","Recurso",
                      "Id Concepto","Tipo HE","Hrs Rep.","Hrs Auth.","Estado","Validado por","Fecha Validación"],
         columns: [
-            { type:"checkbox", readOnly:false, className:"htCenter" },      // 0 checkbox
+            { renderer: chkRenderer, readOnly:true, className:"htCenter" }, // 0 checkbox
             { type:"date", dateFormat:"DD/MM/YYYY", correctFormat:true },   // 1 Fecha Lab
             { type:"text", readOnly:true },                                  // 2 Fecha Reporte
             { type:"text", readOnly:true },                                  // 3 Contrato
