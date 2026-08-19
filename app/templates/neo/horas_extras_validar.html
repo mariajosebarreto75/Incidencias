@@ -685,7 +685,7 @@ function estadoRenderer(hotInstance, td, row, col, prop, value) {
 let hot = null, hotHistorial = null;
 let registrosIds = [];
 let _fullData = [], _fullIds = [], _fullRecords = [], _htColFilters = {};
-let _fullHistData = [], _fullHistIds = [], _htHistColFilters = {};
+let _fullHistData = [], _fullHistIds = [], _htHistColFilters = [], _fullHistRecords = [];
 let _neoSortState = null;   // {col, dir:'asc'|'desc'} o null
 let _histSortState = null;
 
@@ -1052,8 +1052,9 @@ async function cargarHistorial(corteId) {
         reg.fecha_validacion || "—",
     ]);
 
-    _fullHistData = filas.slice();
-    _fullHistIds  = registros.map(r => r.id);
+    _fullHistData    = filas.slice();
+    _fullHistIds     = registros.map(r => r.id);
+    _fullHistRecords = registros;
     _htHistColFilters = {};
     _histSelSet.clear();
     _histSelectedIds = [];
@@ -1729,10 +1730,17 @@ const HE_EXPORT_HEADERS = [
     "AUTORIZACIÓN NEO","HORAS AUTORIZADAS"
 ];
 
+function _fmtFechaExport(v) {
+    if (!v) return "";
+    const p = v.split("-");
+    if (p.length === 3) return `${p[2].padStart(2,"0")}/${p[1].padStart(2,"0")}/${p[0]}`;
+    return v;
+}
+
 function _heRowDesdeRecord(r) {
     return [
         r.contrato              || "",
-        r.fecha_labor           || "",
+        _fmtFechaExport(r.fecha_labor),
         r.cedula                || "",
         r.nombre                || "",
         r.recurso               || "",
@@ -1762,10 +1770,43 @@ function _exportarXlsx(rows, sheetName, fileName) {
 }
 
 function exportarExcel() {
-    if (!_fullRecords || !_fullRecords.length) {
-        _toastHist("No hay datos para exportar", "warning"); return;
+    // Detectar si estamos en el tab historial
+    const enHistorial = document.getElementById("panel-historial")?.classList.contains("active");
+
+    if (enHistorial) {
+        // Exportar filas visibles del historial (respeta filtros activos)
+        if (!_fullHistRecords || !_fullHistRecords.length) {
+            _toastHist("No hay datos para exportar", "warning"); return;
+        }
+        // Obtener IDs de las filas actualmente visibles en hotHistorial
+        const visibleIds = new Set();
+        if (hotHistorial) {
+            const n = hotHistorial.countRows();
+            for (let r = 0; r < n; r++) {
+                const physRow = hotHistorial.toPhysicalRow(r);
+                const id = _fullHistIds[physRow];
+                if (id != null) visibleIds.add(id);
+            }
+        }
+        const registros = _fullHistRecords.filter(r => !hotHistorial || visibleIds.has(r.id));
+        _exportarXlsx(registros.map(_heRowDesdeRecord), "Historial HE", "historial_horas_extras.xlsx");
+    } else {
+        // Exportar tab validación (filas visibles del grid principal)
+        if (!_fullRecords || !_fullRecords.length) {
+            _toastHist("No hay datos para exportar", "warning"); return;
+        }
+        const visibleIds = new Set();
+        if (hot) {
+            const n = hot.countRows();
+            for (let r = 0; r < n; r++) {
+                const physRow = hot.toPhysicalRow(r);
+                const id = _fullIds[physRow];
+                if (id != null) visibleIds.add(id);
+            }
+        }
+        const registros = _fullRecords.filter(r => !hot || visibleIds.has(r.id));
+        _exportarXlsx(registros.map(_heRowDesdeRecord), "Horas Extras", "horas_extras.xlsx");
     }
-    _exportarXlsx(_fullRecords.map(_heRowDesdeRecord), "Horas Extras", "horas_extras.xlsx");
 }
 
 // ── Importar Excel (NEO) ──────────────────────────────────────────────────────
