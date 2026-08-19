@@ -682,7 +682,7 @@ let _fullData = [], _fullIds = [], _fullRecords = [], _htColFilters = {};
 let _fullHistData = [], _fullHistIds = [], _htHistColFilters = {};
 let _neoSortState = null;   // {col, dir:'asc'|'desc'} o null
 let _histSortState = null;
-let saveTimer = null;
+
 let historialCargado = false;
 let cortesCargadosNeo = false;
 
@@ -1472,6 +1472,9 @@ function fmtFecha(v) {
 }
 
 // ── Auto-guardar ──────────────────────────────────────────────────────────────
+// Timer por fila (clave: id del registro) para no cancelar guardados de otras filas
+const _saveTimers = {};
+
 function autoGuardar(row) {
     const id = registrosIds[row];
     if (!id) return;
@@ -1480,9 +1483,10 @@ function autoGuardar(row) {
     const obs    = (hot.getDataAtCell(row, C_OBSNEO) || "").trim();
     if (!estado) return;
 
-    clearTimeout(saveTimer);
+    // Cancelar solo el timer de ESTA fila, no el de otras
+    clearTimeout(_saveTimers[id]);
     document.getElementById("saving-indicator").style.display = "inline";
-    saveTimer = setTimeout(async () => {
+    _saveTimers[id] = setTimeout(async () => {
         try {
             const r = await fetch(`/api/he/${id}/validar`, {
                 method: "POST",
@@ -1501,7 +1505,11 @@ function autoGuardar(row) {
                 cargarKpis();
             }
         } catch(e) {}
-        document.getElementById("saving-indicator").style.display = "none";
+        // Ocultar indicador solo cuando no queden timers pendientes
+        delete _saveTimers[id];
+        if (Object.keys(_saveTimers).length === 0) {
+            document.getElementById("saving-indicator").style.display = "none";
+        }
     }, 600);
 }
 
