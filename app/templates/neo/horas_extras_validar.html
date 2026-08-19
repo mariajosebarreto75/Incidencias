@@ -1474,6 +1474,34 @@ function fmtFecha(v) {
 // ── Auto-guardar ──────────────────────────────────────────────────────────────
 // Timer por fila (clave: id del registro) para no cancelar guardados de otras filas
 const _saveTimers = {};
+// Filas con cambios pendientes de confirmar guardado exitoso
+const _dirtyRows = new Map(); // id → {row, estado, hrs, obs}
+
+async function _guardarFila(id, payload, row) {
+    try {
+        const r = await fetch(`/api/he/${id}/validar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const d = await r.json();
+        if (d.ok) {
+            _dirtyRows.delete(id); // guardado confirmado
+            if (hot && row != null) {
+                hot.setDataAtCell(row, C_VALBY,    d.validado_por    || "", "auto");
+                hot.setDataAtCell(row, C_VALFECHA, d.fecha_validacion || "", "auto");
+                const _fi = _fullIds.indexOf(id);
+                if (_fi !== -1) {
+                    _fullData[_fi][C_VALBY]    = d.validado_por    || "";
+                    _fullData[_fi][C_VALFECHA] = d.fecha_validacion || "";
+                }
+            }
+            cargarKpis();
+        }
+    } catch(e) {
+        // Red caída: queda en _dirtyRows para el guardado periódico
+    }
+}
 
 function autoGuardar(row) {
     const id = registrosIds[row];
@@ -1483,35 +1511,33 @@ function autoGuardar(row) {
     const obs    = (hot.getDataAtCell(row, C_OBSNEO) || "").trim();
     if (!estado) return;
 
+    const payload = { autorizacion_neo: estado, horas_autorizadas: (hrs !== "" && hrs != null) ? parseInt(hrs) : null, obs_neo: obs };
+
+    // Marcar como pendiente inmediatamente
+    _dirtyRows.set(id, { row, payload });
+
     // Cancelar solo el timer de ESTA fila, no el de otras
     clearTimeout(_saveTimers[id]);
     document.getElementById("saving-indicator").style.display = "inline";
     _saveTimers[id] = setTimeout(async () => {
-        try {
-            const r = await fetch(`/api/he/${id}/validar`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ autorizacion_neo: estado, horas_autorizadas: (hrs !== "" && hrs != null) ? parseInt(hrs) : null, obs_neo: obs }),
-            });
-            const d = await r.json();
-            if (d.ok) {
-                hot.setDataAtCell(row, C_VALBY,    d.validado_por    || "", "auto");
-                hot.setDataAtCell(row, C_VALFECHA, d.fecha_validacion || "", "auto");
-                const _fi = _fullIds.indexOf(registrosIds[row]);
-                if (_fi !== -1) {
-                    _fullData[_fi][C_VALBY]    = d.validado_por    || "";
-                    _fullData[_fi][C_VALFECHA] = d.fecha_validacion || "";
-                }
-                cargarKpis();
-            }
-        } catch(e) {}
-        // Ocultar indicador solo cuando no queden timers pendientes
+        await _guardarFila(id, payload, row);
         delete _saveTimers[id];
         if (Object.keys(_saveTimers).length === 0) {
             document.getElementById("saving-indicator").style.display = "none";
         }
     }, 600);
 }
+
+// Guardado periódico cada 60s: re-intenta filas que no se confirmaron
+setInterval(async () => {
+    if (_dirtyRows.size === 0) return;
+    const ind = document.getElementById("saving-indicator");
+    if (ind) ind.style.display = "inline";
+    for (const [id, {row, payload}] of [..._dirtyRows]) {
+        await _guardarFila(id, payload, row);
+    }
+    if (ind && Object.keys(_saveTimers).length === 0) ind.style.display = "none";
+}, 60000);
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 async function cargarKpis() {
