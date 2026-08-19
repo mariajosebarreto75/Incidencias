@@ -467,7 +467,7 @@ body { background:var(--c-bg); }
     <!-- ══════════════════ PANEL 3: CORTES ══════════════════ -->
     <div class="he-panel" id="panel-cortes">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-            <h6 style="margin:0;font-weight:700;color:#0d3b66;"><i class="bi bi-archive me-2"></i>Cortes de nómina (17→16)</h6>
+            <h6 style="margin:0;font-weight:700;color:#0d3b66;"><i class="bi bi-archive me-2"></i>Cortes de nómina</h6>
             <button class="btn btn-sm btn-primary fw-semibold" onclick="abrirNuevoCorte()" style="border-radius:7px;">
                 <i class="bi bi-plus-lg me-1"></i>Nuevo corte
             </button>
@@ -498,7 +498,7 @@ body { background:var(--c-bg); }
         </div>
         <div class="he-modal-body">
           <div style="background:#fff8e1;border-radius:8px;padding:10px 14px;font-size:.8rem;color:#7c5e0a;margin-bottom:14px;">
-            <strong>Período 17→16:</strong> los cortes van del día 17 de un mes al día 16 del mes siguiente.
+            <strong>Período 18→17:</strong> los cortes van del día 18 de un mes al día 17 del mes siguiente.
           </div>
           <div class="he-form-row cols1">
             <div class="he-form-group"><label>Nombre del corte (opcional)</label>
@@ -1582,7 +1582,6 @@ async function cambiarTab(nombre, btn) {
         autoCargarCorteActual();
     }
     if (nombre === "cortes" && !cortesCargados) {
-        cortesCargados = true;
         cargarCortes();
     }
 }
@@ -1629,11 +1628,22 @@ async function cargarKpisCortesCoor() {
 }
 
 async function cargarCortes() {
+    cortesCargados = true;
     cargarKpisCortesCoor();
     const cid = document.getElementById("gridContrato").value;
     const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
-    const r = await fetch(url);
-    const cortes = await r.json();
+    let cortes = [];
+    try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        cortes = await r.json();
+    } catch(e) {
+        cortesCargados = false;
+        document.getElementById("cortesList").innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#ef4444;padding:48px 0;">
+            <i class="bi bi-exclamation-triangle" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+            Error al cargar cortes. <a href="#" onclick="cortesCargados=false;cargarCortes();return false;">Reintentar</a></div>`;
+        return;
+    }
     const container = document.getElementById("cortesList");
     if (!cortes.length) {
         container.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:48px 0;">
@@ -1660,16 +1670,16 @@ async function cargarCortes() {
 }
 
 function abrirNuevoCorte() {
-    // Sugerir fechas del corte actual (17 del mes pasado → 16 del mes actual)
+    // Sugerir fechas del corte actual (18 del mes pasado → 17 del mes actual)
     const hoy = new Date();
     const dia = hoy.getDate();
     let ini, fin;
-    if (dia >= 17) {
-        ini = new Date(hoy.getFullYear(), hoy.getMonth(), 17);
-        fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 16);
+    if (dia >= 18) {
+        ini = new Date(hoy.getFullYear(), hoy.getMonth(), 18);
+        fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 17);
     } else {
-        ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 17);
-        fin = new Date(hoy.getFullYear(), hoy.getMonth(), 16);
+        ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 18);
+        fin = new Date(hoy.getFullYear(), hoy.getMonth(), 17);
     }
     const fmt = d => d.toISOString().split("T")[0];
     document.getElementById("corteFechaInicio").value = fmt(ini);
