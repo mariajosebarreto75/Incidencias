@@ -1055,6 +1055,9 @@ async function cargarHistorial(corteId) {
     _fullHistData = filas.slice();
     _fullHistIds  = registros.map(r => r.id);
     _htHistColFilters = {};
+    _histSelSet.clear();
+    _histSelectedIds = [];
+    _actualizarBarraAcciones();
     if (hotHistorial) { hotHistorial.loadData(filas); _refreshFilterBtns(hotHistorial); return; }
 
     function chkRenderer(hotInstance, TD, row, col, prop, value) {
@@ -1108,27 +1111,40 @@ async function cargarHistorial(corteId) {
                 // Checkbox "seleccionar todos" en el header
                 TH.innerHTML = '<input type="checkbox" id="histChkAll" title="Seleccionar todos" style="cursor:pointer;width:14px;height:14px;">';
                 TH.querySelector("#histChkAll").addEventListener("change", function() {
+                    const checked = this.checked;
+                    // Actualizar Set directamente sin escanear filas
+                    _histSelSet.clear();
                     const n = hotHistorial.countRows();
-                    for (let r = 0; r < n; r++) hotHistorial.setDataAtCell(r, 0, this.checked, "selAll");
+                    const updates = [];
+                    for (let r = 0; r < n; r++) {
+                        updates.push([r, 0, checked]);
+                        if (checked) {
+                            const physRow = hotHistorial.toPhysicalRow(r);
+                            const id = _fullHistIds[physRow];
+                            if (id) _histSelSet.add(id);
+                        }
+                    }
+                    _histSelectedIds = [..._histSelSet];
+                    _actualizarBarraAcciones();
+                    hotHistorial.setDataAtCell(updates, "selAll");
                 });
                 return;
             }
             _showFilterBtn(col, TH); _colorearHeaderNeo(this, col, TH);
         },
         afterChange: function(changes, source) {
-            if (source === "loadData" || !changes) return;
-            // Actualizar selección cuando cambia un checkbox
+            if (source === "loadData" || source === "selAll" || !changes) return;
+            // Actualizar selección cuando cambia un checkbox (solo la fila tocada)
             const chkCols = changes.filter(([,col]) => col === 0);
             if (chkCols.length) {
-                _histSelectedIds = [];
-                const n = hotHistorial.countRows();
-                for (let r = 0; r < n; r++) {
-                    if (hotHistorial.getDataAtCell(r, 0)) {
-                        const physRow = hotHistorial.toPhysicalRow(r);
-                        const id = _fullHistIds[physRow];
-                        if (id) _histSelectedIds.push(id);
-                    }
-                }
+                chkCols.forEach(([row,, , newVal]) => {
+                    const physRow = hotHistorial.toPhysicalRow(row);
+                    const id = _fullHistIds[physRow];
+                    if (!id) return;
+                    if (newVal) _histSelSet.add(id);
+                    else _histSelSet.delete(id);
+                });
+                _histSelectedIds = [..._histSelSet];
                 _actualizarBarraAcciones();
                 return;
             }
@@ -2218,6 +2234,7 @@ function _toastHist(msg, tipo) {
     setTimeout(() => t.remove(), 3500);
 }
 let _histSelectedIds = [];
+let _histSelSet = new Set();
 
 function _actualizarBarraAcciones() {
     const n = _histSelectedIds.length;
