@@ -1885,9 +1885,18 @@ function exportarExcel() {
         "TIPO HE","VALOR EXTRA NÓMINA","VALOR EXTRA",
         "AUTORIZACIÓN NEO","HORAS AUTORIZADAS"
     ];
+    function _fmtFechaXlsx(v) {
+        if (!v) return "";
+        let y, m, d;
+        if (v.includes("-")) { [y, m, d] = v.split("-").map(Number); }
+        else if (v.includes("/")) { [d, m, y] = v.split("/").map(Number); }
+        else return v;
+        if (!y || !m || !d) return v;
+        return new Date(y, m - 1, d);
+    }
     const rows = recs.map(r => [
         r.contrato              || "",
-        r.fecha_labor           || "",
+        _fmtFechaXlsx(r.fecha_labor),
         r.cedula                || "",
         r.nombre                || "",
         r.recurso               || "",
@@ -1904,8 +1913,13 @@ function exportarExcel() {
         r.autorizacion_neo      || "",
         r.horas_autorizadas     ?? "",
     ]);
-    const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...rows]);
-    // Ancho de columnas automático
+    const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...rows], { cellDates: true });
+    // Formato fecha real en columna FECHA LABOR (índice 1)
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: 1 })];
+        if (cell && cell.t === 'd') cell.z = 'DD/MM/YYYY';
+    }
     ws['!cols'] = HEADERS.map((h, i) => ({
         wch: Math.max(h.length, ...rows.map(r => String(r[i]||'').length)) + 2
     }));
