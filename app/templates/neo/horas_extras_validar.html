@@ -2403,7 +2403,8 @@ async function eliminarSeleccion() {
     if (d.ok) {
         _toastHist(`${d.eliminados} registro${d.eliminados>1?"s":""} eliminado${d.eliminados>1?"s":""}`, "success");
         historialCargado = false;
-        cargarHistorial();
+        const corteActual = document.getElementById("hCorte") ? document.getElementById("hCorte").value : "";
+        await cargarHistorial(corteActual || undefined);
         _histSelectedIds = [];
         _actualizarBarraAcciones();
     } else {
