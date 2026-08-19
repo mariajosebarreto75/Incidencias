@@ -745,12 +745,25 @@ function sincronizarChip(estado) {
 (function(){
     iniciarGrid();
     actualizarCortes().then(() => {
-        // Auto-seleccionar el corte ABIERTO más reciente
-        const abierto = _cortesCache.find(c => c.estado === "ABIERTO");
-        if (abierto) {
-            document.getElementById("fCorte").value = String(abierto.id);
-            sincronizarFechasCorte();
+        // Restaurar filtros guardados; si no hay, auto-seleccionar corte abierto
+        const saved = (() => { try { return JSON.parse(sessionStorage.getItem('fp_' + location.pathname) || '{}'); } catch(e) { return {}; } })();
+        const haySaved = saved.fCorte || saved.fDesde || saved.fHasta || saved.fContrato;
+        if (haySaved) {
+            if (saved.fContrato) document.getElementById("fContrato").value = saved.fContrato;
+            if (saved.fCorte)    document.getElementById("fCorte").value    = saved.fCorte;
+            if (saved.fDesde)    document.getElementById("fDesde").value    = saved.fDesde;
+            if (saved.fHasta)    document.getElementById("fHasta").value    = saved.fHasta;
+            if (saved.fConcepto) document.getElementById("fConcepto").value = saved.fConcepto;
+            if (saved.fEstado)   document.getElementById("fEstado").value   = saved.fEstado;
             sincronizarBtnCerrar();
+        } else {
+            // Auto-seleccionar el corte ABIERTO más reciente
+            const abierto = _cortesCache.find(c => c.estado === "ABIERTO");
+            if (abierto) {
+                document.getElementById("fCorte").value = String(abierto.id);
+                sincronizarFechasCorte();
+                sincronizarBtnCerrar();
+            }
         }
         recargar();
     });

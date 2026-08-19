@@ -736,17 +736,30 @@ let validacionCargada = false;
 (function(){
     iniciarGrid();
     actualizarCortesCoor().then(() => {
-        const corteAbierto = Array.isArray(_cortesCacheCoor)
-            ? _cortesCacheCoor.find(c => c.estado === "ABIERTO")
-            : null;
-        if (corteAbierto) {
+        // Restaurar filtros guardados; si no hay, auto-seleccionar corte abierto
+        const saved = (() => { try { return JSON.parse(sessionStorage.getItem('fp_' + location.pathname) || '{}'); } catch(e) { return {}; } })();
+        const haySaved = saved.fCorte || saved.fDesde || saved.fHasta;
+        if (haySaved) {
             const sel = document.getElementById("fCorte");
-            if (sel) { sel.value = String(corteAbierto.id); sincronizarFechasCoor(); }
-            cargarRegistrosCorteActual(corteAbierto.id);
+            if (sel && saved.fCorte) { sel.value = saved.fCorte; sincronizarFechasCoor(); }
+            if (saved.fDesde) document.getElementById("fDesde").value = saved.fDesde;
+            if (saved.fHasta) document.getElementById("fHasta").value = saved.fHasta;
+        } else {
+            const corteAbierto = Array.isArray(_cortesCacheCoor)
+                ? _cortesCacheCoor.find(c => c.estado === "ABIERTO")
+                : null;
+            if (corteAbierto) {
+                const sel = document.getElementById("fCorte");
+                if (sel) { sel.value = String(corteAbierto.id); sincronizarFechasCoor(); }
+                cargarRegistrosCorteActual(corteAbierto.id);
+            }
         }
         cargarHistorial();
         cargarKpis();
     });
+    // Restaurar contrato si fue guardado
+    const _savedCid = (() => { try { return JSON.parse(sessionStorage.getItem('fp_' + location.pathname) || '{}').gridContrato; } catch(e) { return null; } })();
+    if (_savedCid) document.getElementById("gridContrato").value = _savedCid;
     const cid = document.getElementById("gridContrato").value;
     if (cid) onContratoChange();
     else cargarResumen();

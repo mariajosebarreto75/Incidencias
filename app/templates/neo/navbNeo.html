@@ -522,6 +522,7 @@
     {% endif %}
 
     {% block scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/filter-persist.js') }}"></script>
 
     {% if current_user.is_authenticated %}
     <!-- ══ DRAWER NOTIFICACIONES (global NEO) ═══════════════════════════════ -->
