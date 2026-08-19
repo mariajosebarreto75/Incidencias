@@ -1012,8 +1012,8 @@ async function cargarKpisHistorial() {
 function filtrarChipH(estado, el) {
     el.closest(".he-chips").querySelectorAll(".he-chip").forEach(c => c.classList.remove("active"));
     el.classList.add("active");
-    // Filtro cliente sobre columna 11 (Estado / autorizacion_neo)
-    const COL_ESTADO = 11;
+    // Filtro cliente sobre columna 12 (Estado / autorizacion_neo) — col 0 es checkbox
+    const COL_ESTADO = 12;
     if (estado === '') {
         delete _htHistColFilters[COL_ESTADO];
     } else {
@@ -1535,6 +1535,7 @@ function _applyAllFilters(htInst) {
     if (hist) {
         hotHistorial.loadData(filteredData);
         setTimeout(() => _refreshFilterBtns(hotHistorial), 0);
+        _actualizarKpisHistorialDesdeFiltered(filteredData);
     } else {
         registrosIds = filteredIds;
         hot.loadData(filteredData);
@@ -1569,6 +1570,39 @@ function _actualizarKpisDesdeFiltered(rows) {
     document.getElementById("kv-hrs-auth").textContent   = hrsAuth.toFixed(0);
     document.getElementById("kv-hrs-noconf").textContent = hrsNoconf.toFixed(0);
     document.getElementById("kv-hrs-desc").textContent   = hrsDesc.toFixed(0);
+}
+
+function _actualizarKpisHistorialDesdeFiltered(rows) {
+    // cols historial: 0=chk,1=fechaLab,2=fechaRep,3=contrato,4=coord,5=cedula,
+    //                 6=nombre,7=recurso,8=concepto,9=tipoHE,10=hrsRep,11=hrsAuth,12=estado
+    const H_HRS_REP  = 10;
+    const H_HRS_AUTH = 11;
+    const H_ESTADO   = 12;
+    const total = rows.length;
+    let pend = 0, conf = 0, noconf = 0, desc = 0;
+    let hrsRep = 0, hrsAuth = 0, hrsNoconf = 0, hrsDesc = 0;
+    for (const r of rows) {
+        const est  = (r[H_ESTADO] || "").trim().toUpperCase();
+        const rep  = parseFloat(r[H_HRS_REP])  || 0;
+        const auth = parseFloat(r[H_HRS_AUTH]) || 0;
+        hrsRep += rep;
+        if (est === "CONFORME")        { conf++;   hrsAuth   += auth; }
+        else if (est === "NO CONFORME"){ noconf++; hrsNoconf += auth; }
+        else if (est === "DESCONTADA") { desc++;   hrsDesc   += auth; }
+        else                           { pend++;                      }
+    }
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set("hk-total",    total);
+    set("hk-pend",     pend);
+    set("hk-conf",     conf);
+    set("hk-noconf",   noconf);
+    set("hk-desc",     desc);
+    set("hkv-total",      total.toLocaleString("es-CO"));
+    set("hkv-pendientes", pend.toLocaleString("es-CO"));
+    set("hk-hrs-rep",     hrsRep.toFixed(0));
+    set("hk-hrs-auth",    hrsAuth.toFixed(0));
+    set("hk-hrs-noconf",  hrsNoconf.toFixed(0));
+    set("hk-hrs-desc",    hrsDesc.toFixed(0));
 }
 
 function _refreshFilterBtns(htInst) {
