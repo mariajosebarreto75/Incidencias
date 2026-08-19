@@ -1651,11 +1651,14 @@ async function cargarCortes() {
             No hay cortes registrados aún.</div>`;
         return;
     }
-    container.innerHTML = cortes.map(c => `
-        <div class="corte-card ${c.estado.toLowerCase()}">
+    container.innerHTML = cortes.map(c => {
+        const est = (c.estado || "abierto").toLowerCase();
+        const estLabel = c.estado || "ABIERTO";
+        return `
+        <div class="corte-card ${est}">
             <div style="display:flex;align-items:center;gap:8px;">
                 <span class="corte-card-title">${c.nombre}</span>
-                <span class="corte-badge ${c.estado.toLowerCase()}">${c.estado}</span>
+                <span class="corte-badge ${est}">${estLabel}</span>
             </div>
             <div class="corte-card-meta">
                 <i class="bi bi-calendar-range me-1"></i>${c.fecha_inicio} → ${c.fecha_fin}
@@ -1663,10 +1666,11 @@ async function cargarCortes() {
             </div>
             ${c.estado === "CERRADO" ? `<div class="corte-card-meta"><i class="bi bi-person-check me-1"></i>Cerrado por ${c.cerrado_por} el ${c.fecha_cierre}</div>` : ""}
             <div style="display:flex;gap:6px;margin-top:4px;">
-                <button onclick="verCorte(${c.id},'${c.nombre}','${c.estado}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
+                <button onclick="verCorte(${c.id},'${c.nombre}','${estLabel}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-eye me-1"></i>Ver registros</button>
             </div>
-        </div>`).join("");
+        </div>`;
+    }).join("");
 }
 
 function abrirNuevoCorte() {
