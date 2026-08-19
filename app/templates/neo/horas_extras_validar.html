@@ -1535,8 +1535,13 @@ function _applyAllFilters(htInst) {
 
     if (hist) {
         // Guardar registros filtrados para exportar correctamente
-        const filteredIdSet = new Set(filteredIds);
-        _filteredHistRecords = _fullHistRecords.filter(r => filteredIdSet.has(r.id));
+        const hayFiltros = Object.keys(fmap).length > 0;
+        if (hayFiltros) {
+            const filteredIdSet = new Set(filteredIds);
+            _filteredHistRecords = _fullHistRecords.filter(r => filteredIdSet.has(r.id));
+        } else {
+            _filteredHistRecords = _fullHistRecords; // sin filtros → todos
+        }
         hotHistorial.loadData(filteredData);
         setTimeout(() => _refreshFilterBtns(hotHistorial), 0);
         _actualizarKpisHistorialDesdeFiltered(filteredData);
@@ -1769,10 +1774,19 @@ const HE_EXPORT_HEADERS = [
 ];
 
 function _fmtFechaExport(v) {
+    // Devuelve objeto Date para que Excel la reconozca como fecha real
     if (!v) return "";
-    const p = v.split("-");
-    if (p.length === 3) return `${p[2].padStart(2,"0")}/${p[1].padStart(2,"0")}/${p[0]}`;
-    return v;
+    // v puede ser "YYYY-MM-DD" o "DD/MM/YYYY"
+    let y, m, d;
+    if (v.includes("-")) {
+        [y, m, d] = v.split("-").map(Number);
+    } else if (v.includes("/")) {
+        [d, m, y] = v.split("/").map(Number);
+    } else {
+        return v;
+    }
+    if (!y || !m || !d) return v;
+    return new Date(y, m - 1, d);
 }
 
 function _heRowDesdeRecord(r) {
@@ -1798,7 +1812,16 @@ function _heRowDesdeRecord(r) {
 }
 
 function _exportarXlsx(rows, sheetName, fileName) {
-    const ws = XLSX.utils.aoa_to_sheet([HE_EXPORT_HEADERS, ...rows]);
+    const ws = XLSX.utils.aoa_to_sheet([HE_EXPORT_HEADERS, ...rows], { cellDates: true });
+    // Aplicar formato dd/mm/yyyy a la columna FECHA LABOR (índice 1 → columna B)
+    const fechaColIdx = 1; // FECHA LABOR es la 2da columna en HE_EXPORT_HEADERS
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const cellAddr = XLSX.utils.encode_cell({ r: R, c: fechaColIdx });
+        if (ws[cellAddr] && ws[cellAddr].t === 'd') {
+            ws[cellAddr].z = 'DD/MM/YYYY';
+        }
+    }
     ws['!cols'] = HE_EXPORT_HEADERS.map((h, i) => ({
         wch: Math.max(h.length, ...rows.map(r => String(r[i]||'').length)) + 2
     }));
