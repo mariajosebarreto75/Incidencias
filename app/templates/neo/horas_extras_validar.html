@@ -1076,8 +1076,11 @@ async function cargarHistorial(corteId) {
         licenseKey: "non-commercial-and-evaluation",
         afterGetColHeader: function(col, TH) { _showFilterBtn(col, TH); _colorearHeaderNeo(this, col, TH); },
         afterSelectionEnd: function() {
-            _histSelectedIds = _getHistSelectedIds();
-            _actualizarBarraAcciones();
+            const ids = _getHistSelectedIds();
+            if (ids.length > 0) {
+                _histSelectedIds = ids;
+                _actualizarBarraAcciones();
+            }
         },
     });
 }
