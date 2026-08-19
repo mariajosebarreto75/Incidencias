@@ -685,7 +685,7 @@ function estadoRenderer(hotInstance, td, row, col, prop, value) {
 let hot = null, hotHistorial = null;
 let registrosIds = [];
 let _fullData = [], _fullIds = [], _fullRecords = [], _htColFilters = {};
-let _fullHistData = [], _fullHistIds = [], _htHistColFilters = [], _fullHistRecords = [], _filteredHistRecords = [];
+let _fullHistData = [], _fullHistIds = [], _displayedHistIds = [], _htHistColFilters = [], _fullHistRecords = [], _filteredHistRecords = [];
 let _neoSortState = null;   // {col, dir:'asc'|'desc'} o null
 let _histSortState = null;
 
@@ -1054,6 +1054,7 @@ async function cargarHistorial(corteId) {
 
     _fullHistData        = filas.slice();
     _fullHistIds         = registros.map(r => r.id);
+    _displayedHistIds    = _fullHistIds.slice();
     _fullHistRecords     = registros;
     _filteredHistRecords = registros;
     _htHistColFilters = {};
@@ -1122,7 +1123,7 @@ async function cargarHistorial(corteId) {
                         updates.push([r, 0, checked]);
                         if (checked) {
                             const physRow = hotHistorial.toPhysicalRow(r);
-                            const id = _fullHistIds[physRow];
+                            const id = _displayedHistIds[physRow];
                             if (id) _histSelSet.add(id);
                         }
                     }
@@ -1141,7 +1142,7 @@ async function cargarHistorial(corteId) {
             if (chkCols.length) {
                 chkCols.forEach(([row,, , newVal]) => {
                     const physRow = hotHistorial.toPhysicalRow(row);
-                    const id = _fullHistIds[physRow];
+                    const id = _displayedHistIds[physRow];
                     if (!id) return;
                     if (newVal) _histSelSet.add(id);
                     else _histSelSet.delete(id);
@@ -1535,6 +1536,7 @@ function _applyAllFilters(htInst) {
 
     if (hist) {
         // Guardar registros filtrados para exportar correctamente
+        _displayedHistIds = filteredIds.slice();
         const hayFiltros = Object.keys(fmap).length > 0;
         if (hayFiltros) {
             const filteredIdSet = new Set(filteredIds);
