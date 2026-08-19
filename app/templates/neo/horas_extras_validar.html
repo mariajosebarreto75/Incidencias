@@ -1661,7 +1661,7 @@ function _exportarXlsx(rows, sheetName, fileName) {
 
 function exportarExcel() {
     if (!_fullRecords || !_fullRecords.length) {
-        mostrarToastNeo("No hay datos para exportar", "warning"); return;
+        _toastHist("No hay datos para exportar", "warning"); return;
     }
     _exportarXlsx(_fullRecords.map(_heRowDesdeRecord), "Horas Extras", "horas_extras.xlsx");
 }
@@ -2123,6 +2123,14 @@ async function exportarCorteNeo(id, nombre) {
 }
 
 // ── Editar / Eliminar desde historial ─────────────────────────────────────────
+function _toastHist(msg, tipo) {
+    const t = document.createElement("div");
+    const bg = tipo === "success" ? "#198754" : tipo === "danger" ? "#dc3545" : "#f59e0b";
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${bg};color:#fff;padding:10px 18px;border-radius:8px;font-size:.84rem;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.18);`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
 let _histSelectedIds = [];
 
 function _actualizarBarraAcciones() {
@@ -2158,7 +2166,7 @@ function _getHistSelectedIds() {
 
 function abrirEditarSeleccion() {
     _histSelectedIds = _getHistSelectedIds();
-    if (!_histSelectedIds.length) { mostrarToastNeo("Selecciona al menos una fila","warning"); return; }
+    if (!_histSelectedIds.length) { _toastHist("Selecciona al menos una fila","warning"); return; }
     // Pre-cargar los cortes en el select del modal
     const sel = document.getElementById("editHistCorte");
     if (sel && (!sel.options.length || sel.options.length < 2)) {
@@ -2177,7 +2185,7 @@ function abrirEditarSeleccion() {
 async function confirmarEditarHist() {
     const fecha  = document.getElementById("editHistFecha").value;
     const corteId = document.getElementById("editHistCorte").value;
-    if (!fecha && !corteId) { mostrarToastNeo("Ingresa al menos un campo a modificar","warning"); return; }
+    if (!fecha && !corteId) { _toastHist("Ingresa al menos un campo a modificar","warning"); return; }
     const payload = {};
     if (fecha)   payload.fecha_labor = fecha;
     if (corteId) payload.corte_id    = parseInt(corteId);
@@ -2193,7 +2201,7 @@ async function confirmarEditarHist() {
         } catch { fail++; }
     }
     document.getElementById("modalEditarHist").classList.remove("open");
-    mostrarToastNeo(`${ok} registro${ok>1?"s":""} actualizado${ok>1?"s":""}${fail?" · "+fail+" error(es)":""}`, fail?"warning":"success");
+    _toastHist(`${ok} registro${ok>1?"s":""} actualizado${ok>1?"s":""}${fail?" · "+fail+" error(es)":""}`, fail?"warning":"success");
     historialCargado = false;
     cargarHistorial();
     _histSelectedIds = [];
@@ -2202,7 +2210,7 @@ async function confirmarEditarHist() {
 
 async function eliminarSeleccion() {
     _histSelectedIds = _getHistSelectedIds();
-    if (!_histSelectedIds.length) { mostrarToastNeo("Selecciona al menos una fila","warning"); return; }
+    if (!_histSelectedIds.length) { _toastHist("Selecciona al menos una fila","warning"); return; }
     if (!confirm(`¿Eliminar ${_histSelectedIds.length} registro${_histSelectedIds.length>1?"s":""}? Esta acción no se puede deshacer.`)) return;
     const r = await fetch("/api/he/bulk-delete", {
         method:"POST", headers:{"Content-Type":"application/json"},
@@ -2210,13 +2218,13 @@ async function eliminarSeleccion() {
     });
     const d = await r.json();
     if (d.ok) {
-        mostrarToastNeo(`${d.eliminados} registro${d.eliminados>1?"s":""} eliminado${d.eliminados>1?"s":""}`, "success");
+        _toastHist(`${d.eliminados} registro${d.eliminados>1?"s":""} eliminado${d.eliminados>1?"s":""}`, "success");
         historialCargado = false;
         cargarHistorial();
         _histSelectedIds = [];
         _actualizarBarraAcciones();
     } else {
-        mostrarToastNeo(d.msg || "Error al eliminar","danger");
+        _toastHist(d.msg || "Error al eliminar","danger");
     }
 }
 </script>
