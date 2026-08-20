@@ -542,7 +542,6 @@ def api_he_conciliacion_agregar():
 
             he = HoraExtra(
                 contrato_id       = contrato.id if contrato else None,
-                contrato          = contrato_nombre,
                 fecha_labor       = fecha,
                 cedula            = str(row.get("cedula", "")).strip(),
                 nombre            = str(row.get("nombre", "")).strip(),
