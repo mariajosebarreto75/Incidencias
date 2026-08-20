@@ -164,6 +164,37 @@
             <div style="text-align:center;padding:24px;color:#475569;">Sin datos</div>
         </div>
     </div>
+
+    <!-- VALOR EXTRA NÓMINA -->
+    <div class="dh-card" style="margin-bottom:1.5rem;">
+        <div class="dh-card-hdr" style="justify-content:space-between;">
+            <span class="dh-card-ttl"><i class="bi bi-currency-dollar me-1" style="color:#4ade80"></i>Valor Extra Nómina — Reportado vs Autorizado</span>
+            <button class="dh-btn-sec" onclick="recalcularValores()" style="font-size:.72rem;padding:4px 12px;">
+                <i class="bi bi-arrow-repeat me-1"></i>Recalcular todo
+            </button>
+        </div>
+        <!-- KPIs valor nómina -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;padding:14px 18px;border-bottom:1px solid var(--dh-border);">
+            <div class="dh-kpi" style="padding:12px 16px;">
+                <div class="dh-kpi-icon" style="color:#a78bfa"><i class="bi bi-file-earmark-text"></i></div>
+                <div class="dh-kpi-val" id="kv_rep" style="font-size:1.3rem">—</div>
+                <div class="dh-kpi-lbl">Valor Extra Nómina Reportado</div>
+            </div>
+            <div class="dh-kpi" style="padding:12px 16px;">
+                <div class="dh-kpi-icon" style="color:#4ade80"><i class="bi bi-patch-check-fill"></i></div>
+                <div class="dh-kpi-val" id="kv_auth" style="font-size:1.3rem;color:#4ade80">—</div>
+                <div class="dh-kpi-lbl">Valor Extra Nómina Autorizado</div>
+            </div>
+            <div class="dh-kpi" style="padding:12px 16px;">
+                <div class="dh-kpi-icon" style="color:#f87171"><i class="bi bi-arrow-down-circle-fill"></i></div>
+                <div class="dh-kpi-val" id="kv_diff" style="font-size:1.3rem;color:#f87171">—</div>
+                <div class="dh-kpi-lbl">Diferencia (Rep − Aut)</div>
+            </div>
+        </div>
+        <div id="valorNominaTable" style="overflow-x:auto;">
+            <div style="text-align:center;padding:24px;color:#475569;">Sin datos</div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -196,9 +227,10 @@ function buildParams() {
 
 async function cargar() {
     const params = buildParams();
-    const [data, ranking] = await Promise.all([
+    const [data, ranking, valorNomina] = await Promise.all([
         fetch('/admin/api/he/dashboard-data?' + params).then(r=>r.json()),
         fetch('/api/he/ranking-contratos?' + params).then(r=>r.json()).catch(()=>[]),
+        fetch('/api/he/valor-extra-nomina?' + params).then(r=>r.json()).catch(()=>[]),
     ]);
     if (data.error) { console.error(data.error); return; }
     renderKpis(data.kpis);
@@ -207,6 +239,7 @@ async function cargar() {
     renderLimite(data.limite_legal);
     renderSupervisores(data.supervisores);
     renderRankingContratos(ranking);
+    renderValorNomina(valorNomina);
     // Top tipo
     if (data.top_tipo) {
         const tag = document.getElementById('topTipoTag');
@@ -455,6 +488,120 @@ function toggleDashTec(btn, ci, ki) {
     const open = row.style.display !== 'none';
     row.style.display = open ? 'none' : '';
     btn.textContent = open ? '+' : '−';
+}
+
+// ── Valor Extra Nómina ──────────────────────────────────────────────────────
+const fmtCOP = v => {
+    if (!v && v !== 0) return '—';
+    return '$ ' + Math.round(v).toLocaleString('es-CO');
+};
+
+function renderValorNomina(data) {
+    const cont = document.getElementById('valorNominaTable');
+    // KPIs totales
+    const totalRep  = (data || []).reduce((s, c) => s + (c.valor_rep  || 0), 0);
+    const totalAuth = (data || []).reduce((s, c) => s + (c.valor_auth || 0), 0);
+    document.getElementById('kv_rep').textContent  = fmtCOP(totalRep);
+    document.getElementById('kv_auth').textContent = fmtCOP(totalAuth);
+    document.getElementById('kv_diff').textContent = fmtCOP(totalRep - totalAuth);
+
+    if (!data || !data.length) {
+        cont.innerHTML = '<div style="text-align:center;padding:24px;color:#475569;">Sin datos o sin salarios cargados en personas</div>';
+        return;
+    }
+    const maxVal = data[0].valor_rep || 1;
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+        <thead><tr style="background:#0f172a;color:#94a3b8;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
+            <th style="padding:8px 14px;text-align:left;">Contrato</th>
+            <th style="padding:8px 14px;text-align:right;width:160px;">Val. Reportado</th>
+            <th style="padding:8px 14px;text-align:right;width:160px;">Val. Autorizado</th>
+            <th style="padding:8px 14px;width:180px;">Distribución</th>
+            <th style="padding:6px 8px;width:32px;"></th>
+        </tr></thead><tbody>`;
+
+    data.forEach((c, ci) => {
+        const pct = maxVal > 0 ? (c.valor_rep / maxVal * 100).toFixed(1) : 0;
+        const authPct = c.valor_rep > 0 ? Math.min(100, c.valor_auth / c.valor_rep * 100).toFixed(1) : 0;
+        html += `<tr style="border-bottom:1px solid #334155;">
+            <td style="padding:8px 14px;color:#e2e8f0;font-weight:600;">${c.nombre}</td>
+            <td style="padding:8px 14px;text-align:right;color:#a78bfa;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(c.valor_rep)}</td>
+            <td style="padding:8px 14px;text-align:right;color:#4ade80;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(c.valor_auth)}</td>
+            <td style="padding:8px 14px;">
+                <div style="background:#1e3a4c;border-radius:4px;height:8px;overflow:hidden;position:relative;">
+                    <div style="background:#7c3aed;height:100%;width:${pct}%;border-radius:4px;"></div>
+                    <div style="background:#4ade80;height:100%;width:${authPct}%;border-radius:4px;position:absolute;top:0;left:0;opacity:.7;"></div>
+                </div>
+            </td>
+            <td style="padding:4px 8px;text-align:center;">
+                <button onclick="toggleVnConc(this,${ci})" style="background:none;border:1px solid #334155;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:.85rem;color:#94a3b8;line-height:1;">+</button>
+            </td>
+        </tr>
+        <tr id="vn-conc-${ci}" style="display:none;">
+            <td colspan="5" style="padding:0 0 0 28px;background:#1a2a3a;">
+                <table style="width:100%;border-collapse:collapse;font-size:.77rem;">
+                    <thead><tr style="color:#64748b;text-transform:uppercase;font-size:.7rem;">
+                        <th style="padding:6px 10px;text-align:left;">Tipo de hora extra</th>
+                        <th style="padding:6px 10px;text-align:right;width:140px;">Val. Reportado</th>
+                        <th style="padding:6px 10px;text-align:right;width:140px;">Val. Autorizado</th>
+                        <th style="padding:4px 6px;width:32px;"></th>
+                    </tr></thead><tbody>`;
+        (c.conceptos || []).forEach((conc, ki) => {
+            html += `<tr style="border-bottom:1px solid #1e3a4c;">
+                <td style="padding:6px 10px;color:#cbd5e1;">${conc.codigo} — ${conc.tipo}</td>
+                <td style="padding:6px 10px;text-align:right;color:#818cf8;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_rep)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#34d399;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_auth)}</td>
+                <td style="padding:4px 6px;text-align:center;">
+                    <button onclick="toggleVnTec(this,${ci},${ki})" style="background:none;border:1px solid #334155;border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:.78rem;color:#64748b;line-height:1;">+</button>
+                </td>
+            </tr>
+            <tr id="vn-tec-${ci}-${ki}" style="display:none;">
+                <td colspan="4" style="padding:0 0 0 20px;background:#172032;">
+                    <table style="width:100%;border-collapse:collapse;font-size:.75rem;">
+                        <thead><tr style="color:#475569;text-transform:uppercase;font-size:.68rem;">
+                            <th style="padding:5px 10px;text-align:left;">Cédula</th>
+                            <th style="padding:5px 10px;text-align:left;">Nombre</th>
+                            <th style="padding:5px 10px;text-align:right;width:130px;">Val. Reportado</th>
+                            <th style="padding:5px 10px;text-align:right;width:130px;">Val. Autorizado</th>
+                        </tr></thead><tbody>`;
+            (conc.tecnicos || []).forEach(tec => {
+                html += `<tr style="border-bottom:1px solid #1e293b;">
+                    <td style="padding:5px 10px;color:#64748b;font-variant-numeric:tabular-nums;">${tec.cedula}</td>
+                    <td style="padding:5px 10px;color:#e2e8f0;font-weight:500;">${tec.nombre}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#a78bfa;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_rep)}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#4ade80;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_auth)}</td>
+                </tr>`;
+            });
+            html += `</tbody></table></td></tr>`;
+        });
+        html += `</tbody></table></td></tr>`;
+    });
+    html += '</tbody></table>';
+    cont.innerHTML = html;
+}
+
+function toggleVnConc(btn, ci) {
+    const row = document.getElementById(`vn-conc-${ci}`);
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : '';
+    btn.textContent = open ? '+' : '−';
+}
+function toggleVnTec(btn, ci, ki) {
+    const row = document.getElementById(`vn-tec-${ci}-${ki}`);
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : '';
+    btn.textContent = open ? '+' : '−';
+}
+
+async function recalcularValores() {
+    if (!confirm('¿Recalcular valor_extra_nomina en TODOS los registros? Esto actualiza la BD.')) return;
+    const res = await fetch('/api/he/recalcular-valores', { method: 'POST' });
+    const d = await res.json();
+    if (d.ok) {
+        alert(`Recalculados: ${d.actualizados} registros`);
+        cargar();
+    } else {
+        alert('Error: ' + (d.msg || 'desconocido'));
+    }
 }
 
 // Cargar al abrir con mes actual por defecto

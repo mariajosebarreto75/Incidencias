@@ -453,9 +453,12 @@ def api_he_actualizar(id):
     he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
     he.justificacion      = f.get("justificacion", he.justificacion)
     he.observacion        = f.get("observacion", he.observacion)
-    if f.get("valor_hora")         is not None: he.valor_hora         = f["valor_hora"]
-    if f.get("valor_extra_nomina") is not None: he.valor_extra_nomina = f["valor_extra_nomina"]
-    if f.get("valor_extra")        is not None: he.valor_extra        = f["valor_extra"]
+    if f.get("valor_hora")  is not None: he.valor_hora  = f["valor_hora"]
+    if f.get("valor_extra") is not None: he.valor_extra = f["valor_extra"]
+    # Auto-calcular valor_extra_nomina con horas reportadas
+    val_nom = _calc_valor_nomina(he.cedula, he.id_concepto, he.horas_reportadas)
+    if val_nom is not None:
+        he.valor_extra_nomina = val_nom
     db.session.commit()
     return jsonify({"ok": True})
 
@@ -510,6 +513,18 @@ def he_neo():
 def he_conciliacion():
     contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     return render_template("neo/he_conciliacion.html", contratos=contratos)
+
+
+def _calc_valor_nomina(cedula, id_concepto, horas):
+    """((salario * factor) / 220) * horas — retorna None si no hay salario."""
+    if not horas:
+        return None
+    persona = Persona.query.filter_by(Documento=str(cedula)).first()
+    if not persona or not persona.Salario:
+        return None
+    concepto = HeConcepto.query.filter_by(codigo=str(id_concepto)).first()
+    factor = float(concepto.factor) if concepto else FACTOR_HE.get(str(id_concepto), 1.0)
+    return round(float(persona.Salario) * factor / 220 * float(horas), 2)
 
 
 def _parse_hora(val):
@@ -567,6 +582,8 @@ def api_he_conciliacion_agregar():
                 errores.append(f"Cédula vacía en fila contrato={contrato_nombre}")
                 continue
 
+            id_conc = (lambda v: v.zfill(2) if v else v)(str(row.get("id_concepto", "")).strip())
+            hrs_rep = float(row.get("horas_reportadas", 0) or 0)
             he = HoraExtra(
                 contrato_id       = contrato.id,
                 fecha_labor       = fecha,
@@ -576,8 +593,8 @@ def api_he_conciliacion_agregar():
                 placa             = str(row.get("placa", "")).strip() or None,
                 hora_inicio       = _parse_hora(row.get("hora_inicio")),
                 hora_fin          = _parse_hora(row.get("hora_fin")),
-                id_concepto       = (lambda v: v.zfill(2) if v else v)(str(row.get("id_concepto", "")).strip()),
-                horas_reportadas  = float(row.get("horas_reportadas", 0) or 0),
+                id_concepto       = id_conc,
+                horas_reportadas  = hrs_rep,
                 horas_compensadas = float(row.get("horas_compensadas", 0) or 0),
                 tipo_he           = str(row.get("tipo_he", "")).strip() or None,
                 justificacion     = str(row.get("justificacion", "")).strip() or None,
@@ -585,6 +602,7 @@ def api_he_conciliacion_agregar():
                 corte_id          = int(row["corte_id"]) if row.get("corte_id") else None,
                 reportado_por_id  = current_user.id,
                 estado            = "PENDIENTE",
+                valor_extra_nomina = _calc_valor_nomina(cedula, id_conc, hrs_rep),
             )
             db.session.add(he)
             agregados += 1
@@ -1061,3 +1079,105 @@ def api_he_conceptos_delete(cid):
     db.session.delete(c)
     db.session.commit()
     return jsonify({"ok": True})
+
+
+# ── API: valor extra nómina agrupado contrato→tipo→técnico ───────────────────
+
+@he_bp.route("/api/he/valor-extra-nomina")
+@login_required
+def api_he_valor_extra_nomina():
+    params = request.args
+    q = HoraExtra.query
+    if params.get("contrato_id"):
+        q = q.filter(HoraExtra.contrato_id == int(params["contrato_id"]))
+    if params.get("corte_id"):
+        q = q.filter(HoraExtra.corte_id == int(params["corte_id"]))
+    if params.get("mes"):
+        y, m = params["mes"].split("-")
+        q = q.filter(db.extract("year", HoraExtra.fecha_labor) == int(y),
+                     db.extract("month", HoraExtra.fecha_labor) == int(m))
+    if params.get("fecha_desde"):
+        q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(params["fecha_desde"]))
+    if params.get("fecha_hasta"):
+        q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(params["fecha_hasta"]))
+
+    registros = q.all()
+
+    # Cargar salarios y factores en memoria para eficiencia
+    cedulas = {r.cedula for r in registros}
+    salarios = {p.Documento: float(p.Salario)
+                for p in Persona.query.filter(Persona.Documento.in_(cedulas), Persona.Salario.isnot(None)).all()}
+    factores = {c.codigo: float(c.factor) for c in HeConcepto.query.all()}
+
+    def val(cedula, id_concepto, horas):
+        if not horas:
+            return 0
+        sal = salarios.get(cedula)
+        if not sal:
+            return 0
+        fac = factores.get(str(id_concepto), FACTOR_HE.get(str(id_concepto), 1.0))
+        return round(sal * fac / 220 * float(horas), 2)
+
+    contratos = {}
+    for r in registros:
+        cid = r.contrato_id
+        cname = r.contrato.contrato if r.contrato else ""
+        if cid not in contratos:
+            contratos[cid] = {"nombre": cname, "contrato_id": cid,
+                               "valor_rep": 0, "valor_auth": 0, "conceptos": {}}
+
+        vr = val(r.cedula, r.id_concepto, r.horas_reportadas)
+        va = val(r.cedula, r.id_concepto, r.horas_autorizadas) if r.horas_autorizadas else 0
+
+        contratos[cid]["valor_rep"]  += vr
+        contratos[cid]["valor_auth"] += va
+
+        ck = r.id_concepto or ""
+        if ck not in contratos[cid]["conceptos"]:
+            contratos[cid]["conceptos"][ck] = {
+                "codigo": ck,
+                "tipo": r.tipo_he or CONCEPTOS_HE.get(ck, ck),
+                "valor_rep": 0, "valor_auth": 0, "tecnicos": {}
+            }
+        contratos[cid]["conceptos"][ck]["valor_rep"]  += vr
+        contratos[cid]["conceptos"][ck]["valor_auth"] += va
+
+        tk = r.cedula
+        tecs = contratos[cid]["conceptos"][ck]["tecnicos"]
+        if tk not in tecs:
+            tecs[tk] = {"cedula": tk, "nombre": r.nombre or "", "valor_rep": 0, "valor_auth": 0}
+        tecs[tk]["valor_rep"]  += vr
+        tecs[tk]["valor_auth"] += va
+
+    result = []
+    for c in sorted(contratos.values(), key=lambda x: -x["valor_rep"]):
+        c["conceptos"] = sorted(
+            [dict(v, tecnicos=sorted(v["tecnicos"].values(), key=lambda t: -t["valor_rep"]))
+             for v in c["conceptos"].values()],
+            key=lambda x: -x["valor_rep"]
+        )
+        result.append(c)
+
+    return jsonify(result)
+
+
+# ── API: recalcular valor_extra_nomina en todos los registros ────────────────
+
+@he_bp.route("/api/he/recalcular-valores", methods=["POST"])
+@login_required
+def api_he_recalcular_valores():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    salarios = {p.Documento: float(p.Salario)
+                for p in Persona.query.filter(Persona.Salario.isnot(None)).all()}
+    factores = {c.codigo: float(c.factor) for c in HeConcepto.query.all()}
+    actualizados = 0
+    for he in HoraExtra.query.all():
+        sal = salarios.get(he.cedula)
+        if not sal or not he.horas_reportadas:
+            continue
+        fac = factores.get(he.id_concepto, FACTOR_HE.get(he.id_concepto, 1.0))
+        he.valor_extra_nomina = round(sal * fac / 220 * float(he.horas_reportadas), 2)
+        actualizados += 1
+    db.session.commit()
+    return jsonify({"ok": True, "actualizados": actualizados})
