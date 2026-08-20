@@ -787,7 +787,7 @@ function iniciarGrid() {
             { type:"text", readOnly:true },   // 1  contrato
             { type:"text", readOnly:true },   // 2  recurso
             { type:"text", readOnly:true },   // 3  placa
-            { type:"numeric", readOnly:true },// 4  horas_reportadas
+            { type:"numeric" },               // 4  horas_reportadas (editable NEO)
             { type:"text", readOnly:true },   // 5  hora_inicio
             { type:"text", readOnly:true },   // 6  hora_fin
             { type:"text", readOnly:true },   // 7  cedula
@@ -826,6 +826,18 @@ function iniciarGrid() {
                 const id = registrosIds[row];
                 const fi = _fullIds.indexOf(id);
                 if (fi !== -1) _fullData[fi][col] = newVal;
+            });
+            // Guardar horas_reportadas directamente vía PUT (no pasa por validar)
+            changes.forEach(([row, col, oldVal, newVal]) => {
+                if (col !== C_HRS || oldVal === newVal) return;
+                const id = registrosIds[row];
+                if (!id) return;
+                fetch(`/api/he/${id}`, {
+                    method:"PUT", headers:{"Content-Type":"application/json"},
+                    body: JSON.stringify({ horas_reportadas: parseFloat(newVal) || 0 })
+                }).then(r=>r.json()).then(d => {
+                    if (!d.ok) hot.setDataAtCell(row, col, oldVal, "revert");
+                }).catch(() => hot.setDataAtCell(row, col, oldVal, "revert"));
             });
             // Only trigger autoGuardar for user-editable columns (avoid cascade from setDataAtCell)
             const EDIT_COLS = new Set([C_HAUTH, C_ESTADO, C_OBSNEO]);
@@ -1159,7 +1171,7 @@ async function cargarHistorial(corteId) {
             changes.forEach(([row, col, oldVal, newVal]) => {
                 if (oldVal === newVal) return;
                 const physRow = hotHistorial.toPhysicalRow(row);
-                const id = _fullHistIds[physRow];
+                const id = _displayedHistIds[physRow];
                 if (!id) return;
                 const fieldMap = { 1:"fecha_labor", 5:"cedula", 6:"nombre", 7:"recurso", 8:"id_concepto", 10:"horas_reportadas" };
                 const field = fieldMap[col];

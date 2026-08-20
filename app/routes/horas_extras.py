@@ -447,8 +447,8 @@ def api_he_actualizar(id):
     he.placa              = f.get("placa", he.placa)
     he.id_concepto        = concepto
     he.tipo_he            = CONCEPTOS_HE.get(concepto, he.tipo_he)
-    he.horas_reportadas   = int(float(f.get("horas_reportadas") or he.horas_reportadas))
-    he.horas_compensadas  = int(float(f.get("horas_compensadas") or 0))
+    he.horas_reportadas   = float(f.get("horas_reportadas") or he.horas_reportadas)
+    he.horas_compensadas  = float(f.get("horas_compensadas") or 0)
     he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
     he.justificacion      = f.get("justificacion", he.justificacion)
     he.observacion        = f.get("observacion", he.observacion)
