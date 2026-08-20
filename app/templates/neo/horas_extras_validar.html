@@ -813,7 +813,7 @@ function iniciarGrid() {
         dropdownMenu: false,
         fixedColumnsLeft: 0,
         rowHeights: 28,
-        wordWrap: false,
+        autoRowSize: false,
         licenseKey: "non-commercial-and-evaluation",
         cells: function(row, col) {
             if (col >= C_HAUTH && col <= C_OBSNEO) return { className: "ht-neo-edit" };
@@ -1111,7 +1111,7 @@ async function cargarHistorial(corteId) {
         filters: true,
         dropdownMenu: false,
         rowHeights: 28,
-        wordWrap: false,
+        autoRowSize: false,
         licenseKey: "non-commercial-and-evaluation",
         afterGetColHeader: function(col, TH) {
             if (col === 0) {
