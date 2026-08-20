@@ -118,8 +118,8 @@
                     <button type="submit" class="vr-btn-filtrar">
                         <i class="bi bi-search"></i> Filtrar
                     </button>
-                    <a href="{{ url_for('neo.validar_reportes') }}" class="vr-btn-limpiar">
-                        <i class="bi bi-x-circle"></i> Limpiar
+                    <a href="{{ url_for('neo.validar_reportes') }}" class="vr-btn-limpiar" id="btnLimpiarFiltros">
+                        <i class="bi bi-x-circle"></i> Limpiar todo
                     </a>
                 </div>
             </div>
@@ -476,6 +476,59 @@
     if (btnLimpiar) {
         btnLimpiar.addEventListener('click', function() {
             sessionStorage.removeItem(STORAGE_KEY);
+        });
+    }
+})();
+
+/* ── Persistencia de filtros en sessionStorage ────────────────────────────── */
+(function () {
+    const KEY        = 'neo_vr_filtros';
+    const CAMPOS     = ['fecha_ini','fecha_fin','fecha_rep_ini','fecha_rep_fin','contrato','recurso'];
+    const form       = document.getElementById('formFiltros');
+    const btnLimpiar = document.getElementById('btnLimpiarFiltros');
+
+    // ¿La URL ya trae parámetros de filtro?
+    const urlParams   = new URLSearchParams(window.location.search);
+    const tieneParams = CAMPOS.some(k => urlParams.get(k));
+
+    if (tieneParams) {
+        // Guardar lo que llegó por URL
+        const datos = {};
+        CAMPOS.forEach(k => { datos[k] = urlParams.get(k) || ''; });
+        sessionStorage.setItem(KEY, JSON.stringify(datos));
+    } else {
+        // Restaurar desde sessionStorage y reenviar el formulario
+        const guardado = sessionStorage.getItem(KEY);
+        if (guardado) {
+            try {
+                const datos = JSON.parse(guardado);
+                const tieneDatos = CAMPOS.some(k => datos[k]);
+                if (tieneDatos) {
+                    CAMPOS.forEach(k => {
+                        const el = form.querySelector(`[name="${k}"]`);
+                        if (el && datos[k]) el.value = datos[k];
+                    });
+                    form.submit(); // reenviar para que el servidor filtre
+                    return;
+                }
+            } catch(e) { sessionStorage.removeItem(KEY); }
+        }
+    }
+
+    // Al enviar el formulario, guardar los valores
+    form.addEventListener('submit', () => {
+        const datos = {};
+        CAMPOS.forEach(k => {
+            const el = form.querySelector(`[name="${k}"]`);
+            datos[k] = el ? el.value : '';
+        });
+        sessionStorage.setItem(KEY, JSON.stringify(datos));
+    });
+
+    // Botón "Limpiar todo" también borra el sessionStorage
+    if (btnLimpiar) {
+        btnLimpiar.addEventListener('click', () => {
+            sessionStorage.removeItem(KEY);
         });
     }
 })();
