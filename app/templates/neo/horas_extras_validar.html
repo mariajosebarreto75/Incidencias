@@ -1901,7 +1901,7 @@ const HE_EXPORT_HEADERS = [
     "ID CONCEPTO","# HORAS REPORTADAS","# HORAS COMPENSADAS",
     "AUTORIZACIÓN SUPERVISOR","JUSTIFICACIÓN","OBSERVACIÓN",
     "TIPO HE","VALOR EXTRA NÓMINA","VALOR EXTRA",
-    "AUTORIZACIÓN NEO","HORAS AUTORIZADAS"
+    "AUTORIZACIÓN NEO","HORAS AUTORIZADAS","ESTADO NEO","OBS NEO"
 ];
 
 function _fmtFechaExport(v) {
@@ -1936,6 +1936,8 @@ function _heRowDesdeRecord(r) {
         r.valor_extra           ?? "",
         r.autorizacion_neo      || "",
         r.horas_autorizadas     ?? "",
+        r.estado                || "",
+        r.obs_neo               || "",
     ];
 }
 
