@@ -154,6 +154,16 @@
             </div>
         </div>
     </div>
+
+    <!-- RANKING POR CONTRATO -->
+    <div class="dh-card" style="margin-bottom:1rem;">
+        <div class="dh-card-hdr">
+            <span class="dh-card-ttl"><i class="bi bi-bar-chart-steps me-1"></i>Ranking de horas por contrato</span>
+        </div>
+        <div id="rankingContratosDash" style="overflow-x:auto;">
+            <div style="text-align:center;padding:24px;color:#475569;">Sin datos</div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -186,13 +196,17 @@ function buildParams() {
 
 async function cargar() {
     const params = buildParams();
-    const data = await fetch('/admin/api/he/dashboard-data?' + params).then(r=>r.json());
+    const [data, ranking] = await Promise.all([
+        fetch('/admin/api/he/dashboard-data?' + params).then(r=>r.json()),
+        fetch('/api/he/ranking-contratos?' + params).then(r=>r.json()).catch(()=>[]),
+    ]);
     if (data.error) { console.error(data.error); return; }
     renderKpis(data.kpis);
     renderChartTipo(data.por_tipo);
     renderChartDia(data.por_dia);
     renderLimite(data.limite_legal);
     renderSupervisores(data.supervisores);
+    renderRankingContratos(ranking);
     // Top tipo
     if (data.top_tipo) {
         const tag = document.getElementById('topTipoTag');
@@ -355,6 +369,92 @@ function renderSupervisores(lista) {
             <td style="text-align:right;color:#a78bfa">${fmt(s.hrs_reportadas)}h</td>
             <td style="text-align:right;color:#4ade80;font-weight:600">${fmt(s.hrs_autorizadas)}h</td>
         </tr>`).join('');
+}
+
+function renderRankingContratos(data) {
+    const cont = document.getElementById('rankingContratosDash');
+    if (!data || !data.length) {
+        cont.innerHTML = '<div style="text-align:center;padding:24px;color:#475569;">Sin datos</div>';
+        return;
+    }
+    const maxHrs = data[0].hrs;
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+        <thead><tr style="background:#0f172a;color:#94a3b8;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
+            <th style="padding:8px 14px;text-align:left;">Contrato</th>
+            <th style="padding:8px 14px;text-align:right;width:90px;">Hrs Rep.</th>
+            <th style="padding:8px 14px;width:220px;">Distribución</th>
+            <th style="padding:6px 8px;width:32px;"></th>
+        </tr></thead><tbody>`;
+    data.forEach((c, ci) => {
+        const pct = maxHrs > 0 ? (c.hrs / maxHrs * 100).toFixed(1) : 0;
+        html += `<tr style="border-bottom:1px solid #334155;">
+            <td style="padding:8px 14px;color:#e2e8f0;font-weight:600;">${c.nombre}</td>
+            <td style="padding:8px 14px;text-align:right;color:#38bdf8;font-weight:700;font-variant-numeric:tabular-nums;">${c.hrs.toFixed(1)}</td>
+            <td style="padding:8px 14px;">
+                <div style="background:#1e3a4c;border-radius:4px;height:8px;overflow:hidden;">
+                    <div style="background:#0ea5e9;height:100%;width:${pct}%;border-radius:4px;"></div>
+                </div>
+            </td>
+            <td style="padding:4px 8px;text-align:center;">
+                <button onclick="toggleDashConc(this,${ci})" style="background:none;border:1px solid #334155;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:.85rem;color:#94a3b8;line-height:1;">+</button>
+            </td>
+        </tr>
+        <tr id="drk-conc-${ci}" style="display:none;">
+            <td colspan="4" style="padding:0 0 0 28px;background:#1a2a3a;">
+                <table style="width:100%;border-collapse:collapse;font-size:.77rem;">
+                    <thead><tr style="color:#64748b;text-transform:uppercase;font-size:.7rem;">
+                        <th style="padding:6px 10px;text-align:left;">Tipo de hora extra</th>
+                        <th style="padding:6px 10px;text-align:right;width:80px;">Hrs</th>
+                        <th style="padding:6px 10px;width:160px;"></th>
+                        <th style="padding:4px 6px;width:32px;"></th>
+                    </tr></thead><tbody>`;
+        c.conceptos.forEach((conc, ki) => {
+            const pctC = c.hrs > 0 ? (conc.hrs / c.hrs * 100).toFixed(1) : 0;
+            html += `<tr style="border-bottom:1px solid #1e3a4c;">
+                <td style="padding:6px 10px;color:#cbd5e1;">${conc.tipo}</td>
+                <td style="padding:6px 10px;text-align:right;color:#818cf8;font-weight:600;font-variant-numeric:tabular-nums;">${conc.hrs.toFixed(1)}</td>
+                <td style="padding:6px 10px;">
+                    <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;">
+                        <div style="background:#6366f1;height:100%;width:${pctC}%;border-radius:4px;"></div>
+                    </div>
+                </td>
+                <td style="padding:4px 6px;text-align:center;">
+                    <button onclick="toggleDashTec(this,${ci},${ki})" style="background:none;border:1px solid #334155;border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:.78rem;color:#64748b;line-height:1;">+</button>
+                </td>
+            </tr>
+            <tr id="drk-tec-${ci}-${ki}" style="display:none;">
+                <td colspan="4" style="padding:0 0 0 20px;background:#172032;">
+                    <table style="width:100%;border-collapse:collapse;font-size:.75rem;">
+                        <thead><tr style="color:#475569;text-transform:uppercase;font-size:.68rem;">
+                            <th style="padding:5px 10px;text-align:left;">Cédula</th>
+                            <th style="padding:5px 10px;text-align:left;">Nombre</th>
+                            <th style="padding:5px 10px;text-align:right;width:70px;">Hrs</th>
+                        </tr></thead><tbody>`;
+            conc.tecnicos.forEach(tec => {
+                html += `<tr style="border-bottom:1px solid #1e293b;">
+                    <td style="padding:5px 10px;color:#64748b;font-variant-numeric:tabular-nums;">${tec.cedula}</td>
+                    <td style="padding:5px 10px;color:#34d399;font-weight:500;">${tec.nombre}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#4ade80;font-weight:600;font-variant-numeric:tabular-nums;">${tec.hrs.toFixed(1)}</td>
+                </tr>`;
+            });
+            html += `</tbody></table></td></tr>`;
+        });
+        html += `</tbody></table></td></tr>`;
+    });
+    html += '</tbody></table>';
+    cont.innerHTML = html;
+}
+function toggleDashConc(btn, ci) {
+    const row = document.getElementById(`drk-conc-${ci}`);
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : '';
+    btn.textContent = open ? '+' : '−';
+}
+function toggleDashTec(btn, ci, ki) {
+    const row = document.getElementById(`drk-tec-${ci}-${ki}`);
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : '';
+    btn.textContent = open ? '+' : '−';
 }
 
 // Cargar al abrir con mes actual por defecto
