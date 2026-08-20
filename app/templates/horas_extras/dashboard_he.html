@@ -404,6 +404,8 @@ function renderSupervisores(lista) {
         </tr>`).join('');
 }
 
+const fmtH = n => Math.round(n || 0).toLocaleString('es-CO');
+
 function renderRankingContratos(data) {
     const cont = document.getElementById('rankingContratosDash');
     if (!data || !data.length) {
@@ -414,18 +416,22 @@ function renderRankingContratos(data) {
     let html = `<table style="width:100%;border-collapse:collapse;font-size:.8rem;">
         <thead><tr style="background:#0f172a;color:#94a3b8;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
             <th style="padding:8px 14px;text-align:left;">Contrato</th>
-            <th style="padding:8px 14px;text-align:right;width:90px;">Hrs Rep.</th>
-            <th style="padding:8px 14px;width:220px;">Distribución</th>
+            <th style="padding:8px 14px;text-align:right;width:100px;">Hrs Rep.</th>
+            <th style="padding:8px 14px;text-align:right;width:100px;">Hrs Aut.</th>
+            <th style="padding:8px 14px;width:180px;">Distribución</th>
             <th style="padding:6px 8px;width:32px;"></th>
         </tr></thead><tbody>`;
     data.forEach((c, ci) => {
-        const pct = maxHrs > 0 ? (c.hrs / maxHrs * 100).toFixed(1) : 0;
+        const pct     = maxHrs > 0 ? (c.hrs / maxHrs * 100).toFixed(1) : 0;
+        const authPct = c.hrs > 0 ? Math.min(100, (c.hrs_auth || 0) / c.hrs * 100).toFixed(1) : 0;
         html += `<tr style="border-bottom:1px solid #334155;">
             <td style="padding:8px 14px;color:#e2e8f0;font-weight:600;">${c.nombre}</td>
-            <td style="padding:8px 14px;text-align:right;color:#38bdf8;font-weight:700;font-variant-numeric:tabular-nums;">${c.hrs.toFixed(1)}</td>
+            <td style="padding:8px 14px;text-align:right;color:#38bdf8;font-weight:700;font-variant-numeric:tabular-nums;">${fmtH(c.hrs)}</td>
+            <td style="padding:8px 14px;text-align:right;color:#4ade80;font-weight:700;font-variant-numeric:tabular-nums;">${fmtH(c.hrs_auth)}</td>
             <td style="padding:8px 14px;">
-                <div style="background:#1e3a4c;border-radius:4px;height:8px;overflow:hidden;">
-                    <div style="background:#0ea5e9;height:100%;width:${pct}%;border-radius:4px;"></div>
+                <div style="background:#1e3a4c;border-radius:4px;height:8px;overflow:hidden;position:relative;">
+                    <div style="background:#0ea5e9;height:100%;width:${pct}%;border-radius:4px;position:absolute;top:0;left:0;"></div>
+                    <div style="background:#4ade80;height:100%;width:${authPct}%;border-radius:4px;position:absolute;top:0;left:0;opacity:.8;"></div>
                 </div>
             </td>
             <td style="padding:4px 8px;text-align:center;">
@@ -433,22 +439,26 @@ function renderRankingContratos(data) {
             </td>
         </tr>
         <tr id="drk-conc-${ci}" style="display:none;">
-            <td colspan="4" style="padding:0 0 0 28px;background:#1a2a3a;">
+            <td colspan="5" style="padding:0 0 0 28px;background:#1a2a3a;">
                 <table style="width:100%;border-collapse:collapse;font-size:.77rem;">
                     <thead><tr style="color:#64748b;text-transform:uppercase;font-size:.7rem;">
                         <th style="padding:6px 10px;text-align:left;">Tipo de hora extra</th>
-                        <th style="padding:6px 10px;text-align:right;width:80px;">Hrs</th>
-                        <th style="padding:6px 10px;width:160px;"></th>
+                        <th style="padding:6px 10px;text-align:right;width:90px;">Hrs Rep.</th>
+                        <th style="padding:6px 10px;text-align:right;width:90px;">Hrs Aut.</th>
+                        <th style="padding:6px 10px;width:140px;"></th>
                         <th style="padding:4px 6px;width:32px;"></th>
                     </tr></thead><tbody>`;
         c.conceptos.forEach((conc, ki) => {
-            const pctC = c.hrs > 0 ? (conc.hrs / c.hrs * 100).toFixed(1) : 0;
+            const pctC     = c.hrs > 0 ? (conc.hrs / c.hrs * 100).toFixed(1) : 0;
+            const authPctC = conc.hrs > 0 ? Math.min(100, (conc.hrs_auth || 0) / conc.hrs * 100).toFixed(1) : 0;
             html += `<tr style="border-bottom:1px solid #1e3a4c;">
                 <td style="padding:6px 10px;color:#cbd5e1;">${conc.tipo}</td>
-                <td style="padding:6px 10px;text-align:right;color:#818cf8;font-weight:600;font-variant-numeric:tabular-nums;">${conc.hrs.toFixed(1)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#818cf8;font-weight:600;font-variant-numeric:tabular-nums;">${fmtH(conc.hrs)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#34d399;font-weight:600;font-variant-numeric:tabular-nums;">${fmtH(conc.hrs_auth)}</td>
                 <td style="padding:6px 10px;">
-                    <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;">
-                        <div style="background:#6366f1;height:100%;width:${pctC}%;border-radius:4px;"></div>
+                    <div style="background:#1e293b;border-radius:4px;height:6px;overflow:hidden;position:relative;">
+                        <div style="background:#6366f1;height:100%;width:${pctC}%;border-radius:4px;position:absolute;top:0;left:0;"></div>
+                        <div style="background:#4ade80;height:100%;width:${authPctC}%;border-radius:4px;position:absolute;top:0;left:0;opacity:.75;"></div>
                     </div>
                 </td>
                 <td style="padding:4px 6px;text-align:center;">
@@ -456,18 +466,20 @@ function renderRankingContratos(data) {
                 </td>
             </tr>
             <tr id="drk-tec-${ci}-${ki}" style="display:none;">
-                <td colspan="4" style="padding:0 0 0 20px;background:#172032;">
+                <td colspan="5" style="padding:0 0 0 20px;background:#172032;">
                     <table style="width:100%;border-collapse:collapse;font-size:.75rem;">
                         <thead><tr style="color:#475569;text-transform:uppercase;font-size:.68rem;">
                             <th style="padding:5px 10px;text-align:left;">Cédula</th>
                             <th style="padding:5px 10px;text-align:left;">Nombre</th>
-                            <th style="padding:5px 10px;text-align:right;width:70px;">Hrs</th>
+                            <th style="padding:5px 10px;text-align:right;width:80px;">Hrs Rep.</th>
+                            <th style="padding:5px 10px;text-align:right;width:80px;">Hrs Aut.</th>
                         </tr></thead><tbody>`;
             conc.tecnicos.forEach(tec => {
                 html += `<tr style="border-bottom:1px solid #1e293b;">
                     <td style="padding:5px 10px;color:#64748b;font-variant-numeric:tabular-nums;">${tec.cedula}</td>
                     <td style="padding:5px 10px;color:#34d399;font-weight:500;">${tec.nombre}</td>
-                    <td style="padding:5px 10px;text-align:right;color:#4ade80;font-weight:600;font-variant-numeric:tabular-nums;">${tec.hrs.toFixed(1)}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#818cf8;font-weight:600;font-variant-numeric:tabular-nums;">${fmtH(tec.hrs)}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#4ade80;font-weight:600;font-variant-numeric:tabular-nums;">${fmtH(tec.hrs_auth)}</td>
                 </tr>`;
             });
             html += `</tbody></table></td></tr>`;

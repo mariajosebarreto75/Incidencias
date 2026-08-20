@@ -829,6 +829,7 @@ def api_he_ranking_contratos():
         HoraExtra.cedula,
         HoraExtra.nombre,
         sa_func.sum(HoraExtra.horas_reportadas).label("hrs"),
+        sa_func.sum(HoraExtra.horas_autorizadas).label("hrs_auth"),
     )
 
     if corte_id:
@@ -858,26 +859,30 @@ def api_he_ranking_contratos():
     ).all()
 
     # Construir jerarquía: contrato → concepto → técnico
-    from collections import defaultdict
     contratos_map = {}
-    for contrato_id_val, concepto, cedula, nombre, hrs in rows:
+    for contrato_id_val, concepto, cedula, nombre, hrs, hrs_auth in rows:
         contrato_obj = Contrato.query.get(contrato_id_val)
         if not contrato_obj:
             continue
         nombre_contrato = contrato_obj.contrato
-        hrs_f = float(hrs or 0)
+        hrs_f      = float(hrs or 0)
+        hrs_auth_f = float(hrs_auth or 0)
 
         if nombre_contrato not in contratos_map:
-            contratos_map[nombre_contrato] = {"nombre": nombre_contrato, "hrs": 0, "conceptos": {}}
-        contratos_map[nombre_contrato]["hrs"] += hrs_f
+            contratos_map[nombre_contrato] = {"nombre": nombre_contrato, "hrs": 0, "hrs_auth": 0, "conceptos": {}}
+        contratos_map[nombre_contrato]["hrs"]      += hrs_f
+        contratos_map[nombre_contrato]["hrs_auth"] += hrs_auth_f
 
         tipo = CONCEPTOS_HE.get(concepto, concepto)
         clave_conc = f"{concepto}|{tipo}"
         if clave_conc not in contratos_map[nombre_contrato]["conceptos"]:
-            contratos_map[nombre_contrato]["conceptos"][clave_conc] = {"concepto": concepto, "tipo": tipo, "hrs": 0, "tecnicos": []}
-        contratos_map[nombre_contrato]["conceptos"][clave_conc]["hrs"] += hrs_f
+            contratos_map[nombre_contrato]["conceptos"][clave_conc] = {
+                "concepto": concepto, "tipo": tipo, "hrs": 0, "hrs_auth": 0, "tecnicos": []
+            }
+        contratos_map[nombre_contrato]["conceptos"][clave_conc]["hrs"]      += hrs_f
+        contratos_map[nombre_contrato]["conceptos"][clave_conc]["hrs_auth"] += hrs_auth_f
         contratos_map[nombre_contrato]["conceptos"][clave_conc]["tecnicos"].append({
-            "cedula": cedula or "", "nombre": nombre or "", "hrs": hrs_f
+            "cedula": cedula or "", "nombre": nombre or "", "hrs": hrs_f, "hrs_auth": hrs_auth_f
         })
 
     # Convertir a lista ordenada
