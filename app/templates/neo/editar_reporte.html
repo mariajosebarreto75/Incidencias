@@ -92,8 +92,8 @@
                 <div class="col-md-3">
                     <label class="edit-label" for="hora_inicio">Hora inicio</label>
                     <div class="input-group rpt-hora-group">
-                        <input type="time" id="hora_inicio" class="edit-input"
-                               value="{{ reporte.hora_inicio.strftime('%H:%M') if reporte.hora_inicio else '' }}">
+                        <input type="time" id="hora_inicio" class="edit-input" step="1"
+                               value="{{ reporte.hora_inicio.strftime('%H:%M:%S') if reporte.hora_inicio else '' }}">
                         <button type="button" class="btn rpt-copy-btn" id="btnCopyHoraInicio"
                                 title="Copiar hora inicio">
                             <i class="bi bi-clipboard"></i>
@@ -103,8 +103,8 @@
                 <div class="col-md-3">
                     <label class="edit-label" for="hora_fin">Hora fin</label>
                     <div class="input-group rpt-hora-group">
-                        <input type="time" id="hora_fin" class="edit-input"
-                               value="{{ reporte.hora_fin.strftime('%H:%M') if reporte.hora_fin else '' }}">
+                        <input type="time" id="hora_fin" class="edit-input" step="1"
+                               value="{{ reporte.hora_fin.strftime('%H:%M:%S') if reporte.hora_fin else '' }}">
                         <button type="button" class="btn rpt-copy-btn" id="btnCopyHoraFin"
                                 title="Copiar hora fin">
                             <i class="bi bi-clipboard"></i>
@@ -138,6 +138,7 @@
                 <div class="col-md-6">
                     <label class="edit-label" for="parametro_neo">Parámetro NEO</label>
                     <select id="parametro_neo" class="edit-input">
+                        <option value="" {% if not reporte.parametro_neo %}selected{% endif %}>— Sin parámetro —</option>
                         {% for p in parametros_neo %}
                         <option value="{{ p.parametroNeo }}"
                             {% if p.parametroNeo == reporte.parametro_neo %}selected{% endif %}>

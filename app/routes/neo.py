@@ -116,7 +116,7 @@ RECURSOS_EXTRA_NEO = {
 }
 
 EXTENSIONES_PERMITIDAS = {"jpg", "jpeg", "png", "webp", "gif"}
-MAX_MB = 10
+MAX_MB = 20
 
 
 # ------------------------------------
@@ -342,7 +342,7 @@ def validar_reportes():
 
     kpis = {
         "total":        len(reportes),
-        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme") and r.estado != "Respondido"),
+        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme")),
         "no_conformes": sum(1 for r in reportes if r.conformidad_neo == "No conforme"),
         "conformes":    sum(1 for r in reportes if r.conformidad_neo == "Conforme"),
     }
@@ -530,8 +530,10 @@ def editar_reporte(id):
             else:
                 reporte.impacto = "Alto"
 
-        # Recalcular afectación económica
-        if reporte.impacto and reporte.horas_afectadas:
+        # Recalcular afectación económica solo si el cliente no envió un valor
+        if "afectacion" in d and d["afectacion"] not in (None, ""):
+            reporte.afectacion_economica = _parsear_float(d["afectacion"])
+        elif reporte.impacto and reporte.horas_afectadas:
             tarifas = {"Bajo": 20000, "Medio": 50000, "Alto": 100000}
             reporte.afectacion_economica = (
                 tarifas.get(reporte.impacto, 0) * reporte.horas_afectadas
@@ -929,7 +931,12 @@ def guardar_reporte():
         # Si el reporte viene de una alerta GPS, resolverla ahora
         alerta_id_from = datos.get("alerta_id")
         if alerta_id_from:
-            alerta_obj = AlertaGPS.query.get(int(alerta_id_from))
+            try:
+                alerta_id_from = int(alerta_id_from)
+            except (TypeError, ValueError):
+                alerta_id_from = None
+        if alerta_id_from:
+            alerta_obj = AlertaGPS.query.get(alerta_id_from)
             if alerta_obj and alerta_obj.estado_local == "pendiente":
                 try:
                     from app.services.gps_monitor import responder_alertas
@@ -1220,15 +1227,15 @@ def alertas_datos():
     elif scope == "con_contrato":
         q = q.filter(AlertaGPS.contract_code != None)
 
-    # Filtro de fecha: si viene vacío o es "hoy" usa la fecha actual
-    if fecha and fecha != "todas":
+    # Filtro de fecha: "todas" = sin filtro de fecha; vacío o "hoy" = hoy
+    if fecha == "todas":
+        pass  # sin filtro de fecha
+    else:
         try:
-            f_date = _dt.strptime(fecha, "%Y-%m-%d").date()
+            f_date = _dt.strptime(fecha, "%Y-%m-%d").date() if fecha else _date.today()
         except ValueError:
             f_date = _date.today()
-    else:
-        f_date = _date.today()
-    q = q.filter(AlertaGPS.triggered_at.like(f"{f_date}%"))
+        q = q.filter(AlertaGPS.triggered_at.like(f"{f_date}%"))
 
     if placa:
         q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
