@@ -1560,13 +1560,13 @@ function _applyAllFilters(htInst) {
         } else {
             _filteredHistRecords = _fullHistRecords; // sin filtros → todos
         }
-        hotHistorial.finishEditing();
+        if (hotHistorial.getActiveEditor && hotHistorial.getActiveEditor()?.isOpened()) hotHistorial.finishEditing();
         hotHistorial.loadData(filteredData);
         setTimeout(() => _refreshFilterBtns(hotHistorial), 0);
         _actualizarKpisHistorialDesdeFiltered(filteredData);
     } else {
+        if (hot.getActiveEditor && hot.getActiveEditor()?.isOpened()) hot.finishEditing();
         registrosIds = filteredIds;
-        hot.finishEditing();
         hot.loadData(filteredData);
         setTimeout(() => _refreshFilterBtns(hot), 0);
         _actualizarKpisDesdeFiltered(filteredData);
