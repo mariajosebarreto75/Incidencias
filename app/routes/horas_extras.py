@@ -511,6 +511,19 @@ def he_conciliacion():
     return render_template("neo/he_conciliacion.html", contratos=contratos)
 
 
+def _parse_hora(val):
+    """Extrae HH:MM de strings de hora del Excel (ej. 'Sat Dec 30 1899 05:30:00 GMT...')."""
+    if not val:
+        return None
+    s = str(val).strip()
+    # Buscar patrón HH:MM:SS en el string
+    import re
+    m = re.search(r'(\d{1,2}):(\d{2})(?::\d{2})?', s)
+    if m:
+        return f"{int(m.group(1)):02d}:{m.group(2)}"
+    return s[:20] if len(s) > 20 else s or None
+
+
 # ── API: agregar registros desde conciliación ─────────────────────────────────
 @he_bp.route("/api/he/conciliacion-agregar", methods=["POST"])
 @login_required
@@ -560,8 +573,8 @@ def api_he_conciliacion_agregar():
                 nombre            = str(row.get("nombre", "")).strip() or None,
                 recurso           = str(row.get("recurso", "")).strip() or None,
                 placa             = str(row.get("placa", "")).strip() or None,
-                hora_inicio       = str(row.get("hora_inicio", "")).strip() or None,
-                hora_fin          = str(row.get("hora_fin", "")).strip() or None,
+                hora_inicio       = _parse_hora(row.get("hora_inicio")),
+                hora_fin          = _parse_hora(row.get("hora_fin")),
                 id_concepto       = str(row.get("id_concepto", "")).strip(),
                 horas_reportadas  = float(row.get("horas_reportadas", 0) or 0),
                 horas_compensadas = float(row.get("horas_compensadas", 0) or 0),
