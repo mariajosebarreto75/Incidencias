@@ -5,6 +5,7 @@ from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models.hora_extra import HoraExtra, CONCEPTOS_HE, FACTOR_HE
+from app.models.he_concepto import HeConcepto
 from app.models.contrato import Contrato
 from app.models.persona import Persona
 from app.models.user_contrato import UserContrato
@@ -999,3 +1000,64 @@ def api_he_cortes_detalle(corte_id):
         "corte":     corte.to_dict(),
         "registros": [r.to_dict() for r in registros],
     })
+
+
+# ── HE Conceptos CRUD ────────────────────────────────────────────────────────
+
+@he_bp.route("/neo/he-conceptos")
+@login_required
+def page_he_conceptos():
+    return render_template("neo/he_conceptos.html")
+
+
+@he_bp.route("/api/he/conceptos", methods=["GET"])
+@login_required
+def api_he_conceptos_list():
+    items = HeConcepto.query.order_by(HeConcepto.codigo).all()
+    return jsonify([c.to_dict() for c in items])
+
+
+@he_bp.route("/api/he/conceptos", methods=["POST"])
+@login_required
+def api_he_conceptos_create():
+    data = request.get_json(force=True)
+    codigo = str(data.get("codigo", "")).strip().zfill(2) if data.get("codigo") else None
+    if not codigo or not data.get("nombre") or data.get("factor") is None:
+        return jsonify({"error": "codigo, nombre y factor son requeridos"}), 400
+    if HeConcepto.query.filter_by(codigo=codigo).first():
+        return jsonify({"error": f"Ya existe concepto con código {codigo}"}), 409
+    c = HeConcepto(
+        codigo=codigo,
+        nombre=str(data["nombre"]).strip(),
+        factor=float(data["factor"]),
+        activo=bool(data.get("activo", True)),
+    )
+    db.session.add(c)
+    db.session.commit()
+    return jsonify(c.to_dict()), 201
+
+
+@he_bp.route("/api/he/conceptos/<int:cid>", methods=["PUT"])
+@login_required
+def api_he_conceptos_update(cid):
+    c = HeConcepto.query.get_or_404(cid)
+    data = request.get_json(force=True)
+    if "codigo" in data:
+        c.codigo = str(data["codigo"]).strip().zfill(2)
+    if "nombre" in data:
+        c.nombre = str(data["nombre"]).strip()
+    if "factor" in data:
+        c.factor = float(data["factor"])
+    if "activo" in data:
+        c.activo = bool(data["activo"])
+    db.session.commit()
+    return jsonify(c.to_dict())
+
+
+@he_bp.route("/api/he/conceptos/<int:cid>", methods=["DELETE"])
+@login_required
+def api_he_conceptos_delete(cid):
+    c = HeConcepto.query.get_or_404(cid)
+    db.session.delete(c)
+    db.session.commit()
+    return jsonify({"ok": True})

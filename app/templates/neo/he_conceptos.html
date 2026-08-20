@@ -1,0 +1,139 @@
+{% extends "neo/base_neo.html" %}
+{% block title %}Conceptos HE{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="mb-0">Conceptos de Horas Extras</h5>
+    <button class="btn btn-sm btn-primary" onclick="abrirNuevo()">+ Nuevo concepto</button>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <table class="table table-hover table-sm mb-0" id="tblConceptos">
+        <thead class="table-dark">
+          <tr>
+            <th style="width:80px">Código</th>
+            <th>Nombre</th>
+            <th style="width:100px">Factor</th>
+            <th style="width:80px">Activo</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbodyConceptos">
+          <tr><td colspan="5" class="text-center py-3 text-muted">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalConcepto" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0" id="modalTitle">Nuevo concepto</h6>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="fId">
+        <div class="mb-2">
+          <label class="form-label small mb-1">Código</label>
+          <input type="text" id="fCodigo" class="form-control form-control-sm" placeholder="03">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small mb-1">Nombre</label>
+          <input type="text" id="fNombre" class="form-control form-control-sm">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small mb-1">Factor</label>
+          <input type="number" id="fFactor" class="form-control form-control-sm" step="0.0001" min="0">
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="fActivo" checked>
+          <label class="form-check-label small" for="fActivo">Activo</label>
+        </div>
+      </div>
+      <div class="modal-footer py-2">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-sm btn-primary" onclick="guardar()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let _modal;
+const API = "/api/he/conceptos";
+
+async function cargar() {
+  const res = await fetch(API);
+  const data = await res.json();
+  const tbody = document.getElementById("tbodyConceptos");
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Sin registros</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(c => `
+    <tr>
+      <td>${c.codigo}</td>
+      <td>${c.nombre}</td>
+      <td>${c.factor.toFixed(4)}</td>
+      <td>${c.activo ? '<span class="badge bg-success">Sí</span>' : '<span class="badge bg-secondary">No</span>'}</td>
+      <td class="text-end">
+        <button class="btn btn-xs btn-outline-primary py-0 px-1" onclick='editarFila(${JSON.stringify(c)})'>Editar</button>
+        <button class="btn btn-xs btn-outline-danger py-0 px-1 ms-1" onclick="eliminar(${c.id})">✕</button>
+      </td>
+    </tr>`).join("");
+}
+
+function abrirNuevo() {
+  document.getElementById("fId").value = "";
+  document.getElementById("fCodigo").value = "";
+  document.getElementById("fNombre").value = "";
+  document.getElementById("fFactor").value = "";
+  document.getElementById("fActivo").checked = true;
+  document.getElementById("modalTitle").textContent = "Nuevo concepto";
+  _modal.show();
+}
+
+function editarFila(c) {
+  document.getElementById("fId").value = c.id;
+  document.getElementById("fCodigo").value = c.codigo;
+  document.getElementById("fNombre").value = c.nombre;
+  document.getElementById("fFactor").value = c.factor;
+  document.getElementById("fActivo").checked = c.activo;
+  document.getElementById("modalTitle").textContent = "Editar concepto";
+  _modal.show();
+}
+
+async function guardar() {
+  const id = document.getElementById("fId").value;
+  const payload = {
+    codigo: document.getElementById("fCodigo").value,
+    nombre: document.getElementById("fNombre").value,
+    factor: parseFloat(document.getElementById("fFactor").value),
+    activo: document.getElementById("fActivo").checked,
+  };
+  const url  = id ? `${API}/${id}` : API;
+  const meth = id ? "PUT" : "POST";
+  const res = await fetch(url, { method: meth, headers: {"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+  const data = await res.json();
+  if (!res.ok) { alert(data.error || "Error al guardar"); return; }
+  _modal.hide();
+  cargar();
+}
+
+async function eliminar(id) {
+  if (!confirm("¿Eliminar este concepto?")) return;
+  await fetch(`${API}/${id}`, { method: "DELETE" });
+  cargar();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  _modal = new bootstrap.Modal(document.getElementById("modalConcepto"));
+  cargar();
+});
+</script>
+{% endblock %}
