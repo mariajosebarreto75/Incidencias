@@ -524,14 +524,22 @@ def api_he_conciliacion_agregar():
 
     agregados = 0
     errores = []
-    for row in rows:
-        try:
-            # Buscar contrato por nombre
+    try:
+        for row in rows:
             contrato_nombre = str(row.get("contrato", "")).strip()
             contrato = Contrato.query.filter(
-                Contrato.contrato.ilike(f"%{contrato_nombre}%"),
+                Contrato.contrato.ilike(contrato_nombre),
                 Contrato.activo == True
             ).first()
+            if not contrato:
+                # intento coincidencia parcial
+                contrato = Contrato.query.filter(
+                    Contrato.contrato.ilike(f"%{contrato_nombre}%"),
+                    Contrato.activo == True
+                ).first()
+            if not contrato:
+                errores.append(f"Contrato no encontrado: {contrato_nombre}")
+                continue
 
             fecha_str = str(row.get("fecha_labor", "")).strip()
             try:
@@ -540,12 +548,17 @@ def api_he_conciliacion_agregar():
                 errores.append(f"Fecha inválida: {fecha_str}")
                 continue
 
+            cedula = str(row.get("cedula", "")).strip()
+            if not cedula:
+                errores.append(f"Cédula vacía en fila contrato={contrato_nombre}")
+                continue
+
             he = HoraExtra(
-                contrato_id       = contrato.id if contrato else None,
+                contrato_id       = contrato.id,
                 fecha_labor       = fecha,
-                cedula            = str(row.get("cedula", "")).strip(),
-                nombre            = str(row.get("nombre", "")).strip(),
-                recurso           = str(row.get("recurso", "")).strip(),
+                cedula            = cedula,
+                nombre            = str(row.get("nombre", "")).strip() or None,
+                recurso           = str(row.get("recurso", "")).strip() or None,
                 placa             = str(row.get("placa", "")).strip() or None,
                 hora_inicio       = str(row.get("hora_inicio", "")).strip() or None,
                 hora_fin          = str(row.get("hora_fin", "")).strip() or None,
@@ -561,10 +574,12 @@ def api_he_conciliacion_agregar():
             )
             db.session.add(he)
             agregados += 1
-        except Exception as ex:
-            errores.append(str(ex))
 
-    db.session.commit()
+        db.session.commit()
+    except Exception as ex:
+        db.session.rollback()
+        return jsonify({"ok": False, "msg": str(ex)}), 500
+
     return jsonify({"ok": True, "agregados": agregados, "errores": errores})
 
 
