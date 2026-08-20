@@ -580,8 +580,8 @@ async function comparar() {
         document.getElementById("sumSoloApp").textContent  = _soloApp.length;
         document.getElementById("sumSoloFile").textContent = _soloFile.length;
         document.getElementById("sumMatch").textContent    = match >= 0 ? match : 0;
-        document.getElementById("concSummary").style.display = "";
-        document.getElementById("concResults").style.display = "";
+        document.getElementById("concSummary").style.display = "grid";
+        document.getElementById("concResults").style.display = "block";
 
         toast(`Comparación completada: ${_soloApp.length} solo en app, ${_soloFile.length} solo en archivo`, "success");
     } catch(err) {
