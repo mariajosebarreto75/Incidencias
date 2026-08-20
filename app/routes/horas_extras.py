@@ -556,8 +556,7 @@ def api_he_conciliacion_agregar():
                 justificacion     = str(row.get("justificacion", "")).strip() or None,
                 observacion       = str(row.get("observacion", "")).strip() or None,
                 corte_id          = int(row["corte_id"]) if row.get("corte_id") else None,
-                fecha_reporte     = date.today(),
-                reportado_por     = current_user.nombre_completo,
+                reportado_por_id  = current_user.id,
                 estado            = "PENDIENTE",
             )
             db.session.add(he)
