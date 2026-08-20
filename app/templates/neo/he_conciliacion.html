@@ -1,0 +1,861 @@
+{% extends "neo/navbNeo.html" %}
+{% block title %}Conciliación HE{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/handsontable.full.min.css') }}">
+<style>
+:root {
+    --c-bg: #f0f4f8;
+    --c-card: #ffffff;
+    --c-border: #d1dde8;
+    --c-text: #1a2b3c;
+    --c-muted: #6b7f94;
+    --c-primary: #0d3b66;
+    --c-danger: #dc2626;
+    --c-success: #16a34a;
+    --c-warn: #d97706;
+    --c-app-row: #fef2f2;
+    --c-app-hd: #dc2626;
+    --c-file-row: #f0fdf4;
+    --c-file-hd: #16a34a;
+}
+body { background: var(--c-bg); color: var(--c-text); font-family: 'Segoe UI', sans-serif; }
+
+.conc-header {
+    background: var(--c-primary);
+    color: #fff;
+    padding: 18px 28px 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 3px solid rgba(255,255,255,.15);
+}
+.conc-header h1 { font-size: 1.15rem; font-weight: 700; margin: 0; letter-spacing: .01em; }
+.conc-header p  { font-size: .78rem; margin: 2px 0 0; opacity: .8; }
+
+.conc-body { padding: 22px 28px; max-width: 1600px; margin: 0 auto; }
+
+/* Filtros */
+.conc-filters {
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: flex-end;
+    margin-bottom: 20px;
+}
+.conc-filters label { font-size: .72rem; font-weight: 600; color: var(--c-muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+.conc-filters select, .conc-filters input[type=file] {
+    font-size: .82rem;
+    border: 1px solid var(--c-border);
+    border-radius: 7px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    color: var(--c-text);
+    min-width: 200px;
+}
+.conc-filters input[type=file] { padding: 5px 10px; cursor: pointer; }
+
+/* Upload zone */
+.upload-zone {
+    background: var(--c-card);
+    border: 2px dashed var(--c-border);
+    border-radius: 12px;
+    padding: 36px 24px;
+    text-align: center;
+    transition: border-color .2s, background .2s;
+    cursor: pointer;
+    margin-bottom: 22px;
+}
+.upload-zone.drag { border-color: var(--c-primary); background: #e8f0f8; }
+.upload-zone.loaded { border-color: var(--c-success); background: #f0fdf4; border-style: solid; }
+.upload-zone i { font-size: 2.2rem; color: var(--c-muted); display: block; margin-bottom: 8px; }
+.upload-zone .uz-title { font-size: .95rem; font-weight: 600; color: var(--c-text); }
+.upload-zone .uz-sub   { font-size: .78rem; color: var(--c-muted); margin-top: 4px; }
+.upload-zone input[type=file] { display: none; }
+
+/* Botón comparar */
+.btn-comparar {
+    background: var(--c-primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity .15s;
+}
+.btn-comparar:disabled { opacity: .45; cursor: not-allowed; }
+.btn-comparar:not(:disabled):hover { opacity: .88; }
+
+/* Resultados */
+.conc-results { display: none; }
+.conc-section {
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    overflow: hidden;
+}
+.conc-section-header {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--c-border);
+}
+.conc-section-header.danger { background: #fef2f2; }
+.conc-section-header.success { background: #f0fdf4; }
+.conc-section-header .badge {
+    font-size: .72rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    margin-left: auto;
+}
+.badge-danger  { background: #fee2e2; color: var(--c-danger); }
+.badge-success { background: #dcfce7; color: var(--c-success); }
+.conc-section-header h3 { font-size: .95rem; font-weight: 700; margin: 0; }
+.conc-section-header p  { font-size: .75rem; color: var(--c-muted); margin: 2px 0 0; }
+.sec-meta { flex: 1; }
+
+.conc-section-body { padding: 16px 20px; }
+
+/* Tabla resultado */
+.conc-table-wrap { overflow-x: auto; }
+table.conc-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .78rem;
+}
+table.conc-tbl th {
+    background: #f1f5f9;
+    font-weight: 700;
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--c-muted);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--c-border);
+    white-space: nowrap;
+}
+table.conc-tbl td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+table.conc-tbl tr:last-child td { border-bottom: none; }
+table.conc-tbl tr.app-row  { background: #fff5f5; }
+table.conc-tbl tr.file-row { background: #f0fdf4; }
+table.conc-tbl tr:hover td { background: #f8fafc; }
+
+.btn-sm-act {
+    font-size: .7rem;
+    padding: 3px 10px;
+    border-radius: 5px;
+    border: 1px solid;
+    cursor: pointer;
+    background: transparent;
+    font-weight: 600;
+    transition: background .15s;
+    white-space: nowrap;
+}
+.btn-del  { border-color: var(--c-danger);  color: var(--c-danger);  }
+.btn-del:hover  { background: #fee2e2; }
+.btn-add  { border-color: var(--c-success); color: var(--c-success); }
+.btn-add:hover  { background: #dcfce7; }
+.btn-edit { border-color: var(--c-warn);    color: var(--c-warn);    }
+.btn-edit:hover { background: #fef3c7; }
+
+.actions-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.btn-bulk {
+    font-size: .76rem;
+    padding: 5px 14px;
+    border-radius: 6px;
+    border: 1px solid;
+    cursor: pointer;
+    font-weight: 600;
+    background: transparent;
+}
+.btn-bulk-del { border-color: var(--c-danger); color: var(--c-danger); }
+.btn-bulk-del:hover { background: #fee2e2; }
+.btn-bulk-add { border-color: var(--c-success); color: var(--c-success); }
+.btn-bulk-add:hover { background: #dcfce7; }
+
+.empty-msg {
+    text-align: center;
+    padding: 28px;
+    color: var(--c-muted);
+    font-size: .83rem;
+}
+.empty-msg i { font-size: 1.8rem; display: block; margin-bottom: 6px; color: var(--c-success); }
+
+/* Summary cards */
+.conc-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+.sum-card {
+    background: var(--c-card);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    text-align: center;
+}
+.sum-card .sum-n { font-size: 1.7rem; font-weight: 800; line-height: 1; }
+.sum-card .sum-l { font-size: .72rem; color: var(--c-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .04em; }
+.sum-card.danger .sum-n { color: var(--c-danger); }
+.sum-card.success .sum-n { color: var(--c-success); }
+.sum-card.ok .sum-n { color: var(--c-primary); }
+
+/* Modal editar */
+.modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 26px 28px;
+    width: 480px;
+    max-width: 95vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.modal-box h4 { font-size: 1rem; font-weight: 700; margin: 0 0 18px; color: var(--c-primary); }
+.modal-field { margin-bottom: 14px; }
+.modal-field label { font-size: .72rem; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 4px; }
+.modal-field input, .modal-field select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--c-border);
+    border-radius: 7px; font-size: .85rem; box-sizing: border-box;
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.btn-modal-cancel { padding: 8px 20px; border: 1px solid var(--c-border); border-radius: 7px; background: transparent; cursor: pointer; font-size: .83rem; }
+.btn-modal-save   { padding: 8px 20px; background: var(--c-primary); color: #fff; border: none; border-radius: 7px; cursor: pointer; font-size: .83rem; font-weight: 600; }
+
+/* Toast */
+#toastConc {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #1e293b; color: #fff;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: .83rem; z-index: 9999;
+    display: none; box-shadow: 0 4px 20px rgba(0,0,0,.3);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="conc-header">
+    <i class="bi bi-file-earmark-diff" style="font-size:1.6rem;opacity:.85;"></i>
+    <div>
+        <h1>Conciliación de Horas Extras</h1>
+        <p>Compara tu archivo Excel con los registros de la aplicación</p>
+    </div>
+</div>
+
+<div class="conc-body">
+
+    <!-- FILTROS Y CARGA -->
+    <div class="conc-filters">
+        <div>
+            <label>Corte</label>
+            <select id="concCorte">
+                <option value="">Todos los cortes</option>
+            </select>
+        </div>
+        <div>
+            <label>Contrato</label>
+            <select id="concContrato">
+                <option value="">Todos los contratos</option>
+                {% for c in contratos %}
+                <option value="{{ c.id }}">{{ c.contrato }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- UPLOAD ZONE -->
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept=".xlsx,.xls">
+        <i class="bi bi-cloud-upload" id="uzIcon"></i>
+        <div class="uz-title" id="uzTitle">Arrastra tu archivo Excel aquí o haz clic para seleccionar</div>
+        <div class="uz-sub" id="uzSub">Formato: .xlsx — Encabezados: Contrato, Fecha Labor, Cedula, Id Concepto, # Horas Reportadas…</div>
+    </div>
+
+    <div style="text-align:center;margin-bottom:24px;">
+        <button class="btn-comparar" id="btnComparar" disabled onclick="comparar()">
+            <i class="bi bi-arrow-left-right"></i> Comparar con la aplicación
+        </button>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="conc-summary" id="concSummary" style="display:none;">
+        <div class="sum-card ok">
+            <div class="sum-n" id="sumApp">—</div>
+            <div class="sum-l">Registros en App</div>
+        </div>
+        <div class="sum-card ok">
+            <div class="sum-n" id="sumFile">—</div>
+            <div class="sum-l">Registros en Archivo</div>
+        </div>
+        <div class="sum-card danger">
+            <div class="sum-n" id="sumSoloApp">—</div>
+            <div class="sum-l">Solo en App</div>
+        </div>
+        <div class="sum-card success">
+            <div class="sum-n" id="sumSoloFile">—</div>
+            <div class="sum-l">Solo en Archivo</div>
+        </div>
+        <div class="sum-card ok">
+            <div class="sum-n" id="sumMatch">—</div>
+            <div class="sum-l">Coinciden</div>
+        </div>
+    </div>
+
+    <!-- RESULTADOS -->
+    <div class="conc-results" id="concResults">
+
+        <!-- Solo en App -->
+        <div class="conc-section">
+            <div class="conc-section-header danger">
+                <i class="bi bi-exclamation-triangle-fill" style="color:var(--c-danger);font-size:1.1rem;"></i>
+                <div class="sec-meta">
+                    <h3 style="color:var(--c-danger);">En la App pero NO en el archivo</h3>
+                    <p>Estos registros existen en la aplicación pero no aparecen en tu Excel. Puedes editarlos o eliminarlos.</p>
+                </div>
+                <span class="badge badge-danger" id="badgeSoloApp">0</span>
+            </div>
+            <div class="conc-section-body">
+                <div class="actions-bar">
+                    <button class="btn-bulk btn-bulk-del" onclick="eliminarSeleccionadosApp()">
+                        <i class="bi bi-trash me-1"></i>Eliminar seleccionados
+                    </button>
+                </div>
+                <div class="conc-table-wrap">
+                    <table class="conc-tbl" id="tblSoloApp">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="chkAllApp" onchange="toggleAllApp(this.checked)"></th>
+                                <th>Contrato</th><th>Fecha Labor</th><th>Cédula</th><th>Nombre</th>
+                                <th>Recurso</th><th>Id Concepto</th><th>Hrs Rep.</th><th>Hrs Auth.</th>
+                                <th>Estado NEO</th><th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodySoloApp"></tbody>
+                    </table>
+                </div>
+                <div class="empty-msg" id="emptyApp" style="display:none;">
+                    <i class="bi bi-check-circle-fill"></i>
+                    No hay registros en la app que falten en el archivo
+                </div>
+            </div>
+        </div>
+
+        <!-- Solo en Archivo -->
+        <div class="conc-section">
+            <div class="conc-section-header success">
+                <i class="bi bi-file-earmark-plus-fill" style="color:var(--c-success);font-size:1.1rem;"></i>
+                <div class="sec-meta">
+                    <h3 style="color:var(--c-success);">En el archivo pero NO en la App</h3>
+                    <p>Estos registros están en tu Excel pero no existen en la aplicación. Puedes agregarlos.</p>
+                </div>
+                <span class="badge badge-success" id="badgeSoloFile">0</span>
+            </div>
+            <div class="conc-section-body">
+                <div class="actions-bar">
+                    <button class="btn-bulk btn-bulk-add" onclick="agregarSeleccionadosFile()">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar seleccionados a la App
+                    </button>
+                </div>
+                <div class="conc-table-wrap">
+                    <table class="conc-tbl" id="tblSoloFile">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="chkAllFile" onchange="toggleAllFile(this.checked)"></th>
+                                <th>Contrato</th><th>Fecha Labor</th><th>Cédula</th><th>Nombre</th>
+                                <th>Recurso</th><th>Placa</th><th>Id Concepto</th><th>Hrs Rep.</th>
+                                <th>Tipo HE</th><th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodySoloFile"></tbody>
+                    </table>
+                </div>
+                <div class="empty-msg" id="emptyFile" style="display:none;">
+                    <i class="bi bi-check-circle-fill"></i>
+                    No hay registros en el archivo que falten en la app
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /conc-results -->
+</div><!-- /conc-body -->
+
+<!-- Modal editar -->
+<div class="modal-overlay" id="modalEditar">
+    <div class="modal-box">
+        <h4><i class="bi bi-pencil-square me-2"></i>Editar registro</h4>
+        <input type="hidden" id="editId">
+        <div class="modal-field"><label>Fecha Labor</label><input type="date" id="editFecha"></div>
+        <div class="modal-field"><label>Horas Reportadas</label><input type="number" id="editHrsRep" min="0" max="24" step="0.5"></div>
+        <div class="modal-field"><label>Horas Autorizadas</label><input type="number" id="editHrsAuth" min="0" max="24" step="0.5"></div>
+        <div class="modal-field">
+            <label>Estado NEO</label>
+            <select id="editEstado">
+                <option value="">— Sin validar —</option>
+                <option value="CONFORME">CONFORME</option>
+                <option value="NO CONFORME">NO CONFORME</option>
+                <option value="DESCONTADA">DESCONTADA</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="cerrarModal()">Cancelar</button>
+            <button class="btn-modal-save" onclick="guardarEdicion()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<div id="toastConc"></div>
+
+<script src="{{ url_for('static', filename='vendor/xlsx.full.min.js') }}"></script>
+<script>
+// ── Estado ────────────────────────────────────────────────────────────────────
+let _appRecords  = [];   // registros de la app
+let _fileRecords = [];   // registros del archivo Excel
+let _soloApp     = [];   // en app pero no en archivo
+let _soloFile    = [];   // en archivo pero no en app
+let _fileLoaded  = false;
+
+// ── Clave de comparación: Contrato|FechaLabor|Cedula|IdConcepto|HrsReportadas
+function clave(contrato, fecha, cedula, concepto, hrs) {
+    const f = String(fecha || "").split("T")[0].trim();
+    return `${String(contrato||"").trim()}|${f}|${String(cedula||"").trim()}|${String(concepto||"").trim()}|${parseFloat(hrs||0).toFixed(2)}`;
+}
+
+// ── Cargar cortes ─────────────────────────────────────────────────────────────
+async function cargarCortes() {
+    try {
+        const r = await fetch("/api/he/cortes");
+        const cortes = await r.json();
+        const sel = document.getElementById("concCorte");
+        sel.innerHTML = '<option value="">Todos los cortes</option>' +
+            cortes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+        // Auto-seleccionar corte abierto
+        const abierto = cortes.find(c => (c.estado || "").toLowerCase() === "abierto");
+        if (abierto) sel.value = abierto.id;
+    } catch(e) {}
+}
+
+// ── Upload zone ───────────────────────────────────────────────────────────────
+const uploadZone = document.getElementById("uploadZone");
+const fileInput  = document.getElementById("fileInput");
+
+uploadZone.addEventListener("dragover", e => { e.preventDefault(); uploadZone.classList.add("drag"); });
+uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("drag"));
+uploadZone.addEventListener("drop", e => {
+    e.preventDefault();
+    uploadZone.classList.remove("drag");
+    if (e.dataTransfer.files[0]) procesarArchivo(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change", () => { if (fileInput.files[0]) procesarArchivo(fileInput.files[0]); });
+
+function procesarArchivo(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        try {
+            const wb = XLSX.read(e.target.result, { type: "array", cellDates: true });
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+            _fileRecords = rows;
+            _fileLoaded = true;
+            uploadZone.classList.add("loaded");
+            document.getElementById("uzIcon").className = "bi bi-file-earmark-check-fill";
+            document.getElementById("uzIcon").style.color = "var(--c-success)";
+            document.getElementById("uzTitle").textContent = `✓ ${file.name} — ${rows.length} filas cargadas`;
+            document.getElementById("uzSub").textContent = "Haz clic en 'Comparar' para ver las diferencias";
+            document.getElementById("btnComparar").disabled = false;
+        } catch(err) {
+            toast("Error al leer el archivo: " + err.message, "danger");
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// ── Normalizar fecha de Excel ─────────────────────────────────────────────────
+function normFecha(v) {
+    if (!v) return "";
+    if (v instanceof Date) {
+        const y = v.getFullYear();
+        const m = String(v.getMonth()+1).padStart(2,"0");
+        const d = String(v.getDate()).padStart(2,"0");
+        return `${y}-${m}-${d}`;
+    }
+    const s = String(v).trim();
+    if (s.includes("/")) {
+        const p = s.split("/");
+        if (p.length === 3) {
+            // dd/mm/yyyy o mm/dd/yyyy — asumimos dd/mm/yyyy
+            const y = p[2].length === 2 ? "20"+p[2] : p[2];
+            return `${y}-${p[1].padStart(2,"0")}-${p[0].padStart(2,"0")}`;
+        }
+    }
+    return s.split("T")[0];
+}
+
+function normHrs(v) { return parseFloat(v || 0); }
+function normStr(v) { return String(v || "").trim(); }
+
+// ── Comparar ──────────────────────────────────────────────────────────────────
+async function comparar() {
+    const btn = document.getElementById("btnComparar");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Cargando...';
+    try {
+        // Obtener registros de la app
+        const corte    = document.getElementById("concCorte").value;
+        const contrato = document.getElementById("concContrato").value;
+        let url = "/api/he/registros";
+        const params = [];
+        if (corte)    params.push(`corte_id=${corte}`);
+        if (contrato) params.push(`contrato_id=${contrato}`);
+        if (params.length) url += "?" + params.join("&");
+
+        const r = await fetch(url);
+        _appRecords = await r.json();
+
+        // Construir Set de claves de la app
+        const appKeys = new Map();
+        _appRecords.forEach(rec => {
+            const k = clave(rec.contrato, rec.fecha_labor, rec.cedula, rec.id_concepto, rec.horas_reportadas);
+            appKeys.set(k, rec);
+        });
+
+        // Construir Set de claves del archivo
+        const fileKeys = new Map();
+        _fileRecords.forEach(row => {
+            const contrat = normStr(row["Contrato"] || row["contrato"] || "");
+            const fecha   = normFecha(row["Fecha Labor"] || row["fecha_labor"] || row["FECHA LABOR"] || "");
+            const cedula  = normStr(row["Cedula"] || row["Cédula"] || row["cedula"] || row["CEDULA"] || "");
+            const conc    = normStr(row["Id Concepto"] || row["id_concepto"] || row["ID CONCEPTO"] || "");
+            const hrs     = normHrs(row["# Horas Reportadas"] || row["Horas Reportadas"] || row["horas_reportadas"] || 0);
+            const k = clave(contrat, fecha, cedula, conc, hrs);
+            fileKeys.set(k, { ...row, _contrato: contrat, _fecha: fecha, _cedula: cedula, _concepto: conc, _hrs: hrs });
+        });
+
+        // Diferencias
+        _soloApp  = [];
+        _soloFile = [];
+
+        appKeys.forEach((rec, k) => { if (!fileKeys.has(k)) _soloApp.push(rec); });
+        fileKeys.forEach((row, k) => { if (!appKeys.has(k)) _soloFile.push(row); });
+
+        // Mostrar resultados
+        renderSoloApp(_soloApp);
+        renderSoloFile(_soloFile);
+
+        const match = _appRecords.length - _soloApp.length;
+        document.getElementById("sumApp").textContent    = _appRecords.length;
+        document.getElementById("sumFile").textContent   = _fileRecords.length;
+        document.getElementById("sumSoloApp").textContent  = _soloApp.length;
+        document.getElementById("sumSoloFile").textContent = _soloFile.length;
+        document.getElementById("sumMatch").textContent    = match >= 0 ? match : 0;
+        document.getElementById("concSummary").style.display = "";
+        document.getElementById("concResults").style.display = "";
+
+        toast(`Comparación completada: ${_soloApp.length} solo en app, ${_soloFile.length} solo en archivo`, "success");
+    } catch(err) {
+        toast("Error al comparar: " + err.message, "danger");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-left-right"></i> Comparar con la aplicación';
+    }
+}
+
+// ── Render tabla "Solo en App" ─────────────────────────────────────────────────
+function renderSoloApp(recs) {
+    const badge = document.getElementById("badgeSoloApp");
+    const tbody = document.getElementById("tbodySoloApp");
+    const empty = document.getElementById("emptyApp");
+    badge.textContent = recs.length;
+    if (!recs.length) {
+        tbody.innerHTML = "";
+        empty.style.display = "";
+        return;
+    }
+    empty.style.display = "none";
+    tbody.innerHTML = recs.map((rec, i) => `
+        <tr class="app-row" id="appRow${rec.id}">
+            <td><input type="checkbox" class="chk-app" data-id="${rec.id}"></td>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;" title="${rec.contrato||""}">${rec.contrato||""}</td>
+            <td>${fmtFecha(rec.fecha_labor)}</td>
+            <td>${rec.cedula||""}</td>
+            <td>${rec.nombre||""}</td>
+            <td>${rec.recurso||""}</td>
+            <td>${rec.id_concepto||""}</td>
+            <td style="text-align:right;">${rec.horas_reportadas||""}</td>
+            <td style="text-align:right;">${rec.horas_autorizadas != null ? rec.horas_autorizadas : "—"}</td>
+            <td><span style="font-size:.7rem;padding:2px 8px;border-radius:10px;background:${estadoBg(rec.autorizacion_neo)};color:${estadoColor(rec.autorizacion_neo)};font-weight:700;">${rec.autorizacion_neo||"PENDIENTE"}</span></td>
+            <td>
+                <div style="display:flex;gap:5px;">
+                    <button class="btn-sm-act btn-edit" onclick="abrirEditar(${rec.id},'${rec.fecha_labor}',${rec.horas_reportadas||0},${rec.horas_autorizadas||'null'},'${rec.autorizacion_neo||''}')">
+                        <i class="bi bi-pencil"></i> Editar
+                    </button>
+                    <button class="btn-sm-act btn-del" onclick="eliminarUno(${rec.id})">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                </div>
+            </td>
+        </tr>`).join("");
+}
+
+// ── Render tabla "Solo en Archivo" ────────────────────────────────────────────
+function renderSoloFile(rows) {
+    const badge = document.getElementById("badgeSoloFile");
+    const tbody = document.getElementById("tbodySoloFile");
+    const empty = document.getElementById("emptyFile");
+    badge.textContent = rows.length;
+    if (!rows.length) {
+        tbody.innerHTML = "";
+        empty.style.display = "";
+        return;
+    }
+    empty.style.display = "none";
+    tbody.innerHTML = rows.map((row, i) => {
+        const nombre  = normStr(row["Nombre"] || row["nombre"] || "");
+        const recurso = normStr(row["Recurso"] || row["recurso"] || "");
+        const placa   = normStr(row["Placa"] || row["placa"] || row["placa"] || "");
+        const tipoHe  = normStr(row["Tipo He"] || row["Tipo HE"] || row["tipo_he"] || "");
+        return `
+        <tr class="file-row" id="fileRow${i}">
+            <td><input type="checkbox" class="chk-file" data-idx="${i}"></td>
+            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;" title="${row._contrato}">${row._contrato}</td>
+            <td>${fmtFecha(row._fecha)}</td>
+            <td>${row._cedula}</td>
+            <td>${nombre}</td>
+            <td>${recurso}</td>
+            <td>${placa}</td>
+            <td>${row._concepto}</td>
+            <td style="text-align:right;">${row._hrs}</td>
+            <td>${tipoHe}</td>
+            <td>
+                <button class="btn-sm-act btn-add" onclick="agregarUno(${i})">
+                    <i class="bi bi-plus-circle"></i> Agregar
+                </button>
+            </td>
+        </tr>`;
+    }).join("");
+}
+
+// ── Helpers estilo ────────────────────────────────────────────────────────────
+function estadoBg(e) {
+    if (e === "CONFORME")    return "#dcfce7";
+    if (e === "NO CONFORME") return "#fee2e2";
+    if (e === "DESCONTADA")  return "#fef3c7";
+    return "#f1f5f9";
+}
+function estadoColor(e) {
+    if (e === "CONFORME")    return "#15803d";
+    if (e === "NO CONFORME") return "#dc2626";
+    if (e === "DESCONTADA")  return "#d97706";
+    return "#64748b";
+}
+function fmtFecha(v) {
+    if (!v) return "";
+    const s = String(v).split("T")[0];
+    const p = s.split("-");
+    return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : s;
+}
+
+// ── Seleccionar todos ─────────────────────────────────────────────────────────
+function toggleAllApp(checked) {
+    document.querySelectorAll(".chk-app").forEach(c => c.checked = checked);
+}
+function toggleAllFile(checked) {
+    document.querySelectorAll(".chk-file").forEach(c => c.checked = checked);
+}
+
+// ── Eliminar ──────────────────────────────────────────────────────────────────
+async function eliminarUno(id) {
+    if (!confirm("¿Eliminar este registro? Esta acción no se puede deshacer.")) return;
+    await _eliminarIds([id]);
+}
+
+async function eliminarSeleccionadosApp() {
+    const ids = [...document.querySelectorAll(".chk-app:checked")].map(c => parseInt(c.dataset.id));
+    if (!ids.length) { toast("Selecciona al menos un registro","warning"); return; }
+    if (!confirm(`¿Eliminar ${ids.length} registro(s)?`)) return;
+    await _eliminarIds(ids);
+}
+
+async function _eliminarIds(ids) {
+    try {
+        const r = await fetch("/api/he/bulk-delete", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(ids)
+        });
+        const d = await r.json();
+        if (d.ok) {
+            ids.forEach(id => {
+                const row = document.getElementById("appRow" + id);
+                if (row) row.remove();
+                _soloApp = _soloApp.filter(r => r.id !== id);
+            });
+            document.getElementById("badgeSoloApp").textContent = _soloApp.length;
+            document.getElementById("sumSoloApp").textContent   = _soloApp.length;
+            if (!_soloApp.length) document.getElementById("emptyApp").style.display = "";
+            toast(`${d.eliminados} registro(s) eliminado(s)`, "success");
+        } else {
+            toast(d.msg || "Error al eliminar", "danger");
+        }
+    } catch(e) { toast("Error: " + e.message, "danger"); }
+}
+
+// ── Agregar desde archivo ─────────────────────────────────────────────────────
+async function agregarUno(idx) {
+    await _agregarRows([_soloFile[idx]], [idx]);
+}
+
+async function agregarSeleccionadosFile() {
+    const checks = [...document.querySelectorAll(".chk-file:checked")];
+    if (!checks.length) { toast("Selecciona al menos un registro","warning"); return; }
+    const idxs = checks.map(c => parseInt(c.dataset.idx));
+    const rows = idxs.map(i => _soloFile[i]);
+    await _agregarRows(rows, idxs);
+}
+
+async function _agregarRows(rows, idxs) {
+    try {
+        const corteId = document.getElementById("concCorte").value || null;
+        const payload = rows.map(row => {
+            const hInicio = normStr(row["Hora Inicio"] || row["hora_inicio"] || "");
+            const hFin    = normStr(row["Hora Fin"]    || row["hora_fin"]    || "");
+            const placa   = normStr(row["Placa"]   || row["placa"]   || "");
+            const nombre  = normStr(row["Nombre"]  || row["nombre"]  || "");
+            const recurso = normStr(row["Recurso"] || row["recurso"] || "");
+            const tipoHe  = normStr(row["Tipo He"] || row["tipo_he"] || "");
+            const just    = normStr(row["Justificación"] || row["Justificacion"] || row["justificacion"] || "");
+            const obs     = normStr(row["Observación"] || row["Observacion"] || row["observacion"] || "");
+            const hrsComp = normHrs(row["# Horas Compensadas"] || row["horas_compensadas"] || 0);
+            return {
+                contrato:          row._contrato,
+                fecha_labor:       row._fecha,
+                cedula:            row._cedula,
+                nombre:            nombre,
+                recurso:           recurso,
+                placa:             placa,
+                hora_inicio:       hInicio,
+                hora_fin:          hFin,
+                id_concepto:       row._concepto,
+                horas_reportadas:  row._hrs,
+                horas_compensadas: hrsComp,
+                tipo_he:           tipoHe,
+                justificacion:     just,
+                observacion:       obs,
+                corte_id:          corteId ? parseInt(corteId) : null,
+            };
+        });
+
+        const r = await fetch("/api/he/conciliacion-agregar", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        if (d.ok) {
+            // Quitar filas agregadas de la tabla
+            idxs.sort((a,b) => b-a).forEach(idx => {
+                const row = document.getElementById("fileRow" + idx);
+                if (row) row.remove();
+                _soloFile.splice(idx, 1);
+            });
+            // Re-numerar índices (simplificado: re-renderizar)
+            renderSoloFile(_soloFile);
+            document.getElementById("sumSoloFile").textContent = _soloFile.length;
+            toast(`${d.agregados} registro(s) agregado(s) a la app`, "success");
+        } else {
+            toast(d.msg || "Error al agregar", "danger");
+        }
+    } catch(e) { toast("Error: " + e.message, "danger"); }
+}
+
+// ── Modal editar ──────────────────────────────────────────────────────────────
+function abrirEditar(id, fecha, hrsRep, hrsAuth, estado) {
+    document.getElementById("editId").value     = id;
+    document.getElementById("editFecha").value  = fecha;
+    document.getElementById("editHrsRep").value = hrsRep;
+    document.getElementById("editHrsAuth").value = hrsAuth || "";
+    document.getElementById("editEstado").value  = estado || "";
+    document.getElementById("modalEditar").classList.add("open");
+}
+function cerrarModal() {
+    document.getElementById("modalEditar").classList.remove("open");
+}
+async function guardarEdicion() {
+    const id     = document.getElementById("editId").value;
+    const fecha  = document.getElementById("editFecha").value;
+    const hrsRep = document.getElementById("editHrsRep").value;
+    const hrsAuth= document.getElementById("editHrsAuth").value;
+    const estado = document.getElementById("editEstado").value;
+
+    try {
+        const r = await fetch(`/api/he/${id}`, {
+            method: "PUT",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({
+                fecha_labor:       fecha,
+                horas_reportadas:  hrsRep ? parseFloat(hrsRep) : null,
+                horas_autorizadas: hrsAuth ? parseFloat(hrsAuth) : null,
+                autorizacion_neo:  estado || null,
+            })
+        });
+        const d = await r.json();
+        if (d.ok) {
+            cerrarModal();
+            toast("Registro actualizado", "success");
+            // Actualizar la fila en la tabla visualmente
+            const idx = _soloApp.findIndex(r => r.id == id);
+            if (idx !== -1) {
+                _soloApp[idx].fecha_labor      = fecha;
+                _soloApp[idx].horas_reportadas = parseFloat(hrsRep);
+                _soloApp[idx].horas_autorizadas= parseFloat(hrsAuth);
+                _soloApp[idx].autorizacion_neo = estado;
+                renderSoloApp(_soloApp);
+            }
+        } else {
+            toast(d.msg || "Error al guardar", "danger");
+        }
+    } catch(e) { toast("Error: " + e.message, "danger"); }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type) {
+    const el = document.getElementById("toastConc");
+    el.textContent = msg;
+    el.style.background = type === "success" ? "#15803d" : type === "danger" ? "#dc2626" : "#d97706";
+    el.style.display = "block";
+    setTimeout(() => el.style.display = "none", 3500);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", cargarCortes);
+</script>
+{% endblock %}

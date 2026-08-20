@@ -502,6 +502,74 @@ def he_neo():
     )
 
 
+# ── NEO: página de conciliación ───────────────────────────────────────────────
+@he_bp.route("/neo/he-conciliacion")
+@login_required
+@permiso_requerido("horas_extras")
+def he_conciliacion():
+    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    return render_template("neo/he_conciliacion.html", contratos=contratos)
+
+
+# ── API: agregar registros desde conciliación ─────────────────────────────────
+@he_bp.route("/api/he/conciliacion-agregar", methods=["POST"])
+@login_required
+@permiso_requerido("horas_extras")
+def api_he_conciliacion_agregar():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    rows = request.get_json(silent=True) or []
+    if not rows:
+        return jsonify({"ok": False, "msg": "Sin datos"}), 400
+
+    agregados = 0
+    errores = []
+    for row in rows:
+        try:
+            # Buscar contrato por nombre
+            contrato_nombre = str(row.get("contrato", "")).strip()
+            contrato = Contrato.query.filter(
+                Contrato.contrato.ilike(f"%{contrato_nombre}%"),
+                Contrato.activo == True
+            ).first()
+
+            fecha_str = str(row.get("fecha_labor", "")).strip()
+            try:
+                fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+            except Exception:
+                errores.append(f"Fecha inválida: {fecha_str}")
+                continue
+
+            he = HoraExtra(
+                contrato_id       = contrato.id if contrato else None,
+                contrato          = contrato_nombre,
+                fecha_labor       = fecha,
+                cedula            = str(row.get("cedula", "")).strip(),
+                nombre            = str(row.get("nombre", "")).strip(),
+                recurso           = str(row.get("recurso", "")).strip(),
+                placa             = str(row.get("placa", "")).strip() or None,
+                hora_inicio       = str(row.get("hora_inicio", "")).strip() or None,
+                hora_fin          = str(row.get("hora_fin", "")).strip() or None,
+                id_concepto       = str(row.get("id_concepto", "")).strip(),
+                horas_reportadas  = float(row.get("horas_reportadas", 0) or 0),
+                horas_compensadas = float(row.get("horas_compensadas", 0) or 0),
+                tipo_he           = str(row.get("tipo_he", "")).strip() or None,
+                justificacion     = str(row.get("justificacion", "")).strip() or None,
+                observacion       = str(row.get("observacion", "")).strip() or None,
+                corte_id          = int(row["corte_id"]) if row.get("corte_id") else None,
+                fecha_reporte     = date.today(),
+                reportado_por     = current_user.nombre_completo,
+                estado            = "PENDIENTE",
+            )
+            db.session.add(he)
+            agregados += 1
+        except Exception as ex:
+            errores.append(str(ex))
+
+    db.session.commit()
+    return jsonify({"ok": True, "agregados": agregados, "errores": errores})
+
+
 # ── API: validar registro (NEO/admin) ─────────────────────────────────────────
 @he_bp.route("/api/he/<int:id>/validar", methods=["POST"])
 @login_required
