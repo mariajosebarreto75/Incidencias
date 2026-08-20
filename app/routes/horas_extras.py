@@ -575,7 +575,7 @@ def api_he_conciliacion_agregar():
                 placa             = str(row.get("placa", "")).strip() or None,
                 hora_inicio       = _parse_hora(row.get("hora_inicio")),
                 hora_fin          = _parse_hora(row.get("hora_fin")),
-                id_concepto       = str(row.get("id_concepto", "")).strip(),
+                id_concepto       = (lambda v: v.zfill(2) if v else v)(str(row.get("id_concepto", "")).strip()),
                 horas_reportadas  = float(row.get("horas_reportadas", 0) or 0),
                 horas_compensadas = float(row.get("horas_compensadas", 0) or 0),
                 tipo_he           = str(row.get("tipo_he", "")).strip() or None,
