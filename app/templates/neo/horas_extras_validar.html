@@ -1560,12 +1560,10 @@ function _applyAllFilters(htInst) {
         } else {
             _filteredHistRecords = _fullHistRecords; // sin filtros → todos
         }
-        if (hotHistorial.getActiveEditor && hotHistorial.getActiveEditor()?.isOpened()) hotHistorial.finishEditing();
         hotHistorial.loadData(filteredData);
         setTimeout(() => _refreshFilterBtns(hotHistorial), 0);
         _actualizarKpisHistorialDesdeFiltered(filteredData);
     } else {
-        if (hot.getActiveEditor && hot.getActiveEditor()?.isOpened()) hot.finishEditing();
         registrosIds = filteredIds;
         hot.loadData(filteredData);
         setTimeout(() => _refreshFilterBtns(hot), 0);
