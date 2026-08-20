@@ -1174,6 +1174,25 @@ def api_he_valor_extra_nomina():
 
 # ── API: recalcular valor_extra_nomina en todos los registros ────────────────
 
+@he_bp.route("/api/he/normalizar-conceptos", methods=["POST"])
+@login_required
+def api_he_normalizar_conceptos():
+    """Rellena id_concepto con cero a la izquierda: '3' → '03'."""
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    registros = HoraExtra.query.filter(
+        db.func.length(HoraExtra.id_concepto) < 2
+    ).all()
+    actualizados = 0
+    for he in registros:
+        if he.id_concepto:
+            he.id_concepto = he.id_concepto.strip().zfill(2)
+            he.tipo_he = CONCEPTOS_HE.get(he.id_concepto, he.tipo_he)
+            actualizados += 1
+    db.session.commit()
+    return jsonify({"ok": True, "actualizados": actualizados})
+
+
 @he_bp.route("/api/he/recalcular-valores", methods=["POST"])
 @login_required
 def api_he_recalcular_valores():

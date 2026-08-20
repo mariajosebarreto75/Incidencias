@@ -169,9 +169,14 @@
     <div class="dh-card" style="margin-bottom:1.5rem;">
         <div class="dh-card-hdr" style="justify-content:space-between;">
             <span class="dh-card-ttl"><i class="bi bi-currency-dollar me-1" style="color:#4ade80"></i>Valor Extra Nómina — Reportado vs Autorizado</span>
-            <button class="dh-btn-sec" onclick="recalcularValores()" style="font-size:.72rem;padding:4px 12px;">
-                <i class="bi bi-arrow-repeat me-1"></i>Recalcular todo
-            </button>
+            <div style="display:flex;gap:6px;">
+                <button class="dh-btn-sec" onclick="normalizarConceptos()" style="font-size:.72rem;padding:4px 12px;">
+                    <i class="bi bi-wrench me-1"></i>Normalizar códigos
+                </button>
+                <button class="dh-btn-sec" onclick="recalcularValores()" style="font-size:.72rem;padding:4px 12px;">
+                    <i class="bi bi-arrow-repeat me-1"></i>Recalcular todo
+                </button>
+            </div>
         </div>
         <!-- KPIs valor nómina -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;padding:14px 18px;border-bottom:1px solid var(--dh-border);">
@@ -602,6 +607,18 @@ function toggleVnTec(btn, ci, ki) {
     const open = row.style.display !== 'none';
     row.style.display = open ? 'none' : '';
     btn.textContent = open ? '+' : '−';
+}
+
+async function normalizarConceptos() {
+    if (!confirm('¿Normalizar id_concepto en BD? ("3" → "03", "5" → "05", etc.)')) return;
+    const res = await fetch('/api/he/normalizar-conceptos', { method: 'POST' });
+    const d = await res.json();
+    if (d.ok) {
+        alert(`Normalizados: ${d.actualizados} registros`);
+        cargar();
+    } else {
+        alert('Error: ' + (d.msg || 'desconocido'));
+    }
 }
 
 async function recalcularValores() {
