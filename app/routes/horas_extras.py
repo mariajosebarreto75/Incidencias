@@ -873,17 +873,23 @@ def api_he_ranking_contratos():
         contratos_map[nombre_contrato]["hrs"]      += hrs_f
         contratos_map[nombre_contrato]["hrs_auth"] += hrs_auth_f
 
-        tipo = CONCEPTOS_HE.get(concepto, concepto)
-        clave_conc = f"{concepto}|{tipo}"
+        concepto_pad = (concepto or "").strip().zfill(2) if concepto else ""
+        tipo = CONCEPTOS_HE.get(concepto_pad, concepto_pad)
+        clave_conc = concepto_pad
         if clave_conc not in contratos_map[nombre_contrato]["conceptos"]:
             contratos_map[nombre_contrato]["conceptos"][clave_conc] = {
-                "concepto": concepto, "tipo": tipo, "hrs": 0, "hrs_auth": 0, "tecnicos": []
+                "concepto": concepto_pad, "tipo": tipo, "hrs": 0, "hrs_auth": 0, "tecnicos": []
             }
         contratos_map[nombre_contrato]["conceptos"][clave_conc]["hrs"]      += hrs_f
         contratos_map[nombre_contrato]["conceptos"][clave_conc]["hrs_auth"] += hrs_auth_f
-        contratos_map[nombre_contrato]["conceptos"][clave_conc]["tecnicos"].append({
-            "cedula": cedula or "", "nombre": nombre or "", "hrs": hrs_f, "hrs_auth": hrs_auth_f
-        })
+        tecs = contratos_map[nombre_contrato]["conceptos"][clave_conc]["tecnicos"]
+        tec_key = cedula or ""
+        existing = next((t for t in tecs if t["cedula"] == tec_key), None)
+        if existing:
+            existing["hrs"]      += hrs_f
+            existing["hrs_auth"] += hrs_auth_f
+        else:
+            tecs.append({"cedula": tec_key, "nombre": nombre or "", "hrs": hrs_f, "hrs_auth": hrs_auth_f})
 
     # Convertir a lista ordenada
     result = []
