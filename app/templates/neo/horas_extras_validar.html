@@ -314,6 +314,17 @@ body { background:var(--c-bg); }
             <div class="he-conc-grid-neo" id="neoConceptoGrid"></div>
         </div>
 
+        <!-- Ranking de horas por contrato -->
+        <div style="margin:0 0 18px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <h6 style="margin:0;font-weight:700;color:#0d6b73;"><i class="bi bi-bar-chart-steps me-2"></i>Ranking de horas por contrato</h6>
+                <button onclick="cargarRankingContratos()" style="background:none;border:1px solid #0d6b73;color:#0d6b73;border-radius:6px;padding:3px 10px;font-size:.75rem;cursor:pointer;"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+            </div>
+            <div id="rankingContratos" style="border:1px solid #d1dde8;border-radius:10px;overflow:hidden;font-size:.82rem;max-height:420px;overflow-y:auto;">
+                <div style="text-align:center;padding:24px;color:#94a3b8;">Aplica un filtro de corte o fechas y presiona Actualizar</div>
+            </div>
+        </div>
+
         <!-- Filtros -->
         <div class="he-filtros">
             <div>
@@ -502,14 +513,6 @@ body { background:var(--c-bg); }
             <div class="he-kpi-card danger"> <div class="he-kpi-val" id="ck-hrs-noauth">—</div><div class="he-kpi-lbl">Hrs No Autorizadas</div></div>
             <div class="he-kpi-card warning"><div class="he-kpi-val" id="ck-hrs-desc">—</div><div class="he-kpi-lbl">Hrs Descontadas</div></div>
         </div>
-        <!-- ── Ranking contratos ── -->
-        <div style="margin:18px 0 22px;">
-            <h6 style="margin:0 0 10px;font-weight:700;color:#0d6b73;"><i class="bi bi-bar-chart-steps me-2"></i>Ranking de horas por contrato</h6>
-            <div id="rankingContratos" style="border:1px solid #d1dde8;border-radius:10px;overflow:hidden;font-size:.82rem;">
-                <div style="text-align:center;padding:24px;color:#94a3b8;">Carga un corte para ver el ranking</div>
-            </div>
-        </div>
-
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
             <h6 style="margin:0;font-weight:700;color:#0d6b73;"><i class="bi bi-archive me-2"></i>Cortes de nómina (17→16)</h6>
             <button class="btn btn-sm btn-primary fw-semibold" onclick="abrirNuevoCorteNeo()" style="border-radius:7px;">
@@ -732,13 +735,17 @@ async function cargarKpisCortesNeo() {
         document.getElementById("ck-hrs-noauth").textContent = (+d.hrs_no_conformes||0).toFixed(0);
         document.getElementById("ck-hrs-desc").textContent   = (+d.hrs_descontadas ||0).toFixed(0);
     } catch(e) {}
-    cargarRankingContratos();
 }
 
 async function cargarRankingContratos() {
-    const corte = document.getElementById("ckCorte")?.value ?? "";
+    const corte = document.getElementById("fCorte")?.value ?? "";
+    const desde = document.getElementById("fDesde")?.value ?? "";
+    const hasta = document.getElementById("fHasta")?.value ?? "";
     const cont  = document.getElementById("rankingContratos");
-    if (!corte) { cont.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;">Selecciona un corte para ver el ranking</div>'; return; }
+    let url = "/api/he/ranking-contratos";
+    if (corte) url += `?corte_id=${corte}`;
+    else if (desde) url += `?fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    else { cont.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;">Aplica un filtro de corte o fechas y presiona Actualizar</div>'; return; }
     cont.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;">Cargando…</div>';
     try {
         const r = await fetch(`/api/he/ranking-contratos?corte_id=${corte}`);
