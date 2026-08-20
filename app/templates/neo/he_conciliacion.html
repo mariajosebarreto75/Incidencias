@@ -444,10 +444,13 @@ let _soloApp     = [];   // en app pero no en archivo
 let _soloFile    = [];   // en archivo pero no en app
 let _fileLoaded  = false;
 
+// ── Normalizar string para comparación: minúsculas, sin espacios dobles
+function norm(v) { return String(v||"").trim().toLowerCase().replace(/\s+/g," "); }
+
 // ── Clave de comparación: Contrato|FechaLabor|Cedula|IdConcepto|HrsReportadas
 function clave(contrato, fecha, cedula, concepto, hrs) {
     const f = String(fecha || "").split("T")[0].trim();
-    return `${String(contrato||"").trim()}|${f}|${String(cedula||"").trim()}|${String(concepto||"").trim()}|${parseFloat(hrs||0).toFixed(2)}`;
+    return `${norm(contrato)}|${f}|${String(cedula||"").trim()}|${norm(concepto)}|${parseFloat(hrs||0).toFixed(2)}`;
 }
 
 // ── Cargar cortes ─────────────────────────────────────────────────────────────
@@ -590,78 +593,81 @@ async function comparar() {
 }
 
 // ── Render tabla "Solo en App" ─────────────────────────────────────────────────
-function renderSoloApp(recs) {
+const PAGE_SIZE = 100;
+let _pageApp = 0, _pageFile = 0;
+
+function rowApp(rec) {
+    return `<tr class="app-row" id="appRow${rec.id}">
+        <td><input type="checkbox" class="chk-app" data-id="${rec.id}"></td>
+        <td title="${rec.contrato||""}">${rec.contrato||""}</td>
+        <td>${fmtFecha(rec.fecha_labor)}</td>
+        <td>${rec.cedula||""}</td>
+        <td>${rec.nombre||""}</td>
+        <td>${rec.recurso||""}</td>
+        <td>${rec.id_concepto||""}</td>
+        <td style="text-align:right;">${rec.horas_reportadas||""}</td>
+        <td style="text-align:right;">${rec.horas_autorizadas != null ? rec.horas_autorizadas : "—"}</td>
+        <td><span style="font-size:.7rem;padding:2px 8px;border-radius:10px;background:${estadoBg(rec.autorizacion_neo)};color:${estadoColor(rec.autorizacion_neo)};font-weight:700;">${rec.autorizacion_neo||"PENDIENTE"}</span></td>
+        <td><div style="display:flex;gap:5px;">
+            <button class="btn-sm-act btn-edit" onclick="abrirEditar(${rec.id},'${rec.fecha_labor}',${rec.horas_reportadas||0},${rec.horas_autorizadas||'null'},'${rec.autorizacion_neo||''}')"><i class="bi bi-pencil"></i> Editar</button>
+            <button class="btn-sm-act btn-del" onclick="eliminarUno(${rec.id})"><i class="bi bi-trash"></i> Eliminar</button>
+        </div></td>
+    </tr>`;
+}
+
+function renderSoloApp(recs, reset) {
+    if (reset !== false) _pageApp = 0;
     const badge = document.getElementById("badgeSoloApp");
     const tbody = document.getElementById("tbodySoloApp");
     const empty = document.getElementById("emptyApp");
     badge.textContent = recs.length;
-    if (!recs.length) {
-        tbody.innerHTML = "";
-        empty.style.display = "";
-        return;
-    }
+    if (!recs.length) { tbody.innerHTML = ""; empty.style.display = ""; return; }
     empty.style.display = "none";
-    tbody.innerHTML = recs.map((rec, i) => `
-        <tr class="app-row" id="appRow${rec.id}">
-            <td><input type="checkbox" class="chk-app" data-id="${rec.id}"></td>
-            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;" title="${rec.contrato||""}">${rec.contrato||""}</td>
-            <td>${fmtFecha(rec.fecha_labor)}</td>
-            <td>${rec.cedula||""}</td>
-            <td>${rec.nombre||""}</td>
-            <td>${rec.recurso||""}</td>
-            <td>${rec.id_concepto||""}</td>
-            <td style="text-align:right;">${rec.horas_reportadas||""}</td>
-            <td style="text-align:right;">${rec.horas_autorizadas != null ? rec.horas_autorizadas : "—"}</td>
-            <td><span style="font-size:.7rem;padding:2px 8px;border-radius:10px;background:${estadoBg(rec.autorizacion_neo)};color:${estadoColor(rec.autorizacion_neo)};font-weight:700;">${rec.autorizacion_neo||"PENDIENTE"}</span></td>
-            <td>
-                <div style="display:flex;gap:5px;">
-                    <button class="btn-sm-act btn-edit" onclick="abrirEditar(${rec.id},'${rec.fecha_labor}',${rec.horas_reportadas||0},${rec.horas_autorizadas||'null'},'${rec.autorizacion_neo||''}')">
-                        <i class="bi bi-pencil"></i> Editar
-                    </button>
-                    <button class="btn-sm-act btn-del" onclick="eliminarUno(${rec.id})">
-                        <i class="bi bi-trash"></i> Eliminar
-                    </button>
-                </div>
-            </td>
-        </tr>`).join("");
+    const slice = recs.slice(0, (_pageApp + 1) * PAGE_SIZE);
+    const more  = recs.length > slice.length;
+    tbody.innerHTML = slice.map(rowApp).join("") +
+        (more ? `<tr><td colspan="11" style="text-align:center;padding:10px;">
+            <button class="btn-bulk" style="border-color:#6b7f94;color:#6b7f94;" onclick="_pageApp++;renderSoloApp(_soloApp,false)">
+                Ver más (${recs.length - slice.length} restantes)
+            </button></td></tr>` : "");
+}
+
+function rowFile(row, i) {
+    const nombre  = normStr(row["Nombre"]  || row["nombre"]  || "");
+    const recurso = normStr(row["Recurso"] || row["recurso"] || "");
+    const placa   = normStr(row["Placa"]   || row["placa"]   || "");
+    const tipoHe  = normStr(row["Tipo He"] || row["Tipo HE"] || row["tipo_he"] || "");
+    return `<tr class="file-row" id="fileRow${i}">
+        <td><input type="checkbox" class="chk-file" data-idx="${i}"></td>
+        <td title="${row._contrato}">${row._contrato}</td>
+        <td>${fmtFecha(row._fecha)}</td>
+        <td>${row._cedula}</td>
+        <td>${nombre}</td>
+        <td>${recurso}</td>
+        <td>${placa}</td>
+        <td>${row._concepto}</td>
+        <td style="text-align:right;">${row._hrs}</td>
+        <td>${tipoHe}</td>
+        <td><button class="btn-sm-act btn-add" onclick="agregarUno(${i})"><i class="bi bi-plus-circle"></i> Agregar</button></td>
+    </tr>`;
 }
 
 // ── Render tabla "Solo en Archivo" ────────────────────────────────────────────
-function renderSoloFile(rows) {
+function renderSoloFile(rows, reset) {
+    if (reset !== false) _pageFile = 0;
     const badge = document.getElementById("badgeSoloFile");
     const tbody = document.getElementById("tbodySoloFile");
     const empty = document.getElementById("emptyFile");
     badge.textContent = rows.length;
-    if (!rows.length) {
-        tbody.innerHTML = "";
-        empty.style.display = "";
-        return;
-    }
+    if (!rows.length) { tbody.innerHTML = ""; empty.style.display = ""; return; }
     empty.style.display = "none";
-    tbody.innerHTML = rows.map((row, i) => {
-        const nombre  = normStr(row["Nombre"] || row["nombre"] || "");
-        const recurso = normStr(row["Recurso"] || row["recurso"] || "");
-        const placa   = normStr(row["Placa"] || row["placa"] || row["placa"] || "");
-        const tipoHe  = normStr(row["Tipo He"] || row["Tipo HE"] || row["tipo_he"] || "");
-        return `
-        <tr class="file-row" id="fileRow${i}">
-            <td><input type="checkbox" class="chk-file" data-idx="${i}"></td>
-            <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;" title="${row._contrato}">${row._contrato}</td>
-            <td>${fmtFecha(row._fecha)}</td>
-            <td>${row._cedula}</td>
-            <td>${nombre}</td>
-            <td>${recurso}</td>
-            <td>${placa}</td>
-            <td>${row._concepto}</td>
-            <td style="text-align:right;">${row._hrs}</td>
-            <td>${tipoHe}</td>
-            <td>
-                <button class="btn-sm-act btn-add" onclick="agregarUno(${i})">
-                    <i class="bi bi-plus-circle"></i> Agregar
-                </button>
-            </td>
-        </tr>`;
-    }).join("");
+    const slice = rows.slice(0, (_pageFile + 1) * PAGE_SIZE);
+    const more  = rows.length > slice.length;
+    tbody.innerHTML = slice.map((r, idx) => rowFile(r, idx)).join("") +
+        (more ? `<tr><td colspan="11" style="text-align:center;padding:10px;">
+            <button class="btn-bulk" style="border-color:#6b7f94;color:#6b7f94;" onclick="_pageFile++;renderSoloFile(_soloFile,false)">
+                Ver más (${rows.length - slice.length} restantes)
+            </button></td></tr>` : "");
 }
 
 // ── Helpers estilo ────────────────────────────────────────────────────────────
