@@ -740,9 +740,175 @@ body { background: var(--c-bg); color: var(--c-text); font-family: system-ui,-ap
     </div>
   </div>
 
+  <!-- ══ HORAS EXTRAS ══════════════════════════════════════════════════════ -->
+  <div class="section-title" style="margin-top:28px">
+    <i class="bi bi-clock-history"></i> Horas Extras
+    <a href="{{ url_for('he_bp.he_dashboard') }}" style="font-size:.72rem;font-weight:400;color:var(--c-primary);margin-left:8px;text-decoration:none;">
+      Ver dashboard completo →
+    </a>
+  </div>
+
+  <!-- KPIs HE -->
+  <div class="kpi-row" id="he-kpi-row" style="margin-bottom:12px">
+    <div class="kpi kpi-sky">
+      <div class="kpi-icon"><i class="bi bi-clipboard2-data"></i></div>
+      <div class="kpi-label">Total registros</div>
+      <div class="kpi-value" id="hk-total">—</div>
+    </div>
+    <div class="kpi kpi-purple">
+      <div class="kpi-icon"><i class="bi bi-clock-history"></i></div>
+      <div class="kpi-label">Hrs reportadas</div>
+      <div class="kpi-value" id="hk-rep">—</div>
+    </div>
+    <div class="kpi kpi-green">
+      <div class="kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
+      <div class="kpi-label">Hrs autorizadas</div>
+      <div class="kpi-value" id="hk-auth">—</div>
+    </div>
+    <div class="kpi kpi-red">
+      <div class="kpi-icon"><i class="bi bi-x-circle-fill"></i></div>
+      <div class="kpi-label">Hrs no conformes</div>
+      <div class="kpi-value" id="hk-noconf">—</div>
+    </div>
+    <div class="kpi kpi-amber">
+      <div class="kpi-icon"><i class="bi bi-hourglass-split"></i></div>
+      <div class="kpi-label">Pendientes</div>
+      <div class="kpi-value" id="hk-pend">—</div>
+    </div>
+  </div>
+
+  <!-- Ranking HE por contrato -->
+  <div class="card mb-3">
+    <div class="card-header">
+      <i class="bi bi-bar-chart-steps"></i> Horas Extras — Horas por contrato (mes actual)
+    </div>
+    <div class="card-body-flush" id="he-ranking-wrap">
+      <p style="padding:16px 18px;color:var(--c-muted);font-size:.82rem">Cargando…</p>
+    </div>
+  </div>
+
 </div><!-- /page -->
 
 <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+<script>
+// ── Horas Extras mini-dashboard ──────────────────────────────────────────────
+(function() {
+  const fmtN = n => Math.round(n || 0).toLocaleString('es-CO');
+  const hoy  = new Date();
+  const mes  = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
+
+  async function cargarHE() {
+    try {
+      const [kpi, rank] = await Promise.all([
+        fetch('/admin/api/he/dashboard-data?mes=' + mes).then(r => r.json()),
+        fetch('/api/he/ranking-contratos?mes=' + mes).then(r => r.json()).catch(() => []),
+      ]);
+      if (kpi && kpi.kpis) {
+        document.getElementById('hk-total').textContent  = fmtN(kpi.kpis.total);
+        document.getElementById('hk-rep').textContent    = fmtN(kpi.kpis.hrs_reportadas) + 'h';
+        document.getElementById('hk-auth').textContent   = fmtN(kpi.kpis.hrs_autorizadas) + 'h';
+        document.getElementById('hk-noconf').textContent = fmtN(kpi.kpis.hrs_no_conforme) + 'h';
+        document.getElementById('hk-pend').textContent   = fmtN(kpi.kpis.pendientes);
+      }
+      renderHERanking(rank);
+    } catch(e) { console.error('HE dashboard error', e); }
+  }
+
+  function renderHERanking(data) {
+    const wrap = document.getElementById('he-ranking-wrap');
+    if (!data || !data.length) {
+      wrap.innerHTML = '<p style="padding:16px 18px;color:var(--c-muted);font-size:.82rem">Sin registros de horas extras para este mes.</p>';
+      return;
+    }
+    const maxHrs = data[0].hrs || 1;
+    let rows = data.map((c, ci) => {
+      const pct     = (c.hrs / maxHrs * 100).toFixed(1);
+      const authPct = c.hrs > 0 ? Math.min(100, (c.hrs_auth || 0) / c.hrs * 100).toFixed(1) : 0;
+      return `<tr>
+        <td style="padding:9px 14px;font-weight:600;color:var(--c-text)">${c.nombre}</td>
+        <td class="right" style="padding:9px 14px;color:var(--c-sky);font-weight:700;font-variant-numeric:tabular-nums;">${fmtN(c.hrs)}h</td>
+        <td class="right" style="padding:9px 14px;color:var(--c-green);font-weight:700;font-variant-numeric:tabular-nums;">${fmtN(c.hrs_auth)}h</td>
+        <td style="padding:9px 14px;width:200px;">
+          <div style="background:#f1f5f9;border-radius:4px;height:8px;overflow:hidden;position:relative;">
+            <div style="position:absolute;top:0;left:0;height:100%;width:${pct}%;border-radius:4px;background:linear-gradient(90deg,var(--c-primary),#38bdf8);"></div>
+            <div style="position:absolute;top:0;left:0;height:100%;width:${authPct}%;border-radius:4px;background:var(--c-green);opacity:.6;"></div>
+          </div>
+        </td>
+        <td style="padding:4px 10px;text-align:center;">
+          <button onclick="toggleHeConc(this,${ci})" style="background:none;border:1px solid var(--c-border2);border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:.85rem;color:var(--c-muted);line-height:1;">+</button>
+        </td>
+      </tr>
+      <tr id="he-conc-${ci}" style="display:none;">
+        <td colspan="5" style="padding:0 0 0 24px;background:#f8fafc;">
+          <table class="impact-table" style="font-size:.76rem;">
+            <thead><tr>
+              <th>Tipo de hora extra</th>
+              <th class="right" style="width:90px;">Hrs Rep.</th>
+              <th class="right" style="width:90px;">Hrs Aut.</th>
+              <th style="width:24px;"></th>
+            </tr></thead><tbody>
+            ${(c.conceptos || []).map((conc, ki) => `
+              <tr>
+                <td style="padding:7px 14px;color:var(--c-text2);">${conc.tipo}</td>
+                <td class="right" style="padding:7px 14px;color:var(--c-sky);font-weight:600;font-variant-numeric:tabular-nums;">${fmtN(conc.hrs)}h</td>
+                <td class="right" style="padding:7px 14px;color:var(--c-green);font-weight:600;font-variant-numeric:tabular-nums;">${fmtN(conc.hrs_auth)}h</td>
+                <td style="padding:4px 6px;text-align:center;">
+                  <button onclick="toggleHeTec(this,${ci},${ki})" style="background:none;border:1px solid var(--c-border2);border-radius:5px;width:20px;height:20px;cursor:pointer;font-size:.75rem;color:var(--c-muted);line-height:1;">+</button>
+                </td>
+              </tr>
+              <tr id="he-tec-${ci}-${ki}" style="display:none;">
+                <td colspan="4" style="padding:0 0 0 20px;background:#f0f4f8;">
+                  <table class="impact-table" style="font-size:.74rem;">
+                    <thead><tr>
+                      <th>Cédula</th><th>Nombre</th>
+                      <th class="right" style="width:80px;">Hrs Rep.</th>
+                      <th class="right" style="width:80px;">Hrs Aut.</th>
+                    </tr></thead><tbody>
+                    ${(conc.tecnicos || []).map(t => `
+                      <tr>
+                        <td style="padding:6px 14px;color:var(--c-muted);font-variant-numeric:tabular-nums;">${t.cedula}</td>
+                        <td style="padding:6px 14px;color:var(--c-text2);font-weight:500;">${t.nombre}</td>
+                        <td class="right" style="padding:6px 14px;color:var(--c-sky);font-weight:600;font-variant-numeric:tabular-nums;">${fmtN(t.hrs)}h</td>
+                        <td class="right" style="padding:6px 14px;color:var(--c-green);font-weight:600;font-variant-numeric:tabular-nums;">${fmtN(t.hrs_auth)}h</td>
+                      </tr>`).join('')}
+                    </tbody>
+                  </table>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `<table class="impact-table">
+      <thead><tr>
+        <th>Contrato</th>
+        <th class="right" style="width:100px;">Hrs Rep.</th>
+        <th class="right" style="width:100px;">Hrs Aut.</th>
+        <th style="width:220px;">Distribución</th>
+        <th style="width:32px;"></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  window.toggleHeConc = function(btn, ci) {
+    const row = document.getElementById('he-conc-' + ci);
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : '';
+    btn.textContent = open ? '+' : '−';
+  };
+  window.toggleHeTec = function(btn, ci, ki) {
+    const row = document.getElementById('he-tec-' + ci + '-' + ki);
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : '';
+    btn.textContent = open ? '+' : '−';
+  };
+
+  cargarHE();
+})();
+</script>
 <script>
 /* ── AUTO-REFRESH ── */
 (function(){
