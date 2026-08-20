@@ -502,6 +502,14 @@ body { background:var(--c-bg); }
             <div class="he-kpi-card danger"> <div class="he-kpi-val" id="ck-hrs-noauth">—</div><div class="he-kpi-lbl">Hrs No Autorizadas</div></div>
             <div class="he-kpi-card warning"><div class="he-kpi-val" id="ck-hrs-desc">—</div><div class="he-kpi-lbl">Hrs Descontadas</div></div>
         </div>
+        <!-- ── Ranking contratos ── -->
+        <div style="margin:18px 0 22px;">
+            <h6 style="margin:0 0 10px;font-weight:700;color:#0d6b73;"><i class="bi bi-bar-chart-steps me-2"></i>Ranking de horas por contrato</h6>
+            <div id="rankingContratos" style="border:1px solid #d1dde8;border-radius:10px;overflow:hidden;font-size:.82rem;">
+                <div style="text-align:center;padding:24px;color:#94a3b8;">Carga un corte para ver el ranking</div>
+            </div>
+        </div>
+
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
             <h6 style="margin:0;font-weight:700;color:#0d6b73;"><i class="bi bi-archive me-2"></i>Cortes de nómina (17→16)</h6>
             <button class="btn btn-sm btn-primary fw-semibold" onclick="abrirNuevoCorteNeo()" style="border-radius:7px;">
@@ -724,6 +732,98 @@ async function cargarKpisCortesNeo() {
         document.getElementById("ck-hrs-noauth").textContent = (+d.hrs_no_conformes||0).toFixed(0);
         document.getElementById("ck-hrs-desc").textContent   = (+d.hrs_descontadas ||0).toFixed(0);
     } catch(e) {}
+    cargarRankingContratos();
+}
+
+async function cargarRankingContratos() {
+    const corte = document.getElementById("ckCorte")?.value ?? "";
+    const cont  = document.getElementById("rankingContratos");
+    if (!corte) { cont.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;">Selecciona un corte para ver el ranking</div>'; return; }
+    cont.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;">Cargando…</div>';
+    try {
+        const r = await fetch(`/api/he/ranking-contratos?corte_id=${corte}`);
+        const data = await r.json();
+        if (!data.length) { cont.innerHTML = '<div style="text-align:center;padding:24px;color:#94a3b8;">Sin datos</div>'; return; }
+        const maxHrs = data[0].hrs;
+        let html = `<table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="background:#0d3b66;color:#fff;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;">
+                <th style="padding:8px 12px;text-align:left;">Contrato</th>
+                <th style="padding:8px 12px;text-align:right;width:90px;">Hrs Rep.</th>
+                <th style="padding:8px 12px;width:200px;">Distribución</th>
+                <th style="padding:8px 6px;width:32px;"></th>
+            </tr></thead><tbody>`;
+        data.forEach((c, ci) => {
+            const pct = maxHrs > 0 ? (c.hrs / maxHrs * 100).toFixed(1) : 0;
+            html += `<tr class="rk-row" style="background:${ci%2===0?'#f8fafc':'#fff'};border-bottom:1px solid #e2e8f0;">
+                <td style="padding:8px 12px;font-weight:600;color:#1a2b3c;">${c.nombre}</td>
+                <td style="padding:8px 12px;text-align:right;font-variant-numeric:tabular-nums;color:#0d3b66;font-weight:700;">${c.hrs.toFixed(1)}</td>
+                <td style="padding:8px 12px;">
+                    <div style="background:#e2e8f0;border-radius:4px;height:8px;overflow:hidden;">
+                        <div style="background:#0d6b73;height:100%;width:${pct}%;border-radius:4px;transition:width .4s;"></div>
+                    </div>
+                </td>
+                <td style="padding:4px 6px;text-align:center;">
+                    <button onclick="toggleRkConc(this, ${ci})" style="background:none;border:1px solid #cbd5e1;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:.85rem;color:#475569;line-height:1;">+</button>
+                </td>
+            </tr>
+            <tr id="rk-conc-${ci}" style="display:none;background:#f0f9ff;">
+                <td colspan="4" style="padding:0 0 0 24px;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead><tr style="font-size:.72rem;color:#6b7f94;text-transform:uppercase;">
+                            <th style="padding:6px 10px;text-align:left;">Tipo de hora extra</th>
+                            <th style="padding:6px 10px;text-align:right;width:90px;">Hrs</th>
+                            <th style="padding:6px 10px;width:160px;"></th>
+                            <th style="padding:4px 6px;width:32px;"></th>
+                        </tr></thead><tbody>`;
+            c.conceptos.forEach((conc, ki) => {
+                const pctC = c.hrs > 0 ? (conc.hrs / c.hrs * 100).toFixed(1) : 0;
+                html += `<tr style="border-bottom:1px solid #e0f2fe;">
+                    <td style="padding:6px 10px;color:#334155;">${conc.tipo}</td>
+                    <td style="padding:6px 10px;text-align:right;font-variant-numeric:tabular-nums;color:#0369a1;font-weight:600;">${conc.hrs.toFixed(1)}</td>
+                    <td style="padding:6px 10px;">
+                        <div style="background:#e0f2fe;border-radius:4px;height:6px;overflow:hidden;">
+                            <div style="background:#0284c7;height:100%;width:${pctC}%;border-radius:4px;"></div>
+                        </div>
+                    </td>
+                    <td style="padding:4px 6px;text-align:center;">
+                        <button onclick="toggleRkTec(this, ${ci}, ${ki})" style="background:none;border:1px solid #bae6fd;border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:.8rem;color:#0369a1;line-height:1;">+</button>
+                    </td>
+                </tr>
+                <tr id="rk-tec-${ci}-${ki}" style="display:none;background:#f0fdf4;">
+                    <td colspan="4" style="padding:0 0 0 20px;">
+                        <table style="width:100%;border-collapse:collapse;">
+                            <thead><tr style="font-size:.7rem;color:#6b7f94;text-transform:uppercase;">
+                                <th style="padding:5px 10px;text-align:left;">Cédula</th>
+                                <th style="padding:5px 10px;text-align:left;">Nombre</th>
+                                <th style="padding:5px 10px;text-align:right;width:80px;">Hrs</th>
+                            </tr></thead><tbody>`;
+                conc.tecnicos.forEach(tec => {
+                    html += `<tr style="border-bottom:1px solid #dcfce7;">
+                        <td style="padding:5px 10px;color:#475569;font-variant-numeric:tabular-nums;">${tec.cedula}</td>
+                        <td style="padding:5px 10px;color:#166534;font-weight:500;">${tec.nombre}</td>
+                        <td style="padding:5px 10px;text-align:right;color:#15803d;font-weight:600;font-variant-numeric:tabular-nums;">${tec.hrs.toFixed(1)}</td>
+                    </tr>`;
+                });
+                html += `</tbody></table></td></tr>`;
+            });
+            html += `</tbody></table></td></tr>`;
+        });
+        html += '</tbody></table>';
+        cont.innerHTML = html;
+    } catch(e) { cont.innerHTML = '<div style="text-align:center;padding:24px;color:#dc2626;">Error al cargar ranking</div>'; }
+}
+
+function toggleRkConc(btn, ci) {
+    const row = document.getElementById(`rk-conc-${ci}`);
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : '';
+    btn.textContent = open ? '+' : '−';
+}
+function toggleRkTec(btn, ci, ki) {
+    const row = document.getElementById(`rk-tec-${ci}-${ki}`);
+    const open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : '';
+    btn.textContent = open ? '+' : '−';
 }
 
 // ── Chips ─────────────────────────────────────────────────────────────────────

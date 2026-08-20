@@ -793,6 +793,86 @@ def api_he_kpis():
         return jsonify({"error": str(e), "trace": traceback.format_exc()}), 500
 
 
+# ── API: ranking de contratos por horas ──────────────────────────────────────
+@he_bp.route("/api/he/ranking-contratos")
+@login_required
+def api_he_ranking_contratos():
+    from sqlalchemy import func as sa_func, or_ as sa_or
+    from app.models.hora_extra import CONCEPTOS_HE
+
+    corte_id    = request.args.get("corte_id", type=int)
+    fecha_desde = request.args.get("fecha_desde", "")
+    fecha_hasta = request.args.get("fecha_hasta", "")
+
+    q = db.session.query(
+        HoraExtra.contrato_id,
+        HoraExtra.id_concepto,
+        HoraExtra.cedula,
+        HoraExtra.nombre,
+        sa_func.sum(HoraExtra.horas_reportadas).label("hrs"),
+    )
+
+    if corte_id:
+        corte_obj = HeCorte.query.get(corte_id)
+        if corte_obj:
+            q = q.filter(sa_or(
+                HoraExtra.corte_id == corte_id,
+                db.and_(
+                    HoraExtra.fecha_labor >= corte_obj.fecha_inicio,
+                    HoraExtra.fecha_labor <= corte_obj.fecha_fin,
+                )
+            ))
+    else:
+        if fecha_desde:
+            try:
+                q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde))
+            except Exception:
+                pass
+        if fecha_hasta:
+            try:
+                q = q.filter(HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
+            except Exception:
+                pass
+
+    rows = q.group_by(
+        HoraExtra.contrato_id, HoraExtra.id_concepto, HoraExtra.cedula, HoraExtra.nombre
+    ).all()
+
+    # Construir jerarquía: contrato → concepto → técnico
+    from collections import defaultdict
+    contratos_map = {}
+    for contrato_id_val, concepto, cedula, nombre, hrs in rows:
+        contrato_obj = Contrato.query.get(contrato_id_val)
+        if not contrato_obj:
+            continue
+        nombre_contrato = contrato_obj.contrato
+        hrs_f = float(hrs or 0)
+
+        if nombre_contrato not in contratos_map:
+            contratos_map[nombre_contrato] = {"nombre": nombre_contrato, "hrs": 0, "conceptos": {}}
+        contratos_map[nombre_contrato]["hrs"] += hrs_f
+
+        tipo = CONCEPTOS_HE.get(concepto, concepto)
+        clave_conc = f"{concepto}|{tipo}"
+        if clave_conc not in contratos_map[nombre_contrato]["conceptos"]:
+            contratos_map[nombre_contrato]["conceptos"][clave_conc] = {"concepto": concepto, "tipo": tipo, "hrs": 0, "tecnicos": []}
+        contratos_map[nombre_contrato]["conceptos"][clave_conc]["hrs"] += hrs_f
+        contratos_map[nombre_contrato]["conceptos"][clave_conc]["tecnicos"].append({
+            "cedula": cedula or "", "nombre": nombre or "", "hrs": hrs_f
+        })
+
+    # Convertir a lista ordenada
+    result = []
+    for c in sorted(contratos_map.values(), key=lambda x: x["hrs"], reverse=True):
+        conceptos = sorted(c["conceptos"].values(), key=lambda x: x["hrs"], reverse=True)
+        for conc in conceptos:
+            conc["tecnicos"] = sorted(conc["tecnicos"], key=lambda x: x["hrs"], reverse=True)[:10]
+        c["conceptos"] = conceptos
+        result.append(c)
+
+    return jsonify(result)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # CORTES
 # ══════════════════════════════════════════════════════════════════════════════
