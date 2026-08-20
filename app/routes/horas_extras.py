@@ -1174,6 +1174,49 @@ def api_he_valor_extra_nomina():
 
 # ── API: recalcular valor_extra_nomina en todos los registros ────────────────
 
+@he_bp.route("/api/he/diagnostico-valores")
+@login_required
+def api_he_diagnostico_valores():
+    """Retorna por qué registros no tienen valor_extra_nomina calculado."""
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "msg": "No autorizado"}), 403
+
+    salarios = {p.Documento: float(p.Salario) if p.Salario else None
+                for p in Persona.query.all()}
+    factores = {c.codigo: float(c.factor) for c in HeConcepto.query.all()}
+
+    sin_valor = HoraExtra.query.filter(HoraExtra.valor_extra_nomina.is_(None)).all()
+
+    razones = {"sin_salario_en_personas": [], "salario_nulo": [], "sin_horas": [], "sin_concepto": []}
+    total = len(sin_valor)
+
+    cedulas_sin_persona = set()
+    cedulas_sin_salario = set()
+
+    for he in sin_valor:
+        if not he.horas_reportadas:
+            razones["sin_horas"].append(he.id)
+            continue
+        if he.cedula not in salarios:
+            cedulas_sin_persona.add(he.cedula)
+            razones["sin_salario_en_personas"].append(he.cedula)
+        elif not salarios[he.cedula]:
+            cedulas_sin_salario.add(he.cedula)
+            razones["salario_nulo"].append(he.cedula)
+
+    return jsonify({
+        "total_sin_valor": total,
+        "sin_horas_reportadas": len(razones["sin_horas"]),
+        "cedulas_sin_persona_en_bd": sorted(cedulas_sin_persona),
+        "cedulas_con_salario_nulo": sorted(cedulas_sin_salario),
+        "resumen": {
+            "sin_persona": len(cedulas_sin_persona),
+            "salario_nulo": len(cedulas_sin_salario),
+            "sin_horas": len(razones["sin_horas"]),
+        }
+    })
+
+
 @he_bp.route("/api/he/normalizar-conceptos", methods=["POST"])
 @login_required
 def api_he_normalizar_conceptos():
