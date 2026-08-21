@@ -537,7 +537,7 @@ function renderValorNomina(data) {
         </tr></thead><tbody>`;
 
     data.forEach((c, ci) => {
-        const pct = maxVal > 0 ? (c.valor_rep / maxVal * 100).toFixed(1) : 0;
+        const pct     = maxVal > 0 ? (c.valor_rep / maxVal * 100).toFixed(1) : 0;
         const authPct = c.valor_rep > 0 ? Math.min(100, c.valor_auth / c.valor_rep * 100).toFixed(1) : 0;
         html += `<tr style="border-bottom:1px solid #334155;">
             <td style="padding:8px 14px;color:#e2e8f0;font-weight:600;">${c.nombre}</td>
@@ -550,42 +550,46 @@ function renderValorNomina(data) {
                 </div>
             </td>
             <td style="padding:4px 8px;text-align:center;">
-                <button onclick="toggleVnConc(this,${ci})" style="background:none;border:1px solid #334155;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:.85rem;color:#94a3b8;line-height:1;">+</button>
+                <button onclick="toggleVnTec(this,${ci})" style="background:none;border:1px solid #334155;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:.85rem;color:#94a3b8;line-height:1;">+</button>
             </td>
         </tr>
-        <tr id="vn-conc-${ci}" style="display:none;">
+        <tr id="vn-tec-${ci}" style="display:none;">
             <td colspan="5" style="padding:0 0 0 28px;background:#1a2a3a;">
                 <table style="width:100%;border-collapse:collapse;font-size:.77rem;">
                     <thead><tr style="color:#64748b;text-transform:uppercase;font-size:.7rem;">
-                        <th style="padding:6px 10px;text-align:left;">Tipo de hora extra</th>
-                        <th style="padding:6px 10px;text-align:right;width:140px;">Val. Reportado</th>
-                        <th style="padding:6px 10px;text-align:right;width:140px;">Val. Autorizado</th>
+                        <th style="padding:6px 10px;text-align:left;">Técnico</th>
+                        <th style="padding:6px 10px;text-align:left;width:130px;">Cédula</th>
+                        <th style="padding:6px 10px;text-align:right;width:130px;">Val. Reportado</th>
+                        <th style="padding:6px 10px;text-align:right;width:130px;">Val. Autorizado</th>
                         <th style="padding:4px 6px;width:32px;"></th>
                     </tr></thead><tbody>`;
-        (c.conceptos || []).forEach((conc, ki) => {
+        (c.tecnicos || []).forEach((tec, ti) => {
             html += `<tr style="border-bottom:1px solid #1e3a4c;">
-                <td style="padding:6px 10px;color:#cbd5e1;">${conc.codigo} — ${conc.tipo}</td>
-                <td style="padding:6px 10px;text-align:right;color:#818cf8;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_rep)}</td>
-                <td style="padding:6px 10px;text-align:right;color:#34d399;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_auth)}</td>
+                <td style="padding:6px 10px;color:#e2e8f0;font-weight:600;">${tec.nombre}</td>
+                <td style="padding:6px 10px;color:#64748b;font-variant-numeric:tabular-nums;">${tec.cedula}</td>
+                <td style="padding:6px 10px;text-align:right;color:#a78bfa;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_rep)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#4ade80;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_auth)}</td>
                 <td style="padding:4px 6px;text-align:center;">
-                    <button onclick="toggleVnTec(this,${ci},${ki})" style="background:none;border:1px solid #334155;border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:.78rem;color:#64748b;line-height:1;">+</button>
+                    <button onclick="toggleVnConc(this,${ci},${ti})" style="background:none;border:1px solid #334155;border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:.78rem;color:#64748b;line-height:1;">+</button>
                 </td>
             </tr>
-            <tr id="vn-tec-${ci}-${ki}" style="display:none;">
-                <td colspan="4" style="padding:0 0 0 20px;background:#172032;">
+            <tr id="vn-conc-${ci}-${ti}" style="display:none;">
+                <td colspan="5" style="padding:0 0 0 20px;background:#172032;">
                     <table style="width:100%;border-collapse:collapse;font-size:.75rem;">
                         <thead><tr style="color:#475569;text-transform:uppercase;font-size:.68rem;">
-                            <th style="padding:5px 10px;text-align:left;">Cédula</th>
-                            <th style="padding:5px 10px;text-align:left;">Nombre</th>
-                            <th style="padding:5px 10px;text-align:right;width:130px;">Val. Reportado</th>
-                            <th style="padding:5px 10px;text-align:right;width:130px;">Val. Autorizado</th>
+                            <th style="padding:5px 10px;text-align:left;">Tipo de HE</th>
+                            <th style="padding:5px 10px;text-align:right;width:110px;">Hrs Rep.</th>
+                            <th style="padding:5px 10px;text-align:right;width:110px;">Hrs Aut.</th>
+                            <th style="padding:5px 10px;text-align:right;width:120px;">Val. Reportado</th>
+                            <th style="padding:5px 10px;text-align:right;width:120px;">Val. Autorizado</th>
                         </tr></thead><tbody>`;
-            (conc.tecnicos || []).forEach(tec => {
+            (tec.conceptos || []).forEach(conc => {
                 html += `<tr style="border-bottom:1px solid #1e293b;">
-                    <td style="padding:5px 10px;color:#64748b;font-variant-numeric:tabular-nums;">${tec.cedula}</td>
-                    <td style="padding:5px 10px;color:#e2e8f0;font-weight:500;">${tec.nombre}</td>
-                    <td style="padding:5px 10px;text-align:right;color:#a78bfa;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_rep)}</td>
-                    <td style="padding:5px 10px;text-align:right;color:#4ade80;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_auth)}</td>
+                    <td style="padding:5px 10px;color:#cbd5e1;">${conc.codigo} — ${conc.tipo}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(conc.hrs_rep || 0)}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(conc.hrs_auth || 0)}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#818cf8;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_rep)}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#34d399;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_auth)}</td>
                 </tr>`;
             });
             html += `</tbody></table></td></tr>`;
@@ -596,14 +600,14 @@ function renderValorNomina(data) {
     cont.innerHTML = html;
 }
 
-function toggleVnConc(btn, ci) {
-    const row = document.getElementById(`vn-conc-${ci}`);
+function toggleVnTec(btn, ci) {
+    const row = document.getElementById(`vn-tec-${ci}`);
     const open = row.style.display !== 'none';
     row.style.display = open ? 'none' : '';
     btn.textContent = open ? '+' : '−';
 }
-function toggleVnTec(btn, ci, ki) {
-    const row = document.getElementById(`vn-tec-${ci}-${ki}`);
+function toggleVnConc(btn, ci, ti) {
+    const row = document.getElementById(`vn-conc-${ci}-${ti}`);
     const open = row.style.display !== 'none';
     row.style.display = open ? 'none' : '';
     btn.textContent = open ? '+' : '−';

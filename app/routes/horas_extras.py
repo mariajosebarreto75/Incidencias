@@ -1144,38 +1144,45 @@ def api_he_valor_extra_nomina():
         cname = r.contrato.contrato if r.contrato else ""
         if cid not in contratos:
             contratos[cid] = {"nombre": cname, "contrato_id": cid,
-                               "valor_rep": 0, "valor_auth": 0, "conceptos": {}}
+                               "valor_rep": 0, "valor_auth": 0, "tecnicos": {}}
 
         vr = val(r.cedula, r.id_concepto, r.horas_reportadas)
         va = val(r.cedula, r.id_concepto, r.horas_autorizadas) if r.horas_autorizadas else 0
+        hrs_rep  = float(r.horas_reportadas  or 0)
+        hrs_auth = float(r.horas_autorizadas or 0)
 
         contratos[cid]["valor_rep"]  += vr
         contratos[cid]["valor_auth"] += va
 
-        ck = r.id_concepto or ""
-        if ck not in contratos[cid]["conceptos"]:
-            contratos[cid]["conceptos"][ck] = {
-                "codigo": ck,
-                "tipo": r.tipo_he or CONCEPTOS_HE.get(ck, ck),
-                "valor_rep": 0, "valor_auth": 0, "tecnicos": {}
-            }
-        contratos[cid]["conceptos"][ck]["valor_rep"]  += vr
-        contratos[cid]["conceptos"][ck]["valor_auth"] += va
-
         tk = r.cedula
-        tecs = contratos[cid]["conceptos"][ck]["tecnicos"]
+        tecs = contratos[cid]["tecnicos"]
         if tk not in tecs:
-            tecs[tk] = {"cedula": tk, "nombre": r.nombre or "", "valor_rep": 0, "valor_auth": 0}
+            tecs[tk] = {"cedula": tk, "nombre": r.nombre or "",
+                        "valor_rep": 0, "valor_auth": 0,
+                        "hrs_rep": 0, "hrs_auth": 0, "conceptos": {}}
         tecs[tk]["valor_rep"]  += vr
         tecs[tk]["valor_auth"] += va
+        tecs[tk]["hrs_rep"]    += hrs_rep
+        tecs[tk]["hrs_auth"]   += hrs_auth
+
+        ck = r.id_concepto or ""
+        concs = tecs[tk]["conceptos"]
+        if ck not in concs:
+            concs[ck] = {"codigo": ck,
+                         "tipo": r.tipo_he or CONCEPTOS_HE.get(ck, ck),
+                         "valor_rep": 0, "valor_auth": 0,
+                         "hrs_rep": 0, "hrs_auth": 0}
+        concs[ck]["valor_rep"]  += vr
+        concs[ck]["valor_auth"] += va
+        concs[ck]["hrs_rep"]    += hrs_rep
+        concs[ck]["hrs_auth"]   += hrs_auth
 
     result = []
     for c in sorted(contratos.values(), key=lambda x: -x["valor_rep"]):
-        c["conceptos"] = sorted(
-            [dict(v, tecnicos=sorted(v["tecnicos"].values(), key=lambda t: -t["valor_rep"]))
-             for v in c["conceptos"].values()],
-            key=lambda x: -x["valor_rep"]
-        )
+        tec_list = sorted(c["tecnicos"].values(), key=lambda t: -t["valor_rep"])
+        for t in tec_list:
+            t["conceptos"] = sorted(t["conceptos"].values(), key=lambda x: -x["valor_rep"])
+        c["tecnicos"] = tec_list
         result.append(c)
 
     return jsonify(result)
