@@ -1592,6 +1592,12 @@ function _renderPopupList(vals) {
 
 // Búsqueda en el popup
 document.addEventListener('DOMContentLoaded', function() {
+    // Si viene ?corte=pasado desde el hub, abrir pestaña Cortes automáticamente
+    if (new URLSearchParams(location.search).get('corte') === 'pasado') {
+        const tabCortes = document.querySelector('.he-tab:last-child');
+        if (tabCortes) tabCortes.click();
+    }
+
     document.getElementById('fpSearch').addEventListener('input', function() {
         const q = this.value.toLowerCase().trim();
         const popup = document.getElementById('htFilterPopup');
