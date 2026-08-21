@@ -901,7 +901,7 @@ function iniciarGrid() {
             { type:"text", readOnly:true },   // 8  nombre
             { type:"text", readOnly:true },   // 9  id_concepto
             { type:"text", readOnly:true },   // 10 tipo_he
-            { type:"numeric", readOnly:true },// 11 horas_compensadas
+            { type:"numeric" },               // 11 horas_compensadas (editable NEO)
             { type:"text", readOnly:true },   // 12 autorizacion_sup
             { type:"text", readOnly:true },   // 13 justificacion
             { type:"text", readOnly:true },   // 14 observacion
@@ -923,7 +923,7 @@ function iniciarGrid() {
         autoRowSize: false,
         licenseKey: "non-commercial-and-evaluation",
         cells: function(row, col) {
-            if (col >= C_HAUTH && col <= C_OBSNEO) return { className: "ht-neo-edit" };
+            if (col === C_COMP || (col >= C_HAUTH && col <= C_OBSNEO)) return { className: "ht-neo-edit" };
             return {};
         },
         afterChange: function(changes, source) {
@@ -936,12 +936,13 @@ function iniciarGrid() {
             });
             // Guardar horas_reportadas directamente vía PUT (no pasa por validar)
             changes.forEach(([row, col, oldVal, newVal]) => {
-                if (col !== C_HRS || oldVal === newVal) return;
+                if ((col !== C_HRS && col !== C_COMP) || oldVal === newVal) return;
                 const id = registrosIds[row];
                 if (!id) return;
+                const campo = col === C_HRS ? "horas_reportadas" : "horas_compensadas";
                 fetch(`/api/he/${id}`, {
                     method:"PUT", headers:{"Content-Type":"application/json"},
-                    body: JSON.stringify({ horas_reportadas: parseFloat(newVal) || 0 })
+                    body: JSON.stringify({ [campo]: parseFloat(newVal) || 0 })
                 }).then(r=>r.json()).then(d => {
                     if (!d.ok) hot.setDataAtCell(row, col, oldVal, "revert");
                 }).catch(() => hot.setDataAtCell(row, col, oldVal, "revert"));
@@ -1327,8 +1328,7 @@ function _colorearHeaderNeo(htInst, col, TH) {
         else if (phys === 10 || phys === 11) bg = '#0284c7';
     } else {
         if      (phys === C_HRS)  bg = '#dc2626';
-        else if (phys === C_COMP) bg = '#d97706';
-        else if (phys === C_HAUTH || phys === C_ESTADO || phys === C_OBSNEO) bg = '#0284c7';
+        else if (phys === C_COMP || phys === C_HAUTH || phys === C_ESTADO || phys === C_OBSNEO) bg = '#0284c7';
     }
     TH.style.background = bg;
     TH.style.color      = '#fff';
