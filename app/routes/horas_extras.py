@@ -910,8 +910,13 @@ def api_he_ranking_contratos():
 @login_required
 def api_he_cortes_list():
     """Lista de cortes, opcionalmente filtrado por contrato."""
+    from sqlalchemy.orm import joinedload
     contrato_id = request.args.get("contrato_id", type=int)
-    q = HeCorte.query
+    q = HeCorte.query.options(
+        joinedload(HeCorte.contrato),
+        joinedload(HeCorte.creado_por),
+        joinedload(HeCorte.cerrado_por),
+    )
     if contrato_id:
         q = q.filter((HeCorte.contrato_id == contrato_id) | (HeCorte.contrato_id == None))
     elif current_user.rol.lower() == "coordinador":
@@ -1022,7 +1027,12 @@ def api_he_verificar_clave():
 @login_required
 def api_he_cortes_detalle(corte_id):
     """Registros de un corte específico."""
-    corte = HeCorte.query.get_or_404(corte_id)
+    from sqlalchemy.orm import joinedload
+    corte = HeCorte.query.options(
+        joinedload(HeCorte.contrato),
+        joinedload(HeCorte.creado_por),
+        joinedload(HeCorte.cerrado_por),
+    ).get_or_404(corte_id)
     registros = HoraExtra.query.filter_by(corte_id=corte_id).order_by(HoraExtra.fecha_labor).all()
     return jsonify({
         "corte":     corte.to_dict(),
