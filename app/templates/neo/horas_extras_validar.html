@@ -897,27 +897,27 @@ function iniciarGrid() {
             "Fecha Reporte","Validado Por","Fecha Validación"
         ],
         columns: [
-            { type:"text", readOnly:true },   // 0  fecha_labor
-            { type:"text", readOnly:true },   // 1  contrato
-            { type:"text", readOnly:true },   // 2  recurso
-            { type:"text", readOnly:true },   // 3  placa
-            { type:"numeric" },               // 4  horas_reportadas (editable NEO)
-            { type:"text", readOnly:true },   // 5  hora_inicio
-            { type:"text", readOnly:true },   // 6  hora_fin
-            { type:"text", readOnly:true },   // 7  cedula
-            { type:"text", readOnly:true },   // 8  nombre
-            { type:"text", readOnly:true },   // 9  id_concepto
-            { type:"text", readOnly:true },   // 10 tipo_he
-            { type:"numeric" },               // 11 horas_compensadas (editable NEO)
-            { type:"text", readOnly:true },   // 12 autorizacion_sup
-            { type:"text", readOnly:true },   // 13 justificacion
-            { type:"text", readOnly:true },   // 14 observacion
-            { type:"numeric" },               // 15 horas_autorizadas (editable)
+            { type:"text" },                  // 0  fecha_labor
+            { type:"text", readOnly:true },   // 1  contrato (FK, no editable directo)
+            { type:"text" },                  // 2  recurso
+            { type:"text" },                  // 3  placa
+            { type:"numeric" },               // 4  horas_reportadas
+            { type:"text" },                  // 5  hora_inicio
+            { type:"text" },                  // 6  hora_fin
+            { type:"text" },                  // 7  cedula
+            { type:"text" },                  // 8  nombre
+            { type:"text" },                  // 9  id_concepto
+            { type:"text" },                  // 10 tipo_he
+            { type:"numeric" },               // 11 horas_compensadas
+            { type:"text" },                  // 12 autorizacion_sup
+            { type:"text" },                  // 13 justificacion
+            { type:"text" },                  // 14 observacion
+            { type:"numeric" },               // 15 horas_autorizadas
             { type:"dropdown", source: ESTADOS_NEO, strict:false, allowInvalid:true, renderer: estadoRenderer }, // 16
-            { type:"text" },                  // 17 obs_neo (editable)
-            { type:"text", readOnly:true },   // 18 fecha_reporte
-            { type:"text", readOnly:true },   // 19 validado_por
-            { type:"text", readOnly:true },   // 20 fecha_validacion
+            { type:"text" },                  // 17 obs_neo
+            { type:"text", readOnly:true },   // 18 fecha_reporte (sistema)
+            { type:"text", readOnly:true },   // 19 validado_por (sistema)
+            { type:"text", readOnly:true },   // 20 fecha_validacion (sistema)
         ],
         colWidths: [105,155,125,80,110, 90,80,100,160,95,190, 115,165, 155,155, 110,120,170, 140,140,130],
         height: 520,
@@ -930,7 +930,7 @@ function iniciarGrid() {
         autoRowSize: false,
         licenseKey: "non-commercial-and-evaluation",
         cells: function(row, col) {
-            if (col === C_COMP || (col >= C_HAUTH && col <= C_OBSNEO)) return { className: "ht-neo-edit" };
+            if (col in {0:1,2:1,3:1,4:1,5:1,6:1,7:1,8:1,9:1,10:1,11:1,12:1,13:1,14:1} || (col >= C_HAUTH && col <= C_OBSNEO)) return { className: "ht-neo-edit" };
             return {};
         },
         afterChange: function(changes, source) {
@@ -941,20 +941,29 @@ function iniciarGrid() {
                 const fi = _fullIds.indexOf(id);
                 if (fi !== -1) _fullData[fi][col] = newVal;
             });
-            // Guardar horas_reportadas directamente vía PUT (no pasa por validar)
+            // Mapa columna → campo del modelo para PUT directo
+            const PUT_FIELDS = {
+                0:"fecha_labor", 2:"recurso", 3:"placa",
+                4:"horas_reportadas", 5:"hora_inicio", 6:"hora_fin",
+                7:"cedula", 8:"nombre", 9:"id_concepto", 10:"tipo_he",
+                11:"horas_compensadas", 12:"autorizacion_sup",
+                13:"justificacion", 14:"observacion"
+            };
+            const NUMERIC_COLS = new Set([4, 11]);
             changes.forEach(([row, col, oldVal, newVal]) => {
-                if ((col !== C_HRS && col !== C_COMP) || oldVal === newVal) return;
+                if (!(col in PUT_FIELDS) || oldVal === newVal) return;
                 const id = registrosIds[row];
                 if (!id) return;
-                const campo = col === C_HRS ? "horas_reportadas" : "horas_compensadas";
+                const campo = PUT_FIELDS[col];
+                const valor = NUMERIC_COLS.has(col) ? (parseFloat(newVal) || 0) : (newVal ?? "");
                 fetch(`/api/he/${id}`, {
                     method:"PUT", headers:{"Content-Type":"application/json"},
-                    body: JSON.stringify({ [campo]: parseFloat(newVal) || 0 })
+                    body: JSON.stringify({ [campo]: valor })
                 }).then(r=>r.json()).then(d => {
                     if (!d.ok) hot.setDataAtCell(row, col, oldVal, "revert");
                 }).catch(() => hot.setDataAtCell(row, col, oldVal, "revert"));
             });
-            // Only trigger autoGuardar for user-editable columns (avoid cascade from setDataAtCell)
+            // autoGuardar para columnas NEO (horas_autorizadas, estado, obs_neo)
             const EDIT_COLS = new Set([C_HAUTH, C_ESTADO, C_OBSNEO]);
             const rows = new Set();
             changes.forEach(([row, col]) => { if (EDIT_COLS.has(col)) rows.add(row); });
