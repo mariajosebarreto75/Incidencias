@@ -82,10 +82,7 @@
                 {% for c in cortes %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
             </select>
         </div>
-        <div>
-            <span class="dh-filter-lbl">Mes</span>
-            <input id="fMes" type="month" class="dh-select">
-        </div>
+
         <div>
             <span class="dh-filter-lbl">Desde</span>
             <input id="fDesde" type="date" class="dh-select">
@@ -211,7 +208,7 @@ const fmtHrs = n => Math.round(n||0).toLocaleString('es-CO');
 
 function limpiar() {
     ['fContrato','fCorte'].forEach(id=>document.getElementById(id).value='');
-    ['fMes','fDesde','fHasta'].forEach(id=>document.getElementById(id).value='');
+    ['fDesde','fHasta'].forEach(id=>document.getElementById(id).value='');
     cargar();
 }
 
@@ -219,12 +216,10 @@ function buildParams() {
     const p = new URLSearchParams();
     const c = document.getElementById('fContrato').value;
     const k = document.getElementById('fCorte').value;
-    const m = document.getElementById('fMes').value;
     const d = document.getElementById('fDesde').value;
     const h = document.getElementById('fHasta').value;
     if (c) p.set('contrato_id', c);
     if (k) p.set('corte_id', k);
-    if (m && !d && !h) p.set('mes', m);
     if (d) p.set('fecha_desde', d);
     if (h) p.set('fecha_hasta', h);
     return p;
@@ -638,8 +633,6 @@ async function recalcularValores() {
 }
 
 // Cargar al abrir con mes actual por defecto
-const hoy = new Date();
-document.getElementById('fMes').value = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0');
 cargar();
 
 /* ── AUTO-REFRESH ── */
