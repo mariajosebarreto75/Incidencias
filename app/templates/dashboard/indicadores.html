@@ -39,12 +39,12 @@ body { background: var(--c-bg); color: #1e293b; font-family: system-ui,-apple-sy
 
 /* ── TOPBAR ─────────────────────────────────────────────── */
 .topbar {
-  background: var(--c-primary);
+  background: linear-gradient(90deg, #005f6b, #00b8c9);
   padding: 0 24px;
   display: flex; align-items: center; gap: 16px;
   height: 56px;
   position: sticky; top: 0; z-index: 100;
-  box-shadow: 0 2px 8px rgba(13,107,115,.3);
+  box-shadow: 0 2px 8px rgba(0,95,107,.35);
 }
 .topbar img { height: 32px; filter: brightness(0) invert(1); opacity: .9; }
 .topbar-title { color: #fff; font-size: 1rem; font-weight: 700; flex: 1; }
@@ -77,6 +77,15 @@ body { background: var(--c-bg); color: #1e293b; font-family: system-ui,-apple-sy
 .dash-nav-item:hover { background: rgba(255,255,255,.08); color: #e2e8f0; }
 .dash-nav-item.active { background: #0284c7; color: #fff; }
 
+/* ── ACTUALIZAR BTN ─────────────────────────────────────── */
+.btn-actualizar {
+  background: #1d4ed8; color: #fff; border: none;
+  border-radius: 6px; padding: 6px 14px; font-size: .8rem;
+  font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;
+  transition: background .15s;
+}
+.btn-actualizar:hover { background: #1e40af; }
+
 /* ── CONTENT HEADER ──────────────────────────────────────── */
 .content-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -90,25 +99,25 @@ body { background: var(--c-bg); color: #1e293b; font-family: system-ui,-apple-sy
 
 /* ── FILTER BAR ─────────────────────────────────────────── */
 .filter-bar {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: #1e293b;
+  border: 1px solid #334155;
   border-radius: var(--radius);
   padding: 14px 18px;
   margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  box-shadow: var(--c-shadow);
   display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
 }
 .filter-group { display: flex; flex-direction: column; gap: 4px; }
 .filter-label {
   font-size: .68rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .5px; color: #64748b;
+  letter-spacing: .5px; color: #94a3b8;
 }
 .filter-select {
-  border: 1px solid #cbd5e1; border-radius: var(--radius-sm);
-  padding: 6px 10px; font-size: .82rem; background: #ffffff;
-  color: #1e293b; min-width: 140px; cursor: pointer;
+  border: 1px solid #334155; border-radius: var(--radius-sm);
+  padding: 6px 10px; font-size: .82rem; background: #0f172a;
+  color: #e2e8f0; min-width: 140px; cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%2364748b' d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%2394a3b8' d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 8px center;
   padding-right: 28px;
 }
@@ -117,9 +126,9 @@ body { background: var(--c-bg); color: #1e293b; font-family: system-ui,-apple-sy
 /* Multi-select dropdown personalizado */
 .ms-wrap { position: relative; }
 .ms-btn {
-  border: 1px solid #cbd5e1; border-radius: var(--radius-sm);
-  padding: 6px 28px 6px 10px; font-size: .82rem; background: #ffffff;
-  color: #1e293b; min-width: 180px; cursor: pointer;
+  border: 1px solid #334155; border-radius: var(--radius-sm);
+  padding: 6px 28px 6px 10px; font-size: .82rem; background: #0f172a;
+  color: #e2e8f0; min-width: 180px; cursor: pointer;
   text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='%2364748b' d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 8px center;
@@ -154,12 +163,12 @@ body { background: var(--c-bg); color: #1e293b; font-family: system-ui,-apple-sy
 }
 .btn-filter:hover { background: var(--c-primary-d); }
 .btn-clear {
-  background: #f1f5f9; color: #64748b;
-  border: 1px solid #cbd5e1; border-radius: var(--radius-sm);
+  background: #1e293b; color: #94a3b8;
+  border: 1px solid #475569; border-radius: var(--radius-sm);
   padding: 7px 14px; font-size: .82rem; cursor: pointer;
   text-decoration: none; display: flex; align-items: center; gap: 4px;
 }
-.btn-clear:hover { background: #e2e8f0; }
+.btn-clear:hover { background: #334155; color: #e2e8f0; }
 
 /* ── CHIPS ──────────────────────────────────────────────── */
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; align-items: center; }
@@ -340,14 +349,19 @@ body { background: var(--c-bg); color: #1e293b; font-family: system-ui,-apple-sy
       <div class="content-header-title"><i class="bi bi-speedometer2 me-2" style="color:#0d9488"></i>Indicadores NEO</div>
       <div class="content-header-sub">{{ current_user.nombre_completo }}</div>
     </div>
-    <nav class="dash-nav">
-      <a href="{{ url_for('dashboard.indicadores') }}" class="dash-nav-item active">
-        <i class="bi bi-speedometer2"></i> Indicadores NEO
-      </a>
-      <a href="{{ url_for('he_bp.he_dashboard') }}" class="dash-nav-item">
-        <i class="bi bi-clock-history"></i> Horas Extras
-      </a>
-    </nav>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <nav class="dash-nav">
+        <a href="{{ url_for('dashboard.indicadores') }}" class="dash-nav-item active">
+          <i class="bi bi-speedometer2"></i> Indicadores NEO
+        </a>
+        <a href="{{ url_for('he_bp.he_dashboard') }}" class="dash-nav-item">
+          <i class="bi bi-clock-history"></i> Horas Extras
+        </a>
+      </nav>
+      <button type="button" class="btn-actualizar" onclick="document.getElementById('filter-form').submit()">
+        <i class="bi bi-arrow-clockwise"></i> Actualizar
+      </button>
+    </div>
   </div>
 
   <!-- FILTROS -->
