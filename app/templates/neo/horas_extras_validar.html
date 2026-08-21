@@ -250,7 +250,7 @@ body { background:var(--c-bg); }
                 <i class="bi bi-patch-check"></i> Validación de Horas
                 <span class="tab-badge" id="tb-pend">—</span>
             </button>
-            <button class="he-tab" onclick="if(typeof cambiarTab!='undefined')cambiarTab('historial',this)">
+            <button class="he-tab" id="tab-historial" style="display:none" onclick="if(typeof cambiarTab!='undefined')cambiarTab('historial',this)">
                 <i class="bi bi-clock-history"></i> Historial
             </button>
             <button class="he-tab" onclick="if(typeof cambiarTab!='undefined')cambiarTab('cortes',this)">
@@ -405,6 +405,13 @@ body { background:var(--c-bg); }
 
     <!-- ══════════════════ PANEL 2: HISTORIAL ══════════════════ -->
     <div class="he-panel" id="panel-historial">
+
+        <div style="margin-bottom:10px;">
+            <button class="btn btn-sm btn-outline-secondary" style="border-radius:7px;font-size:.78rem;"
+                onclick="cambiarTab('cortes', document.querySelector('.he-tab:last-child'))">
+                <i class="bi bi-arrow-left me-1"></i>Volver a Cortes
+            </button>
+        </div>
 
         <!-- Chips de estado historial -->
         <div class="he-chips">
@@ -2438,7 +2445,7 @@ async function eliminarCorteNeo(id, nombre, conRegistros) {
 async function verCorteNeo(id, nombre) {
     // Marcar como cargado ANTES de cambiarTab para que no dispare cargarHistorial() sin id
     historialCargado = true;
-    const tab = document.querySelectorAll(".he-tab")[1]; // tab Historial
+    const tab = document.getElementById("tab-historial");
     cambiarTab("historial", tab);
     // Poblar selector y seleccionar el corte
     await actualizarCortesHistorial();

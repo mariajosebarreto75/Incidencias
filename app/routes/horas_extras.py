@@ -778,34 +778,33 @@ def api_he_kpis():
     if id_concepto:
         q = q.filter(HoraExtra.id_concepto == id_concepto)
 
-    def _hrs_rep(q_base):
-        return float(q_base.with_entities(
-            db.func.coalesce(db.func.sum(HoraExtra.horas_reportadas), 0)
-        ).scalar() or 0)
-
-    def _hrs_auth(q_base):
-        return float(q_base.with_entities(
-            db.func.coalesce(db.func.sum(HoraExtra.horas_autorizadas), 0)
-        ).scalar() or 0)
-
-    q_conf   = q.filter(HoraExtra.estado == "CONFORME")
-    q_noconf = q.filter(HoraExtra.estado == "NO CONFORME")
-    q_desc   = q.filter(HoraExtra.estado == "DESCONTADA")
-    q_pend   = q.filter(HoraExtra.estado == "PENDIENTE")
-
+    from sqlalchemy import case as sa_case, func as sa_func
     try:
+        row = q.with_entities(
+            sa_func.count().label("total"),
+            sa_func.sum(sa_case((HoraExtra.estado == "PENDIENTE",   1), else_=0)).label("pendientes"),
+            sa_func.sum(sa_case((HoraExtra.estado == "CONFORME",    1), else_=0)).label("conformes"),
+            sa_func.sum(sa_case((HoraExtra.estado == "NO CONFORME", 1), else_=0)).label("no_conformes"),
+            sa_func.sum(sa_case((HoraExtra.estado == "DESCONTADA",  1), else_=0)).label("descontadas"),
+            sa_func.coalesce(sa_func.sum(HoraExtra.horas_reportadas), 0).label("hrs_rep"),
+            sa_func.coalesce(sa_func.sum(HoraExtra.horas_autorizadas), 0).label("hrs_auth"),
+            sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "CONFORME",    HoraExtra.horas_reportadas), else_=0)), 0).label("hrs_conf"),
+            sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "NO CONFORME", HoraExtra.horas_reportadas), else_=0)), 0).label("hrs_noconf"),
+            sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "DESCONTADA",  HoraExtra.horas_reportadas), else_=0)), 0).label("hrs_desc"),
+            sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "PENDIENTE",   HoraExtra.horas_reportadas), else_=0)), 0).label("hrs_pend"),
+        ).one()
         return jsonify({
-            "total":            q.count(),
-            "pendientes":       q_pend.count(),
-            "conformes":        q_conf.count(),
-            "no_conformes":     q_noconf.count(),
-            "descontadas":      q_desc.count(),
-            "hrs_reportadas":   _hrs_rep(q),
-            "hrs_conformes":    _hrs_rep(q_conf),
-            "hrs_no_conformes": _hrs_rep(q_noconf),
-            "hrs_descontadas":  _hrs_rep(q_desc),
-            "hrs_pendientes":   _hrs_rep(q_pend),
-            "hrs_autorizadas":  _hrs_auth(q),
+            "total":            row.total,
+            "pendientes":       row.pendientes,
+            "conformes":        row.conformes,
+            "no_conformes":     row.no_conformes,
+            "descontadas":      row.descontadas,
+            "hrs_reportadas":   float(row.hrs_rep),
+            "hrs_conformes":    float(row.hrs_conf),
+            "hrs_no_conformes": float(row.hrs_noconf),
+            "hrs_descontadas":  float(row.hrs_desc),
+            "hrs_pendientes":   float(row.hrs_pend),
+            "hrs_autorizadas":  float(row.hrs_auth),
         })
     except Exception as e:
         import traceback
