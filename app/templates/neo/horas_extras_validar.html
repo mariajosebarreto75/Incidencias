@@ -1410,18 +1410,29 @@ function _openFilterPopup(htInst, col, anchorBtn) {
     _fpHot = htInst;
     _fpCol = col;
 
-    // Usar _fullData siempre (no getData que devuelve solo filas filtradas)
+    // Usar datos filtrados por otras columnas activas (cascada de filtros)
     const sourceData = (htInst === hotHistorial && typeof _fullHistData !== 'undefined') ? _fullHistData : _fullData;
-    const allVals = [...new Set(sourceData.map(r => {
+    const hist2 = htInst === hotHistorial;
+    const fmap2 = hist2 ? _htHistColFilters : _htColFilters;
+    const otherCols = Object.keys(fmap2).map(Number).filter(c => c !== col);
+    const filteredSrc = otherCols.length === 0 ? sourceData : sourceData.filter(r =>
+        otherCols.every(c => {
+            const v = r[c]; const sv = (v === null || v === undefined) ? '' : String(v);
+            return fmap2[c].has(sv);
+        })
+    );
+    const allVals = [...new Set(filteredSrc.map(r => {
         const v = r[col];
         return (v === null || v === undefined) ? '' : String(v);
     }))].sort((a,b) => String(a).localeCompare(String(b), 'es', {sensitivity:'base'}));
 
-    // Si hay filtro activo para esta columna, restaurar selección previa; si no, todo seleccionado
+    // Restaurar selección previa intersectada con los valores disponibles (cascada)
     const hist  = htInst === hotHistorial;
     const fmap  = hist ? _htHistColFilters : _htColFilters;
+    const availSet = new Set(allVals);
     if (fmap[col]) {
-        _fpSelected = new Set(fmap[col]);
+        _fpSelected = new Set([...fmap[col]].filter(v => availSet.has(v)));
+        if (_fpSelected.size === 0) _fpSelected = availSet;
     } else {
         _fpSelected = new Set(allVals);
     }

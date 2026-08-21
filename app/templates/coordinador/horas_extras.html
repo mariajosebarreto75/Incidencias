@@ -1988,10 +1988,24 @@ function _openFilterPopupC(htInst, col, anchorBtn, isVal) {
     _fpCHot = htInst; _fpCCol = col; _fpCIsVal = isVal;
     const src   = isVal ? _fullValData : _fullRegData;
     const fmap  = isVal ? _htValFilters : _htRegFilters;
-    const allVals = [...new Set(src.map(r => {
+    // Filtrar por otras columnas activas para mostrar solo valores disponibles en el subconjunto
+    const otherCols = Object.keys(fmap).map(Number).filter(c => c !== col);
+    const filteredSrc = otherCols.length === 0 ? src : src.filter(r =>
+        otherCols.every(c => {
+            const v = r[c]; const sv = (v === null || v === undefined) ? '' : String(v);
+            return fmap[c].has(sv);
+        })
+    );
+    const allVals = [...new Set(filteredSrc.map(r => {
         const v = r[col]; return (v === null || v === undefined) ? '' : String(v);
     }))].sort((a,b) => String(a).localeCompare(String(b), 'es', {sensitivity:'base'}));
-    _fpCSelected = fmap[col] ? new Set(fmap[col]) : new Set(allVals);
+    const availSetC = new Set(allVals);
+    if (fmap[col]) {
+        _fpCSelected = new Set([...fmap[col]].filter(v => availSetC.has(v)));
+        if (_fpCSelected.size === 0) _fpCSelected = availSetC;
+    } else {
+        _fpCSelected = new Set(allVals);
+    }
     _renderPopupListC(allVals);
     const popup = document.getElementById('htFilterPopupC');
     const rect  = anchorBtn.getBoundingClientRect();
