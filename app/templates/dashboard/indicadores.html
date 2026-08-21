@@ -376,15 +376,6 @@ body { background: var(--c-bg); color: #1e293b; font-family: system-ui,-apple-sy
         </select>
       </div>
 
-      <div class="filter-group">
-        <span class="filter-label">Mes</span>
-        <select name="mes" class="filter-select" style="min-width:110px">
-          <option value="">Todos</option>
-          {% for num, nombre in meses_nombres.items() %}
-          <option value="{{ num }}" {% if mes_filtro == num %}selected{% endif %}>{{ nombre }}</option>
-          {% endfor %}
-        </select>
-      </div>
 
       <div class="filter-group">
         <span class="filter-label">Tipo de desvío</span>
