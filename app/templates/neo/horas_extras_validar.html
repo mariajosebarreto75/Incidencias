@@ -2332,12 +2332,14 @@ async function cargarCortesNeo() {
             No hay cortes registrados aún.</div>`;
         return;
     }
-    container.innerHTML = cortes.map(c => `
-        <div class="corte-card ${c.estado.toLowerCase()}">
+    container.innerHTML = cortes.map(c => {
+        const estadoLow = (c.estado || "").toLowerCase();
+        return `
+        <div class="corte-card ${estadoLow}">
             <div style="display:flex;align-items:center;gap:8px;">
                 <span class="corte-card-title">${c.nombre}</span>
-                <span class="corte-badge ${c.estado.toLowerCase()}">${c.estado}</span>
-            </div>
+                <span class="corte-badge ${estadoLow}">${c.estado || ""}</span>
+            </div>`;
             <div class="corte-card-meta">
                 <i class="bi bi-calendar-range me-1"></i>${c.fecha_inicio} → ${c.fecha_fin}
                 ${c.contrato ? `&nbsp;·&nbsp;<i class="bi bi-building me-1"></i>${c.contrato}` : ""}
@@ -2356,7 +2358,8 @@ async function cargarCortesNeo() {
                 <button onclick="eliminarCorteNeo(${c.id},'${c.nombre}',true)" class="btn btn-sm btn-danger" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-trash3-fill me-1"></i>Eliminar corte + registros</button>
             </div>
-        </div>`).join("");
+        </div>`;
+    }).join("");
 }
 
 function abrirNuevoCorteNeo() {
