@@ -353,7 +353,8 @@ body { background:var(--c-bg); }
             <div class="he-entry-head">
                 <i class="bi bi-table" style="font-size:1.1rem;opacity:.8;"></i>
                 <h6>Ingreso de Horas Extras</h6>
-                <span id="lblRegistrosCorte" style="font-size:.75rem;color:#6b7280;margin-left:.8rem;font-weight:400"></span>
+                <span id="lblRegistrosCorte" style="font-size:.75rem;color:rgba(255,255,255,.7);font-weight:400"></span>
+                <button onclick="abrirNuevoCorte()" class="btn btn-sm fw-semibold" style="border-radius:7px;font-size:.75rem;padding:4px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);"><i class="bi bi-plus-circle me-1"></i>Nuevo Corte</button>
             </div>
             <div class="he-toolbar">
                 <button onclick="agregarFilas(10)" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.75rem;">
@@ -1728,6 +1729,10 @@ async function crearCorte() {
         cortesCargados = false;
         cargarCortes();
         mostrarToast(`Corte creado · ${d.registros_asignados} registros asignados`, "success");
+        // Si estamos en el panel de registro, cargar el nuevo corte vacío directamente
+        if (document.getElementById("panel-registro").classList.contains("active")) {
+            cargarRegistrosCorteActual(d.id);
+        }
     } else {
         mostrarToast(d.msg || "Error al crear corte", "danger");
     }
