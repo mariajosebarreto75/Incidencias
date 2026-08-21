@@ -2339,7 +2339,7 @@ async function cargarCortesNeo() {
             <div style="display:flex;align-items:center;gap:8px;">
                 <span class="corte-card-title">${c.nombre}</span>
                 <span class="corte-badge ${estadoLow}">${c.estado || ""}</span>
-            </div>`;
+            </div>
             <div class="corte-card-meta">
                 <i class="bi bi-calendar-range me-1"></i>${c.fecha_inicio} → ${c.fecha_fin}
                 ${c.contrato ? `&nbsp;·&nbsp;<i class="bi bi-building me-1"></i>${c.contrato}` : ""}
