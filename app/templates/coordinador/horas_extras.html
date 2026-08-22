@@ -328,6 +328,10 @@ body { background:var(--c-bg); }
                 </div>
                 <div class="he-stat-card success">
                     <div class="he-stat-val" id="rs-hrs-auth">—</div>
+                    <div class="he-stat-lbl">Total Aprobadas</div>
+                </div>
+                <div class="he-stat-card success">
+                    <div class="he-stat-val" id="rs-hrs-conf" style="color:#166534;">—</div>
                     <div class="he-stat-lbl">Hrs Autorizadas</div>
                 </div>
                 <div class="he-stat-card danger">
@@ -2160,16 +2164,16 @@ function _actualizarKpisCoorReg(registros) {
 
 function _actualizarKpisCoor(rows) {
     let total = rows.length, pend = 0, conf = 0, noconf = 0, desc = 0;
-    let hrsRep = 0, hrsConf = 0, hrsNoconf = 0, hrsDesc = 0, hrsPend = 0;
+    let hrsRep = 0, hrsConf = 0, hrsNoconfRep = 0, hrsDesc = 0, hrsPend = 0;
     for (const r of rows) {
         const est  = (r[V_ESTADO] || "").trim().toUpperCase();
         const rep  = parseFloat(r[V_HRS])   || 0;
         const auth = parseFloat(r[V_HAUTH]) || 0;
         hrsRep += rep;
-        if (est === "CONFORME")        { conf++;   hrsConf   += auth; }
-        else if (est === "NO CONFORME"){ noconf++; hrsNoconf += auth; }
-        else if (est === "DESCONTADA") { desc++;   hrsDesc   += auth; }
-        else                           { pend++;   hrsPend   += rep;  }
+        if (est === "CONFORME")        { conf++;   hrsConf      += auth; }
+        else if (est === "NO CONFORME"){ noconf++; hrsNoconfRep += rep;  }
+        else if (est === "DESCONTADA") { desc++;   hrsDesc      += auth; }
+        else                           { pend++;   hrsPend      += rep;  }
     }
     // Chips y métricas del panel validación
     document.getElementById("k-total").textContent       = total;
@@ -2181,14 +2185,15 @@ function _actualizarKpisCoor(rows) {
     document.getElementById("kv-pend-val").textContent   = hrsPend.toLocaleString("es-CO");
     document.getElementById("k-hrs-rep").textContent     = hrsRep.toFixed(0);
     document.getElementById("k-hrs-conf").textContent    = hrsConf.toFixed(0);
-    document.getElementById("k-hrs-noconf").textContent  = hrsNoconf.toFixed(0);
+    document.getElementById("k-hrs-noconf").textContent  = hrsNoconfRep.toFixed(0);
     document.getElementById("k-hrs-desc").textContent    = hrsDesc.toFixed(0);
     // Tarjetas grandes del dashboard superior
     document.getElementById("rs-total").textContent      = total.toLocaleString("es-CO");
     document.getElementById("rs-pendientes").textContent = hrsPend.toLocaleString("es-CO");
     document.getElementById("rs-hrs-rep").textContent    = hrsRep.toFixed(0);
     document.getElementById("rs-hrs-auth").textContent   = (hrsConf + hrsDesc).toFixed(0);
-    document.getElementById("rs-hrs-noauth").textContent = hrsNoconf.toFixed(0);
+    document.getElementById("rs-hrs-conf").textContent   = hrsConf.toFixed(0);
+    document.getElementById("rs-hrs-noauth").textContent = hrsNoconfRep.toFixed(0);
     document.getElementById("rs-hrs-desc").textContent   = hrsDesc.toFixed(0);
     // Mostrar el contenido del resumen si estaba oculto
     const vacio    = document.getElementById("resumenVacio");
