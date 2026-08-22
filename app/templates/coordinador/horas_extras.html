@@ -2187,7 +2187,7 @@ function _actualizarKpisCoor(rows) {
     document.getElementById("rs-total").textContent      = total.toLocaleString("es-CO");
     document.getElementById("rs-pendientes").textContent = hrsPend.toLocaleString("es-CO");
     document.getElementById("rs-hrs-rep").textContent    = hrsRep.toFixed(0);
-    document.getElementById("rs-hrs-auth").textContent   = hrsConf.toFixed(0);
+    document.getElementById("rs-hrs-auth").textContent   = (hrsConf + hrsDesc).toFixed(0);
     document.getElementById("rs-hrs-noauth").textContent = hrsNoconf.toFixed(0);
     document.getElementById("rs-hrs-desc").textContent   = hrsDesc.toFixed(0);
     // Mostrar el contenido del resumen si estaba oculto

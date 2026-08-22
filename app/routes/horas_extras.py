@@ -674,7 +674,8 @@ def api_he_resumen():
     total            = q.count()
     hrs_reportadas   = _sum_rep(q)
     conformes        = q_conf.count()
-    hrs_autorizadas  = _sum_auth(q_conf)
+    # Horas autorizadas = CONFORME + DESCONTADA (ambas tienen horas_autorizadas válidas)
+    hrs_autorizadas  = _sum_auth(q_conf) + _sum_auth(q_desc)
     hrs_no_autorizadas = _sum_rep(q_noconf)
     hrs_descontadas    = _sum_rep(q_desc)
 

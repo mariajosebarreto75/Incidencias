@@ -1740,7 +1740,7 @@ function _actualizarKpisDesdeFiltered(rows) {
     document.getElementById("kv-total").textContent      = total.toLocaleString("es-CO");
     document.getElementById("kv-pendientes").textContent = pend.toLocaleString("es-CO");
     document.getElementById("kv-hrs-rep").textContent    = hrsRep.toFixed(0);
-    document.getElementById("kv-hrs-auth").textContent   = hrsAuth.toFixed(0);
+    document.getElementById("kv-hrs-auth").textContent   = (hrsAuth + hrsDesc).toFixed(0);
     document.getElementById("kv-hrs-noconf").textContent = hrsNoconf.toFixed(0);
     document.getElementById("kv-hrs-desc").textContent   = hrsDesc.toFixed(0);
 }
@@ -1773,7 +1773,7 @@ function _actualizarKpisHistorialDesdeFiltered(rows) {
     set("hkv-total",      total.toLocaleString("es-CO"));
     set("hkv-pendientes", pend.toLocaleString("es-CO"));
     set("hk-hrs-rep",     hrsRep.toFixed(0));
-    set("hk-hrs-auth",    hrsAuth.toFixed(0));
+    set("hk-hrs-auth",    (hrsAuth + hrsDesc).toFixed(0));
     set("hk-hrs-noconf",  hrsNoconf.toFixed(0));
     set("hk-hrs-desc",    hrsDesc.toFixed(0));
 }
