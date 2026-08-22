@@ -178,10 +178,10 @@ body { background:var(--c-bg); }
 
 /* ── Resumen dashboard ── */
 .he-resumen { margin-bottom:20px; }
-.he-resumen-main { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+.he-resumen-main { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:14px; }
 .he-stat-card {
     background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08);
-    padding:14px 20px; display:flex; flex-direction:column; gap:4px; min-width:160px; flex:1;
+    padding:14px 18px; display:flex; flex-direction:column; gap:4px;
     border-top:4px solid #dee2e6;
 }
 .he-stat-card.primary   { border-top-color:#0d3b66; }

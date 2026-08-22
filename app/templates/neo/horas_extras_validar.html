@@ -68,10 +68,9 @@ body { background:var(--c-bg); }
 .he-chip.ch-desc.active { background:#8b5cf6; color:#fff; }
 
 /* ── Tarjetas grandes de KPI ── */
-.he-kpi-row { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:18px; }
+.he-kpi-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; margin-bottom:18px; }
 .he-kpi-card {
-    flex:1; min-width:150px;
-    background:#fff; border-radius:14px; padding:18px 20px;
+    background:#fff; border-radius:14px; padding:16px 18px;
     box-shadow:0 2px 10px rgba(0,0,0,.08);
     border-top:4px solid #dee2e6;
 }
