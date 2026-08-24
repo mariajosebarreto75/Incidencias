@@ -525,9 +525,11 @@ function renderValorNomina(data) {
     let html = `<table style="width:100%;border-collapse:collapse;font-size:.8rem;">
         <thead><tr style="background:#0f172a;color:#94a3b8;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
             <th style="padding:8px 14px;text-align:left;">Contrato</th>
-            <th style="padding:8px 14px;text-align:right;width:160px;">Val. Reportado</th>
-            <th style="padding:8px 14px;text-align:right;width:160px;">Val. Autorizado</th>
-            <th style="padding:8px 14px;width:180px;">Distribución</th>
+            <th style="padding:8px 14px;text-align:right;width:110px;">Hrs Rep.</th>
+            <th style="padding:8px 14px;text-align:right;width:110px;">Hrs Aut.</th>
+            <th style="padding:8px 14px;text-align:right;width:150px;">Val. Reportado</th>
+            <th style="padding:8px 14px;text-align:right;width:150px;">Val. Autorizado</th>
+            <th style="padding:8px 14px;width:160px;">Distribución</th>
             <th style="padding:6px 8px;width:32px;"></th>
         </tr></thead><tbody>`;
 
@@ -536,6 +538,8 @@ function renderValorNomina(data) {
         const authPct = c.valor_rep > 0 ? Math.min(100, c.valor_auth / c.valor_rep * 100).toFixed(1) : 0;
         html += `<tr style="border-bottom:1px solid #334155;">
             <td style="padding:8px 14px;color:#e2e8f0;font-weight:600;">${c.nombre}</td>
+            <td style="padding:8px 14px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(c.hrs_rep||0)}</td>
+            <td style="padding:8px 14px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(c.hrs_auth||0)}</td>
             <td style="padding:8px 14px;text-align:right;color:#a78bfa;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(c.valor_rep)}</td>
             <td style="padding:8px 14px;text-align:right;color:#4ade80;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(c.valor_auth)}</td>
             <td style="padding:8px 14px;">
@@ -549,7 +553,7 @@ function renderValorNomina(data) {
             </td>
         </tr>
         <tr id="vn-tec-${ci}" style="display:none;">
-            <td colspan="5" style="padding:0 0 0 28px;background:#1a2a3a;">
+            <td colspan="7" style="padding:0 0 0 28px;background:#1a2a3a;">
                 <table style="width:100%;border-collapse:collapse;font-size:.77rem;">
                     <thead><tr style="color:#64748b;text-transform:uppercase;font-size:.7rem;">
                         <th style="padding:6px 10px;text-align:left;">Técnico</th>

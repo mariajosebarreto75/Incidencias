@@ -1145,7 +1145,8 @@ def api_he_valor_extra_nomina():
         cname = r.contrato.contrato if r.contrato else ""
         if cid not in contratos:
             contratos[cid] = {"nombre": cname, "contrato_id": cid,
-                               "valor_rep": 0, "valor_auth": 0, "tecnicos": {}}
+                               "valor_rep": 0, "valor_auth": 0,
+                               "hrs_rep": 0, "hrs_auth": 0, "tecnicos": {}}
 
         vr = val(r.cedula, r.id_concepto, r.horas_reportadas)
         va = val(r.cedula, r.id_concepto, r.horas_autorizadas) if r.horas_autorizadas else 0
@@ -1154,6 +1155,8 @@ def api_he_valor_extra_nomina():
 
         contratos[cid]["valor_rep"]  += vr
         contratos[cid]["valor_auth"] += va
+        contratos[cid]["hrs_rep"]    += hrs_rep
+        contratos[cid]["hrs_auth"]   += hrs_auth
 
         tk = r.cedula
         tecs = contratos[cid]["tecnicos"]
