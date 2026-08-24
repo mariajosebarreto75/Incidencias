@@ -358,7 +358,7 @@ body { background:var(--c-bg); }
                 <i class="bi bi-table" style="font-size:1.1rem;opacity:.8;"></i>
                 <h6>Ingreso de Horas Extras</h6>
                 <span id="lblRegistrosCorte" style="font-size:.75rem;color:rgba(255,255,255,.7);font-weight:400"></span>
-                <button onclick="abrirNuevoCorte()" class="btn btn-sm fw-semibold" style="border-radius:7px;font-size:.75rem;padding:4px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);"><i class="bi bi-plus-circle me-1"></i>Nuevo Corte</button>
+                <button onclick="exportarGridRegistro()" class="btn btn-sm fw-semibold" style="border-radius:7px;font-size:.75rem;padding:4px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);"><i class="bi bi-file-earmark-excel me-1"></i>Exportar</button>
             </div>
             <div class="he-toolbar">
                 <button onclick="agregarFilas(10)" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.75rem;">
@@ -740,8 +740,8 @@ let validacionCargada = false;
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
     iniciarGrid();
-    actualizarCortesCoor().then(() => {
-        // Restaurar filtros guardados; si no hay, auto-seleccionar corte abierto
+    _asegurarCorteActivo().then(corteActivo => {
+        // Restaurar filtros guardados; si no hay, auto-seleccionar corte del período actual
         const saved = (() => { try { return JSON.parse(sessionStorage.getItem('fp_' + location.pathname) || '{}'); } catch(e) { return {}; } })();
         const haySaved = saved.fCorte || saved.fDesde || saved.fHasta;
         if (haySaved) {
@@ -749,15 +749,10 @@ let validacionCargada = false;
             if (sel && saved.fCorte) { sel.value = saved.fCorte; sincronizarFechasCoor(); }
             if (saved.fDesde) document.getElementById("fDesde").value = saved.fDesde;
             if (saved.fHasta) document.getElementById("fHasta").value = saved.fHasta;
-        } else {
-            const corteAbierto = Array.isArray(_cortesCacheCoor)
-                ? _cortesCacheCoor.find(c => c.estado === "ABIERTO")
-                : null;
-            if (corteAbierto) {
-                const sel = document.getElementById("fCorte");
-                if (sel) { sel.value = String(corteAbierto.id); sincronizarFechasCoor(); }
-                cargarRegistrosCorteActual(corteAbierto.id);
-            }
+        } else if (corteActivo) {
+            const sel = document.getElementById("fCorte");
+            if (sel) { sel.value = String(corteActivo.id); sincronizarFechasCoor(); }
+            cargarRegistrosCorteActual(corteActivo.id);
         }
         cargarHistorial();
         cargarKpis();
@@ -959,9 +954,8 @@ async function onContratoChange() {
     cargarResumen();
     await actualizarCortesCoor();
     cargarKpis();
-    // Recargar registros del corte abierto del nuevo contrato
-    const corteAbierto = Array.isArray(_cortesCacheCoor)
-        ? _cortesCacheCoor.find(c => c.estado === "ABIERTO") : null;
+    // Recargar registros del corte del período actual para el nuevo contrato
+    const corteAbierto = _corteActivo();
     if (corteAbierto) {
         const sel = document.getElementById("fCorte");
         if (sel) { sel.value = String(corteAbierto.id); sincronizarFechasCoor(); }
@@ -1109,6 +1103,55 @@ async function cargarResumen() {
 
 // ── Filtro por corte ─────────────────────────────────────────────────────────
 let _cortesCacheCoor = [];
+
+// Devuelve {ini, fin} del período 18-17 correspondiente a hoy
+function _periodoActual() {
+    const hoy = new Date();
+    const dia = hoy.getDate();
+    let ini, fin;
+    if (dia >= 18) {
+        ini = new Date(hoy.getFullYear(), hoy.getMonth(), 18);
+        fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 17);
+    } else {
+        ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 18);
+        fin = new Date(hoy.getFullYear(), hoy.getMonth(), 17);
+    }
+    const fmt = d => d.toISOString().split("T")[0];
+    return { ini: fmt(ini), fin: fmt(fin) };
+}
+
+// Encuentra el corte que corresponde al período actual; fallback: primer ABIERTO
+function _corteActivo() {
+    if (!Array.isArray(_cortesCacheCoor)) return null;
+    const p = _periodoActual();
+    return _cortesCacheCoor.find(c => c.fecha_inicio === p.ini && c.fecha_fin === p.fin && c.estado !== "CERRADO")
+        || _cortesCacheCoor.find(c => c.estado === "ABIERTO")
+        || null;
+}
+
+// Garantiza que exista un corte para el período actual; lo crea si no existe
+async function _asegurarCorteActivo() {
+    if (!Array.isArray(_cortesCacheCoor)) await actualizarCortesCoor();
+    let corte = _corteActivo();
+    if (!corte) {
+        const p = _periodoActual();
+        const r = await fetch("/api/he/cortes", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                nombre: `Corte ${p.ini} → ${p.fin}`,
+                fecha_inicio: p.ini,
+                fecha_fin: p.fin,
+                contrato_id: null,
+                observacion: ""
+            })
+        });
+        const d = await r.json();
+        if (d.ok) { await actualizarCortesCoor(); corte = _corteActivo(); }
+    }
+    return corte;
+}
+
 async function actualizarCortesCoor() {
     const cid = document.getElementById("gridContrato").value;
     const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
@@ -1884,6 +1927,46 @@ async function confirmarImport() {
             : `✓ ${guardados} registro(s) importados correctamente`;
         mostrarToast(msg, "success");
     }
+}
+
+function exportarGridRegistro() {
+    const recs = _fullRegRecords;
+    if (!recs || !recs.length) { mostrarToast("No hay registros guardados para exportar","warning"); return; }
+    const HEADERS = [
+        "CONTRATO","FECHA LABOR","CÉDULA","NOMBRE","RECURSO","PLACA",
+        "ID CONCEPTO","# HRS REPORTADAS","# HRS COMPENSADAS",
+        "AUTORIZACIÓN SUPERVISOR","JUSTIFICACIÓN","OBSERVACIÓN","TIPO HE"
+    ];
+    function _fmtF(v) {
+        if (!v) return "";
+        let y, m, d;
+        if (v.includes("-")) { [y, m, d] = v.split("-").map(Number); }
+        else if (v.includes("/")) { [d, m, y] = v.split("/").map(Number); }
+        else return v;
+        if (!y || !m || !d) return v;
+        return new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    }
+    const rows = recs.map(r => [
+        r.contrato || "", _fmtF(r.fecha_labor),
+        r.cedula || "", r.nombre || "", r.recurso || "", r.placa || "",
+        (r.id_concepto||"").toString().padStart(2,"0"),
+        r.horas_reportadas ?? "", r.horas_compensadas ?? "",
+        r.autorizacion_sup || "", r.justificacion || "",
+        r.observacion || "", r.tipo_he || ""
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...rows], { cellDates: true });
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: R, c: 1 })];
+        if (cell && cell.t === 'd') cell.z = 'DD/MM/YYYY';
+    }
+    ws['!cols'] = HEADERS.map((h, i) => ({
+        wch: Math.max(h.length, ...rows.map(r => String(r[i]||'').length)) + 2
+    }));
+    const p = _periodoActual();
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Registros");
+    XLSX.writeFile(wb, `registros_${p.ini}_${p.fin}.xlsx`);
 }
 
 function exportarExcel() {
