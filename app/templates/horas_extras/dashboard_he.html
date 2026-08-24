@@ -558,6 +558,8 @@ function renderValorNomina(data) {
                     <thead><tr style="color:#64748b;text-transform:uppercase;font-size:.7rem;">
                         <th style="padding:6px 10px;text-align:left;">Técnico</th>
                         <th style="padding:6px 10px;text-align:left;width:130px;">Cédula</th>
+                        <th style="padding:6px 10px;text-align:right;width:90px;">Hrs Rep.</th>
+                        <th style="padding:6px 10px;text-align:right;width:90px;">Hrs Aut.</th>
                         <th style="padding:6px 10px;text-align:right;width:130px;">Val. Reportado</th>
                         <th style="padding:6px 10px;text-align:right;width:130px;">Val. Autorizado</th>
                         <th style="padding:4px 6px;width:32px;"></th>
@@ -566,6 +568,8 @@ function renderValorNomina(data) {
             html += `<tr style="border-bottom:1px solid #1e3a4c;">
                 <td style="padding:6px 10px;color:#e2e8f0;font-weight:600;">${tec.nombre}</td>
                 <td style="padding:6px 10px;color:#64748b;font-variant-numeric:tabular-nums;">${tec.cedula}</td>
+                <td style="padding:6px 10px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(tec.hrs_rep||0)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(tec.hrs_auth||0)}</td>
                 <td style="padding:6px 10px;text-align:right;color:#a78bfa;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_rep)}</td>
                 <td style="padding:6px 10px;text-align:right;color:#4ade80;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_auth)}</td>
                 <td style="padding:4px 6px;text-align:center;">
@@ -573,7 +577,7 @@ function renderValorNomina(data) {
                 </td>
             </tr>
             <tr id="vn-conc-${ci}-${ti}" style="display:none;">
-                <td colspan="5" style="padding:0 0 0 20px;background:#172032;">
+                <td colspan="7" style="padding:0 0 0 20px;background:#172032;">
                     <table style="width:100%;border-collapse:collapse;font-size:.75rem;">
                         <thead><tr style="color:#475569;text-transform:uppercase;font-size:.68rem;">
                             <th style="padding:5px 10px;text-align:left;">Tipo de HE</th>
