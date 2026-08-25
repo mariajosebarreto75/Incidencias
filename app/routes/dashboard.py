@@ -78,7 +78,7 @@ def _formato_horas(total_horas):
 @login_required
 def indicadores():
 
-    if not (current_user.rol.lower() in ("admin", "director") or current_user.acceso_dashboard):
+    if not (current_user.rol.lower() in ("admin", "director") or current_user.acceso_dashboard or current_user.tiene_permiso("dashboard_gerencial")):
         abort(403)
 
     # ---- Contratos visibles para este usuario (si no tiene asignados, ve todos) ----

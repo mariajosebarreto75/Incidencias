@@ -248,6 +248,29 @@
             <i class="bi bi-floppy me-1"></i>Guardar contratos
         </button>
         <span class="nu-save-msg" id="msg-{{ u.id }}">✓ Guardado</span>
+        <!-- PERMISOS DE MÓDULOS -->
+        {% set perms = u.get_permisos() %}
+        <div class="nu-contratos-label" style="margin-top:.9rem;">Permisos de módulos</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.4rem;">
+            <label class="nu-check-label" style="border-color:{% if 'neo_reportes' in perms %}#0284c7{% else %}#1e293b{% endif %};"
+                   title="Panel de Reportes NEO y Distribución Operativa">
+                <input type="checkbox" class="perm-ck" data-uid="{{ u.id }}" data-permiso="neo_reportes"
+                       {% if 'neo_reportes' in perms %}checked{% endif %} onchange="togglePermiso(this)">
+                <span><i class="bi bi-broadcast-pin me-1" style="color:#38bdf8;"></i>NEO Reportes</span>
+            </label>
+            <label class="nu-check-label" style="border-color:{% if 'horas_extras' in perms %}#7c3aed{% else %}#1e293b{% endif %};"
+                   title="Módulo de Horas Extras (registro, validación y dashboard HE)">
+                <input type="checkbox" class="perm-ck" data-uid="{{ u.id }}" data-permiso="horas_extras"
+                       {% if 'horas_extras' in perms %}checked{% endif %} onchange="togglePermiso(this)">
+                <span><i class="bi bi-clock-history me-1" style="color:#a78bfa;"></i>Horas Extras</span>
+            </label>
+            <label class="nu-check-label" style="border-color:{% if 'dashboard_gerencial' in perms %}#0d9488{% else %}#1e293b{% endif %};"
+                   title="Dashboard Gerencial de indicadores de reportes NEO">
+                <input type="checkbox" class="perm-ck" data-uid="{{ u.id }}" data-permiso="dashboard_gerencial"
+                       {% if 'dashboard_gerencial' in perms %}checked{% endif %} onchange="togglePermiso(this)">
+                <span><i class="bi bi-bar-chart-line me-1" style="color:#2dd4bf;"></i>Dashboard Gerencial</span>
+            </label>
+        </div>
     </div>
 </div>
 {% else %}
@@ -398,6 +421,21 @@ async function toggleActivo(btn, activar) {
     const r = await apiFetch("/admin/api/usuarios/" + btn.dataset.id, "PUT", { activo: activar });
     if (r.success) location.reload();
     else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
+}
+
+async function togglePermiso(cb) {
+    const uid     = cb.dataset.uid;
+    const permiso = cb.dataset.permiso;
+    const valor   = cb.checked;
+    const r = await apiFetch("/admin/api/usuarios/" + uid, "PUT", { permiso, valor });
+    if (r.success) {
+        const colorMap = { neo_reportes:'#0284c7', horas_extras:'#7c3aed', dashboard_gerencial:'#0d9488' };
+        cb.parentElement.style.borderColor = valor ? (colorMap[permiso] || '#0ea5e9') : '#1e293b';
+        mostrarAlerta("alerta", (valor ? "✓ Permiso activado" : "✓ Permiso desactivado") + ": " + permiso, "success");
+    } else {
+        cb.checked = !valor;
+        mostrarAlerta("alerta", r.mensaje || "Error al cambiar permiso", "danger");
+    }
 }
 
 async function toggleDashboard(btn, dar) {

@@ -178,7 +178,7 @@
         {% if current_user.rol.lower() == 'admin' or current_user.tiene_permiso('horas_extras') %}
         <div class="col-sm-6 col-lg-4">
             <a href="/horas-extras" class="text-decoration-none">
-                <div class="dash-card dash-card--sm" style="--card-accent:#7c3aed;">
+                <div class="dash-card dash-card--sm">
                     <div class="dash-card-icon dash-card-icon--sm" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);color:#7c3aed;">
                         <i class="bi bi-clock-history"></i>
                     </div>
@@ -187,6 +187,26 @@
                         Registre y valide las horas extras del personal a su cargo.
                     </p>
                     <span class="dash-card-btn" style="background:#7c3aed;">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Ingresar
+                    </span>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- DASHBOARD GERENCIAL -->
+        {% if current_user.rol.lower() == 'admin' or current_user.acceso_dashboard or current_user.tiene_permiso('dashboard_gerencial') %}
+        <div class="col-sm-6 col-lg-4">
+            <a href="/dashboard-gerencial" class="text-decoration-none">
+                <div class="dash-card dash-card--sm">
+                    <div class="dash-card-icon dash-card-icon--sm" style="background:linear-gradient(135deg,#ccfbf1,#99f6e4);color:#0d9488;">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <h4 class="dash-card-title">Dashboard Gerencial</h4>
+                    <p class="dash-card-desc">
+                        Indicadores consolidados de reportes operacionales NEO.
+                    </p>
+                    <span class="dash-card-btn" style="background:#0d9488;">
                         <i class="bi bi-arrow-right-circle me-1"></i>Ingresar
                     </span>
                 </div>

@@ -351,6 +351,16 @@
                            onchange="togglePermiso(this)">
                     <span><i class="bi bi-broadcast-pin me-1" style="color:#38bdf8;"></i>NEO Reportes</span>
                 </label>
+                <label class="nu-check-label" style="border-color:{% if 'dashboard_gerencial' in perms %}#0d9488{% else %}#1e293b{% endif %};"
+                       title="Dashboard Gerencial de indicadores de reportes NEO">
+                    <input type="checkbox"
+                           class="perm-ck"
+                           data-uid="{{ u.id }}"
+                           data-permiso="dashboard_gerencial"
+                           {% if 'dashboard_gerencial' in perms %}checked{% endif %}
+                           onchange="togglePermiso(this)">
+                    <span><i class="bi bi-bar-chart-line me-1" style="color:#2dd4bf;"></i>Dashboard Gerencial</span>
+                </label>
             </div>
         </div>
     </div>
