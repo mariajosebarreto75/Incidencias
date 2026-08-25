@@ -251,6 +251,12 @@
                        {% if 'horas_extras' in perms %}checked{% endif %} onchange="togglePermiso(this)">
                 <span><i class="bi bi-clock-history me-1" style="color:#a78bfa;"></i>Horas Extras</span>
             </label>
+            <label class="nu-check-label" style="border-color:{% if 'dashboard_he' in perms %}#0369a1{% else %}#1e293b{% endif %};"
+                   title="Dashboard HE — indicadores de horas extras (hrs reportadas, autorizadas, valor extra nómina)">
+                <input type="checkbox" class="perm-ck" data-uid="{{ u.id }}" data-permiso="dashboard_he"
+                       {% if 'dashboard_he' in perms %}checked{% endif %} onchange="togglePermiso(this)">
+                <span><i class="bi bi-bar-chart-steps me-1" style="color:#38bdf8;"></i>Dashboard HE <small style="color:#64748b;font-size:.68rem;">(indicadores horas extras)</small></span>
+            </label>
             <label class="nu-check-label" style="border-color:{% if u.acceso_dashboard or 'dashboard_gerencial' in perms %}#0d9488{% else %}#1e293b{% endif %};"
                    title="Dashboard Gerencial — vista consolidada de indicadores de reportes operacionales NEO (conformidad, no conformidad, tiempos de respuesta)">
                 <input type="checkbox" class="perm-ck" data-uid="{{ u.id }}" data-permiso="dashboard_gerencial"
@@ -420,7 +426,7 @@ async function togglePermiso(cb) {
         : { permiso, valor };
     const r = await apiFetch("/admin/api/usuarios/" + uid, "PUT", payload);
     if (r.success) {
-        const colorMap = { neo_reportes:'#0284c7', horas_extras:'#7c3aed', dashboard_gerencial:'#0d9488' };
+        const colorMap = { neo_reportes:'#0284c7', horas_extras:'#7c3aed', dashboard_he:'#0369a1', dashboard_gerencial:'#0d9488' };
         cb.parentElement.style.borderColor = valor ? (colorMap[permiso] || '#0ea5e9') : '#1e293b';
         mostrarAlerta("alerta", (valor ? "✓ Permiso activado" : "✓ Permiso desactivado") + ": " + permiso, "success");
     } else {
