@@ -135,6 +135,7 @@
     <div class="row g-4 justify-content-center">
 
         <!-- DISTRIBUCIÓN OPERATIVA -->
+        {% if current_user.rol.lower() == 'admin' or current_user.tiene_permiso('neo_reportes') %}
         <div class="col-sm-6 col-lg-4">
             <a href="/coordinador/distribucion-operativa" class="text-decoration-none">
                 <div class="dash-card dash-card--sm">
@@ -151,8 +152,10 @@
                 </div>
             </a>
         </div>
+        {% endif %}
 
         <!-- PANEL DE REPORTES NEO -->
+        {% if current_user.rol.lower() == 'admin' or current_user.tiene_permiso('neo_reportes') %}
         <div class="col-sm-6 col-lg-4">
             <a href="/coordinador/panelReportes" class="text-decoration-none">
                 <div class="dash-card dash-card--reportes dash-card--sm">
@@ -169,6 +172,27 @@
                 </div>
             </a>
         </div>
+        {% endif %}
+
+        <!-- HORAS EXTRAS -->
+        {% if current_user.rol.lower() == 'admin' or current_user.tiene_permiso('horas_extras') %}
+        <div class="col-sm-6 col-lg-4">
+            <a href="/horas-extras" class="text-decoration-none">
+                <div class="dash-card dash-card--sm" style="--card-accent:#7c3aed;">
+                    <div class="dash-card-icon dash-card-icon--sm" style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);color:#7c3aed;">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                    <h4 class="dash-card-title">Horas Extras</h4>
+                    <p class="dash-card-desc">
+                        Registre y valide las horas extras del personal a su cargo.
+                    </p>
+                    <span class="dash-card-btn" style="background:#7c3aed;">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Ingresar
+                    </span>
+                </div>
+            </a>
+        </div>
+        {% endif %}
 
         <!-- ARCHIVO DE SEGUIMIENTO -->
         <div class="col-sm-6 col-lg-4">
