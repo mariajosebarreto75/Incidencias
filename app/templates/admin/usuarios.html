@@ -199,19 +199,6 @@
                 <i class="bi bi-check-circle me-1"></i>Activar
             </button>
             {% endif %}
-            {% if u.acceso_dashboard %}
-            <button class="nu-btn-dash-on"
-                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
-                onclick="toggleDashboard(this, false)" title="Quitar acceso al Dashboard gerencial">
-                <i class="bi bi-graph-up-arrow me-1"></i>Dashboard: Sí
-            </button>
-            {% else %}
-            <button class="nu-btn-dash-off"
-                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
-                onclick="toggleDashboard(this, true)" title="Dar acceso al Dashboard gerencial">
-                <i class="bi bi-graph-up me-1"></i>Dashboard: No
-            </button>
-            {% endif %}
             <button class="nu-btn-del"
                 data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
                 onclick="eliminarUsuario(this)" title="Eliminar">
@@ -264,11 +251,11 @@
                        {% if 'horas_extras' in perms %}checked{% endif %} onchange="togglePermiso(this)">
                 <span><i class="bi bi-clock-history me-1" style="color:#a78bfa;"></i>Horas Extras</span>
             </label>
-            <label class="nu-check-label" style="border-color:{% if 'dashboard_gerencial' in perms %}#0d9488{% else %}#1e293b{% endif %};"
-                   title="Dashboard Gerencial de indicadores de reportes NEO">
+            <label class="nu-check-label" style="border-color:{% if u.acceso_dashboard or 'dashboard_gerencial' in perms %}#0d9488{% else %}#1e293b{% endif %};"
+                   title="Dashboard Gerencial — vista consolidada de indicadores de reportes operacionales NEO (conformidad, no conformidad, tiempos de respuesta)">
                 <input type="checkbox" class="perm-ck" data-uid="{{ u.id }}" data-permiso="dashboard_gerencial"
-                       {% if 'dashboard_gerencial' in perms %}checked{% endif %} onchange="togglePermiso(this)">
-                <span><i class="bi bi-bar-chart-line me-1" style="color:#2dd4bf;"></i>Dashboard Gerencial</span>
+                       {% if u.acceso_dashboard or 'dashboard_gerencial' in perms %}checked{% endif %} onchange="togglePermiso(this)">
+                <span><i class="bi bi-graph-up-arrow me-1" style="color:#2dd4bf;"></i>Dashboard Gerencial <small style="color:#64748b;font-size:.68rem;">(indicadores de reportes)</small></span>
             </label>
         </div>
     </div>
@@ -427,7 +414,11 @@ async function togglePermiso(cb) {
     const uid     = cb.dataset.uid;
     const permiso = cb.dataset.permiso;
     const valor   = cb.checked;
-    const r = await apiFetch("/admin/api/usuarios/" + uid, "PUT", { permiso, valor });
+    // Para dashboard_gerencial también sincronizamos acceso_dashboard
+    const payload = permiso === 'dashboard_gerencial'
+        ? { permiso, valor, acceso_dashboard: valor }
+        : { permiso, valor };
+    const r = await apiFetch("/admin/api/usuarios/" + uid, "PUT", payload);
     if (r.success) {
         const colorMap = { neo_reportes:'#0284c7', horas_extras:'#7c3aed', dashboard_gerencial:'#0d9488' };
         cb.parentElement.style.borderColor = valor ? (colorMap[permiso] || '#0ea5e9') : '#1e293b';
