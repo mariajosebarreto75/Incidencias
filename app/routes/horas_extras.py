@@ -672,28 +672,32 @@ def api_he_resumen():
     q_conf    = q.filter(HoraExtra.estado == "CONFORME")
     q_noconf  = q.filter(HoraExtra.estado == "NO CONFORME")
     q_desc    = q.filter(HoraExtra.estado == "DESCONTADA")
-    total            = q.count()
-    hrs_reportadas   = _sum_rep(q)
-    conformes        = q_conf.count()
-    # Horas autorizadas = CONFORME + DESCONTADA (ambas tienen horas_autorizadas válidas)
-    hrs_autorizadas  = _sum_auth(q_conf) + _sum_auth(q_desc)
+    total              = q.count()
+    hrs_reportadas     = _sum_rep(q)
+    conformes          = q_conf.count()
+    hrs_auth_conf      = _sum_auth(q_conf)
+    hrs_auth_desc      = _sum_auth(q_desc)
+    # Total aprobadas = autorizado conforme + autorizado descontado
+    hrs_autorizadas    = hrs_auth_conf + hrs_auth_desc
     hrs_no_autorizadas = _sum_rep(q_noconf)
-    hrs_descontadas    = _sum_rep(q_desc)
+    # Descontadas = horas autorizadas en estado DESCONTADA
+    hrs_descontadas    = hrs_auth_desc
 
-    # Obtener conceptos reales de la DB (puede ser "3" o "03", lo que sea)
+    # Normalizar codigo: "3" → "03" para display consistente
     codigos_db = [
         r[0] for r in
         q.with_entities(HoraExtra.id_concepto).distinct().all()
         if r[0]
     ]
     por_concepto = []
-    for codigo in sorted(codigos_db, key=lambda x: x.zfill(4)):
-        # Buscar nombre en el dict probando con y sin cero inicial
-        nombre = (CONCEPTOS_HE.get(codigo)
-                  or CONCEPTOS_HE.get(codigo.zfill(2))
-                  or CONCEPTOS_HE.get(codigo.lstrip("0") or "0")
-                  or codigo)
-        qc       = q.filter(HoraExtra.id_concepto == codigo)
+    vistos = set()
+    for codigo_raw in sorted(codigos_db, key=lambda x: x.zfill(4)):
+        codigo = codigo_raw.zfill(2)
+        if codigo in vistos:
+            continue
+        vistos.add(codigo)
+        nombre = CONCEPTOS_HE.get(codigo) or CONCEPTOS_HE.get(codigo_raw) or codigo
+        qc       = q.filter(HoraExtra.id_concepto.in_([codigo_raw, codigo]))
         ct_total = qc.count()
         if ct_total == 0:
             continue
@@ -711,12 +715,13 @@ def api_he_resumen():
         return jsonify({
             "ok": True,
             "total": total,
-            "hrs_reportadas":    hrs_reportadas,
-            "conformes":         conformes,
-            "hrs_autorizadas":   hrs_autorizadas,
+            "hrs_reportadas":     hrs_reportadas,
+            "conformes":          conformes,
+            "hrs_autorizadas":    hrs_autorizadas,
+            "hrs_auth_conf":      hrs_auth_conf,
             "hrs_no_autorizadas": hrs_no_autorizadas,
-            "hrs_descontadas":   hrs_descontadas,
-            "por_concepto":      por_concepto,
+            "hrs_descontadas":    hrs_descontadas,
+            "por_concepto":       por_concepto,
         })
     except Exception as e:
         import traceback
@@ -794,7 +799,13 @@ def api_he_kpis():
             sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "NO CONFORME", HoraExtra.horas_reportadas), else_=0)), 0).label("hrs_noconf"),
             sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "DESCONTADA",  HoraExtra.horas_reportadas), else_=0)), 0).label("hrs_desc"),
             sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "PENDIENTE",   HoraExtra.horas_reportadas), else_=0)), 0).label("hrs_pend"),
+            # Horas autorizadas por estado (horas_autorizadas field, not reportadas)
+            sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "CONFORME",   HoraExtra.horas_autorizadas), else_=0)), 0).label("hrs_conf_auth"),
+            sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "DESCONTADA", HoraExtra.horas_autorizadas), else_=0)), 0).label("hrs_desc_auth"),
         ).one()
+        # Total aprobadas = autorizado conforme + autorizado descontado
+        hrs_conf_auth = float(row.hrs_conf_auth)
+        hrs_desc_auth = float(row.hrs_desc_auth)
         return jsonify({
             "total":            row.total,
             "pendientes":       row.pendientes,
@@ -806,7 +817,9 @@ def api_he_kpis():
             "hrs_no_conformes": float(row.hrs_noconf),
             "hrs_descontadas":  float(row.hrs_desc),
             "hrs_pendientes":   float(row.hrs_pend),
-            "hrs_autorizadas":  float(row.hrs_auth),
+            "hrs_autorizadas":  hrs_conf_auth + hrs_desc_auth,
+            "hrs_conf_auth":    hrs_conf_auth,
+            "hrs_desc_auth":    hrs_desc_auth,
         })
     except Exception as e:
         import traceback

@@ -1680,14 +1680,44 @@ async function cargarCortes() {
                 ${c.contrato ? `&nbsp;·&nbsp;<i class="bi bi-building me-1"></i>${c.contrato}` : ""}
             </div>
             ${c.estado === "CERRADO" ? `<div class="corte-card-meta"><i class="bi bi-person-check me-1"></i>Cerrado por ${c.cerrado_por} el ${c.fecha_cierre}</div>` : ""}
-            <div style="display:flex;gap:6px;margin-top:4px;">
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
                 <button onclick="verCorte(${c.id},'${c.nombre}','${estLabel}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-eye me-1"></i>Ver registros</button>
+                <button onclick="exportarCorteCoor(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-success" style="border-radius:6px;font-size:.72rem;">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Exportar</button>
             </div>
         </div>`;
     }).join("");
 }
 
+
+async function exportarCorteCoor(id, nombre) {
+    mostrarToast("Generando Excel…", "info");
+    try {
+        const r = await fetch(`/api/he/registros?corte_id=${id}&limit=9999`);
+        const registros = await r.json();
+        if (!Array.isArray(registros) || !registros.length) {
+            mostrarToast("No hay registros en este corte", "warning"); return;
+        }
+        const headers = ["Fecha Labor","Contrato","Recurso","Placa","Hrs Reportadas","Hora Inicio","Hora Fin","Cédula","Nombre","Concepto","Tipo HE","Hrs Compensadas","Autorización Supervisor","Justificación","Observación","Autorización NEO","Hrs Autorizadas","Estado"];
+        const rows = registros.map(r => [
+            r.fecha_labor, r.contrato||"", r.recurso||"", r.placa||"",
+            r.horas_reportadas||0, r.hora_inicio||"", r.hora_fin||"",
+            r.cedula||"", r.nombre||"",
+            (r.id_concepto||"").toString().padStart(2,"0"),
+            r.tipo_he||"", r.horas_compensadas||0, r.autorizacion_sup||"",
+            r.justificacion||"", r.observacion||"",
+            r.autorizacion_neo||"", r.horas_autorizadas||0, r.estado||""
+        ]);
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        XLSX.utils.book_append_sheet(wb, ws, "HE");
+        XLSX.writeFile(wb, `HE_${nombre.replace(/[^a-zA-Z0-9]/g,"_")}.xlsx`);
+        mostrarToast("Excel descargado", "success");
+    } catch(e) {
+        mostrarToast("Error al exportar: " + e.message, "danger");
+    }
+}
 
 async function cerrarCorte(id) {
     if (!confirm("¿Cerrar este corte? Ya no se podrán agregar registros nuevos.")) return;

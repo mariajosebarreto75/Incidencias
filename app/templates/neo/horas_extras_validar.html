@@ -747,7 +747,7 @@ async function cargarKpisCortesNeo() {
         document.getElementById("ck-hrs-rep").textContent    = (+d.hrs_reportadas  ||0).toFixed(0);
         document.getElementById("ck-hrs-auth").textContent   = (+d.hrs_autorizadas ||0).toFixed(0);
         document.getElementById("ck-hrs-noauth").textContent = (+d.hrs_no_conformes||0).toFixed(0);
-        document.getElementById("ck-hrs-desc").textContent   = (+d.hrs_descontadas ||0).toFixed(0);
+        document.getElementById("ck-hrs-desc").textContent   = (+d.hrs_desc_auth   ||0).toFixed(0);
     } catch(e) {}
 }
 
@@ -1158,8 +1158,9 @@ async function cargarKpisHistorial() {
         document.getElementById("hkv-pendientes").textContent = (d.pendientes || 0).toLocaleString("es-CO");
         document.getElementById("hk-hrs-rep").textContent     = (+d.hrs_reportadas   || 0).toFixed(0);
         document.getElementById("hk-hrs-auth").textContent    = (+d.hrs_autorizadas  || 0).toFixed(0);
+        document.getElementById("hk-hrs-conf").textContent    = (+d.hrs_conf_auth    || 0).toFixed(0);
         document.getElementById("hk-hrs-noconf").textContent  = (+d.hrs_no_conformes || 0).toFixed(0);
-        document.getElementById("hk-hrs-desc").textContent    = (+d.hrs_descontadas  || 0).toFixed(0);
+        document.getElementById("hk-hrs-desc").textContent    = (+d.hrs_desc_auth    || 0).toFixed(0);
     } catch(e) {
         ["hk-total","hk-pend","hk-conf","hk-noconf","hk-desc"].forEach(id => {
             const el = document.getElementById(id); if (el) el.textContent = "!";
@@ -1913,8 +1914,9 @@ async function cargarKpis() {
         document.getElementById("kv-pendientes").textContent = (d.pendientes || 0).toLocaleString("es-CO");
         document.getElementById("kv-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
         document.getElementById("kv-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
+        document.getElementById("kv-hrs-conf").textContent   = (+d.hrs_conf_auth    || 0).toFixed(0);
         document.getElementById("kv-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
-        document.getElementById("kv-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
+        document.getElementById("kv-hrs-desc").textContent   = (+d.hrs_desc_auth    || 0).toFixed(0);
         // Desglose por concepto (solo si hay contrato_id)
         if (cid) {
             try {
