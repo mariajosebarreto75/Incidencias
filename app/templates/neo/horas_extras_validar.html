@@ -903,6 +903,15 @@ function sincronizarChip(estado) {
     });
 })();
 
+// ── Renderer retroalimentación (solo visual para NEO) ─────────────────────────
+function retroRendererNeo(instance, td, row, col, prop, value) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    td.style.background = value ? "#fffde7" : "";
+    td.style.fontStyle  = "italic";
+    td.style.color      = value ? "#5f4c00" : "#bbb";
+    td.title = value ? "Retroalimentación del coordinador" : "";
+}
+
 // ── Grid principal ────────────────────────────────────────────────────────────
 function iniciarGrid() {
     hot = new Handsontable(document.getElementById("gridNeo"), {
@@ -914,11 +923,12 @@ function iniciarGrid() {
             "#Hrs Compensadas","Autorización(supervisor)",
             "Justificación","Observación",
             "Hrs Autorizadas","Estado Neo","Obs Neo",
-            "Fecha Reporte","Validado Por","Fecha Validación"
+            "Fecha Reporte","Validado Por","Fecha Validación",
+            "Retroalimentación Coordinador"
         ],
         columns: [
             { type:"text" },                  // 0  fecha_labor
-            { type:"text", readOnly:true },   // 1  contrato (FK, no editable directo)
+            { type:"text", readOnly:true },   // 1  contrato
             { type:"text" },                  // 2  recurso
             { type:"text" },                  // 3  placa
             { type:"numeric" },               // 4  horas_reportadas
@@ -935,11 +945,12 @@ function iniciarGrid() {
             { type:"numeric" },               // 15 horas_autorizadas
             { type:"dropdown", source: ESTADOS_NEO, strict:false, allowInvalid:true, renderer: estadoRenderer }, // 16
             { type:"text" },                  // 17 obs_neo
-            { type:"text", readOnly:true },   // 18 fecha_reporte (sistema)
-            { type:"text", readOnly:true },   // 19 validado_por (sistema)
-            { type:"text", readOnly:true },   // 20 fecha_validacion (sistema)
+            { type:"text", readOnly:true },   // 18 fecha_reporte
+            { type:"text", readOnly:true },   // 19 validado_por
+            { type:"text", readOnly:true },   // 20 fecha_validacion
+            { type:"text", readOnly:true, renderer: retroRendererNeo }, // 21 retroalimentacion (read-only)
         ],
-        colWidths: [105,155,125,80,110, 90,80,100,160,95,190, 115,165, 155,155, 110,120,170, 140,140,130],
+        colWidths: [105,155,125,80,110, 90,80,100,160,95,190, 115,165, 155,155, 110,120,170, 140,140,130,200],
         height: 520,
         stretchH: "none",
         manualColumnResize: true,
@@ -1122,6 +1133,7 @@ async function recargar() {
         reg.fecha_reporte || "",           // 18 Fecha Reporte
         reg.validado_por || "",            // 19 Validado Por
         reg.fecha_validacion || "",        // 20 Fecha Validación
+        reg.retroalimentacion || "",       // 21 Retroalimentación (read-only)
     ]);
     // Guardar copia completa para filtros de columna y exportar
     _fullData    = filas;

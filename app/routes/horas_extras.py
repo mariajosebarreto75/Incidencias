@@ -423,18 +423,15 @@ def api_he_actualizar(id):
     if current_user.rol.lower() == "coordinador":
         if he.contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
-        if he.estado != "PENDIENTE":
-            # No-PENDIENTE: solo horas_compensadas y observacion permitidos
-            campos_permitidos = {"horas_compensadas", "observacion"}
-            if any(k not in campos_permitidos for k in f if k != "placa"):
-                # Si solo vienen campos permitidos, aplicar; sino bloquear
-                claves = set(f.keys()) - campos_permitidos
-                if claves:
-                    return jsonify({"ok": False, "msg": "Solo se pueden editar registros pendientes"}), 403
-            if "horas_compensadas" in f:
-                he.horas_compensadas = int(float(f["horas_compensadas"] or 0))
-            if "observacion" in f:
-                he.observacion = f["observacion"]
+        # Coordinadores pueden editar todos los campos excepto los campos NEO
+        NEO_FIELDS = {"autorizacion_neo", "horas_autorizadas", "obs_neo", "estado"}
+        if any(k in NEO_FIELDS for k in f):
+            return jsonify({"ok": False, "msg": "No puede modificar campos de validación NEO"}), 403
+        # Retroalimentación solo cuando NEO ya validó
+        if "retroalimentacion" in f:
+            if not he.autorizacion_neo:
+                return jsonify({"ok": False, "msg": "Solo puede retroalimentar registros ya validados por NEO"}), 403
+            he.retroalimentacion = f["retroalimentacion"]
             db.session.commit()
             return jsonify({"ok": True})
     concepto = str(f.get("id_concepto") or he.id_concepto or "").strip()
@@ -453,6 +450,8 @@ def api_he_actualizar(id):
     he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
     he.justificacion      = f.get("justificacion", he.justificacion)
     he.observacion        = f.get("observacion", he.observacion)
+    if "retroalimentacion" in f:
+        he.retroalimentacion = f["retroalimentacion"]
     if f.get("valor_hora")  is not None: he.valor_hora  = f["valor_hora"]
     if f.get("valor_extra") is not None: he.valor_extra = f["valor_extra"]
     # Auto-calcular valor_extra_nomina con horas reportadas

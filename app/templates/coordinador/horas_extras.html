@@ -126,6 +126,10 @@ body { background:var(--c-bg); }
 .tabulator-header-filter input:focus { border-color:#0d3b66; background:#fff; }
 .tabulator-col-content { display:flex; flex-direction:column; gap:2px; }
 
+/* ── Retroalimentación activa ── */
+.retro-activa { background:#fffde7 !important; }
+.htDimmed { color:#bbb !important; }
+
 /* ── Tarjetas de corte ── */
 .corte-card {
     background:#fff; border-radius:12px; box-shadow:0 1px 8px rgba(0,0,0,.08);
@@ -665,7 +669,8 @@ const N_COLS = 14;
 // Índices columnas validación (historial)
 const V_FECHA=0, V_CED=1, V_NOM=2, V_REC=3, V_PLACA=4, V_HRS=5,
       V_COD=6, V_TIPO=7, V_COMP=8, V_SUP=9, V_JUST=10, V_OBS=11,
-      V_ESTADO=12, V_HAUTH=13, V_NEOAUTH=14, V_OBSNEO=15;
+      V_ESTADO=12, V_HAUTH=13, V_NEOAUTH=14, V_OBSNEO=15,
+      V_RETRO=16, V_VALIDADO=17;
 
 const FILAS = 40;
 const FILAS_EXTRA = 20; // filas vacías al final para ingresar nuevos registros
@@ -1110,9 +1115,11 @@ async function actualizarCortesCoor() {
     const sel = document.getElementById("fCorte");
     if (!sel) return;
     const val = sel.value;
+    // Solo mostrar cortes ABIERTOS en el filtro de validación
+    const cortesAbiertos = _cortesCacheCoor.filter(c => c.estado !== "CERRADO");
     sel.innerHTML = '<option value="">Todos los cortes</option>' +
-        _cortesCacheCoor.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
-    if (_cortesCacheCoor.find(c => String(c.id) === val)) sel.value = val;
+        cortesAbiertos.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+    if (cortesAbiertos.find(c => String(c.id) === val)) sel.value = val;
 }
 
 function sincronizarFechasCoor() {
@@ -1214,22 +1221,24 @@ async function cargarHistorial(corteId) {
         _fullValIds      = regs.map(reg => reg.id);
         _fullValRecords  = regs;   // registros completos del API para exportar
         _fullValData = regs.map(reg => [
-            fmtFechaCoor(reg.fecha_labor),
-            reg.cedula || "",
-            reg.nombre || "",
-            reg.recurso || "",
-            reg.placa || "",
-            reg.horas_reportadas ?? "",
-            reg.id_concepto || "",
-            reg.tipo_he || "",
-            reg.horas_compensadas ?? "",
-            reg.autorizacion_sup || "",
-            reg.justificacion || "",
-            reg.observacion || "",
-            reg.estado || "",
-            reg.horas_autorizadas ?? "",
-            reg.autorizacion_neo || "",
-            reg.obs_neo || "",
+            fmtFechaCoor(reg.fecha_labor),         // 0  V_FECHA
+            reg.cedula || "",                       // 1  V_CED
+            reg.nombre || "",                       // 2  V_NOM
+            reg.recurso || "",                      // 3  V_REC
+            reg.placa || "",                        // 4  V_PLACA
+            reg.horas_reportadas ?? "",             // 5  V_HRS
+            reg.id_concepto || "",                  // 6  V_COD
+            reg.tipo_he || "",                      // 7  V_TIPO
+            reg.horas_compensadas ?? "",            // 8  V_COMP
+            reg.autorizacion_sup || "",             // 9  V_SUP
+            reg.justificacion || "",                // 10 V_JUST
+            reg.observacion || "",                  // 11 V_OBS
+            reg.estado || "",                       // 12 V_ESTADO
+            reg.horas_autorizadas ?? "",            // 13 V_HAUTH
+            reg.autorizacion_neo || "",             // 14 V_NEOAUTH
+            reg.obs_neo || "",                      // 15 V_OBSNEO
+            reg.retroalimentacion || "",            // 16 V_RETRO
+            reg.validado_por || "",                 // 17 V_VALIDADO
         ]);
         _htValFilters = {};
 
@@ -1240,37 +1249,45 @@ async function cargarHistorial(corteId) {
                 colHeaders: [
                     "Fecha Labor","Cédula","Nombre","Recurso","Placa",
                     "#Hrs Rep.","Id Concepto","Tipo HE","#Hrs Comp.",
-                    "Autorización Sup.","Justificación","Observación",
-                    "Estado","Hrs Auth.","Auth NEO","Obs NEO","Acciones"
+                    "Auth. Sup.","Justificación","Observación",
+                    "Estado","Hrs Auth.","Auth NEO","Obs NEO",
+                    "Retroalimentación","Validado por","Acciones"
                 ],
                 columns: [
-                    { type:"text", readOnly:true },   // V_FECHA
-                    { type:"text", readOnly:true },   // V_CED
-                    { type:"text", readOnly:true },   // V_NOM
-                    { type:"text" },                  // V_REC (editable PEND)
-                    { type:"text" },                  // V_PLACA (editable PEND)
-                    { type:"numeric", readOnly:true },// V_HRS
-                    { type:"text", readOnly:true },   // V_COD
-                    { type:"text", readOnly:true },   // V_TIPO
-                    { type:"numeric" },               // V_COMP (siempre editable)
-                    { type:"text" },                  // V_SUP (editable PEND)
-                    { type:"text" },                  // V_JUST (editable PEND)
-                    { type:"text" },                  // V_OBS (siempre editable)
-                    { type:"text", readOnly:true, renderer: estadoRendererCoor }, // V_ESTADO
-                    { type:"numeric", readOnly:true },// V_HAUTH
-                    { type:"text", readOnly:true },   // V_NEOAUTH
-                    { type:"text", readOnly:true },   // V_OBSNEO
-                    { data: 16, renderer: accionRendererCoor, readOnly:true, width:80 },
+                    { type:"text" },                  // 0  V_FECHA
+                    { type:"text" },                  // 1  V_CED
+                    { type:"text" },                  // 2  V_NOM
+                    { type:"text" },                  // 3  V_REC
+                    { type:"text" },                  // 4  V_PLACA
+                    { type:"numeric" },               // 5  V_HRS
+                    { type:"text" },                  // 6  V_COD
+                    { type:"text" },                  // 7  V_TIPO
+                    { type:"numeric" },               // 8  V_COMP
+                    { type:"text" },                  // 9  V_SUP
+                    { type:"text" },                  // 10 V_JUST
+                    { type:"text" },                  // 11 V_OBS
+                    { type:"text", readOnly:true, renderer: estadoRendererCoor }, // 12 V_ESTADO
+                    { type:"numeric", readOnly:true }, // 13 V_HAUTH  (NEO)
+                    { type:"text", readOnly:true },   // 14 V_NEOAUTH (NEO)
+                    { type:"text", readOnly:true },   // 15 V_OBSNEO  (NEO)
+                    { type:"text" },                  // 16 V_RETRO - editable solo si NEO validó
+                    { type:"text", readOnly:true },   // 17 V_VALIDADO
+                    { data: 18, renderer: accionRendererCoor, readOnly:true, width:80 },
                 ],
                 cells: function(row, col) {
                     // Corte cerrado → todo de solo lectura
                     if (_corteActualEstado === "CERRADO") return { readOnly: true };
-                    const estado = (hotVal ? hotVal.getDataAtCell(row, V_ESTADO) : "") || "";
-                    const PEND_ONLY = [V_REC, V_PLACA, V_SUP, V_JUST];
-                    if (PEND_ONLY.includes(col) && estado !== "PENDIENTE") return { readOnly: true };
+                    // Campos NEO siempre de solo lectura
+                    if ([V_HAUTH, V_NEOAUTH, V_OBSNEO, V_VALIDADO].includes(col)) return { readOnly: true };
+                    // Retroalimentación: solo editable cuando NEO ya validó
+                    if (col === V_RETRO) {
+                        const neoAuth = (hotVal ? hotVal.getDataAtCell(row, V_NEOAUTH) : "") || "";
+                        if (!neoAuth) return { readOnly: true, className: "htDimmed" };
+                        return { className: "retro-activa" };
+                    }
                     return {};
                 },
-                colWidths: [95,95,160,110,80,100,80,170,75,80,145,140,140,105,70,100,130,80],
+                colWidths: [95,90,150,100,70,75,80,155,70,80,140,130,130,75,80,130,170,130,80],
                 height: 420,
                 stretchH: "none",
                 manualColumnResize: true,
@@ -1279,9 +1296,13 @@ async function cargarHistorial(corteId) {
                 afterChange: async function(changes, source) {
                     if (!changes || source === "loadData" || source === "auto") return;
                     const FIELD_MAP = {
-                        [V_REC]:"recurso", [V_PLACA]:"placa",
+                        [V_FECHA]:"fecha_labor",  [V_CED]:"cedula",
+                        [V_NOM]:"nombre",         [V_REC]:"recurso",
+                        [V_PLACA]:"placa",        [V_HRS]:"horas_reportadas",
+                        [V_COD]:"id_concepto",    [V_TIPO]:"tipo_he",
                         [V_COMP]:"horas_compensadas", [V_SUP]:"autorizacion_sup",
-                        [V_JUST]:"justificacion", [V_OBS]:"observacion"
+                        [V_JUST]:"justificacion", [V_OBS]:"observacion",
+                        [V_RETRO]:"retroalimentacion"
                     };
                     for (const [row, col, , newVal] of changes) {
                         // Sync to _fullValData so column filters don't overwrite edits
