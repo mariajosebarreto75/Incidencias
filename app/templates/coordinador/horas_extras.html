@@ -473,9 +473,6 @@ body { background:var(--c-bg); }
     <div class="he-panel" id="panel-cortes">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
             <h6 style="margin:0;font-weight:700;color:#0d3b66;"><i class="bi bi-archive me-2"></i>Cortes de nómina</h6>
-            <button class="btn btn-sm btn-primary fw-semibold" onclick="abrirNuevoCorte()" style="border-radius:7px;">
-                <i class="bi bi-plus-lg me-1"></i>Nuevo corte
-            </button>
         </div>
         <!-- KPIs resumen cortes -->
         <div class="he-hrs-row" style="margin-bottom:18px;">
@@ -493,47 +490,6 @@ body { background:var(--c-bg); }
         </div>
     </div>
 
-    <!-- Modal nuevo corte -->
-    <div class="he-modal-overlay" id="modalNuevoCorte">
-      <div class="he-modal" style="max-width:480px;">
-        <div class="he-modal-header">
-          <i class="bi bi-archive"></i>
-          <h6>Crear nuevo corte</h6>
-          <button onclick="cerrarModal('modalNuevoCorte')">&times;</button>
-        </div>
-        <div class="he-modal-body">
-          <div style="background:#fff8e1;border-radius:8px;padding:10px 14px;font-size:.8rem;color:#7c5e0a;margin-bottom:14px;">
-            <strong>Período 18→17:</strong> los cortes van del día 18 de un mes al día 17 del mes siguiente.
-          </div>
-          <div class="he-form-row cols1">
-            <div class="he-form-group"><label>Nombre del corte (opcional)</label>
-              <input type="text" id="corteNombre" placeholder="Ej: 17 Jun – 16 Jul 2025">
-            </div>
-          </div>
-          <div class="he-form-row">
-            <div class="he-form-group"><label>Fecha inicio</label><input type="date" id="corteFechaInicio"></div>
-            <div class="he-form-group"><label>Fecha fin</label><input type="date" id="corteFechaFin"></div>
-          </div>
-          <div class="he-form-row cols1">
-            <div class="he-form-group"><label>Contrato (dejar vacío = todos)</label>
-              <select id="corteContrato">
-                <option value="">— Todos los contratos —</option>
-                {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
-              </select>
-            </div>
-          </div>
-          <div class="he-form-row cols1">
-            <div class="he-form-group"><label>Observación</label>
-              <textarea id="corteObs" rows="2" placeholder="Opcional"></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="he-modal-footer">
-          <button class="btn btn-sm btn-secondary" onclick="cerrarModal('modalNuevoCorte')">Cancelar</button>
-          <button class="btn btn-sm btn-primary fw-bold" onclick="crearCorte()"><i class="bi bi-archive me-1"></i>Crear corte</button>
-        </div>
-      </div>
-    </div>
 
 </div>
 
@@ -1651,20 +1607,16 @@ async function cambiarTab(nombre, btn) {
 
 async function autoCargarCorteActual() {
     try {
-        const cid = document.getElementById("gridContrato").value;
-        const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
-        const cortes = await fetch(url).then(r => r.json()).catch(() => []);
-        const corteAbierto = Array.isArray(cortes) ? cortes.find(c => c.estado === "ABIERTO") : null;
+        await actualizarCortesCoor();
+        const corteAbierto = _corteActivo();
         if (corteAbierto) {
             _corteActualEstado = "ABIERTO";
-            await actualizarCortesCoor();
             const sel = document.getElementById("fCorte");
             if (sel) { sel.value = String(corteAbierto.id); sincronizarFechasCoor(); }
             const banner = document.getElementById("bannerCorteCerrado");
             if (banner) banner.style.display = "none";
             cargarHistorial(corteAbierto.id);
         } else {
-            // No hay corte abierto → tabla vacía lista para el próximo corte
             _corteActualEstado = "ABIERTO";
             const banner = document.getElementById("bannerCorteCerrado");
             if (banner) banner.style.display = "none";
@@ -1736,54 +1688,6 @@ async function cargarCortes() {
     }).join("");
 }
 
-function abrirNuevoCorte() {
-    // Sugerir fechas del corte actual (18 del mes pasado → 17 del mes actual)
-    const hoy = new Date();
-    const dia = hoy.getDate();
-    let ini, fin;
-    if (dia >= 18) {
-        ini = new Date(hoy.getFullYear(), hoy.getMonth(), 18);
-        fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 17);
-    } else {
-        ini = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 18);
-        fin = new Date(hoy.getFullYear(), hoy.getMonth(), 17);
-    }
-    const fmt = d => d.toISOString().split("T")[0];
-    document.getElementById("corteFechaInicio").value = fmt(ini);
-    document.getElementById("corteFechaFin").value    = fmt(fin);
-    document.getElementById("corteNombre").value      = "";
-    document.getElementById("corteObs").value         = "";
-    const cid = document.getElementById("gridContrato").value;
-    if (cid) document.getElementById("corteContrato").value = cid;
-    document.getElementById("modalNuevoCorte").classList.add("open");
-}
-
-async function crearCorte() {
-    const payload = {
-        nombre:       document.getElementById("corteNombre").value.trim(),
-        fecha_inicio: document.getElementById("corteFechaInicio").value,
-        fecha_fin:    document.getElementById("corteFechaFin").value,
-        contrato_id:  document.getElementById("corteContrato").value || null,
-        observacion:  document.getElementById("corteObs").value.trim(),
-    };
-    if (!payload.fecha_inicio || !payload.fecha_fin) { mostrarToast("Complete las fechas","warning"); return; }
-    const r = await fetch("/api/he/cortes", {
-        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)
-    });
-    const d = await r.json();
-    if (d.ok) {
-        cerrarModal("modalNuevoCorte");
-        cortesCargados = false;
-        cargarCortes();
-        mostrarToast(`Corte creado · ${d.registros_asignados} registros asignados`, "success");
-        // Si estamos en el panel de registro, cargar el nuevo corte vacío directamente
-        if (document.getElementById("panel-registro").classList.contains("active")) {
-            cargarRegistrosCorteActual(d.id);
-        }
-    } else {
-        mostrarToast(d.msg || "Error al crear corte", "danger");
-    }
-}
 
 async function cerrarCorte(id) {
     if (!confirm("¿Cerrar este corte? Ya no se podrán agregar registros nuevos.")) return;
