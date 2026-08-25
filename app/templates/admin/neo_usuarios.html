@@ -341,6 +341,16 @@
                            onchange="togglePermiso(this)">
                     <span><i class="bi bi-clock-history me-1" style="color:#a78bfa;"></i>Horas Extras</span>
                 </label>
+                <label class="nu-check-label" style="border-color:{% if 'neo_reportes' in perms %}#0284c7{% else %}#1e293b{% endif %};"
+                       title="Ver módulos NEO: Panel Reportes y Distribución Operativa">
+                    <input type="checkbox"
+                           class="perm-ck"
+                           data-uid="{{ u.id }}"
+                           data-permiso="neo_reportes"
+                           {% if 'neo_reportes' in perms %}checked{% endif %}
+                           onchange="togglePermiso(this)">
+                    <span><i class="bi bi-broadcast-pin me-1" style="color:#38bdf8;"></i>NEO Reportes</span>
+                </label>
             </div>
         </div>
     </div>

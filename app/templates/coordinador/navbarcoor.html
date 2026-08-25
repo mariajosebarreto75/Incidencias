@@ -63,6 +63,7 @@
                     </li>
 
                     <!-- NEO dropdown -->
+                    {% if current_user.rol.lower() == 'admin' or current_user.tiene_permiso('neo_reportes') %}
                     <li class="nav-item dropdown">
                         <a class="nav-link coor-nav-link dropdown-toggle" href="#"
                            data-bs-toggle="dropdown" aria-expanded="false">
@@ -83,6 +84,7 @@
                             </li>
                         </ul>
                     </li>
+                    {% endif %}
 
                     <!-- SEGUIMIENTO dropdown -->
                     <li class="nav-item dropdown">
