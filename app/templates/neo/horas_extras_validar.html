@@ -878,10 +878,23 @@ function sincronizarChip(estado) {
             if (saved.fEstado)   document.getElementById("fEstado").value   = saved.fEstado;
             sincronizarBtnCerrar();
         } else {
-            // Auto-seleccionar el corte ABIERTO más reciente
-            const abierto = _cortesCache.find(c => c.estado === "ABIERTO");
-            if (abierto) {
-                document.getElementById("fCorte").value = String(abierto.id);
+            // Auto-seleccionar el corte del periodo actual (18→17)
+            const hoy = new Date();
+            const dia = hoy.getDate();
+            let iniP, finP;
+            if (dia >= 18) {
+                iniP = new Date(hoy.getFullYear(), hoy.getMonth(), 18);
+                finP = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 17);
+            } else {
+                iniP = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 18);
+                finP = new Date(hoy.getFullYear(), hoy.getMonth(), 17);
+            }
+            const fmt = d => d.toISOString().split("T")[0];
+            const pIni = fmt(iniP), pFin = fmt(finP);
+            const corteActual = _cortesCache.find(c => c.fecha_inicio === pIni && c.fecha_fin === pFin)
+                             || _cortesCache.find(c => c.estado === "ABIERTO");
+            if (corteActual) {
+                document.getElementById("fCorte").value = String(corteActual.id);
                 sincronizarFechasCorte();
                 sincronizarBtnCerrar();
             }

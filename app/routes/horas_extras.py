@@ -185,7 +185,7 @@ def he_dashboard():
 def he_hub():
     rol = current_user.rol.lower()
     puede_ingresar = rol in ("coordinador", "admin")
-    puede_validar  = rol in ("neo", "admin") or current_user.tiene_permiso("horas_extras")
+    puede_validar  = rol in ("neo", "admin")
     if rol == "coordinador":
         base_template = "coordinador/navbarcoor.html"
     elif rol == "neo":
@@ -495,8 +495,9 @@ def api_he_bulk_delete():
 # ── NEO: página de validación ─────────────────────────────────────────────────
 @he_bp.route("/neo/horas-extras")
 @login_required
-@permiso_requerido("horas_extras")
 def he_neo():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        abort(403)
     contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     return render_template(
         "neo/horas_extras_validar.html",
