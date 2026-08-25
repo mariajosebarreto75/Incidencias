@@ -41,6 +41,10 @@ class User(
         db.String(200)
     )
 
+    email = db.Column(
+        db.String(200)
+    )
+
     activo = db.Column(
         db.Boolean,
         default=True
