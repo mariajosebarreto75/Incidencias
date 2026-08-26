@@ -656,7 +656,19 @@ def api_he_resumen():
         if contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
 
+    corte_id    = request.args.get("corte_id",    type=int)
+    fecha_desde = request.args.get("fecha_desde")
+    fecha_hasta = request.args.get("fecha_hasta")
+
     q = HoraExtra.query.filter_by(contrato_id=contrato_id)
+    if corte_id:
+        q = q.filter(HoraExtra.corte_id == corte_id)
+    elif fecha_desde and fecha_hasta:
+        try:
+            q = q.filter(HoraExtra.fecha_labor >= date.fromisoformat(fecha_desde),
+                          HoraExtra.fecha_labor <= date.fromisoformat(fecha_hasta))
+        except Exception:
+            pass
 
     def _sum_rep(base):
         return float(base.with_entities(
