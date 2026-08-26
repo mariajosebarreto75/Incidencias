@@ -443,12 +443,12 @@ body { background:var(--c-bg); }
         <div class="he-filtros">
             <div>
                 <label>Corte</label>
-                <select id="fCorte" onchange="sincronizarFechasCoor();cargarHistorial();cargarKpis()" style="min-width:200px;">
+                <select id="fCorte" onchange="sincronizarFechasCoor();cargarHistorial();cargarKpis();cargarResumen()" style="min-width:200px;">
                     <option value="">Todos los cortes</option>
                 </select>
             </div>
-            <div><label>Desde</label><input type="date" id="fDesde" onchange="document.getElementById('fCorte').value='';cargarHistorial();cargarKpis()"></div>
-            <div><label>Hasta</label><input type="date" id="fHasta" onchange="document.getElementById('fCorte').value='';cargarHistorial();cargarKpis()"></div>
+            <div><label>Desde</label><input type="date" id="fDesde" onchange="document.getElementById('fCorte').value='';cargarHistorial();cargarKpis();cargarResumen()"></div>
+            <div><label>Hasta</label><input type="date" id="fHasta" onchange="document.getElementById('fCorte').value='';cargarHistorial();cargarKpis();cargarResumen()"></div>
             <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()" style="border-radius:7px;" title="Recargar"><i class="bi bi-arrow-clockwise"></i></button>
         </div>
 
@@ -1006,10 +1006,9 @@ const COLORES_CONC = ["#0d3b66","#1565c0","#0369a1","#0e7490","#065f46","#6b21a8
 
 async function cargarResumen() {
     const cid   = document.getElementById("gridContrato").value;
-    // En el tab de registro usamos el corte activo de la grilla; en validación usamos fCorte
-    const corte = _corteActualRegId
-                    ? String(_corteActualRegId)
-                    : (document.getElementById("fCorte")?.value ?? "");
+    // Usar fCorte si está seleccionado; si no, usar el corte activo de la grilla de registro
+    const fCorteVal = document.getElementById("fCorte")?.value ?? "";
+    const corte = fCorteVal || (_corteActualRegId ? String(_corteActualRegId) : "");
     const desde = corte ? "" : (document.getElementById("fDesde")?.value ?? "");
     const hasta = corte ? "" : (document.getElementById("fHasta")?.value ?? "");
     const vacio    = document.getElementById("resumenVacio");
