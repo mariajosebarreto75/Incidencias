@@ -683,6 +683,7 @@ def api_he_resumen():
     q_conf    = q.filter(HoraExtra.estado == "CONFORME")
     q_noconf  = q.filter(HoraExtra.estado == "NO CONFORME")
     q_desc    = q.filter(HoraExtra.estado == "DESCONTADA")
+    q_pend    = q.filter(HoraExtra.estado.notin_(["CONFORME","NO CONFORME","DESCONTADA"]))
     total              = q.count()
     hrs_reportadas     = _sum_rep(q)
     conformes          = q_conf.count()
@@ -693,6 +694,8 @@ def api_he_resumen():
     hrs_no_autorizadas = _sum_rep(q_noconf)
     # Descontadas = horas autorizadas en estado DESCONTADA
     hrs_descontadas    = hrs_auth_desc
+    # Pendientes = horas reportadas de registros aún no revisados
+    hrs_pendientes     = _sum_rep(q_pend)
 
     # Normalizar codigo: "3" → "03" para display consistente
     codigos_db = [
@@ -733,6 +736,7 @@ def api_he_resumen():
             "hrs_auth_conf":      hrs_auth_conf,
             "hrs_no_autorizadas": hrs_no_autorizadas,
             "hrs_descontadas":    hrs_descontadas,
+            "hrs_pendientes":     hrs_pendientes,
             "por_concepto":       por_concepto,
         })
     except Exception as e:

@@ -336,11 +336,11 @@ body { background:var(--c-bg); }
                 </div>
                 <div class="he-stat-card success">
                     <div class="he-stat-val" id="rs-hrs-conf" style="color:#166534;">—</div>
-                    <div class="he-stat-lbl">Hrs Aprobadas</div>
+                    <div class="he-stat-lbl">Hrs Conforme</div>
                 </div>
                 <div class="he-stat-card danger">
                     <div class="he-stat-val" id="rs-hrs-noauth">—</div>
-                    <div class="he-stat-lbl">Hrs No Autorizadas</div>
+                    <div class="he-stat-lbl">Hrs No Conformes</div>
                 </div>
                 <div class="he-stat-card warning" style="border-top-color:#8b5cf6;">
                     <div class="he-stat-val" id="rs-hrs-desc" style="color:#5b21b6;">—</div>
@@ -1027,8 +1027,10 @@ async function cargarResumen() {
         if (!d.ok) return;
 
         document.getElementById("rs-total").textContent      = d.total.toLocaleString("es-CO");
+        document.getElementById("rs-pendientes").textContent = (+d.hrs_pendientes   || 0).toFixed(0);
         document.getElementById("rs-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
         document.getElementById("rs-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
+        document.getElementById("rs-hrs-conf").textContent   = (+d.hrs_auth_conf    || 0).toFixed(0);
         document.getElementById("rs-hrs-noauth").textContent = (+d.hrs_no_autorizadas || 0).toFixed(0);
         document.getElementById("rs-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
 
