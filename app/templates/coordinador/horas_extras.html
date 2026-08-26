@@ -882,6 +882,9 @@ async function cargarRegistrosCorteActual(corteId) {
     if (lbl) lbl.textContent = registros.length > 0
         ? `${registros.length} registro(s) guardados en este corte`
         : "Sin registros en este corte — ingrese las primeras horas";
+
+    // Actualizar el dashboard de resumen filtrando por este corte
+    cargarResumen();
 }
 
 // Convierte DD-MM-YY → YYYY-MM-DD para el backend
@@ -1003,9 +1006,12 @@ const COLORES_CONC = ["#0d3b66","#1565c0","#0369a1","#0e7490","#065f46","#6b21a8
 
 async function cargarResumen() {
     const cid   = document.getElementById("gridContrato").value;
-    const corte = document.getElementById("fCorte")?.value ?? "";
-    const desde = document.getElementById("fDesde")?.value ?? "";
-    const hasta = document.getElementById("fHasta")?.value ?? "";
+    // En el tab de registro usamos el corte activo de la grilla; en validación usamos fCorte
+    const corte = _corteActualRegId
+                    ? String(_corteActualRegId)
+                    : (document.getElementById("fCorte")?.value ?? "");
+    const desde = corte ? "" : (document.getElementById("fDesde")?.value ?? "");
+    const hasta = corte ? "" : (document.getElementById("fHasta")?.value ?? "");
     const vacio    = document.getElementById("resumenVacio");
     const contenido= document.getElementById("resumenContenido");
     if (!cid) {
