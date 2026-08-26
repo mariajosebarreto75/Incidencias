@@ -175,7 +175,6 @@ body { background:var(--c-bg); }
 .ht-badge.CONFORME    { background:#d1e7dd; color:#0a3622; }
 .ht-badge.NO-CONFORME { background:#f8d7da; color:#842029; }
 .ht-badge.DESCONTADA  { background:#ede9fe; color:#5b21b6; }
-.ht-badge.CONSILIADO  { background:#ede9fe; color:#6d28d9; border:1px solid #c4b5fd; }
 
 #saving-indicator { font-size:.73rem; color:#007d8a; display:none; }
 
@@ -279,9 +278,6 @@ body { background:var(--c-bg); }
             <div class="he-chip ch-desc" onclick="filtrarChip('DESCONTADA',this)">
                 <i class="bi bi-dash-circle"></i> Descontadas <span class="cnt" id="k-desc">—</span>
             </div>
-            <div class="he-chip ch-cons" onclick="filtrarChip('CONSILIADO',this)" style="border-color:#7c3aed;color:#7c3aed;">
-                <i class="bi bi-shield-check"></i> Consiliados <span class="cnt" id="k-cons">—</span>
-            </div>
         </div>
 
         <!-- Tarjetas KPI grandes -->
@@ -368,7 +364,7 @@ body { background:var(--c-bg); }
                 <select id="fEstado" onchange="sincronizarChip(this.value);_guardarFiltrosNeo();recargar()">
                     <option value="">Todos</option>
                     <option>PENDIENTE</option><option>CONFORME</option>
-                    <option>NO CONFORME</option><option>DESCONTADA</option><option>CONSILIADO</option>
+                    <option>NO CONFORME</option><option>DESCONTADA</option>
                 </select>
             </div>
             <button class="btn btn-sm btn-outline-secondary" onclick="recargar()" style="border-radius:7px;">
@@ -436,9 +432,6 @@ body { background:var(--c-bg); }
             </div>
             <div class="he-chip ch-desc" onclick="filtrarChipH('DESCONTADA',this)">
                 <i class="bi bi-dash-circle"></i> Descontadas <span class="cnt" id="hk-desc">—</span>
-            </div>
-            <div class="he-chip ch-cons" onclick="filtrarChipH('CONSILIADO',this)" style="border-color:#7c3aed;color:#7c3aed;">
-                <i class="bi bi-shield-check"></i> Consiliados <span class="cnt" id="hk-cons">—</span>
             </div>
         </div>
 
@@ -729,7 +722,7 @@ const C_FECHA=0, C_CONTRATO=1, C_REC=2, C_PLACA=3, C_HRS=4,
       C_HAUTH=15, C_ESTADO=16, C_OBSNEO=17,
       C_FREPORTE=18, C_VALBY=19, C_VALFECHA=20;
 
-const ESTADOS_NEO = ["CONFORME", "NO CONFORME", "DESCONTADA", "CONSILIADO"];
+const ESTADOS_NEO = ["CONFORME", "NO CONFORME", "DESCONTADA"];
 
 function estadoRenderer(hotInstance, td, row, col, prop, value) {
     Handsontable.renderers.TextRenderer.apply(this, arguments);
@@ -903,7 +896,7 @@ function filtrarChip(estado, el) {
 }
 
 function sincronizarChip(estado) {
-    const map = {"":"ch-all","PENDIENTE":"ch-pend","CONFORME":"ch-conf","NO CONFORME":"ch-noconf","DESCONTADA":"ch-desc","CONSILIADO":"ch-cons"};
+    const map = {"":"ch-all","PENDIENTE":"ch-pend","CONFORME":"ch-conf","NO CONFORME":"ch-noconf","DESCONTADA":"ch-desc"};
     document.querySelectorAll(".he-chip").forEach(c => c.classList.remove("active"));
     const cls = map[estado];
     if (cls) { const chip = document.querySelector(".he-chip."+cls); if (chip) chip.classList.add("active"); }

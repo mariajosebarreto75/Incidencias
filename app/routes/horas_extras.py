@@ -629,13 +629,10 @@ def api_he_validar(id):
     horas_auth   = d.get("horas_autorizadas")
     obs          = d.get("obs_neo", "").strip()
 
-    ESTADOS_VALIDOS = ("CONFORME", "NO CONFORME", "DESCONTADA", "CONSILIADO")
-    if autorizacion not in ESTADOS_VALIDOS:
+    if autorizacion not in ("CONFORME", "NO CONFORME", "DESCONTADA"):
         return jsonify({"ok": False, "msg": "Autorización inválida"}), 400
 
-    # Para CONSILIADO el autorizacion_neo base sigue siendo NO CONFORME
-    auth_neo_guardado = "NO CONFORME" if autorizacion == "CONSILIADO" else autorizacion
-    he.autorizacion_neo  = auth_neo_guardado
+    he.autorizacion_neo  = autorizacion
     he.horas_autorizadas = int(float(horas_auth)) if horas_auth is not None else he.horas_reportadas
     he.obs_neo           = obs
     he.estado            = autorizacion
@@ -861,7 +858,6 @@ def api_he_kpis():
             sa_func.sum(sa_case((HoraExtra.estado == "CONFORME",    1), else_=0)).label("conformes"),
             sa_func.sum(sa_case((HoraExtra.estado == "NO CONFORME", 1), else_=0)).label("no_conformes"),
             sa_func.sum(sa_case((HoraExtra.estado == "DESCONTADA",  1), else_=0)).label("descontadas"),
-            sa_func.sum(sa_case((HoraExtra.estado == "CONSILIADO",  1), else_=0)).label("consiliados"),
             sa_func.coalesce(sa_func.sum(HoraExtra.horas_reportadas), 0).label("hrs_rep"),
             sa_func.coalesce(sa_func.sum(HoraExtra.horas_autorizadas), 0).label("hrs_auth"),
             sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "CONFORME",    HoraExtra.horas_reportadas), else_=0)), 0).label("hrs_conf"),
@@ -881,7 +877,6 @@ def api_he_kpis():
             "conformes":        row.conformes,
             "no_conformes":     row.no_conformes,
             "descontadas":      row.descontadas,
-            "consiliados":      row.consiliados,
             "hrs_reportadas":   float(row.hrs_rep),
             "hrs_conformes":    float(row.hrs_conf),
             "hrs_no_conformes": float(row.hrs_noconf),
