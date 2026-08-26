@@ -738,7 +738,7 @@ function iniciarGrid() {
             "Autorización(supervisor)","Justificación","Observación"
         ],
         columns: [
-            { type:"date",         dateFormat:"DD-MM-YY", correctFormat:true },
+            { type:"date",         dateFormat:"DD/MM/YYYY", correctFormat:true },
             { type:"text" },
             { type:"text",         readOnly:true },
             { type:"text" },
@@ -834,7 +834,7 @@ function fijarColumnas(n) {
 function fechaBackendAGrid(iso) {
     if (!iso) return "";
     const [y, m, d] = iso.split("-");
-    return `${d}-${m}-${y.slice(2)}`;
+    return `${d}/${m}/${y}`;
 }
 
 // Carga los registros de un corte en la grilla de ingreso
@@ -896,7 +896,8 @@ async function cargarRegistrosCorteActual(corteId) {
 // Convierte DD-MM-YY → YYYY-MM-DD para el backend
 function fechaParaBackend(val) {
     if (!val) return null;
-    const p = val.split("-");
+    const sep = val.includes("/") ? "/" : "-";
+    const p = val.split(sep);
     if (p.length !== 3) return null;
     const anio = p[2].length === 2 ? "20" + p[2] : p[2];
     return `${anio}-${p[1]}-${p[0]}`;
@@ -2154,7 +2155,7 @@ function _applyAllFiltersCoor() {
             pairs = pairs.slice().sort(([ra], [rb]) => {
                 // Fecha (col 0) en formato DD-MM-YY → comparar como fecha
                 if (col === C_FECHA) {
-                    const toDate = v => { const p=(v||'').split('-'); return p.length===3?`20${p[2]}-${p[1]}-${p[0]}`:''; };
+                    const toDate = v => { const sep=(v||'').includes('/')?'/':'-'; const p=(v||'').split(sep); if(p.length!==3) return ''; const y=p[2].length===2?'20'+p[2]:p[2]; return `${y}-${p[1]}-${p[0]}`; };
                     const cmp = toDate(ra[col]).localeCompare(toDate(rb[col]));
                     return dir === 'asc' ? cmp : -cmp;
                 }
