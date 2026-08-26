@@ -341,18 +341,18 @@ body { background:var(--c-bg); }
             </div>
             <div>
                 <label>Corte</label>
-                <select id="fCorte" onchange="sincronizarFechasCorte();sincronizarBtnCerrar();recargar()" style="min-width:200px;">
+                <select id="fCorte" onchange="sincronizarFechasCorte();sincronizarBtnCerrar();_guardarFiltrosNeo();recargar()" style="min-width:200px;">
                     <option value="">Todos los cortes</option>
                 </select>
             </div>
-            <div><label>Desde</label><input type="date" id="fDesde" onchange="document.getElementById('fCorte').value='';sincronizarBtnCerrar();recargar()"></div>
-            <div><label>Hasta</label><input type="date" id="fHasta" onchange="document.getElementById('fCorte').value='';recargar()"></div>
+            <div><label>Desde</label><input type="date" id="fDesde" onchange="document.getElementById('fCorte').value='';sincronizarBtnCerrar();_guardarFiltrosNeo();recargar()"></div>
+            <div><label>Hasta</label><input type="date" id="fHasta" onchange="document.getElementById('fCorte').value='';_guardarFiltrosNeo();recargar()"></div>
             <button id="btnCerrarCorteActual" onclick="cerrarCorteActual()" class="btn btn-sm btn-outline-danger fw-semibold" style="border-radius:7px;display:none;">
                 <i class="bi bi-lock me-1"></i>Cerrar corte
             </button>
             <div>
                 <label>Concepto</label>
-                <select id="fConcepto" onchange="recargar()" style="min-width:160px;">
+                <select id="fConcepto" onchange="_guardarFiltrosNeo();recargar()" style="min-width:160px;">
                     <option value="">Todos</option>
                     {% for k, v in conceptos.items() %}
                     <option value="{{ k }}">{{ k }} – {{ v }}</option>
@@ -361,7 +361,7 @@ body { background:var(--c-bg); }
             </div>
             <div>
                 <label>Estado</label>
-                <select id="fEstado" onchange="sincronizarChip(this.value);recargar()">
+                <select id="fEstado" onchange="sincronizarChip(this.value);_guardarFiltrosNeo();recargar()">
                     <option value="">Todos</option>
                     <option>PENDIENTE</option><option>CONFORME</option>
                     <option>NO CONFORME</option><option>DESCONTADA</option>
@@ -848,10 +848,25 @@ function toggleRkTec(btn, ci, ki) {
 }
 
 // ── Chips ─────────────────────────────────────────────────────────────────────
+function _guardarFiltrosNeo() {
+    try {
+        const s = {
+            fContrato: document.getElementById("fContrato")?.value || "",
+            fCorte:    document.getElementById("fCorte")?.value    || "",
+            fDesde:    document.getElementById("fDesde")?.value    || "",
+            fHasta:    document.getElementById("fHasta")?.value    || "",
+            fEstado:   document.getElementById("fEstado")?.value   || "",
+            fConcepto: document.getElementById("fConcepto")?.value || "",
+        };
+        sessionStorage.setItem('fp_' + location.pathname, JSON.stringify(s));
+    } catch(e) {}
+}
+
 function filtrarChip(estado, el) {
     document.querySelectorAll(".he-chip").forEach(c => c.classList.remove("active"));
     el.classList.add("active");
     document.getElementById("fEstado").value = estado;
+    _guardarFiltrosNeo();
     recargar();
 }
 
@@ -876,6 +891,7 @@ function sincronizarChip(estado) {
             if (saved.fHasta)    document.getElementById("fHasta").value    = saved.fHasta;
             if (saved.fConcepto) document.getElementById("fConcepto").value = saved.fConcepto;
             if (saved.fEstado)   document.getElementById("fEstado").value   = saved.fEstado;
+            sincronizarChip(saved.fEstado || "");
             sincronizarBtnCerrar();
         } else {
             // Auto-seleccionar el corte del periodo actual (18→17)
@@ -1143,6 +1159,9 @@ async function recargar() {
     hot.loadData(filas);
     _htColFilters = {};  // resetear filtros al recargar
     _refreshFilterBtns(hot);
+    // Guardar filtros actuales y sincronizar chip visual
+    _guardarFiltrosNeo();
+    sincronizarChip(document.getElementById("fEstado")?.value || "");
 }
 
 // ── KPIs historial ────────────────────────────────────────────────────────────

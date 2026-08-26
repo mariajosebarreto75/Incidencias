@@ -1161,6 +1161,12 @@ async function cargarKpis() {
 function filtrarChip(estado, el) {
     document.querySelectorAll(".he-chip").forEach(c => c.classList.remove("active"));
     el.classList.add("active");
+    // Persistir chip activo
+    try {
+        const s = JSON.parse(sessionStorage.getItem('fp_' + location.pathname) || '{}');
+        s.chipEstado = estado;
+        sessionStorage.setItem('fp_' + location.pathname, JSON.stringify(s));
+    } catch(e) {}
     if (!hotVal) return;
     if (!estado) {
         _htValFilters = {};
@@ -1168,6 +1174,17 @@ function filtrarChip(estado, el) {
         _htValFilters = { [V_ESTADO]: new Set([estado]) };
     }
     _applyAllFiltersCoor();
+}
+
+function _restaurarChip() {
+    try {
+        const s = JSON.parse(sessionStorage.getItem('fp_' + location.pathname) || '{}');
+        const estado = s.chipEstado || "";
+        const sel = estado
+            ? document.querySelector(`.he-chip[onclick*="'${estado}'"]`)
+            : document.querySelector(".he-chip.ch-all");
+        if (sel) filtrarChip(estado, sel);
+    } catch(e) {}
 }
 
 // ── Historial (Handsontable) ──────────────────────────────────────────────────
@@ -1329,7 +1346,7 @@ async function cargarHistorial(corteId) {
         }
         _currentValIds = [..._fullValIds];
         _actualizarKpisCoor(_fullValData);
-        setTimeout(() => _refreshFilterBtnsC(hotVal), 0);
+        setTimeout(() => { _refreshFilterBtnsC(hotVal); _restaurarChip(); }, 0);
     } catch(e) { console.error("cargarHistorial:", e); }
 }
 
