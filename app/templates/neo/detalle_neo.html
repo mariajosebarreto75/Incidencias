@@ -445,6 +445,10 @@
                                     Cancelar
                                 </button>
                             </div>
+                            <div class="col-12">
+                                <label class="det-label mb-1"><i class="bi bi-camera me-1"></i>Evidencia (imagen opcional)</label>
+                                <input type="file" id="inputEvidenciaConf" accept="image/*" class="form-control form-control-sm" style="border-radius:8px;">
+                            </div>
                         </div>
                         <div id="confAlerta" class="mt-2"></div>
                     </div>
@@ -481,6 +485,10 @@
                             <button class="btn-conf-guardar w-100" id="btnGuardarConf">
                                 <i class="bi bi-send-fill me-1"></i>Enviar
                             </button>
+                        </div>
+                        <div class="col-12">
+                            <label class="det-label mb-1"><i class="bi bi-camera me-1"></i>Evidencia (imagen opcional)</label>
+                            <input type="file" id="inputEvidenciaConf" accept="image/*" class="form-control form-control-sm" style="border-radius:8px;">
                         </div>
                     </div>
                     <div id="confAlerta" class="mt-2"></div>
@@ -552,7 +560,16 @@
         .then(r => r.json())
         .then(function (data) {
             if (data.ok) {
-                location.reload();
+                // Subir imagen si se seleccionó
+                const imgInput = document.getElementById("inputEvidenciaConf");
+                if (imgInput && imgInput.files[0]) {
+                    const fd = new FormData();
+                    fd.append("imagen", imgInput.files[0]);
+                    fetch("/neo/reporte/" + REPORTE_ID + "/evidencia", { method: "POST", body: fd })
+                        .finally(function () { location.reload(); });
+                } else {
+                    location.reload();
+                }
             } else {
                 mostrarAlerta(data.error || "Error al guardar.", "err");
                 btn.disabled = false;

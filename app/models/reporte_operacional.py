@@ -182,6 +182,8 @@ class ReporteOperacional(db.Model):
         db.Text
     )
 
+    evidencia_conformidad = db.Column(db.String(500))
+
     # =====================
     # AUDITORÍA DE EDICIÓN
     # =====================

@@ -454,6 +454,27 @@ def validar_reporte(id):
     return jsonify({"ok": True})
 
 
+# ── Subir evidencia de conformidad (imagen opcional) ─────────────────────────
+_ALLOWED_IMG_NEO = {"png", "jpg", "jpeg", "gif", "webp"}
+
+@neo.route("/neo/reporte/<int:id>/evidencia", methods=["POST"])
+@login_required
+def evidencia_reporte(id):
+    reporte = ReporteOperacional.query.get_or_404(id)
+    f = request.files.get("imagen")
+    if f and f.filename:
+        ext = f.filename.rsplit(".", 1)[-1].lower()
+        if ext in _ALLOWED_IMG_NEO:
+            folder = os.path.join(current_app.root_path, "static", "uploads", "reporte_evidencias")
+            os.makedirs(folder, exist_ok=True)
+            nombre = f"{id}_conf_{uuid.uuid4().hex[:8]}.{ext}"
+            f.save(os.path.join(folder, nombre))
+            reporte.evidencia_conformidad = f"uploads/reporte_evidencias/{nombre}"
+            from app.extensions import db
+            db.session.commit()
+    return jsonify({"ok": True})
+
+
 # =====================================
 # EDITAR REPORTE (NEO)
 # =====================================
