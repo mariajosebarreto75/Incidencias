@@ -1,6 +1,8 @@
+import os
+import uuid
 from datetime import datetime, date
 from functools import wraps
-from flask import Blueprint, render_template, request, jsonify, abort
+from flask import Blueprint, render_template, request, jsonify, abort, current_app
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -627,10 +629,13 @@ def api_he_validar(id):
     horas_auth   = d.get("horas_autorizadas")
     obs          = d.get("obs_neo", "").strip()
 
-    if autorizacion not in ("CONFORME", "NO CONFORME", "DESCONTADA"):
+    ESTADOS_VALIDOS = ("CONFORME", "NO CONFORME", "DESCONTADA", "CONSILIADO")
+    if autorizacion not in ESTADOS_VALIDOS:
         return jsonify({"ok": False, "msg": "Autorización inválida"}), 400
 
-    he.autorizacion_neo  = autorizacion
+    # Para CONSILIADO el autorizacion_neo base sigue siendo NO CONFORME
+    auth_neo_guardado = "NO CONFORME" if autorizacion == "CONSILIADO" else autorizacion
+    he.autorizacion_neo  = auth_neo_guardado
     he.horas_autorizadas = int(float(horas_auth)) if horas_auth is not None else he.horas_reportadas
     he.obs_neo           = obs
     he.estado            = autorizacion
@@ -643,6 +648,53 @@ def api_he_validar(id):
         "validado_por":    current_user.nombre_completo,
         "fecha_validacion": he.fecha_validacion.strftime("%Y-%m-%d %H:%M"),
     })
+
+
+# ── API: subir evidencia NEO (imagen opcional para CONFORME / NO CONFORME / CONSILIADO) ─
+_ALLOWED_IMG = {"png", "jpg", "jpeg", "gif", "webp"}
+
+def _guardar_imagen(campo, he_id):
+    """Guarda el archivo subido y retorna la ruta relativa o None."""
+    f = request.files.get("imagen")
+    if not f or not f.filename:
+        return None
+    ext = f.filename.rsplit(".", 1)[-1].lower()
+    if ext not in _ALLOWED_IMG:
+        return None
+    folder = os.path.join(current_app.root_path, "static", "uploads", "he_evidencias")
+    os.makedirs(folder, exist_ok=True)
+    nombre = f"{he_id}_{campo}_{uuid.uuid4().hex[:8]}.{ext}"
+    f.save(os.path.join(folder, nombre))
+    return f"uploads/he_evidencias/{nombre}"
+
+
+@he_bp.route("/api/he/<int:id>/evidencia-neo", methods=["POST"])
+@login_required
+@permiso_requerido("horas_extras")
+def api_he_evidencia_neo(id):
+    he = HoraExtra.query.get_or_404(id)
+    ruta = _guardar_imagen("neo", id)
+    if ruta:
+        he.evidencia_neo = ruta
+        db.session.commit()
+    return jsonify({"ok": True, "evidencia_neo": he.evidencia_neo or ""})
+
+
+@he_bp.route("/api/he/<int:id>/evidencia-consiliacion", methods=["POST"])
+@login_required
+@permiso_requerido("horas_extras")
+def api_he_evidencia_consiliacion(id):
+    if current_user.rol.lower() not in ("neo", "admin"):
+        # Coordinador también puede subir su evidencia de consiliación
+        he = HoraExtra.query.get_or_404(id)
+        if he.contrato_id not in _ids_contratos_usuario():
+            return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    he = HoraExtra.query.get_or_404(id)
+    ruta = _guardar_imagen("cons", id)
+    if ruta:
+        he.evidencia_consiliacion = ruta
+        db.session.commit()
+    return jsonify({"ok": True, "evidencia_consiliacion": he.evidencia_consiliacion or ""})
 
 
 # ── API: Resumen por contrato (todos los cortes) ─────────────────────────────
@@ -809,6 +861,7 @@ def api_he_kpis():
             sa_func.sum(sa_case((HoraExtra.estado == "CONFORME",    1), else_=0)).label("conformes"),
             sa_func.sum(sa_case((HoraExtra.estado == "NO CONFORME", 1), else_=0)).label("no_conformes"),
             sa_func.sum(sa_case((HoraExtra.estado == "DESCONTADA",  1), else_=0)).label("descontadas"),
+            sa_func.sum(sa_case((HoraExtra.estado == "CONSILIADO",  1), else_=0)).label("consiliados"),
             sa_func.coalesce(sa_func.sum(HoraExtra.horas_reportadas), 0).label("hrs_rep"),
             sa_func.coalesce(sa_func.sum(HoraExtra.horas_autorizadas), 0).label("hrs_auth"),
             sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "CONFORME",    HoraExtra.horas_reportadas), else_=0)), 0).label("hrs_conf"),
@@ -828,6 +881,7 @@ def api_he_kpis():
             "conformes":        row.conformes,
             "no_conformes":     row.no_conformes,
             "descontadas":      row.descontadas,
+            "consiliados":      row.consiliados,
             "hrs_reportadas":   float(row.hrs_rep),
             "hrs_conformes":    float(row.hrs_conf),
             "hrs_no_conformes": float(row.hrs_noconf),

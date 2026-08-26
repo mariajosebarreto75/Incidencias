@@ -52,6 +52,10 @@ class HoraExtra(db.Model):
     estado              = db.Column(db.String(30), default="PENDIENTE")  # PENDIENTE / CONFORME / NO CONFORME / DESCONTADA
     # Retroalimentación del coordinador (visible a NEO como read-only)
     retroalimentacion   = db.Column(db.Text)
+    # Evidencia fotográfica NEO (CONFORME / NO CONFORME / CONSILIADO)
+    evidencia_neo       = db.Column(db.String(500))
+    # Evidencia fotográfica de consiliación (subida por coordinador)
+    evidencia_consiliacion = db.Column(db.String(500))
 
     corte_id            = db.Column(db.Integer, db.ForeignKey("he_cortes.id"))
 
@@ -96,4 +100,6 @@ class HoraExtra(db.Model):
             "validado_por":       self.validado_por.nombre_completo if self.validado_por else "",
             "fecha_validacion":   self.fecha_validacion.strftime("%Y-%m-%d %H:%M") if self.fecha_validacion else "",
             "retroalimentacion":  self.retroalimentacion or "",
+            "evidencia_neo":      self.evidencia_neo or "",
+            "evidencia_consiliacion": self.evidencia_consiliacion or "",
         }
