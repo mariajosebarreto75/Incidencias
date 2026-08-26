@@ -2209,17 +2209,14 @@ function _actualizarKpisCoor(rows) {
         else                           { pend++;   hrsPend      += rep;  }
     }
     // Chips y métricas del panel validación
-    document.getElementById("k-total").textContent       = total;
-    document.getElementById("k-pend").textContent        = pend;
-    document.getElementById("k-conf").textContent        = conf;
-    document.getElementById("k-noconf").textContent      = noconf;
-    document.getElementById("k-desc").textContent        = desc;
-    document.getElementById("tb-pend").textContent       = pend;
-    document.getElementById("kv-pend-val").textContent   = hrsPend.toLocaleString("es-CO");
-    document.getElementById("k-hrs-rep").textContent     = hrsRep.toFixed(0);
-    document.getElementById("k-hrs-conf").textContent    = hrsConf.toFixed(0);
-    document.getElementById("k-hrs-noconf").textContent  = hrsNoconfRep.toFixed(0);
-    document.getElementById("k-hrs-desc").textContent    = hrsDesc.toFixed(0);
+    const _sk = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    _sk("k-total",     total);
+    _sk("k-pend",      pend);
+    _sk("k-conf",      conf);
+    _sk("k-noconf",    noconf);
+    _sk("k-desc",      desc);
+    _sk("tb-pend",     pend);
+    _sk("kv-pend-val", hrsPend.toLocaleString("es-CO"));
     // Tarjetas grandes del dashboard superior
     document.getElementById("rs-total").textContent      = total.toLocaleString("es-CO");
     document.getElementById("rs-pendientes").textContent = hrsPend.toLocaleString("es-CO");
