@@ -382,7 +382,7 @@ body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:1
             <div class="val blue" id="hs-hrs">—</div><div class="lbl">Hrs Reportadas</div>
         </div>
         <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #22c55e;">
-            <div class="val green" id="hs-auth">—</div><div class="lbl">Hrs Autorizadas</div>
+            <div class="val green" id="hs-auth">—</div><div class="lbl">Hrs Aprobadas</div>
         </div>
         <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #ef4444;">
             <div class="val" style="color:#dc2626;" id="hs-noconf">—</div><div class="lbl">Hrs No Autorizadas</div>
@@ -424,7 +424,7 @@ const contratosData = [
                 return `<div class="coor-conc-card" style="border-left-color:${col};">
                     <div class="ct">${c.codigo} — ${c.nombre}</div>
                     <div class="cv">${c.hrs_autorizadas.toFixed(0)}</div>
-                    <div class="cs">hrs autorizadas</div>
+                    <div class="cs">hrs aprobadas</div>
                     <div class="cb"><div class="cbf" style="width:${pct}%;background:${col};"></div></div>
                     <div class="cp">${pct}% conforme · ${c.hrs_reportadas.toFixed(0)} hrs reportadas</div>
                 </div>`;
@@ -443,7 +443,7 @@ const contratosData = [
                     </div>
                     <div class="coor-stat-box">
                         <div class="val green">${d.hrs_autorizadas.toFixed(0)}</div>
-                        <div class="lbl">Hrs Autorizadas</div>
+                        <div class="lbl">Hrs Aprobadas</div>
                     </div>
                 </div>
                 <div style="font-size:.65rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">

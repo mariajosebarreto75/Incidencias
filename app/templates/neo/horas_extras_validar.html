@@ -300,7 +300,7 @@ body { background:var(--c-bg); }
             </div>
             <div class="he-kpi-card" style="border-top:3px solid #22c55e;">
                 <div class="he-kpi-val" id="kv-hrs-conf" style="color:#15803d;">—</div>
-                <div class="he-kpi-lbl">Hrs Autorizadas</div>
+                <div class="he-kpi-lbl">Hrs Aprobadas</div>
             </div>
             <div class="he-kpi-card danger">
                 <div class="he-kpi-val" id="kv-hrs-noconf">—</div>
@@ -455,7 +455,7 @@ body { background:var(--c-bg); }
             </div>
             <div class="he-kpi-card" style="border-top:3px solid #22c55e;">
                 <div class="he-kpi-val" id="hk-hrs-conf" style="color:#15803d;">—</div>
-                <div class="he-kpi-lbl">Hrs Autorizadas</div>
+                <div class="he-kpi-lbl">Hrs Aprobadas</div>
             </div>
             <div class="he-kpi-card danger">
                 <div class="he-kpi-val" id="hk-hrs-noconf">—</div>
@@ -523,7 +523,7 @@ body { background:var(--c-bg); }
             <div class="he-kpi-card primary"><div class="he-kpi-val" id="ck-total">—</div><div class="he-kpi-lbl">Total Registros</div></div>
             <div class="he-kpi-card" style="border-top:3px solid #f59e0b;background:#fffbeb;"><div class="he-kpi-val" id="ck-pendientes" style="color:#b45309;">—</div><div class="he-kpi-lbl">Pendientes por revisar</div></div>
             <div class="he-kpi-card info">   <div class="he-kpi-val" id="ck-hrs-rep">—</div><div class="he-kpi-lbl">Hrs Reportadas</div></div>
-            <div class="he-kpi-card success"><div class="he-kpi-val" id="ck-hrs-auth">—</div><div class="he-kpi-lbl">Hrs Autorizadas</div></div>
+            <div class="he-kpi-card success"><div class="he-kpi-val" id="ck-hrs-auth">—</div><div class="he-kpi-lbl">Hrs Aprobadas</div></div>
             <div class="he-kpi-card danger"> <div class="he-kpi-val" id="ck-hrs-noauth">—</div><div class="he-kpi-lbl">Hrs No Autorizadas</div></div>
             <div class="he-kpi-card warning"><div class="he-kpi-val" id="ck-hrs-desc">—</div><div class="he-kpi-lbl">Hrs Descontadas</div></div>
         </div>
@@ -1944,7 +1944,7 @@ async function cargarKpis() {
                         return `<div class="he-conc-card-neo" style="border-left-color:${col};">
                             <div class="ct">${c.codigo} — ${c.nombre}</div>
                             <div class="cv">${c.hrs_autorizadas.toFixed(0)}</div>
-                            <div class="cs">hrs autorizadas</div>
+                            <div class="cs">hrs aprobadas</div>
                             <div class="cb"><div class="cbf" style="background:${col};width:${c.total>0?Math.round(c.conformes/c.total*100):0}%;"></div></div>
                         </div>`;
                     }).join("");

@@ -336,7 +336,7 @@ body { background:var(--c-bg); }
                 </div>
                 <div class="he-stat-card success">
                     <div class="he-stat-val" id="rs-hrs-conf" style="color:#166534;">—</div>
-                    <div class="he-stat-lbl">Hrs Autorizadas</div>
+                    <div class="he-stat-lbl">Hrs Aprobadas</div>
                 </div>
                 <div class="he-stat-card danger">
                     <div class="he-stat-val" id="rs-hrs-noauth">—</div>
@@ -1045,7 +1045,7 @@ async function cargarResumen() {
                 <div class="he-conc-title">${c.codigo} — ${c.nombre}</div>
                 <div>
                     <div class="he-conc-num" style="color:${color};">${c.hrs_autorizadas.toFixed(0)}</div>
-                    <div class="he-conc-sub">hrs autorizadas</div>
+                    <div class="he-conc-sub">hrs aprobadas</div>
                 </div>
                 <div class="he-conc-bar">
                     <div class="he-conc-bar-fill" style="width:${pct}%;background:${color};"></div>

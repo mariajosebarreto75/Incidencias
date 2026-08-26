@@ -713,13 +713,14 @@ def api_he_resumen():
         if ct_total == 0:
             continue
         qc_conf  = qc.filter(HoraExtra.estado == "CONFORME")
+        qc_desc  = qc.filter(HoraExtra.estado == "DESCONTADA")
         por_concepto.append({
             "codigo":         codigo,
             "nombre":         nombre,
             "total":          ct_total,
             "conformes":      qc_conf.count(),
             "hrs_reportadas": _sum_rep(qc),
-            "hrs_autorizadas":_sum_auth(qc_conf),
+            "hrs_autorizadas":_sum_auth(qc_conf) + _sum_auth(qc_desc),
         })
 
     try:
