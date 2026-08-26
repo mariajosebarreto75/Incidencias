@@ -439,15 +439,6 @@ body { background:var(--c-bg); }
             </div>
         </div>
 
-        <!-- Métricas de horas -->
-        <div class="he-hrs-row">
-            <div class="he-hrs-card" style="border-top:2px solid #f59e0b;"><div class="hv" id="kv-pend-val" style="color:#b45309;">—</div><div class="hl">Hrs Pendientes</div></div>
-            <div class="he-hrs-card"><div class="hv" id="k-hrs-rep" style="color:#0d3b66;">—</div><div class="hl">Hrs Reportadas</div></div>
-            <div class="he-hrs-card"><div class="hv" id="k-hrs-conf" style="color:#22c55e;">—</div><div class="hl">Hrs Conformes</div></div>
-            <div class="he-hrs-card"><div class="hv" id="k-hrs-noconf" style="color:#ef4444;">—</div><div class="hl">Hrs No Conformes</div></div>
-            <div class="he-hrs-card"><div class="hv" id="k-hrs-desc" style="color:#8b5cf6;">—</div><div class="hl">Hrs Descontadas</div></div>
-        </div>
-
         <!-- Filtros historial -->
         <div class="he-filtros">
             <div>
@@ -1150,16 +1141,13 @@ async function cargarKpis() {
     try {
         const r = await fetch(url);
         const d = await r.json();
-        document.getElementById("k-total").textContent      = d.total      ?? "—";
-        document.getElementById("k-pend").textContent       = d.pendientes ?? "—";
-        document.getElementById("k-conf").textContent       = d.conformes  ?? "—";
-        document.getElementById("k-noconf").textContent     = d.no_conformes ?? "—";
-        document.getElementById("k-desc").textContent       = d.descontadas ?? "—";
-        document.getElementById("k-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
-        document.getElementById("k-hrs-conf").textContent   = (+d.hrs_conformes    || 0).toFixed(0);
-        document.getElementById("k-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
-        document.getElementById("k-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
-        document.getElementById("tb-pend").textContent      = d.pendientes ?? "—";
+        const _set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        _set("k-total",   d.total      ?? "—");
+        _set("k-pend",    d.pendientes ?? "—");
+        _set("k-conf",    d.conformes  ?? "—");
+        _set("k-noconf",  d.no_conformes ?? "—");
+        _set("k-desc",    d.descontadas ?? "—");
+        _set("tb-pend",   d.pendientes ?? "—");
     } catch(e) {}
 }
 
@@ -1756,6 +1744,8 @@ async function _abrirCorteEnValidacion(id, nombre, estado) {
     const sel = document.getElementById("fCorte");
     if (sel) { sel.value = String(id); sincronizarFechasCoor(); }
     cargarHistorial(id);
+    cargarKpis();
+    cargarResumen();
     // Indicador visual de solo lectura cuando el corte está cerrado
     const banner = document.getElementById("bannerCorteCerrado");
     if (banner) banner.style.display = (_corteActualEstado === "CERRADO") ? "flex" : "none";
