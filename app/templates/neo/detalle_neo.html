@@ -364,12 +364,19 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-md-2 d-flex align-items-center justify-content-end">
+                            <div class="col-md-2 d-flex flex-column align-items-end gap-2">
                                 {% if reporte.estado != 'Cerrado' %}
                                 <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
                                         id="btnCorregirConf">
                                     <i class="bi bi-pencil me-1"></i>Corregir
                                 </button>
+                                {% if reporte.conformidad_neo == 'No conforme' %}
+                                <button class="btn btn-sm rounded-pill px-3 fw-semibold"
+                                        id="btnMarcarConsiliado"
+                                        style="background:#7c3aed;color:#fff;border:none;font-size:.75rem;">
+                                    <i class="bi bi-shield-check me-1"></i>Marcar Consiliado
+                                </button>
+                                {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -487,23 +494,6 @@
 
 </div>
 
-<!-- Modal: ¿Reporte consiliado? (reportes/incidencias) -->
-<div id="modalConsiliadoRep" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:14px;width:96%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,.25);overflow:hidden;">
-    <div style="background:#7c3aed;color:#fff;padding:16px 20px;display:flex;align-items:center;gap:10px;">
-      <i class="bi bi-shield-check" style="font-size:1.1rem;"></i>
-      <strong style="flex:1;font-size:.95rem;">¿Reporte consiliado?</strong>
-    </div>
-    <div style="padding:24px 20px;text-align:center;">
-      <p style="font-size:.95rem;color:#374151;margin-bottom:6px;">El reporte fue marcado como <strong>No Conforme</strong>.</p>
-      <p style="font-size:.88rem;color:#6b7280;">¿Fue este reporte consiliado con el coordinador?</p>
-    </div>
-    <div style="padding:12px 20px;border-top:1px solid #eee;display:flex;gap:12px;justify-content:center;">
-      <button id="btnConsiliadoNo" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>No, dejar como No Conforme</button>
-      <button id="btnConsiliadoSi" class="btn btn-sm fw-bold" style="background:#7c3aed;color:#fff;border:none;"><i class="bi bi-shield-check me-1"></i>Sí, Consiliado</button>
-    </div>
-  </div>
-</div>
 
 <script>
 (function () {
@@ -562,14 +552,7 @@
         .then(r => r.json())
         .then(function (data) {
             if (data.ok) {
-                if (sel.value === "No conforme") {
-                    // Preguntar si es consiliado antes de recargar
-                    btn.disabled = false;
-                    btn.innerHTML = labelOriginal;
-                    document.getElementById("modalConsiliadoRep").style.display = "flex";
-                } else {
-                    location.reload();
-                }
+                location.reload();
             } else {
                 mostrarAlerta(data.error || "Error al guardar.", "err");
                 btn.disabled = false;
@@ -583,23 +566,22 @@
         });
     });
 
-    /* ---- Modal consiliado (reportes) ---- */
-    const modalCons = document.getElementById("modalConsiliadoRep");
-    document.getElementById("btnConsiliadoNo").addEventListener("click", function () {
-        modalCons.style.display = "none";
-        location.reload();
-    });
-    document.getElementById("btnConsiliadoSi").addEventListener("click", function () {
-        const obs = document.getElementById("obs_conformidad") ? document.getElementById("obs_conformidad").value : "";
-        fetch("/neo/reporte/" + REPORTE_ID + "/validar", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ conformidad_neo: "Consiliado", observacion_conformidad: obs })
-        }).finally(function () {
-            modalCons.style.display = "none";
-            location.reload();
+    /* ---- Botón Marcar Consiliado (aparece solo cuando conformidad == No conforme) ---- */
+    const btnCons = document.getElementById("btnMarcarConsiliado");
+    if (btnCons) {
+        btnCons.addEventListener("click", function () {
+            if (!confirm("¿Confirma que este reporte fue consiliado con el coordinador?")) return;
+            btnCons.disabled = true;
+            fetch("/neo/reporte/" + REPORTE_ID + "/validar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ conformidad_neo: "Consiliado", observacion_conformidad: "" })
+            }).then(r => r.json()).then(function (data) {
+                if (data.ok) { location.reload(); }
+                else { alert(data.error || "Error al guardar."); btnCons.disabled = false; }
+            }).catch(function () { alert("Error de conexión."); btnCons.disabled = false; });
         });
-    });
+    }
 
     function mostrarAlerta(msg, tipo) {
         const el = document.getElementById("confAlerta");

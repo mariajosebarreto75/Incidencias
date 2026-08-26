@@ -694,25 +694,6 @@ body { background:var(--c-bg); }
   </div>
 </div>
 
-<!-- ── Modal: ¿Reporte consiliado? ── -->
-<div class="he-modal-overlay" id="modalConsiliado">
-  <div class="he-modal" style="max-width:440px;">
-    <div class="he-modal-header" style="background:#7c3aed;">
-      <i class="bi bi-shield-check"></i>
-      <h6>¿Reporte consiliado?</h6>
-      <button onclick="_cerrarModalConsiliado()">&times;</button>
-    </div>
-    <div class="he-modal-body" style="text-align:center;padding:28px 24px;">
-      <p style="font-size:.95rem;color:#374151;margin-bottom:8px;">El reporte fue marcado como <strong>No Conforme</strong>.</p>
-      <p style="font-size:.88rem;color:#6b7280;">¿Fue este reporte consiliado con el coordinador?</p>
-    </div>
-    <div class="he-modal-footer" style="justify-content:center;gap:16px;">
-      <button class="btn btn-sm btn-outline-secondary" onclick="_responderConsiliado(false)"><i class="bi bi-x-lg me-1"></i>No, dejar como No Conforme</button>
-      <button class="btn btn-sm fw-bold" style="background:#7c3aed;color:#fff;border:none;" onclick="_responderConsiliado(true)"><i class="bi bi-shield-check me-1"></i>Sí, marcar como Consiliado</button>
-    </div>
-  </div>
-</div>
-
 <!-- ── Modal: Evidencia NEO (imagen opcional) ── -->
 <div class="he-modal-overlay" id="modalEvidenciaNeo">
   <div class="he-modal" style="max-width:420px;">
@@ -1931,45 +1912,17 @@ async function _guardarFila(id, payload, row) {
                 }
             }
             cargarKpis();
-            // Flujo post-guardado: imagen y/o consiliado
+            // Ofrecer imagen opcional tras guardar CONFORME o NO CONFORME
             const est = (payload.autorizacion_neo || "").toUpperCase();
             if (est === "CONFORME" || est === "NO CONFORME") {
                 _postSaveId  = id;
                 _postSaveRow = row;
-                if (est === "NO CONFORME") {
-                    document.getElementById("modalConsiliado").classList.add("open");
-                } else {
-                    _abrirModalEvidenciaNeo("Evidencia de conformidad (opcional)");
-                }
+                _abrirModalEvidenciaNeo(est === "CONFORME" ? "Evidencia de conformidad (opcional)" : "Evidencia de No Conformidad (opcional)");
             }
         }
     } catch(e) {
         // Red caída: queda en _dirtyRows para el guardado periódico
     }
-}
-
-// ── Lógica modal consiliado ────────────────────────────────────────────────────
-function _cerrarModalConsiliado() {
-    document.getElementById("modalConsiliado").classList.remove("open");
-    // Después de cerrar el modal consiliado, ofrecer imagen de todas formas
-    _abrirModalEvidenciaNeo("Evidencia de No Conformidad (opcional)");
-}
-
-async function _responderConsiliado(si) {
-    document.getElementById("modalConsiliado").classList.remove("open");
-    if (si && _postSaveId) {
-        // Cambiar estado a CONSILIADO en backend
-        await fetch(`/api/he/${_postSaveId}/validar`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ autorizacion_neo: "CONSILIADO", horas_autorizadas: null, obs_neo: "" }),
-        });
-        if (hot && _postSaveRow != null) {
-            hot.setDataAtCell(_postSaveRow, C_ESTADO, "CONSILIADO", "auto");
-        }
-        cargarKpis();
-    }
-    _abrirModalEvidenciaNeo(si ? "Evidencia de consiliación (opcional)" : "Evidencia de No Conformidad (opcional)");
 }
 
 // ── Lógica modal evidencia NEO ─────────────────────────────────────────────────
