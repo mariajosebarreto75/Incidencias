@@ -438,15 +438,15 @@ def validar_reporte(id):
     conformidad = (datos.get("conformidad_neo") or "").strip()
     obs = (datos.get("observacion_conformidad") or "").strip()
 
-    if conformidad not in ("Conforme", "No conforme"):
+    if conformidad not in ("Conforme", "No conforme", "Consiliado"):
         return jsonify({"ok": False, "error": "Seleccione un valor de conformidad"}), 400
 
     reporte.conformidad_neo = conformidad
     reporte.observacion_conformidad = obs or None
     db.session.commit()
 
-    # Notificar al coordinador solo si es No conforme
-    if conformidad == "No conforme":
+    # Notificar al coordinador si es No conforme o Consiliado
+    if conformidad in ("No conforme", "Consiliado"):
         for coor in coordinadores_de_contrato(reporte.contrato):
             crear_notificacion(coor, "no_conforme", reporte)
         db.session.commit()
