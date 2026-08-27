@@ -1060,9 +1060,22 @@ def api_actualizar_cuadrilla():
     return jsonify({"ok": True, "actualizados": actualizados, "no_encontrados": no_encontrados})
 
 
+def _auto_limpiar_alertas_antiguas():
+    """Elimina alertas GPS con más de 1 día de antigüedad (solo quedan hoy y ayer)."""
+    from datetime import timedelta
+    ayer = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    try:
+        AlertaGPS.query.filter(AlertaGPS.triggered_at < ayer).delete(synchronize_session=False)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+
 @neo.route("/neo/alertas")
 @login_required
 def alertas_gps():
+    _auto_limpiar_alertas_antiguas()
+
     codigos_contrato = _codigos_contrato_usuario()
 
     filtro   = request.args.get("filtro",   "pendiente")
@@ -1070,16 +1083,17 @@ def alertas_gps():
     contrato = request.args.get("contrato", "").strip()
     recurso  = request.args.get("recurso",  "").strip()
     orden    = request.args.get("orden",    "reciente")
-    fecha    = request.args.get("fecha",    "").strip()   # YYYY-MM-DD, vacío = todas
+    fecha    = request.args.get("fecha",    "").strip()   # YYYY-MM-DD, vacío = hoy y ayer
     # "todos" | "con_contrato" | "sin_contrato"
     scope    = request.args.get("scope",    "todos")
 
     q = AlertaGPS.query
 
-    # Solo alertas del mes en curso — triggered_at es varchar, se filtra por prefijo YYYY-MM
-    hoy        = datetime.utcnow()
-    mes_prefix = hoy.strftime("%Y-%m")   # e.g. "2026-08"
-    q = q.filter(AlertaGPS.triggered_at.like(f"{mes_prefix}%"))
+    # Solo alertas de hoy y ayer (triggered_at es varchar ISO, compara lexicográficamente)
+    from datetime import timedelta
+    hoy  = datetime.utcnow()
+    ayer = (hoy - timedelta(days=1)).strftime("%Y-%m-%d")
+    q = q.filter(AlertaGPS.triggered_at >= ayer)
 
     # Filtro de estado (pendiente / resuelta / todas)
     if filtro != "todas":
@@ -1204,10 +1218,11 @@ def responder_alerta_gps(id):
 @neo.route("/neo/alertas/badge")
 @login_required
 def badge_alertas():
-    mes_prefix = datetime.utcnow().strftime("%Y-%m")
+    from datetime import timedelta
+    ayer = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
     count = AlertaGPS.query.filter(
         AlertaGPS.estado_local == "pendiente",
-        AlertaGPS.triggered_at.like(f"{mes_prefix}%"),
+        AlertaGPS.triggered_at >= ayer,
     ).count()
     return jsonify({"pendientes": count})
 
@@ -1229,6 +1244,7 @@ def depurar_alertas():
 @login_required
 def alertas_datos():
     """Devuelve las alertas como JSON para el drawer del panel de reportes."""
+    _auto_limpiar_alertas_antiguas()
     import json as _json
     from datetime import date as _date, datetime as _dt
 
@@ -1249,15 +1265,19 @@ def alertas_datos():
     elif scope == "con_contrato":
         q = q.filter(AlertaGPS.contract_code != None)
 
-    # Filtro de fecha: "todas" = sin filtro de fecha; vacío o "hoy" = hoy
-    if fecha == "todas":
-        pass  # sin filtro de fecha
-    else:
+    # Filtro de fecha: fecha específica filtra solo ese día; vacío = hoy y ayer
+    if fecha:
         try:
-            f_date = _dt.strptime(fecha, "%Y-%m-%d").date() if fecha else _date.today()
+            _dt.strptime(fecha, "%Y-%m-%d")
+            q = q.filter(AlertaGPS.triggered_at.like(f"{fecha}%"))
         except ValueError:
-            f_date = _date.today()
-        q = q.filter(AlertaGPS.triggered_at.like(f"{f_date}%"))
+            from datetime import timedelta as _td
+            ayer_str = (_date.today() - _td(days=1)).strftime("%Y-%m-%d")
+            q = q.filter(AlertaGPS.triggered_at >= ayer_str)
+    else:
+        from datetime import timedelta as _td
+        ayer_str = (_date.today() - _td(days=1)).strftime("%Y-%m-%d")
+        q = q.filter(AlertaGPS.triggered_at >= ayer_str)
 
     if placa:
         q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
