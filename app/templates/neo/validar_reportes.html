@@ -325,11 +325,23 @@
     }
 
     /* ── Tabs de estado ── */
+    const VR_CHIP_KEY = 'neo_vr_chip';
+    const chipGuardado = sessionStorage.getItem(VR_CHIP_KEY);
+    if (chipGuardado && chipGuardado !== 'todos') {
+        const tabBtn = document.querySelector(`.vr-tab[data-filtro="${chipGuardado}"]`);
+        if (tabBtn) {
+            document.querySelectorAll(".vr-tab").forEach(b => b.classList.remove("active"));
+            tabBtn.classList.add("active");
+            filtroTab = chipGuardado;
+        }
+    }
+
     document.querySelectorAll(".vr-tab").forEach(btn => {
         btn.addEventListener("click", function () {
             document.querySelectorAll(".vr-tab").forEach(b => b.classList.remove("active"));
             this.classList.add("active");
             filtroTab = this.dataset.filtro;
+            sessionStorage.setItem(VR_CHIP_KEY, filtroTab);
             aplicarFiltros();
         });
     });
@@ -444,64 +456,22 @@
 
 })();
 
-// ── Persistencia de filtros en sessionStorage ─────────────────────────────
-(function() {
-    const STORAGE_KEY = 'neo_validar_filtros';
-    const form = document.getElementById('formFiltros');
-
-    // Al cargar: si la URL no tiene filtros propios pero hay guardados, redirigir
-    const params = new URLSearchParams(window.location.search);
-    const tieneFiltros = ['fecha_ini','fecha_fin','fecha_rep_ini','fecha_rep_fin','contrato','recurso']
-        .some(k => params.get(k));
-
-    if (!tieneFiltros) {
-        const guardados = sessionStorage.getItem(STORAGE_KEY);
-        if (guardados && guardados !== '?') {
-            // Restaurar URL con filtros guardados
-            window.location.replace(window.location.pathname + guardados);
-            return;
-        }
-    } else {
-        // Guardar filtros actuales
-        sessionStorage.setItem(STORAGE_KEY, window.location.search);
-    }
-
-    // Al enviar el formulario: limpiar storage si no hay valores
-    if (form) {
-        form.addEventListener('submit', function() {
-            const data = new FormData(form);
-            const hasValues = [...data.values()].some(v => v.trim() !== '');
-            if (!hasValues) sessionStorage.removeItem(STORAGE_KEY);
-        });
-    }
-
-    // Botón Limpiar: borrar storage
-    const btnLimpiar = document.querySelector('.vr-btn-limpiar');
-    if (btnLimpiar) {
-        btnLimpiar.addEventListener('click', function() {
-            sessionStorage.removeItem(STORAGE_KEY);
-        });
-    }
-})();
-
-/* ── Persistencia de filtros en sessionStorage ────────────────────────────── */
+/* ── Persistencia de filtros de formulario + chip en sessionStorage ─────── */
 (function () {
     const KEY        = 'neo_vr_filtros';
+    const CHIP_KEY   = 'neo_vr_chip';
     const CAMPOS     = ['fecha_ini','fecha_fin','fecha_rep_ini','fecha_rep_fin','contrato','recurso'];
     const form       = document.getElementById('formFiltros');
-    const btnLimpiar = document.getElementById('btnLimpiarFiltros');
+    const btnLimpiar = document.getElementById('btnLimpiarFiltros') || document.querySelector('.vr-btn-limpiar');
 
-    // ¿La URL ya trae parámetros de filtro?
     const urlParams   = new URLSearchParams(window.location.search);
     const tieneParams = CAMPOS.some(k => urlParams.get(k));
 
     if (tieneParams) {
-        // Guardar lo que llegó por URL
         const datos = {};
         CAMPOS.forEach(k => { datos[k] = urlParams.get(k) || ''; });
         sessionStorage.setItem(KEY, JSON.stringify(datos));
     } else {
-        // Restaurar desde sessionStorage y reenviar el formulario
         const guardado = sessionStorage.getItem(KEY);
         if (guardado) {
             try {
@@ -509,30 +479,30 @@
                 const tieneDatos = CAMPOS.some(k => datos[k]);
                 if (tieneDatos) {
                     CAMPOS.forEach(k => {
-                        const el = form.querySelector(`[name="${k}"]`);
+                        const el = form ? form.querySelector(`[name="${k}"]`) : null;
                         if (el && datos[k]) el.value = datos[k];
                     });
-                    form.submit(); // reenviar para que el servidor filtre
-                    return;
+                    if (form) { form.submit(); return; }
                 }
             } catch(e) { sessionStorage.removeItem(KEY); }
         }
     }
 
-    // Al enviar el formulario, guardar los valores
-    form.addEventListener('submit', () => {
-        const datos = {};
-        CAMPOS.forEach(k => {
-            const el = form.querySelector(`[name="${k}"]`);
-            datos[k] = el ? el.value : '';
+    if (form) {
+        form.addEventListener('submit', () => {
+            const datos = {};
+            CAMPOS.forEach(k => {
+                const el = form.querySelector(`[name="${k}"]`);
+                datos[k] = el ? el.value : '';
+            });
+            sessionStorage.setItem(KEY, JSON.stringify(datos));
         });
-        sessionStorage.setItem(KEY, JSON.stringify(datos));
-    });
+    }
 
-    // Botón "Limpiar todo" también borra el sessionStorage
     if (btnLimpiar) {
         btnLimpiar.addEventListener('click', () => {
             sessionStorage.removeItem(KEY);
+            sessionStorage.removeItem(CHIP_KEY);
         });
     }
 })();

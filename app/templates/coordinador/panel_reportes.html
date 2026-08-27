@@ -395,16 +395,87 @@
         });
     }
 
+    // Restaurar chip guardado
+    const COOR_CHIP_KEY = 'coor_panel_chip';
+    const chipGuardado = sessionStorage.getItem(COOR_CHIP_KEY);
+    if (chipGuardado && chipGuardado !== 'todos') {
+        const tabBtn = document.querySelector(`.vr-tab[data-filtro="${chipGuardado}"]`);
+        if (tabBtn) {
+            document.querySelectorAll(".vr-tab").forEach(b => b.classList.remove("active"));
+            tabBtn.classList.add("active");
+            filtroTab = chipGuardado;
+        }
+    }
+
     document.querySelectorAll(".vr-tab").forEach(btn => {
         btn.addEventListener("click", function () {
             document.querySelectorAll(".vr-tab").forEach(b => b.classList.remove("active"));
             this.classList.add("active");
             filtroTab = this.dataset.filtro;
+            sessionStorage.setItem(COOR_CHIP_KEY, filtroTab);
             aplicarFiltros();
         });
     });
 
+    // Limpiar chip cuando se limpia filtros
+    const btnLimpiarCoor = document.querySelector('.vr-btn-limpiar');
+    if (btnLimpiarCoor) {
+        btnLimpiarCoor.addEventListener('click', () => {
+            sessionStorage.removeItem(COOR_CHIP_KEY);
+        });
+    }
+
     aplicarFiltros();
+})();
+
+/* ── Persistencia filtros formulario coordinador ─────────────────────────── */
+(function () {
+    const KEY    = 'coor_panel_filtros';
+    const CAMPOS = ['fecha_ini','fecha_fin','recurso'];
+    const form   = document.querySelector('.vr-filtros-form');
+    const btnLim = document.querySelector('.vr-btn-limpiar');
+
+    const urlParams   = new URLSearchParams(window.location.search);
+    const tieneParams = CAMPOS.some(k => urlParams.get(k));
+
+    if (tieneParams) {
+        const datos = {};
+        CAMPOS.forEach(k => { datos[k] = urlParams.get(k) || ''; });
+        sessionStorage.setItem(KEY, JSON.stringify(datos));
+    } else {
+        const guardado = sessionStorage.getItem(KEY);
+        if (guardado) {
+            try {
+                const datos = JSON.parse(guardado);
+                const tieneDatos = CAMPOS.some(k => datos[k]);
+                if (tieneDatos && form) {
+                    CAMPOS.forEach(k => {
+                        const el = form.querySelector(`[name="${k}"]`);
+                        if (el && datos[k]) el.value = datos[k];
+                    });
+                    form.submit(); return;
+                }
+            } catch(e) { sessionStorage.removeItem(KEY); }
+        }
+    }
+
+    if (form) {
+        form.addEventListener('submit', () => {
+            const datos = {};
+            CAMPOS.forEach(k => {
+                const el = form.querySelector(`[name="${k}"]`);
+                datos[k] = el ? el.value : '';
+            });
+            sessionStorage.setItem(KEY, JSON.stringify(datos));
+        });
+    }
+
+    if (btnLim) {
+        btnLim.addEventListener('click', () => {
+            sessionStorage.removeItem(KEY);
+            sessionStorage.removeItem('coor_panel_chip');
+        });
+    }
 })();
 
 // ══ NOTIFICACIONES COORDINADOR ════════════════════════════════
