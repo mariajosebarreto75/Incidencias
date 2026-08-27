@@ -225,8 +225,8 @@ def panel_reportes():
 
     kpis = {
         "total":        len(reportes),
-        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme") and r.estado != "Respondido"),
-        "no_conformes": sum(1 for r in reportes if r.conformidad_neo == "No conforme"),
+        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme", "Consiliado") and r.estado != "Respondido"),
+        "no_conformes": sum(1 for r in reportes if r.conformidad_neo in ("No conforme", "Consiliado")),
         "conformes":    sum(1 for r in reportes if r.conformidad_neo == "Conforme"),
     }
 
@@ -716,10 +716,10 @@ def apelar_no_conformidad(id):
             "mensaje": "Este reporte ya fue cerrado."
         }), 400
 
-    if reporte.conformidad_neo != "No conforme":
+    if reporte.conformidad_neo not in ("No conforme", "Consiliado"):
         return jsonify({
             "success": False,
-            "mensaje": "Solo se puede apelar cuando NEO calificó el reporte como No conforme."
+            "mensaje": "Solo se puede apelar cuando NEO calificó el reporte como No conforme o Consiliado."
         }), 400
 
     datos = request.get_json(silent=True) or {}

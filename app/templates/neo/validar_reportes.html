@@ -198,6 +198,8 @@
                 {% for r in reportes %}
                 {% if r.conformidad_neo == 'No conforme' %}
                     {% set cat = 'no-conforme' %}
+                {% elif r.conformidad_neo == 'Consiliado' %}
+                    {% set cat = 'consiliado' %}
                 {% elif r.conformidad_neo == 'Conforme' %}
                     {% set cat = 'conforme' %}
                 {% elif r.estado == 'Respondido' %}
@@ -233,6 +235,8 @@
                     <td class="vr-th-center">
                         {% if cat == 'no-conforme' %}
                             <span class="vr-badge-est no-conforme"><i class="bi bi-x-circle-fill"></i> No conforme</span>
+                        {% elif cat == 'consiliado' %}
+                            <span class="vr-badge-est" style="background:#f3e8ff;color:#6d28d9;"><i class="bi bi-shield-check"></i> Consiliado</span>
                         {% elif cat == 'conforme' %}
                             <span class="vr-badge-est conforme"><i class="bi bi-check-circle-fill"></i> Conforme</span>
                         {% elif cat == 'con-respuesta' %}

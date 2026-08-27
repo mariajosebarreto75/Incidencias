@@ -342,9 +342,10 @@ def validar_reportes():
 
     kpis = {
         "total":        len(reportes),
-        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme")),
-        "no_conformes": sum(1 for r in reportes if r.conformidad_neo == "No conforme"),
+        "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme", "Consiliado")),
+        "no_conformes": sum(1 for r in reportes if r.conformidad_neo in ("No conforme", "Consiliado")),
         "conformes":    sum(1 for r in reportes if r.conformidad_neo == "Conforme"),
+        "consiliados":  sum(1 for r in reportes if r.conformidad_neo == "Consiliado"),
     }
 
     return render_template(
