@@ -687,30 +687,6 @@ body { background:var(--c-bg); }
   </div>
 </div>
 
-<!-- ── Modal: Evidencia NEO (imagen opcional) ── -->
-<div class="he-modal-overlay" id="modalEvidenciaNeo">
-  <div class="he-modal" style="max-width:420px;">
-    <div class="he-modal-header" style="background:#0d6b73;">
-      <i class="bi bi-camera"></i>
-      <h6 id="modalEvidenciaTitulo">Adjuntar evidencia (opcional)</h6>
-      <button onclick="_cerrarModalEvidenciaNeo()">&times;</button>
-    </div>
-    <div class="he-modal-body" style="padding:22px 20px;">
-      <p style="font-size:.84rem;color:#6b7280;margin-bottom:14px;">Puede adjuntar una imagen como evidencia. Este paso es <strong>opcional</strong>.</p>
-      <div id="evidenciaPreviewNeo" style="display:none;margin-bottom:12px;text-align:center;">
-        <img id="evidenciaImgNeo" src="" alt="preview" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid #dee2e6;">
-      </div>
-      <label class="btn btn-sm btn-outline-primary w-100" style="cursor:pointer;">
-        <i class="bi bi-image me-1"></i>Seleccionar imagen
-        <input type="file" id="inputEvidenciaNeo" accept="image/*" style="display:none;" onchange="_previewEvidenciaNeo(this)">
-      </label>
-    </div>
-    <div class="he-modal-footer">
-      <button class="btn btn-sm btn-secondary" onclick="_cerrarModalEvidenciaNeo()">Omitir</button>
-      <button class="btn btn-sm btn-primary fw-bold" id="btnSubirEvidenciaNeo" onclick="_subirEvidenciaNeo()"><i class="bi bi-cloud-upload me-1"></i>Subir evidencia</button>
-    </div>
-  </div>
-</div>
 
 <script src="{{ url_for('static', filename='vendor/handsontable.min.js') }}"></script>
 <script src="{{ url_for('static', filename='vendor/xlsx.full.min.js') }}"></script>
@@ -1881,10 +1857,6 @@ const _saveTimers = {};
 // Filas con cambios pendientes de confirmar guardado exitoso
 const _dirtyRows = new Map(); // id → {row, estado, hrs, obs}
 
-// Estado del flujo post-guardado
-let _postSaveId   = null;  // id del registro que acaba de guardarse
-let _postSaveRow  = null;  // fila en el grid
-
 async function _guardarFila(id, payload, row) {
     try {
         const r = await fetch(`/api/he/${id}/validar`, {
@@ -1905,58 +1877,12 @@ async function _guardarFila(id, payload, row) {
                 }
             }
             cargarKpis();
-            // Ofrecer imagen opcional tras guardar CONFORME o NO CONFORME
-            const est = (payload.autorizacion_neo || "").toUpperCase();
-            if (est === "CONFORME" || est === "NO CONFORME") {
-                _postSaveId  = id;
-                _postSaveRow = row;
-                _abrirModalEvidenciaNeo(est === "CONFORME" ? "Evidencia de conformidad (opcional)" : "Evidencia de No Conformidad (opcional)");
-            }
         }
     } catch(e) {
         // Red caída: queda en _dirtyRows para el guardado periódico
     }
 }
 
-// ── Lógica modal evidencia NEO ─────────────────────────────────────────────────
-function _abrirModalEvidenciaNeo(titulo) {
-    document.getElementById("modalEvidenciaTitulo").textContent = titulo || "Adjuntar evidencia (opcional)";
-    document.getElementById("inputEvidenciaNeo").value = "";
-    document.getElementById("evidenciaPreviewNeo").style.display = "none";
-    document.getElementById("modalEvidenciaNeo").classList.add("open");
-}
-
-function _cerrarModalEvidenciaNeo() {
-    document.getElementById("modalEvidenciaNeo").classList.remove("open");
-    _postSaveId = null;
-    _postSaveRow = null;
-}
-
-function _previewEvidenciaNeo(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-        document.getElementById("evidenciaImgNeo").src = e.target.result;
-        document.getElementById("evidenciaPreviewNeo").style.display = "block";
-    };
-    reader.readAsDataURL(file);
-}
-
-async function _subirEvidenciaNeo() {
-    const input = document.getElementById("inputEvidenciaNeo");
-    if (!input.files[0]) { _cerrarModalEvidenciaNeo(); return; }
-    if (!_postSaveId) { _cerrarModalEvidenciaNeo(); return; }
-    const fd = new FormData();
-    fd.append("imagen", input.files[0]);
-    try {
-        document.getElementById("btnSubirEvidenciaNeo").disabled = true;
-        await fetch(`/api/he/${_postSaveId}/evidencia-neo`, { method: "POST", body: fd });
-    } finally {
-        document.getElementById("btnSubirEvidenciaNeo").disabled = false;
-    }
-    _cerrarModalEvidenciaNeo();
-}
 
 function autoGuardar(row) {
     const id = registrosIds[row];
