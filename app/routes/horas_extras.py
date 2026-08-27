@@ -629,10 +629,10 @@ def api_he_validar(id):
     horas_auth   = d.get("horas_autorizadas")
     obs          = d.get("obs_neo", "").strip()
 
-    if autorizacion not in ("CONFORME", "NO CONFORME", "DESCONTADA"):
+    if autorizacion not in ("CONFORME", "NO CONFORME", "DESCONTADA", "PENDIENTE"):
         return jsonify({"ok": False, "msg": "Autorización inválida"}), 400
 
-    he.autorizacion_neo  = autorizacion
+    he.autorizacion_neo  = None if autorizacion == "PENDIENTE" else autorizacion
     he.horas_autorizadas = int(float(horas_auth)) if horas_auth is not None else he.horas_reportadas
     he.obs_neo           = obs
     he.estado            = autorizacion

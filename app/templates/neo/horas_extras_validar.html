@@ -1890,9 +1890,9 @@ function autoGuardar(row) {
     const estado = (hot.getDataAtCell(row, C_ESTADO) || "").trim();
     const hrs    = hot.getDataAtCell(row, C_HAUTH);
     const obs    = (hot.getDataAtCell(row, C_OBSNEO) || "").trim();
-    if (!estado) return;
+    const estadoFinal = estado || "PENDIENTE";
 
-    const payload = { autorizacion_neo: estado, horas_autorizadas: (hrs !== "" && hrs != null) ? parseInt(hrs) : null, obs_neo: obs };
+    const payload = { autorizacion_neo: estadoFinal, horas_autorizadas: (hrs !== "" && hrs != null) ? parseInt(hrs) : null, obs_neo: obs };
 
     // Marcar como pendiente inmediatamente
     _dirtyRows.set(id, { row, payload });
