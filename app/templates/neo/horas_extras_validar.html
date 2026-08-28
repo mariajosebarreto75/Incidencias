@@ -397,6 +397,10 @@ body { background:var(--c-bg); }
                 <span style="font-size:.71rem;color:#6c757d;margin-left:6px;">
                     <i class="bi bi-funnel me-1"></i>Usa el menú de cada columna para filtrar · Las columnas verdes son editables
                 </span>
+                <button class="btn btn-sm btn-outline-warning" style="font-size:.72rem;border-radius:6px;margin-left:auto;"
+                        onclick="recalcularValoresNomina()" title="Recalcular valor extra nómina para todos los registros que tengan cédula y salario registrado">
+                    <i class="bi bi-calculator me-1"></i>Recalcular Valor Nómina
+                </button>
             </div>
             <div style="overflow:auto;"><div id="gridNeo"></div></div>
             <div class="grid-legend">
@@ -1921,6 +1925,22 @@ setInterval(async () => {
 }, 60000);
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
+async function recalcularValoresNomina() {
+    if (!confirm("¿Recalcular el Valor Extra Nómina para todos los registros? Esto actualizará los registros que tengan cédula y salario registrado en el sistema.")) return;
+    try {
+        const r = await fetch("/api/he/recalcular-valores", { method: "POST" });
+        const d = await r.json();
+        if (d.ok) {
+            alert(`✅ Recalculados: ${d.actualizados} registros con valor nómina actualizado.`);
+            cargarGrid();
+        } else {
+            alert("Error: " + (d.msg || "No se pudo recalcular"));
+        }
+    } catch (e) {
+        alert("Error de red: " + e.message);
+    }
+}
+
 async function cargarKpis() {
     try {
         const cid   = document.getElementById("fContrato")?.value ?? "";
