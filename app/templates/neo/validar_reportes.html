@@ -148,6 +148,11 @@
             <i class="bi bi-x-circle-fill"></i> No conformes
             <span class="vr-tab-cnt" id="cnt-no-conforme">0</span>
         </button>
+        <button class="vr-tab" data-filtro="consiliado"
+                style="background:rgba(109,40,217,.12);color:#6d28d9;border-color:rgba(109,40,217,.3)">
+            <i class="bi bi-shield-check"></i> Consiliados
+            <span class="vr-tab-cnt" id="cnt-consiliado">0</span>
+        </button>
     </div>
 
     <!-- BARRA SELECCIÓN -->
@@ -281,7 +286,7 @@
 
     /* ── Contadores por categoría ── */
     const filas = Array.from(document.querySelectorAll(".vr-fila"));
-    const cats  = ["todos","abierto","con-respuesta","conforme","no-conforme"];
+    const cats  = ["todos","abierto","con-respuesta","conforme","no-conforme","consiliado"];
     cats.forEach(c => {
         const el = document.getElementById("cnt-" + c);
         if (!el) return;
