@@ -363,11 +363,13 @@
 
     function actualizarSeleccion() {
         const marcados = filas.filter(f => f.style.display !== "none" && f.querySelector(".chk-fila:checked"));
-        countEl.textContent = marcados.length;
-        selectBar.classList.toggle("d-none", marcados.length === 0);
-        const vis = filasVisibles();
-        chkTodos.indeterminate = marcados.length > 0 && marcados.length < vis.length;
-        chkTodos.checked = vis.length > 0 && marcados.length === vis.length;
+        if (countEl) countEl.textContent = marcados.length;
+        if (selectBar) selectBar.classList.toggle("d-none", marcados.length === 0);
+        if (chkTodos) {
+            const vis = filasVisibles();
+            chkTodos.indeterminate = marcados.length > 0 && marcados.length < vis.length;
+            chkTodos.checked = vis.length > 0 && marcados.length === vis.length;
+        }
     }
 
     if (chkTodos) {
