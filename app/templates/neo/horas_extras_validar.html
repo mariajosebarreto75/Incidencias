@@ -1932,7 +1932,7 @@ async function recalcularValoresNomina() {
         const d = await r.json();
         if (d.ok) {
             alert(`✅ Recalculados: ${d.actualizados} registros con valor nómina actualizado.`);
-            cargarGrid();
+            recargar();
         } else {
             alert("Error: " + (d.msg || "No se pudo recalcular"));
         }
