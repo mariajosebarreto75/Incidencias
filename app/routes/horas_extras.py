@@ -1353,3 +1353,32 @@ def api_he_recalcular_valores():
         actualizados += 1
     db.session.commit()
     return jsonify({"ok": True, "actualizados": actualizados})
+
+
+@he_bp.route("/api/he/rellenar-nombres", methods=["POST"])
+@login_required
+def api_he_rellenar_nombres():
+    """Rellena nombre (y valor_extra_nomina) en registros donde la cédula ya existe en Personas."""
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "msg": "No autorizado"}), 403
+
+    personas = {p.Documento: p for p in Persona.query.all()}
+    factores  = {c.codigo: float(c.factor) for c in HeConcepto.query.all()}
+
+    sin_nombre = HoraExtra.query.filter(
+        (HoraExtra.nombre == None) | (HoraExtra.nombre == "")
+    ).all()
+
+    actualizados = 0
+    for he in sin_nombre:
+        persona = personas.get(he.cedula)
+        if not persona:
+            continue
+        he.nombre = persona.Nombre
+        if not he.valor_extra_nomina and persona.Salario and he.horas_reportadas:
+            fac = factores.get(he.id_concepto, FACTOR_HE.get(he.id_concepto, 1.0))
+            he.valor_extra_nomina = round(float(persona.Salario) * fac / 220 * float(he.horas_reportadas), 2)
+        actualizados += 1
+
+    db.session.commit()
+    return jsonify({"ok": True, "actualizados": actualizados, "sin_nombre_total": len(sin_nombre)})

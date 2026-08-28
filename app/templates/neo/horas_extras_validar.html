@@ -397,10 +397,16 @@ body { background:var(--c-bg); }
                 <span style="font-size:.71rem;color:#6c757d;margin-left:6px;">
                     <i class="bi bi-funnel me-1"></i>Usa el menú de cada columna para filtrar · Las columnas verdes son editables
                 </span>
-                <button class="btn btn-sm btn-outline-warning" style="font-size:.72rem;border-radius:6px;margin-left:auto;"
-                        onclick="recalcularValoresNomina()" title="Recalcular valor extra nómina para todos los registros que tengan cédula y salario registrado">
-                    <i class="bi bi-calculator me-1"></i>Recalcular Valor Nómina
-                </button>
+                <div style="margin-left:auto;display:flex;gap:6px;">
+                    <button class="btn btn-sm btn-outline-info" style="font-size:.72rem;border-radius:6px;"
+                            onclick="rellenarNombres()" title="Rellenar nombre de colaboradores que ya están registrados en Personas">
+                        <i class="bi bi-person-fill-check me-1"></i>Rellenar Nombres
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" style="font-size:.72rem;border-radius:6px;"
+                            onclick="recalcularValoresNomina()" title="Recalcular valor extra nómina para todos los registros que tengan cédula y salario registrado">
+                        <i class="bi bi-calculator me-1"></i>Recalcular Valor Nómina
+                    </button>
+                </div>
             </div>
             <div style="overflow:auto;"><div id="gridNeo"></div></div>
             <div class="grid-legend">
@@ -1925,6 +1931,21 @@ setInterval(async () => {
 }, 60000);
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
+async function rellenarNombres() {
+    try {
+        const r = await fetch("/api/he/rellenar-nombres", { method: "POST" });
+        const d = await r.json();
+        if (d.ok) {
+            alert(`✅ Nombres rellenados: ${d.actualizados} registros actualizados (de ${d.sin_nombre_total} sin nombre).`);
+            recargar();
+        } else {
+            alert("Error: " + (d.msg || "No se pudo rellenar"));
+        }
+    } catch (e) {
+        alert("Error de red: " + e.message);
+    }
+}
+
 async function recalcularValoresNomina() {
     if (!confirm("¿Recalcular el Valor Extra Nómina para todos los registros? Esto actualizará los registros que tengan cédula y salario registrado en el sistema.")) return;
     try {
