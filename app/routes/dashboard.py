@@ -375,6 +375,8 @@ def indicadores():
     )
     semaforo_contratos = []
     for contrato in lista_contratos:
+        if "LYR" in (contrato or "").upper():
+            continue
         total_c      = total_por_contrato.get(contrato, 0)
         pendientes_c = pendientes_raw.get(contrato, 0)
         if pendientes_c <= 15:
