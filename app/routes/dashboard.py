@@ -365,6 +365,36 @@ def indicadores():
         "maximo": maximo_dia,
     }
 
+    # ---- Semáforo reportes vs pendientes por contrato ----
+    pendientes_raw = dict(
+        _aplicar(
+            db.session.query(ReporteOperacional.contrato, func.count(ReporteOperacional.id))
+            .filter(ReporteOperacional.estado == "Abierto"),
+            excluir="contrato"
+        ).group_by(ReporteOperacional.contrato).all()
+    )
+    semaforo_contratos = []
+    for contrato in lista_contratos:
+        total_c      = total_por_contrato.get(contrato, 0)
+        pendientes_c = pendientes_raw.get(contrato, 0)
+        if pendientes_c <= 15:
+            color = "green"
+        elif pendientes_c <= 19:
+            color = "yellow"
+        elif pendientes_c <= 25:
+            color = "orange"
+        else:
+            color = "red"
+        semaforo_contratos.append({
+            "etiqueta":  abrev_por_contrato.get(contrato, contrato),
+            "total":     total_c,
+            "pendientes": pendientes_c,
+            "color":     color,
+            "url":       _url_toggle("contrato", contrato),
+            "activo":    activos.get("contrato") == contrato,
+        })
+    semaforo_contratos.sort(key=lambda x: -x["pendientes"])
+
     # ---- Chips de filtros activos ----
     etiquetas_dimension = {
         "contrato": "Contrato", "recurso": "Recurso", "tipo": "Tipo de incidencia",
@@ -425,6 +455,7 @@ def indicadores():
         pct_respuesta_por_contrato=pct_respuesta_por_contrato,
         conformidad_pie=conformidad_pie,
         reportes_por_dia=reportes_por_dia,
+        semaforo_contratos=semaforo_contratos,
         horas_por_contrato=horas_por_contrato,
         max_horas=max_horas,
         afect_por_tipo=afect_por_tipo,
