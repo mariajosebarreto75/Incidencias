@@ -795,6 +795,41 @@ def subir_evidencia_coor():
 
 
 # =====================================
+# GUARDAR CONSILIACIÓN (obs + imagen opcional)
+# =====================================
+
+@coordinador.route("/coordinador/reporte/<int:id>/consiliacion", methods=["POST"])
+@login_required
+def guardar_consiliacion(id):
+    reporte = ReporteOperacional.query.get_or_404(id)
+
+    if reporte.conformidad_neo != "Consiliado":
+        return jsonify({"ok": False, "error": "El reporte no está en estado Consiliado"}), 400
+
+    obs    = request.form.get("obs_consiliacion", "").strip()
+    imagen = request.files.get("imagen")
+
+    reporte.obs_consiliacion = obs or reporte.obs_consiliacion
+
+    if imagen and imagen.filename:
+        if _ext_ok_coor(imagen.filename):
+            ahora  = datetime.now()
+            anio   = str(ahora.year)
+            mes    = str(ahora.month).zfill(2)
+            ext    = secure_filename(imagen.filename).rsplit(".", 1)[1].lower()
+            nombre = f"cons_{ahora.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{ext}"
+            directorio = os.path.join(
+                current_app.root_path, "uploads", "evidencias_coor", anio, mes
+            )
+            os.makedirs(directorio, exist_ok=True)
+            imagen.save(os.path.join(directorio, nombre))
+            reporte.evidencia_consiliacion = f"uploads/evidencias_coor/{anio}/{mes}/{nombre}"
+
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+# =====================================
 # SERVIR IMAGEN COORDINADOR
 # =====================================
 

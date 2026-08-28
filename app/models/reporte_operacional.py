@@ -185,6 +185,13 @@ class ReporteOperacional(db.Model):
     evidencia_conformidad = db.Column(db.String(500))
 
     # =====================
+    # CONSILIACIÓN (coordinador)
+    # =====================
+
+    obs_consiliacion       = db.Column(db.Text)
+    evidencia_consiliacion = db.Column(db.String(500))
+
+    # =====================
     # AUDITORÍA DE EDICIÓN
     # =====================
 

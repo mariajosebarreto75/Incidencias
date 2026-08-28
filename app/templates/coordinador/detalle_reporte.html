@@ -587,6 +587,12 @@
                                     <span class="badge-conf conforme">
                                         <i class="bi bi-check-circle-fill me-1"></i>Conforme
                                     </span>
+                                    {% elif reporte.conformidad_neo == 'Consiliado' %}
+                                    <span style="display:inline-flex;align-items:center;gap:5px;
+                                                 background:#f3e8ff;color:#6d28d9;border:1px solid #c4b5fd;
+                                                 border-radius:6px;padding:3px 10px;font-size:.8rem;font-weight:700;">
+                                        <i class="bi bi-shield-check"></i>Consiliado
+                                    </span>
                                     {% else %}
                                     <span class="badge-conf no-conforme">
                                         <i class="bi bi-x-circle-fill me-1"></i>No Conforme
@@ -647,6 +653,64 @@
                     </div>
                     {% endif %}
 
+                    {% if reporte.conformidad_neo == 'Consiliado' %}
+                    <div class="row g-2 mt-2">
+                        <div class="col-12"><hr class="my-2"></div>
+
+                        {% if reporte.obs_consiliacion or reporte.evidencia_consiliacion %}
+                        <!-- Datos de consiliación ya guardados -->
+                        {% if reporte.obs_consiliacion %}
+                        <div class="col-12">
+                            <div class="det-field">
+                                <span class="det-label"><i class="bi bi-chat-left-text me-1"></i>Observación de consiliación</span>
+                                <span class="det-value det-obs">{{ reporte.obs_consiliacion }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if reporte.evidencia_consiliacion %}
+                        <div class="col-12">
+                            <span class="det-label d-block mb-2"><i class="bi bi-image me-1"></i>Evidencia de consiliación</span>
+                            <a href="/coordinador/evidencia-coor/{{ reporte.evidencia_consiliacion }}" target="_blank">
+                                <img src="/coordinador/evidencia-coor/{{ reporte.evidencia_consiliacion }}"
+                                     class="det-thumb" alt="Evidencia consiliación">
+                            </a>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+
+                        <!-- Formulario opcional: siempre visible para editar/completar -->
+                        <div class="col-12 mt-2">
+                            <div style="background:#faf5ff;border:1px solid #e9d5ff;border-radius:10px;padding:14px 16px;">
+                                <div style="font-size:.78rem;font-weight:700;color:#6d28d9;margin-bottom:10px;">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    {{ 'Actualizar' if reporte.obs_consiliacion or reporte.evidencia_consiliacion else 'Registrar' }}
+                                    evidencia de consiliación <span style="font-weight:400;color:#9061f9">(opcional)</span>
+                                </div>
+                                <textarea id="obsConsiliacion" rows="2" class="form-control form-control-sm mb-2"
+                                    placeholder="Observación de lo que se acordó en la consiliación…"
+                                    style="font-size:.82rem;border-color:#e9d5ff;">{{ reporte.obs_consiliacion or '' }}</textarea>
+                                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;
+                                                  background:#f3e8ff;border:1px dashed #c4b5fd;border-radius:7px;
+                                                  padding:6px 12px;font-size:.78rem;color:#6d28d9;font-weight:600;white-space:nowrap">
+                                        <i class="bi bi-image"></i>
+                                        {{ 'Cambiar imagen' if reporte.evidencia_consiliacion else 'Adjuntar imagen' }}
+                                        <input type="file" id="imgConsiliacion" accept="image/*" style="display:none"
+                                               onchange="prevConsiliacion(this)">
+                                    </label>
+                                    <span id="consImgNombre" style="font-size:.75rem;color:#6d28d9;display:none"></span>
+                                    <button onclick="guardarConsiliacion()" id="btnGuardarCons"
+                                            style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;
+                                                   border:none;border-radius:7px;padding:6px 16px;
+                                                   font-size:.78rem;font-weight:700;cursor:pointer">
+                                        <i class="bi bi-save me-1"></i>Guardar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                 </div>
             </div>
         </div>
@@ -656,7 +720,48 @@
 </div>
 
 <!-- Variable de contexto para el JS externo -->
-<script>const REPORTE_ID = Number("{{ reporte.id }}");</script>
+<script>
+const REPORTE_ID = Number("{{ reporte.id }}");
+
+function prevConsiliacion(input) {
+    const f = input.files[0];
+    if (!f) return;
+    const el = document.getElementById("consImgNombre");
+    if (el) { el.textContent = f.name; el.style.display = ""; }
+}
+
+async function guardarConsiliacion() {
+    const btn = document.getElementById("btnGuardarCons");
+    const obs = (document.getElementById("obsConsiliacion").value || "").trim();
+    const img = document.getElementById("imgConsiliacion").files[0];
+    if (!obs && !img) {
+        alert("Ingrese una observación o adjunte una imagen antes de guardar.");
+        return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando…';
+    const fd = new FormData();
+    fd.append("obs_consiliacion", obs);
+    if (img) fd.append("imagen", img);
+    try {
+        const r = await fetch(`/coordinador/reporte/${REPORTE_ID}/consiliacion`, {
+            method: "POST", body: fd
+        });
+        const d = await r.json();
+        if (d.ok) {
+            location.reload();
+        } else {
+            alert("Error: " + (d.error || "No se pudo guardar"));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-save me-1"></i>Guardar';
+        }
+    } catch(e) {
+        alert("Error de conexión.");
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-1"></i>Guardar';
+    }
+}
+</script>
 <script src="{{ url_for('static', filename='js/coordinador/detalle_reporte.js') }}"></script>
 
 {% endblock %}
