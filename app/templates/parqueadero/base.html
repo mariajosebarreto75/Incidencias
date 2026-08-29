@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Parqueadero{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
+    <style>
+        :root {
+            --pk-primary: #1a3a5c;
+            --pk-accent:  #f59e0b;
+            --pk-success: #059669;
+            --pk-danger:  #dc2626;
+            --pk-bg:      #f1f5f9;
+            --pk-card:    #ffffff;
+            --pk-text:    #1e293b;
+            --pk-muted:   #64748b;
+            --pk-border:  #e2e8f0;
+        }
+        * { box-sizing: border-box; }
+        body { background: var(--pk-bg); color: var(--pk-text); font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
+
+        /* Navbar */
+        .pk-nav {
+            background: var(--pk-primary);
+            padding: 0 20px;
+            display: flex; align-items: center; gap: 16px;
+            height: 56px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.25);
+        }
+        .pk-nav-brand { color: #fff; font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+        .pk-nav-brand i { color: var(--pk-accent); font-size: 1.3rem; }
+        .pk-nav-links { display: flex; gap: 4px; margin-left: auto; }
+        .pk-nav-link {
+            color: rgba(255,255,255,.7); padding: 6px 14px; border-radius: 6px;
+            text-decoration: none; font-size: .83rem; font-weight: 600;
+            transition: background .15s, color .15s;
+        }
+        .pk-nav-link:hover, .pk-nav-link.active { background: rgba(255,255,255,.12); color: #fff; }
+        .pk-nav-user { color: rgba(255,255,255,.55); font-size: .78rem; margin-left: 8px; }
+
+        /* Layout */
+        .pk-wrap { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
+
+        /* Cards */
+        .pk-card {
+            background: var(--pk-card); border-radius: 12px;
+            border: 1px solid var(--pk-border);
+            box-shadow: 0 1px 4px rgba(0,0,0,.06);
+        }
+        .pk-card-head {
+            padding: 14px 20px; border-bottom: 1px solid var(--pk-border);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .pk-card-head h5 { margin: 0; font-size: .95rem; font-weight: 700; color: var(--pk-primary); }
+        .pk-card-body { padding: 18px 20px; }
+
+        /* Badges */
+        .pk-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; }
+        .pk-badge-carro { background: #dbeafe; color: #1d4ed8; }
+        .pk-badge-moto  { background: #fef3c7; color: #92400e; }
+        .pk-badge-activo { background: #d1fae5; color: #065f46; }
+
+        /* Tarifas card */
+        .tarifa-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--pk-border); font-size: .83rem; }
+        .tarifa-row:last-child { border-bottom: none; }
+        .tarifa-val { font-weight: 700; color: var(--pk-primary); }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav class="pk-nav">
+    <a class="pk-nav-brand" href="{{ url_for('parqueadero.operador') }}">
+        <i class="bi bi-p-square-fill"></i> Parqueadero
+    </a>
+    <div class="pk-nav-links">
+        {% if current_user.rol.lower() in ('admin_parqueadero', 'admin') %}
+        <a class="pk-nav-link {% if request.endpoint == 'parqueadero.operador' %}active{% endif %}"
+           href="{{ url_for('parqueadero.operador') }}"><i class="bi bi-car-front me-1"></i>Operador</a>
+        <a class="pk-nav-link {% if request.endpoint == 'parqueadero.admin' %}active{% endif %}"
+           href="{{ url_for('parqueadero.admin') }}"><i class="bi bi-bar-chart-line me-1"></i>Admin</a>
+        {% endif %}
+    </div>
+    <span class="pk-nav-user"><i class="bi bi-person-circle me-1"></i>{{ current_user.nombre_completo }}</span>
+    <a href="{{ url_for('auth.logout') }}" class="pk-nav-link" style="margin-left:4px;color:rgba(255,255,255,.5);" title="Cerrar sesión">
+        <i class="bi bi-box-arrow-right"></i>
+    </a>
+</nav>
+
+<div class="pk-wrap">
+    {% block content %}{% endblock %}
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

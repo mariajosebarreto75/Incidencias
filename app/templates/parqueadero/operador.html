@@ -1,0 +1,637 @@
+{% extends 'parqueadero/base.html' %}
+{% block title %}Control Parqueadero{% endblock %}
+
+{% block head %}
+<style>
+/* ── Stats bar ── */
+.pk-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.pk-stat { background: var(--pk-card); border-radius: 12px; border: 1px solid var(--pk-border);
+    padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
+.pk-stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.pk-stat-icon.activos  { background: #d1fae5; color: #059669; }
+.pk-stat-icon.salidas  { background: #dbeafe; color: #1d4ed8; }
+.pk-stat-icon.recaudo  { background: #fef3c7; color: #b45309; }
+.pk-stat-label { font-size: .72rem; color: var(--pk-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.pk-stat-val   { font-size: 1.5rem; font-weight: 800; color: var(--pk-primary); line-height: 1; }
+
+/* ── Layout grid ── */
+.pk-main { display: grid; grid-template-columns: 380px 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .pk-main { grid-template-columns: 1fr; } .pk-stats { grid-template-columns: 1fr; } }
+
+/* ── Ingreso form ── */
+#placaInput {
+    font-size: 1.6rem; font-weight: 800; letter-spacing: 4px; text-align: center;
+    text-transform: uppercase; border: 2px solid var(--pk-border);
+    border-radius: 10px; padding: 12px 16px; width: 100%;
+    color: var(--pk-primary); background: #f8fafc;
+    transition: border-color .2s;
+}
+#placaInput:focus { outline: none; border-color: var(--pk-accent); background: #fff; }
+#placaInput.placa-ok  { border-color: var(--pk-success); }
+#placaInput.placa-err { border-color: var(--pk-danger); }
+#placaInput.placa-activa { border-color: #f59e0b; background: #fffbeb; }
+
+.tipo-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 20px; font-size: .82rem; font-weight: 700;
+    margin-top: 8px;
+}
+.tipo-carro { background: #dbeafe; color: #1d4ed8; }
+.tipo-moto  { background: #fef3c7; color: #92400e; }
+.tipo-err   { background: #fee2e2; color: #b91c1c; }
+
+.casco-ctrl { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.casco-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--pk-border);
+    background: #f8fafc; font-size: 1.1rem; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background .15s; }
+.casco-btn:hover { background: #e2e8f0; }
+#cascosNum { font-size: 1.25rem; font-weight: 800; min-width: 28px; text-align: center; color: var(--pk-primary); }
+
+#btnAccion {
+    width: 100%; padding: 13px; font-size: .95rem; font-weight: 700;
+    border-radius: 10px; border: none; cursor: pointer; margin-top: 14px;
+    transition: opacity .15s, transform .1s;
+}
+#btnAccion:active { transform: scale(.98); }
+#btnAccion:disabled { opacity: .45; cursor: not-allowed; }
+.btn-ingresar { background: var(--pk-success); color: #fff; }
+.btn-salir    { background: #d97706; color: #fff; }
+
+/* ── Info placa activa ── */
+#infoActiva { background: #fffbeb; border: 1px solid #fbbf24; border-radius: 10px; padding: 14px 16px; margin-top: 12px; }
+.info-row  { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: .84rem; }
+.info-label { color: var(--pk-muted); }
+.info-val   { font-weight: 700; color: var(--pk-primary); }
+.valor-live { font-size: 1.35rem; font-weight: 800; color: var(--pk-success); }
+
+/* ── Vehículos activos ── */
+.vh-item {
+    background: var(--pk-card); border: 1px solid var(--pk-border);
+    border-radius: 10px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+.vh-placa { font-size: 1rem; font-weight: 800; letter-spacing: 2px; color: var(--pk-primary); min-width: 80px; }
+.vh-meta  { flex: 1; min-width: 140px; }
+.vh-meta span { display: block; font-size: .76rem; color: var(--pk-muted); }
+.vh-meta strong { font-size: .88rem; color: var(--pk-text); }
+.vh-timer { font-size: 1rem; font-weight: 700; color: var(--pk-accent); min-width: 70px; text-align: center; font-variant-numeric: tabular-nums; }
+.vh-valor { font-size: .95rem; font-weight: 800; color: var(--pk-success); min-width: 80px; text-align: right; }
+.btn-salir-vh {
+    background: #fff7ed; border: 1px solid #fed7aa; color: #c2410c;
+    border-radius: 7px; padding: 5px 12px; font-size: .76rem; font-weight: 700;
+    cursor: pointer; white-space: nowrap;
+}
+.btn-salir-vh:hover { background: #ffedd5; }
+
+/* ── Historial ── */
+.hist-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.hist-table th { background: #f1f5f9; padding: 7px 10px; text-align: left; font-weight: 700; color: var(--pk-muted); font-size: .68rem; text-transform: uppercase; }
+.hist-table td { padding: 7px 10px; border-bottom: 1px solid var(--pk-border); }
+.hist-table tr:last-child td { border-bottom: none; }
+
+/* ── Modal recibo ── */
+.pk-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.pk-modal { background: #fff; border-radius: 16px; padding: 28px 24px; max-width: 380px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.pk-modal h5 { margin: 0 0 16px; font-size: 1.05rem; font-weight: 800; color: var(--pk-primary); }
+.recibo-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: .87rem; border-bottom: 1px dashed #e2e8f0; }
+.recibo-row:last-child { border-bottom: none; }
+.recibo-total { font-size: 1.4rem; font-weight: 900; color: var(--pk-success); text-align: center; margin: 14px 0 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="pk-stats" id="statsBar">
+    <div class="pk-stat">
+        <div class="pk-stat-icon activos"><i class="bi bi-car-front-fill"></i></div>
+        <div><div class="pk-stat-label">Activos ahora</div><div class="pk-stat-val" id="stActivos">—</div></div>
+    </div>
+    <div class="pk-stat">
+        <div class="pk-stat-icon salidas"><i class="bi bi-box-arrow-right"></i></div>
+        <div><div class="pk-stat-label">Salidas hoy</div><div class="pk-stat-val" id="stSalidas">—</div></div>
+    </div>
+    <div class="pk-stat">
+        <div class="pk-stat-icon recaudo"><i class="bi bi-cash-coin"></i></div>
+        <div><div class="pk-stat-label">Recaudo hoy</div><div class="pk-stat-val" id="stRecaudo">—</div></div>
+    </div>
+</div>
+
+<div class="pk-main">
+
+    <!-- Columna izquierda: ingreso/salida -->
+    <div>
+        <div class="pk-card" style="margin-bottom:14px;">
+            <div class="pk-card-head">
+                <i class="bi bi-search" style="color:var(--pk-accent);font-size:1.1rem;"></i>
+                <h5>Registrar vehículo</h5>
+            </div>
+            <div class="pk-card-body">
+                <input type="text" id="placaInput" maxlength="6" placeholder="ABC123"
+                       autocomplete="off" spellcheck="false">
+
+                <div id="tipoInfo" style="text-align:center;min-height:32px;"></div>
+
+                <!-- Cascos (solo motos) -->
+                <div id="cascosWrap" style="display:none;">
+                    <div class="casco-ctrl">
+                        <i class="bi bi-shield-fill" style="color:var(--pk-accent);font-size:1.1rem;"></i>
+                        <span style="font-size:.83rem;font-weight:600;color:var(--pk-muted);">Cascos en custodia:</span>
+                        <button class="casco-btn" onclick="ajustarCascos(-1)">−</button>
+                        <span id="cascosNum">0</span>
+                        <button class="casco-btn" onclick="ajustarCascos(1)">+</button>
+                    </div>
+                </div>
+
+                <!-- Info placa activa -->
+                <div id="infoActiva" style="display:none;">
+                    <div class="info-row">
+                        <span class="info-label">Ingresó a las</span>
+                        <span class="info-val" id="iHoraIngreso">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Tiempo</span>
+                        <span class="info-val" id="iTimer" style="color:var(--pk-accent);font-variant-numeric:tabular-nums;">—</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Valor a cobrar</span>
+                        <span class="valor-live" id="iValor">—</span>
+                    </div>
+                    <!-- Ajustar cascos si ya está adentro -->
+                    <div id="cascosActivaWrap" style="display:none;margin-top:10px;">
+                        <div class="casco-ctrl">
+                            <i class="bi bi-shield-fill" style="color:var(--pk-accent);font-size:1rem;"></i>
+                            <span style="font-size:.8rem;font-weight:600;color:var(--pk-muted);">Cascos:</span>
+                            <button class="casco-btn" onclick="ajustarCascosActiva(-1)">−</button>
+                            <span id="cascosActivaNum">0</span>
+                            <button class="casco-btn" onclick="ajustarCascosActiva(1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btnAccion" class="btn-ingresar" disabled onclick="accionPrincipal()">
+                    <i class="bi bi-plus-circle me-2"></i>Registrar ingreso
+                </button>
+            </div>
+        </div>
+
+        <!-- Tarifas -->
+        <div class="pk-card">
+            <div class="pk-card-head">
+                <i class="bi bi-tag-fill" style="color:var(--pk-accent);"></i>
+                <h5>Tarifas vigentes</h5>
+            </div>
+            <div class="pk-card-body">
+                <div class="tarifa-row"><span><i class="bi bi-car-front me-1"></i>Carro 1ª hora</span><span class="tarifa-val">$5.000</span></div>
+                <div class="tarifa-row"><span><i class="bi bi-car-front me-1"></i>Carro hora adicional</span><span class="tarifa-val">$3.000</span></div>
+                <div class="tarifa-row"><span><i class="bi bi-bicycle me-1"></i>Moto (sin importar tiempo)</span><span class="tarifa-val">$5.000</span></div>
+                <div class="tarifa-row"><span><i class="bi bi-shield me-1"></i>Casco (por unidad)</span><span class="tarifa-val">$2.000</span></div>
+                <p style="font-size:.72rem;color:var(--pk-muted);margin:10px 0 0;">* Carros: por hora o fracción</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna derecha: activos + historial -->
+    <div>
+        <div class="pk-card" style="margin-bottom:16px;">
+            <div class="pk-card-head">
+                <i class="bi bi-car-front-fill" style="color:var(--pk-success);"></i>
+                <h5>Vehículos activos</h5>
+                <span id="activosBadge" class="pk-badge pk-badge-activo" style="margin-left:auto;">0</span>
+            </div>
+            <div class="pk-card-body" id="activosLista" style="padding:12px 16px;">
+                <p style="color:var(--pk-muted);font-size:.83rem;text-align:center;padding:20px 0;">
+                    <i class="bi bi-check-circle me-1"></i>Sin vehículos en el parqueadero
+                </p>
+            </div>
+        </div>
+
+        <div class="pk-card">
+            <div class="pk-card-head">
+                <i class="bi bi-clock-history" style="color:var(--pk-muted);"></i>
+                <h5>Historial del día</h5>
+                <span id="historialBadge" class="pk-badge" style="margin-left:auto;background:#f1f5f9;color:var(--pk-muted);">0</span>
+            </div>
+            <div class="pk-card-body" style="padding:0;overflow:auto;">
+                <table class="hist-table">
+                    <thead>
+                        <tr>
+                            <th>Placa</th><th>Tipo</th><th>Ingreso</th><th>Salida</th><th>Tiempo</th><th>Cascos</th><th style="text-align:right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historialBody">
+                        <tr><td colspan="7" style="text-align:center;color:var(--pk-muted);padding:20px;">Sin registros hoy</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal recibo -->
+<div class="pk-overlay" id="modalRecibo" style="display:none;">
+    <div class="pk-modal">
+        <h5><i class="bi bi-receipt me-2" style="color:var(--pk-accent);"></i>Recibo de salida</h5>
+        <div id="reciboContenido"></div>
+        <div class="recibo-total" id="reciboTotal"></div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+            <button onclick="cerrarRecibo()" style="flex:1;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;font-weight:600;cursor:pointer;">
+                Cancelar
+            </button>
+            <button id="btnConfirmarSalida" onclick="confirmarSalida()"
+                    style="flex:2;padding:10px;background:var(--pk-success);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.95rem;cursor:pointer;">
+                <i class="bi bi-check-lg me-1"></i>Confirmar salida
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Constantes tarifas ────────────────────────────────────────────────────────
+const T_CARRO_1 = 5000, T_CARRO_ADD = 3000, T_MOTO = 5000, T_CASCO = 2000;
+
+// ── Estado ────────────────────────────────────────────────────────────────────
+let _tipo = null;         // 'carro' | 'moto' | null
+let _cascos = 0;
+let _registroActivo = null;   // objeto del registro cuando la placa ya está adentro
+let _activos = [];
+let _timerInterval = null;
+let _salidaPendiente = null;  // id a cerrar en modal
+
+// ── Detección placa ───────────────────────────────────────────────────────────
+function detectarTipo(placa) {
+    if (/^[A-Z]{3}[0-9]{3}$/.test(placa)) return 'carro';
+    if (/^[A-Z]{3}[0-9]{2}[A-Z]$/.test(placa)) return 'moto';
+    return null;
+}
+
+const placaInput = document.getElementById('placaInput');
+placaInput.addEventListener('input', async function () {
+    let v = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 6);
+    this.value = v;
+    resetInfoActiva();
+
+    if (v.length < 6) {
+        setTipo(null, false);
+        actualizarBtn();
+        return;
+    }
+
+    // Consultar si ya está adentro
+    const resp = await fetch(`/api/parqueadero/placa/${v}`);
+    const data = await resp.json();
+
+    if (data.activo) {
+        _registroActivo = data;
+        _tipo = data.tipo;
+        mostrarInfoActiva(data);
+        placaInput.className = 'placa-activa';
+        setTipo(data.tipo, false);
+        actualizarBtn(true);
+        return;
+    }
+
+    _registroActivo = null;
+    const tipo = detectarTipo(v);
+    setTipo(tipo, v.length === 6);
+    actualizarBtn(false);
+});
+
+function setTipo(tipo, completa) {
+    _tipo = tipo;
+    _cascos = 0;
+    document.getElementById('cascosNum').textContent = '0';
+    const info = document.getElementById('tipoInfo');
+    const cascWrap = document.getElementById('cascosWrap');
+
+    if (!completa || !tipo) {
+        info.innerHTML = completa && !tipo
+            ? '<span class="tipo-badge tipo-err"><i class="bi bi-exclamation-triangle me-1"></i>Formato no reconocido</span>'
+            : '';
+        cascWrap.style.display = 'none';
+        placaInput.className = completa && !tipo ? 'placa-err' : '';
+        return;
+    }
+    if (tipo === 'carro') {
+        info.innerHTML = '<span class="tipo-badge tipo-carro"><i class="bi bi-car-front-fill me-1"></i>Carro</span>';
+        cascWrap.style.display = 'none';
+        placaInput.className = 'placa-ok';
+    } else {
+        info.innerHTML = '<span class="tipo-badge tipo-moto"><i class="bi bi-bicycle me-1"></i>Moto</span>';
+        cascWrap.style.display = 'block';
+        placaInput.className = 'placa-ok';
+    }
+}
+
+function ajustarCascos(delta) {
+    _cascos = Math.max(0, _cascos + delta);
+    document.getElementById('cascosNum').textContent = _cascos;
+}
+
+// ── Info placa ya activa ──────────────────────────────────────────────────────
+let _infoTimer = null;
+
+function mostrarInfoActiva(data) {
+    const wrap = document.getElementById('infoActiva');
+    wrap.style.display = 'block';
+    const ingreso = new Date(data.hora_ingreso);
+    document.getElementById('iHoraIngreso').textContent = ingreso.toLocaleTimeString('es-CO', {hour:'2-digit',minute:'2-digit'});
+
+    // Cascos ajustables si es moto
+    const cascAct = document.getElementById('cascosActivaWrap');
+    if (data.tipo === 'moto') {
+        cascAct.style.display = 'block';
+        document.getElementById('cascosActivaNum').textContent = data.cascos;
+    } else {
+        cascAct.style.display = 'none';
+    }
+
+    clearInterval(_infoTimer);
+    _infoTimer = setInterval(() => actualizarInfoActiva(data, ingreso), 1000);
+    actualizarInfoActiva(data, ingreso);
+}
+
+function actualizarInfoActiva(data, ingreso) {
+    const ahora = new Date();
+    const segs  = Math.floor((ahora - ingreso) / 1000);
+    const hh = String(Math.floor(segs / 3600)).padStart(2, '0');
+    const mm = String(Math.floor((segs % 3600) / 60)).padStart(2, '0');
+    const ss = String(segs % 60).padStart(2, '0');
+    document.getElementById('iTimer').textContent = `${hh}:${mm}:${ss}`;
+
+    const cascos = parseInt(document.getElementById('cascosActivaNum')?.textContent || data.cascos);
+    const valor = calcularValor(data.tipo, ingreso, cascos);
+    document.getElementById('iValor').textContent = fmt(valor);
+}
+
+function ajustarCascosActiva(delta) {
+    const el = document.getElementById('cascosActivaNum');
+    el.textContent = Math.max(0, parseInt(el.textContent) + delta);
+    actualizarInfoActiva(_registroActivo, new Date(_registroActivo.hora_ingreso));
+}
+
+function resetInfoActiva() {
+    clearInterval(_infoTimer);
+    _registroActivo = null;
+    document.getElementById('infoActiva').style.display = 'none';
+}
+
+// ── Calcular valor ────────────────────────────────────────────────────────────
+function calcularValor(tipo, ingreso, cascos, salida) {
+    const fin = salida || new Date();
+    const minutos = Math.max(1, Math.floor((fin - ingreso) / 60000));
+    if (tipo === 'moto') return T_MOTO + cascos * T_CASCO;
+    const horas = Math.ceil(minutos / 60);
+    return horas <= 1 ? T_CARRO_1 : T_CARRO_1 + (horas - 1) * T_CARRO_ADD;
+}
+
+function fmt(v) { return '$' + Number(v).toLocaleString('es-CO'); }
+
+// ── Botón acción ──────────────────────────────────────────────────────────────
+function actualizarBtn(esActiva = false) {
+    const btn = document.getElementById('btnAccion');
+    if (esActiva) {
+        btn.disabled = false;
+        btn.className = 'btn-salir';
+        btn.innerHTML = '<i class="bi bi-box-arrow-right me-2"></i>Registrar fin del parqueadero';
+    } else if (_tipo && placaInput.value.length === 6) {
+        btn.disabled = false;
+        btn.className = 'btn-ingresar';
+        btn.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Registrar ingreso';
+    } else {
+        btn.disabled = true;
+        btn.className = 'btn-ingresar';
+        btn.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Registrar ingreso';
+    }
+}
+
+async function accionPrincipal() {
+    if (_registroActivo) {
+        abrirRecibo(_registroActivo.id);
+    } else {
+        await registrarIngreso();
+    }
+}
+
+// ── Registrar ingreso ─────────────────────────────────────────────────────────
+async function registrarIngreso() {
+    const placa = placaInput.value.trim();
+    if (!placa || !_tipo) return;
+    const btn = document.getElementById('btnAccion');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Registrando…';
+    const r = await fetch('/api/parqueadero/ingresar', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ placa, tipo: _tipo, cascos: _cascos })
+    });
+    const d = await r.json();
+    if (d.ok) {
+        placaInput.value = '';
+        setTipo(null, false);
+        resetInfoActiva();
+        actualizarBtn();
+        toast(`✓ ${placa} registrado como ${_tipo === 'carro' ? 'Carro' : 'Moto'}`, 'success');
+        cargarActivos();
+        cargarStats();
+    } else {
+        toast(d.msg || 'Error al registrar', 'danger');
+        actualizarBtn();
+    }
+}
+
+// ── Modal recibo / salida ─────────────────────────────────────────────────────
+function abrirRecibo(id) {
+    const reg = _activos.find(a => a.id === id) || _registroActivo;
+    if (!reg) return;
+    _salidaPendiente = id;
+
+    const ingreso = new Date(reg.hora_ingreso);
+    const ahora   = new Date();
+    const cascos  = reg.tipo === 'moto'
+        ? parseInt(document.getElementById('cascosActivaNum')?.textContent ?? reg.cascos)
+        : 0;
+    const valor = calcularValor(reg.tipo, ingreso, cascos);
+
+    const minutos = Math.floor((ahora - ingreso) / 60000);
+    const horas   = Math.ceil(minutos / 60);
+    const tiempoStr = minutos < 60
+        ? `${minutos} min`
+        : `${Math.floor(minutos/60)}h ${minutos%60}min`;
+
+    let desglose = `
+        <div class="recibo-row"><span>Placa</span><span><strong>${reg.placa}</strong></span></div>
+        <div class="recibo-row"><span>Tipo</span><span>${reg.tipo === 'carro' ? '🚗 Carro' : '🏍️ Moto'}</span></div>
+        <div class="recibo-row"><span>Ingreso</span><span>${ingreso.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</span></div>
+        <div class="recibo-row"><span>Tiempo</span><span>${tiempoStr}</span></div>`;
+    if (reg.tipo === 'carro') {
+        desglose += `<div class="recibo-row"><span>Horas cobradas</span><span>${horas}</span></div>`;
+        desglose += `<div class="recibo-row"><span>Tarifa</span><span>${horas === 1 ? fmt(T_CARRO_1) : fmt(T_CARRO_1) + ' + ' + (horas-1) + '×' + fmt(T_CARRO_ADD)}</span></div>`;
+    }
+    if (cascos > 0) {
+        desglose += `<div class="recibo-row"><span>Cascos (${cascos})</span><span>${fmt(cascos * T_CASCO)}</span></div>`;
+    }
+
+    document.getElementById('reciboContenido').innerHTML = desglose;
+    document.getElementById('reciboTotal').textContent = fmt(valor);
+    document.getElementById('modalRecibo').style.display = 'flex';
+
+    // actualizar valor en vivo
+    clearInterval(_timerInterval);
+    _timerInterval = setInterval(() => {
+        const c = reg.tipo === 'moto'
+            ? parseInt(document.getElementById('cascosActivaNum')?.textContent ?? reg.cascos) : 0;
+        document.getElementById('reciboTotal').textContent = fmt(calcularValor(reg.tipo, ingreso, c));
+    }, 1000);
+}
+
+function cerrarRecibo() {
+    document.getElementById('modalRecibo').style.display = 'none';
+    clearInterval(_timerInterval);
+    _salidaPendiente = null;
+}
+
+async function confirmarSalida() {
+    if (!_salidaPendiente) return;
+    const id = _salidaPendiente;
+    const reg = _activos.find(a => a.id === id) || _registroActivo;
+    const cascos = reg?.tipo === 'moto'
+        ? parseInt(document.getElementById('cascosActivaNum')?.textContent ?? (reg?.cascos || 0)) : 0;
+
+    const btn = document.getElementById('btnConfirmarSalida');
+    btn.disabled = true; btn.textContent = 'Procesando…';
+    const r = await fetch(`/api/parqueadero/salir/${id}`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ cascos })
+    });
+    const d = await r.json();
+    cerrarRecibo();
+    btn.disabled = false; btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Confirmar salida';
+    if (d.ok) {
+        toast(`✓ Salida registrada · ${fmt(d.valor_total)}`, 'success');
+        placaInput.value = '';
+        setTipo(null, false);
+        resetInfoActiva();
+        actualizarBtn();
+        cargarActivos();
+        cargarHistorial();
+        cargarStats();
+    } else {
+        toast(d.msg || 'Error', 'danger');
+    }
+}
+
+// ── Cargar datos ──────────────────────────────────────────────────────────────
+async function cargarActivos() {
+    const r = await fetch('/api/parqueadero/activos');
+    _activos = await r.json();
+    renderActivos();
+}
+
+async function cargarHistorial() {
+    const r = await fetch('/api/parqueadero/historial');
+    const hist = await r.json();
+    renderHistorial(hist);
+}
+
+async function cargarStats() {
+    const r = await fetch('/api/parqueadero/stats');
+    const s = await r.json();
+    document.getElementById('stActivos').textContent = s.activos;
+    document.getElementById('stSalidas').textContent = s.salidas;
+    document.getElementById('stRecaudo').textContent = fmt(s.recaudo);
+}
+
+// ── Render activos ────────────────────────────────────────────────────────────
+function renderActivos() {
+    const el = document.getElementById('activosLista');
+    document.getElementById('activosBadge').textContent = _activos.length;
+    if (!_activos.length) {
+        el.innerHTML = `<p style="color:var(--pk-muted);font-size:.83rem;text-align:center;padding:20px 0;">
+            <i class="bi bi-check-circle me-1"></i>Sin vehículos en el parqueadero</p>`;
+        return;
+    }
+    el.innerHTML = _activos.map(a => {
+        const ingreso = new Date(a.hora_ingreso);
+        const tipoIcon = a.tipo === 'carro' ? '🚗' : '🏍️';
+        const cascoStr = a.tipo === 'moto' && a.cascos > 0 ? `<i class="bi bi-shield-fill" style="color:var(--pk-accent);font-size:.7rem;"></i> ${a.cascos} casco${a.cascos > 1?'s':''}` : '';
+        return `<div class="vh-item" id="vhItem_${a.id}">
+            <div class="vh-placa">${a.placa}</div>
+            <div class="vh-meta">
+                <span>${tipoIcon} ${a.tipo === 'carro' ? 'Carro' : 'Moto'} ${cascoStr}</span>
+                <strong>Desde ${ingreso.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</strong>
+            </div>
+            <div class="vh-timer" id="timer_${a.id}">00:00:00</div>
+            <div class="vh-valor" id="valor_${a.id}">${fmt(a.valor_actual)}</div>
+            <button class="btn-salir-vh" onclick="abrirRecibo(${a.id})">
+                <i class="bi bi-box-arrow-right me-1"></i>Salida
+            </button>
+        </div>`;
+    }).join('');
+
+    // Cronómetros en vivo
+    clearInterval(_timerInterval);
+    _timerInterval = setInterval(() => {
+        _activos.forEach(a => {
+            const ingreso = new Date(a.hora_ingreso);
+            const segs = Math.floor((new Date() - ingreso) / 1000);
+            const hh = String(Math.floor(segs / 3600)).padStart(2, '0');
+            const mm = String(Math.floor((segs % 3600) / 60)).padStart(2, '0');
+            const ss = String(segs % 60).padStart(2, '0');
+            const tel = document.getElementById(`timer_${a.id}`);
+            const vel = document.getElementById(`valor_${a.id}`);
+            if (tel) tel.textContent = `${hh}:${mm}:${ss}`;
+            if (vel) vel.textContent = fmt(calcularValor(a.tipo, ingreso, a.cascos));
+        });
+    }, 1000);
+}
+
+// ── Render historial ──────────────────────────────────────────────────────────
+function renderHistorial(hist) {
+    document.getElementById('historialBadge').textContent = hist.length;
+    const tbody = document.getElementById('historialBody');
+    if (!hist.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--pk-muted);padding:20px;">Sin registros hoy</td></tr>';
+        return;
+    }
+    tbody.innerHTML = hist.map(h => {
+        const ing = new Date(h.hora_ingreso);
+        const sal = h.hora_salida ? new Date(h.hora_salida) : null;
+        const minutos = sal ? Math.floor((sal - ing) / 60000) : 0;
+        const tiempoStr = minutos < 60 ? `${minutos}m` : `${Math.floor(minutos/60)}h${minutos%60}m`;
+        return `<tr>
+            <td><strong style="letter-spacing:1px;">${h.placa}</strong></td>
+            <td><span class="pk-badge ${h.tipo === 'carro' ? 'pk-badge-carro' : 'pk-badge-moto'}">${h.tipo === 'carro' ? '🚗' : '🏍️'} ${h.tipo}</span></td>
+            <td>${ing.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</td>
+            <td>${sal ? sal.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}) : '—'}</td>
+            <td>${tiempoStr}</td>
+            <td>${h.tipo === 'moto' ? h.cascos : '—'}</td>
+            <td style="text-align:right;font-weight:700;color:var(--pk-success);">${fmt(h.valor_total)}</td>
+        </tr>`;
+    }).join('');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, tipo = 'success') {
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;
+        background:${tipo === 'success' ? '#059669' : '#dc2626'};color:#fff;
+        border-radius:10px;padding:12px 20px;font-size:.85rem;font-weight:600;
+        box-shadow:0 4px 20px rgba(0,0,0,.25);max-width:320px;`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+cargarActivos();
+cargarHistorial();
+cargarStats();
+// Refresco cada 30s
+setInterval(() => { cargarActivos(); cargarStats(); }, 30000);
+setInterval(cargarHistorial, 60000);
+</script>
+{% endblock %}

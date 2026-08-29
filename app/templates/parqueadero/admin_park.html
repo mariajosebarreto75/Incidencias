@@ -1,0 +1,191 @@
+{% extends 'parqueadero/base.html' %}
+{% block title %}Admin Parqueadero{% endblock %}
+
+{% block head %}
+<style>
+.adm-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (max-width: 760px) { .adm-stats { grid-template-columns: repeat(2, 1fr); } }
+.adm-stat { background: var(--pk-card); border-radius: 12px; border: 1px solid var(--pk-border);
+    padding: 16px 18px; }
+.adm-stat-label { font-size: .7rem; color: var(--pk-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.adm-stat-val   { font-size: 1.6rem; font-weight: 900; color: var(--pk-primary); margin-top: 4px; }
+.adm-stat-sub   { font-size: .75rem; color: var(--pk-muted); }
+
+.adm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 860px) { .adm-grid { grid-template-columns: 1fr; } }
+
+.hist-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.hist-table th { background: #f1f5f9; padding: 8px 10px; text-align: left; font-weight: 700; color: var(--pk-muted); font-size: .68rem; text-transform: uppercase; border-bottom: 2px solid var(--pk-border); }
+.hist-table td { padding: 7px 10px; border-bottom: 1px solid var(--pk-border); }
+.hist-table tr:last-child td { border-bottom: none; }
+.hist-table tr:hover td { background: #f8fafc; }
+
+.danger-zone { background: #fff5f5; border: 1px solid #fecaca; border-radius: 10px; padding: 16px 20px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+    <h4 style="margin:0;font-weight:800;color:var(--pk-primary);">
+        <i class="bi bi-bar-chart-line me-2" style="color:var(--pk-accent);"></i>Panel Administrador
+    </h4>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+        <label style="font-size:.78rem;color:var(--pk-muted);font-weight:600;">Fecha:</label>
+        <input type="date" id="filtroFecha" value="{{ '' }}"
+               style="border:1px solid var(--pk-border);border-radius:7px;padding:5px 10px;font-size:.82rem;"
+               onchange="cargarTodo()">
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="adm-stats">
+    <div class="adm-stat">
+        <div class="adm-stat-label">Activos ahora</div>
+        <div class="adm-stat-val" id="sActivos">—</div>
+    </div>
+    <div class="adm-stat">
+        <div class="adm-stat-label">Salidas del día</div>
+        <div class="adm-stat-val" id="sSalidas">—</div>
+    </div>
+    <div class="adm-stat">
+        <div class="adm-stat-label">Recaudo del día</div>
+        <div class="adm-stat-val" id="sRecaudo">—</div>
+        <div class="adm-stat-sub">solo finalizados</div>
+    </div>
+    <div class="adm-stat">
+        <div class="adm-stat-label">Prom. por vehículo</div>
+        <div class="adm-stat-val" id="sProm">—</div>
+    </div>
+</div>
+
+<div class="adm-grid">
+    <!-- Vehículos activos -->
+    <div class="pk-card">
+        <div class="pk-card-head">
+            <i class="bi bi-car-front-fill" style="color:var(--pk-success);"></i>
+            <h5>Activos en este momento</h5>
+            <span id="activosCnt" class="pk-badge pk-badge-activo" style="margin-left:auto;">0</span>
+        </div>
+        <div class="pk-card-body" style="padding:0;overflow:auto;max-height:340px;">
+            <table class="hist-table">
+                <thead><tr><th>Placa</th><th>Tipo</th><th>Ingreso</th><th>Cascos</th><th style="text-align:right;">Valor actual</th></tr></thead>
+                <tbody id="activosBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Historial del día -->
+    <div class="pk-card">
+        <div class="pk-card-head">
+            <i class="bi bi-clock-history" style="color:var(--pk-muted);"></i>
+            <h5>Historial finalizados</h5>
+            <span id="histCnt" class="pk-badge" style="margin-left:auto;background:#f1f5f9;color:var(--pk-muted);">0</span>
+        </div>
+        <div class="pk-card-body" style="padding:0;overflow:auto;max-height:340px;">
+            <table class="hist-table">
+                <thead><tr><th>Placa</th><th>Tipo</th><th>Ingreso</th><th>Salida</th><th>Cascos</th><th style="text-align:right;">Total</th></tr></thead>
+                <tbody id="histBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Zona peligrosa -->
+<div class="danger-zone" style="margin-top:20px;">
+    <h6 style="color:#b91c1c;font-weight:700;margin:0 0 8px;"><i class="bi bi-exclamation-triangle-fill me-1"></i>Acciones de administrador</h6>
+    <p style="font-size:.82rem;color:#7f1d1d;margin:0 0 12px;">El botón "Iniciar día nuevo" elimina permanentemente el historial de días anteriores. Los vehículos activos <strong>no</strong> se eliminan.</p>
+    <button onclick="iniciaDiaNuevo()" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 20px;font-weight:700;cursor:pointer;font-size:.83rem;">
+        <i class="bi bi-trash3 me-1"></i>Iniciar día nuevo (borrar historial anterior)
+    </button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fmt(v) { return '$' + Number(v).toLocaleString('es-CO'); }
+
+function hoy() {
+    return new Date().toISOString().split('T')[0];
+}
+
+document.getElementById('filtroFecha').value = hoy();
+
+async function cargarTodo() {
+    await Promise.all([cargarStats(), cargarActivos(), cargarHistorial()]);
+}
+
+async function cargarStats() {
+    const r = await fetch('/api/parqueadero/stats');
+    const s = await r.json();
+    document.getElementById('sActivos').textContent  = s.activos;
+    document.getElementById('sSalidas').textContent  = s.salidas;
+    document.getElementById('sRecaudo').textContent  = fmt(s.recaudo);
+    document.getElementById('sProm').textContent     = s.salidas > 0 ? fmt(Math.round(s.recaudo / s.salidas)) : '—';
+}
+
+async function cargarActivos() {
+    const r = await fetch('/api/parqueadero/activos');
+    const activos = await r.json();
+    document.getElementById('activosCnt').textContent = activos.length;
+    const tbody = document.getElementById('activosBody');
+    if (!activos.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--pk-muted);padding:16px;">Sin vehículos activos</td></tr>';
+        return;
+    }
+    tbody.innerHTML = activos.map(a => {
+        const ing = new Date(a.hora_ingreso);
+        return `<tr>
+            <td><strong style="letter-spacing:1px;">${a.placa}</strong></td>
+            <td><span class="pk-badge ${a.tipo === 'carro' ? 'pk-badge-carro' : 'pk-badge-moto'}">${a.tipo}</span></td>
+            <td>${ing.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</td>
+            <td>${a.tipo === 'moto' ? a.cascos : '—'}</td>
+            <td style="text-align:right;font-weight:700;color:var(--pk-success);">${fmt(a.valor_actual)}</td>
+        </tr>`;
+    }).join('');
+}
+
+async function cargarHistorial() {
+    const fecha = document.getElementById('filtroFecha').value || hoy();
+    const r = await fetch(`/api/parqueadero/historial?fecha=${fecha}`);
+    const hist = await r.json();
+    document.getElementById('histCnt').textContent = hist.length;
+    const tbody = document.getElementById('histBody');
+    if (!hist.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--pk-muted);padding:16px;">Sin registros</td></tr>';
+        return;
+    }
+    tbody.innerHTML = hist.map(h => {
+        const ing = new Date(h.hora_ingreso);
+        const sal = h.hora_salida ? new Date(h.hora_salida) : null;
+        return `<tr>
+            <td><strong style="letter-spacing:1px;">${h.placa}</strong></td>
+            <td><span class="pk-badge ${h.tipo === 'carro' ? 'pk-badge-carro' : 'pk-badge-moto'}">${h.tipo}</span></td>
+            <td>${ing.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</td>
+            <td>${sal ? sal.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}) : '—'}</td>
+            <td>${h.tipo === 'moto' ? h.cascos : '—'}</td>
+            <td style="text-align:right;font-weight:700;color:var(--pk-success);">${fmt(h.valor_total)}</td>
+        </tr>`;
+    }).join('');
+}
+
+async function iniciaDiaNuevo() {
+    const ok1 = confirm('¿Seguro que quieres iniciar un día nuevo?\nEsto eliminará permanentemente el historial de días anteriores.');
+    if (!ok1) return;
+    const ok2 = confirm('Segunda confirmación: se borrarán todos los registros finalizados de días anteriores. ¿Continuar?');
+    if (!ok2) return;
+    const r = await fetch('/api/parqueadero/nuevo-dia', { method: 'POST' });
+    const d = await r.json();
+    if (d.ok) {
+        alert(`✓ ${d.eliminados} registro(s) eliminados. El historial quedó limpio.`);
+        cargarTodo();
+    } else {
+        alert('Error: ' + (d.msg || 'No se pudo completar'));
+    }
+}
+
+cargarTodo();
+setInterval(cargarTodo, 30000);
+</script>
+{% endblock %}

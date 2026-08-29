@@ -95,6 +95,10 @@ def login():
             return redirect(url_for("neo.home_neo"))
         elif user.rol.lower() == "director":
             return redirect(url_for("dashboard.indicadores"))
+        elif user.rol.lower() == "parqueadero":
+            return redirect(url_for("parqueadero.operador"))
+        elif user.rol.lower() == "admin_parqueadero":
+            return redirect(url_for("parqueadero.admin"))
 
         return redirect("/")
 
