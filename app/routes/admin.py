@@ -193,7 +193,7 @@ def usuarios():
             UserContrato.query.filter_by(user_id=u.id).all()
         }
 
-    roles = ["coordinador", "director"]
+    roles = ["coordinador", "director", "parqueadero", "admin_parqueadero"]
     return render_template("admin/usuarios.html",
                            usuarios=lista, contratos=contratos,
                            asignados_por_usuario=asignados_por_usuario,
