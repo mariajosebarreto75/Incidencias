@@ -99,10 +99,10 @@
     <div class="dh-kpis" id="kpiRow">
         <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#38bdf8"><i class="bi bi-clipboard2-data"></i></div><div class="dh-kpi-val" id="k_total">—</div><div class="dh-kpi-lbl">Total registros</div></div>
         <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#a78bfa"><i class="bi bi-clock-history"></i></div><div class="dh-kpi-val" id="k_rep">—</div><div class="dh-kpi-lbl">Hrs reportadas</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#4ade80"><i class="bi bi-check-circle-fill"></i></div><div class="dh-kpi-val" id="k_auth">—</div><div class="dh-kpi-lbl">Hrs autorizadas</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#f87171"><i class="bi bi-x-circle-fill"></i></div><div class="dh-kpi-val" id="k_noconf">—</div><div class="dh-kpi-lbl">Hrs no conformes</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#4ade80"><i class="bi bi-check-circle-fill"></i></div><div class="dh-kpi-val" id="k_auth">—</div><div class="dh-kpi-lbl">Total aprobadas</div></div>
         <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#fcd34d"><i class="bi bi-dash-circle-fill"></i></div><div class="dh-kpi-val" id="k_desc">—</div><div class="dh-kpi-lbl">Hrs descontadas</div></div>
         <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#94a3b8"><i class="bi bi-hourglass-split"></i></div><div class="dh-kpi-val" id="k_pend">—</div><div class="dh-kpi-lbl">Pendientes</div></div>
+        <span id="k_noconf" hidden>—</span>
     </div>
 
     <!-- CHARTS ROW -->
@@ -243,7 +243,7 @@ function renderKpis(k) {
     document.getElementById('k_rep').textContent    = fmtHrs(k.hrs_reportadas) + 'h';
     document.getElementById('k_auth').textContent   = fmtHrs(k.hrs_autorizadas) + 'h';
     document.getElementById('k_noconf').textContent = fmtHrs(k.hrs_no_conforme) + 'h';
-    document.getElementById('k_desc').textContent   = fmtHrs(k.hrs_descontadas) + 'h';
+    document.getElementById('k_desc').textContent   = fmtHrs(Math.max(0, (k.hrs_reportadas||0) - (k.hrs_autorizadas||0))) + 'h';
     document.getElementById('k_pend').textContent   = fmt(k.pendientes);
 }
 
