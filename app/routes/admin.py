@@ -1670,11 +1670,18 @@ def api_he_dashboard_data():
             llave = (r.cedula, "")
         else:
             llave = (r.cedula, r.fecha_labor.strftime("%Y-%m"))
+        # Solo contar horas autorizadas de registros conformes o descontados
+        estado = (r.estado or "").strip().upper()
+        if estado not in ("CONFORME", "DESCONTADA"):
+            continue
+        hrs = r.horas_autorizadas or 0
+        if not hrs:
+            continue
         he_por_persona_mes[llave]["nombre"] = r.nombre or r.cedula
         he_por_persona_mes[llave]["mes"]    = r.fecha_labor.strftime("%Y-%m")
         if r.contrato:
             he_por_persona_mes[llave]["contratos"].add(r.contrato.contrato)
-        he_por_persona_mes[llave]["horas"] += r.horas_reportadas or 0
+        he_por_persona_mes[llave]["horas"] += hrs
     limite_legal = []
     for (ced, mes_key), info in he_por_persona_mes.items():
         if info["horas"] >= 36:  # mostrar desde 36h (alerta 75%)
