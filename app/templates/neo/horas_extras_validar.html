@@ -298,10 +298,6 @@ body { background:var(--c-bg); }
                 <div class="he-kpi-val" id="kv-hrs-auth">—</div>
                 <div class="he-kpi-lbl">Total Aprobadas</div>
             </div>
-            <div class="he-kpi-card" style="border-top:3px solid #22c55e;">
-                <div class="he-kpi-val" id="kv-hrs-conf" style="color:#15803d;">—</div>
-                <div class="he-kpi-lbl">Hrs Autorizadas</div>
-            </div>
             <div class="he-kpi-card warning">
                 <div class="he-kpi-val" id="kv-hrs-desc">—</div>
                 <div class="he-kpi-lbl">Hrs Descontadas</div>
@@ -454,10 +450,6 @@ body { background:var(--c-bg); }
             <div class="he-kpi-card success">
                 <div class="he-kpi-val" id="hk-hrs-auth">—</div>
                 <div class="he-kpi-lbl">Total Aprobadas</div>
-            </div>
-            <div class="he-kpi-card" style="border-top:3px solid #22c55e;">
-                <div class="he-kpi-val" id="hk-hrs-conf" style="color:#15803d;">—</div>
-                <div class="he-kpi-lbl">Hrs Autorizadas</div>
             </div>
             <div class="he-kpi-card warning">
                 <div class="he-kpi-val" id="hk-hrs-desc">—</div>
@@ -1189,7 +1181,6 @@ async function cargarKpisHistorial() {
         _hset("hkv-pendientes", (d.pendientes || 0).toLocaleString("es-CO"));
         _hset("hk-hrs-rep",     (+d.hrs_reportadas   || 0).toFixed(0));
         _hset("hk-hrs-auth",    (+d.hrs_autorizadas  || 0).toFixed(0));
-        _hset("hk-hrs-conf",    (+d.hrs_conf_auth    || 0).toFixed(0));
         _hset("hk-hrs-desc",    (+d.hrs_desc_auth    || 0).toFixed(0));
     } catch(e) {
         ["hk-total","hk-pend","hk-conf","hk-noconf","hk-desc"].forEach(id => {
@@ -1792,7 +1783,6 @@ function _actualizarKpisDesdeFiltered(rows) {
     document.getElementById("kv-pendientes").textContent = pend.toLocaleString("es-CO");
     document.getElementById("kv-hrs-rep").textContent    = hrsRep.toFixed(0);
     document.getElementById("kv-hrs-auth").textContent   = (hrsConf + hrsDesc).toFixed(0);
-    document.getElementById("kv-hrs-conf").textContent   = hrsConf.toFixed(0);
     document.getElementById("kv-hrs-desc").textContent   = Math.max(0, hrsRep - (hrsConf + hrsDesc)).toFixed(0);
 }
 
@@ -1825,7 +1815,6 @@ function _actualizarKpisHistorialDesdeFiltered(rows) {
     set("hkv-pendientes", pend.toLocaleString("es-CO"));
     set("hk-hrs-rep",     hrsRep.toFixed(0));
     set("hk-hrs-auth",    (hrsConf + hrsDesc).toFixed(0));
-    set("hk-hrs-conf",    hrsConf.toFixed(0));
     set("hk-hrs-desc",    hrsDesc.toFixed(0));
 }
 
@@ -1974,7 +1963,6 @@ async function cargarKpis() {
         document.getElementById("kv-pendientes").textContent = (d.pendientes || 0).toLocaleString("es-CO");
         document.getElementById("kv-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
         document.getElementById("kv-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
-        document.getElementById("kv-hrs-conf").textContent   = (+d.hrs_conf_auth    || 0).toFixed(0);
         const hrsReportadas = +d.hrs_reportadas || 0;
         const hrsAprobadas  = +d.hrs_autorizadas || 0;
         const hrsDescontadas = Math.max(0, hrsReportadas - hrsAprobadas);
