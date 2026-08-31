@@ -1640,15 +1640,18 @@ def api_he_dashboard_data():
     tipos_lista = sorted(por_tipo.values(), key=lambda x: -x["hrs_reportadas"])
     top_tipo = tipos_lista[0] if tipos_lista else None
 
-    # ── Horas por día ────────────────────────────────────────────────────────
-    por_dia = {}
+    # ── Horas por día (todos los conceptos y solo HE puras) ─────────────────
+    por_dia_todos = {}
+    por_dia_he    = {}
     for r in registros:
         d_str = r.fecha_labor.isoformat() if r.fecha_labor else ""
         if not d_str: continue
-        if d_str not in por_dia:
-            por_dia[d_str] = 0
-        por_dia[d_str] += r.horas_reportadas or 0
-    dias = sorted(por_dia.items())
+        hrs = r.horas_reportadas or 0
+        por_dia_todos[d_str] = por_dia_todos.get(d_str, 0) + hrs
+        if (r.id_concepto or "").strip().zfill(2) in CODIGOS_HE:
+            por_dia_he[d_str] = por_dia_he.get(d_str, 0) + hrs
+    dias       = sorted(por_dia_todos.items())
+    dias_he    = sorted(por_dia_he.items())
 
     # ── Límite legal 48h (solo HE puras 03,04,05,06) ────────────────────────
     # Si hay corte activo, los registros ya están acotados al período del corte;
@@ -1717,6 +1720,7 @@ def api_he_dashboard_data():
         "por_tipo":      tipos_lista,
         "top_tipo":      top_tipo,
         "por_dia":       [{"fecha": d, "horas": h} for d, h in dias],
+        "por_dia_he":    [{"fecha": d, "horas": h} for d, h in dias_he],
         "limite_legal":  limite_legal,
         "supervisores":  supervisores,
     })
