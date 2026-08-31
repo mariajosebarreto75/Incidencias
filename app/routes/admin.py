@@ -1667,11 +1667,12 @@ def api_he_dashboard_data():
     for r in registros:
         hrs = r.horas_reportadas or 0
         if r.fecha_labor:
-            d = r.fecha_labor.isoformat()
-            por_dia_todos[d] = por_dia_todos.get(d, 0) + hrs
+            fl = r.fecha_labor
+            if not rango_ini or not rango_fin or (rango_ini <= fl <= rango_fin):
+                d = fl.isoformat()
+                por_dia_todos[d] = por_dia_todos.get(d, 0) + hrs
         if r.fecha_reporte:
             fd = r.fecha_reporte.date()
-            # Solo contar si cae dentro del rango activo (o si no hay rango)
             if not rango_ini or not rango_fin or (rango_ini <= fd <= rango_fin):
                 d = fd.isoformat()
                 por_dia_reporte[d] = por_dia_reporte.get(d, 0) + hrs
