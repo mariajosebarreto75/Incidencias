@@ -376,7 +376,7 @@ function renderLimite(lista) {
             <td><strong>${r.nombre}</strong><br><span style="font-size:.68rem;opacity:.7">${r.cedula}</span></td>
             <td style="font-size:.72rem">${r.contrato}</td>
             <td style="font-size:.72rem">${r.mes}</td>
-            <td style="text-align:right;font-weight:700;font-size:.9rem">${r.horas}h</td>
+            <td style="text-align:right;font-weight:700;font-size:.9rem">${Math.round(r.horas)}h</td>
             <td>${badge}</td>
         </tr>`;
     }).join('');
