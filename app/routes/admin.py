@@ -1656,6 +1656,7 @@ def api_he_dashboard_data():
     for r in registros:
         if (r.id_concepto or "").strip().zfill(2) not in CODIGOS_HE: continue
         if not r.fecha_labor: continue
+        if not (r.cedula or "").strip(): continue   # ignorar registros sin cédula
         llave = (r.cedula, r.fecha_labor.strftime("%Y-%m"),
                  r.contrato.contrato if r.contrato else "")
         he_por_persona_mes[llave]["nombre"]   = r.nombre or r.cedula
