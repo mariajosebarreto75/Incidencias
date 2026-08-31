@@ -261,24 +261,12 @@ body { background:var(--c-bg); }
     <!-- ══════════════════ PANEL 1: VALIDACIÓN ══════════════════ -->
     <div class="he-panel active" id="panel-validacion">
 
-        <!-- Chips de estado -->
-        <div class="he-chips">
-            <div class="he-chip ch-all active" onclick="filtrarChip('',this)">
-                <i class="bi bi-list-ul"></i> Todos <span class="cnt" id="k-total">—</span>
-            </div>
-            <div class="he-chip ch-pend" onclick="filtrarChip('PENDIENTE',this)">
-                <i class="bi bi-hourglass-split"></i> Pendientes <span class="cnt" id="k-pend">—</span>
-            </div>
-            <div class="he-chip ch-conf" onclick="filtrarChip('CONFORME',this)">
-                <i class="bi bi-check-circle"></i> Conformes <span class="cnt" id="k-conf">—</span>
-            </div>
-            <div class="he-chip ch-noconf" onclick="filtrarChip('NO CONFORME',this)">
-                <i class="bi bi-x-circle"></i> No Conformes <span class="cnt" id="k-noconf">—</span>
-            </div>
-            <div class="he-chip ch-desc" onclick="filtrarChip('DESCONTADA',this)">
-                <i class="bi bi-dash-circle"></i> Descontadas <span class="cnt" id="k-desc">—</span>
-            </div>
-        </div>
+        <!-- Chips de estado ocultos (contadores usados internamente) -->
+        <span id="k-total" hidden>—</span>
+        <span id="k-pend"  hidden>—</span>
+        <span id="k-conf"  hidden>—</span>
+        <span id="k-noconf" hidden>—</span>
+        <span id="k-desc"  hidden>—</span>
 
         <!-- Tarjetas KPI grandes -->
         <div class="he-kpi-row">
@@ -418,24 +406,12 @@ body { background:var(--c-bg); }
             </button>
         </div>
 
-        <!-- Chips de estado historial -->
-        <div class="he-chips">
-            <div class="he-chip ch-all active" onclick="filtrarChipH('',this)">
-                <i class="bi bi-list-ul"></i> Todos <span class="cnt" id="hk-total">—</span>
-            </div>
-            <div class="he-chip ch-pend" onclick="filtrarChipH('PENDIENTE',this)">
-                <i class="bi bi-hourglass-split"></i> Pendientes <span class="cnt" id="hk-pend">—</span>
-            </div>
-            <div class="he-chip ch-conf" onclick="filtrarChipH('CONFORME',this)">
-                <i class="bi bi-check-circle"></i> Conformes <span class="cnt" id="hk-conf">—</span>
-            </div>
-            <div class="he-chip ch-noconf" onclick="filtrarChipH('NO CONFORME',this)">
-                <i class="bi bi-x-circle"></i> No Conformes <span class="cnt" id="hk-noconf">—</span>
-            </div>
-            <div class="he-chip ch-desc" onclick="filtrarChipH('DESCONTADA',this)">
-                <i class="bi bi-dash-circle"></i> Descontadas <span class="cnt" id="hk-desc">—</span>
-            </div>
-        </div>
+        <!-- Chips historial ocultos (contadores internos) -->
+        <span id="hk-total"  hidden>—</span>
+        <span id="hk-pend"   hidden>—</span>
+        <span id="hk-conf"   hidden>—</span>
+        <span id="hk-noconf" hidden>—</span>
+        <span id="hk-desc"   hidden>—</span>
 
         <!-- Tarjetas KPI historial -->
         <div class="he-kpi-row">
