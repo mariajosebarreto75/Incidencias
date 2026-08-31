@@ -118,15 +118,15 @@
         <!-- Por día -->
         <div class="dh-card">
             <div class="dh-card-hdr" style="flex-wrap:wrap;gap:.5rem;">
-                <span class="dh-card-ttl"><i class="bi bi-graph-up me-1"></i><span id="chartDiaTitulo">HE puras por día (03,04,05,06)</span></span>
+                <span class="dh-card-ttl"><i class="bi bi-graph-up me-1"></i><span id="chartDiaTitulo">Horas por día trabajado</span></span>
                 <div style="display:flex;gap:.4rem;margin-left:auto;">
-                    <button id="btnDiaHE" onclick="switchChartDia('he')"
+                    <button id="btnDiaTrabajado" onclick="switchChartDia('trabajado')"
                         style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #38bdf8;background:#0e3a52;color:#38bdf8;">
-                        HE puras
+                        Por día trabajado
                     </button>
-                    <button id="btnDiaTodos" onclick="switchChartDia('todos')"
+                    <button id="btnDiaReporte" onclick="switchChartDia('reporte')"
                         style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #334155;background:transparent;color:#64748b;">
-                        Todos los conceptos
+                        Días de reporte
                     </button>
                 </div>
             </div>
@@ -203,21 +203,21 @@
 {% block scripts %}
 <script>
 let chartTipo = null, chartDia = null;
-let _diasHE = [], _diasTodos = [];
+let _diasTrabajado = [], _diasReporte = [];
 
 function switchChartDia(modo) {
-    const esHE = modo === 'he';
-    document.getElementById('chartDiaTitulo').textContent = esHE
-        ? 'HE puras por día (03,04,05,06)' : 'Todos los conceptos por día';
-    const btnHE    = document.getElementById('btnDiaHE');
-    const btnTodos = document.getElementById('btnDiaTodos');
-    btnHE.style.background    = esHE ? '#0e3a52' : 'transparent';
-    btnHE.style.color         = esHE ? '#38bdf8' : '#64748b';
-    btnHE.style.borderColor   = esHE ? '#38bdf8' : '#334155';
-    btnTodos.style.background = !esHE ? '#2d1f00' : 'transparent';
-    btnTodos.style.color      = !esHE ? '#fbbf24' : '#64748b';
-    btnTodos.style.borderColor= !esHE ? '#f59e0b' : '#334155';
-    renderChartDia(esHE ? _diasHE : _diasTodos);
+    const esTrabajado = modo === 'trabajado';
+    document.getElementById('chartDiaTitulo').textContent = esTrabajado
+        ? 'Horas por día trabajado' : 'Horas por día de reporte';
+    const btnT = document.getElementById('btnDiaTrabajado');
+    const btnR = document.getElementById('btnDiaReporte');
+    btnT.style.background  = esTrabajado ? '#0e3a52'    : 'transparent';
+    btnT.style.color       = esTrabajado ? '#38bdf8'    : '#64748b';
+    btnT.style.borderColor = esTrabajado ? '#38bdf8'    : '#334155';
+    btnR.style.background  = !esTrabajado ? '#2d1f00'   : 'transparent';
+    btnR.style.color       = !esTrabajado ? '#fbbf24'   : '#64748b';
+    btnR.style.borderColor = !esTrabajado ? '#f59e0b'   : '#334155';
+    renderChartDia(esTrabajado ? _diasTrabajado : _diasReporte);
 }
 const fmt    = n => (n||0).toLocaleString('es-CO');
 const fmtHrs = n => Math.round(n||0).toLocaleString('es-CO');
@@ -251,10 +251,9 @@ async function cargar() {
     if (data.error) { console.error(data.error); return; }
     renderKpis(data.kpis);
     renderChartTipo(data.por_tipo);
-    _diasHE    = data.por_dia_he || [];
-    _diasTodos = data.por_dia    || [];
-    renderChartDia(_diasHE);
-    switchChartDia('he');
+    _diasTrabajado = data.por_dia         || [];
+    _diasReporte   = data.por_dia_reporte || [];
+    switchChartDia('trabajado');
     renderLimite(data.limite_legal);
     renderSupervisores(data.supervisores);
 
