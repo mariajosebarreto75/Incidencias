@@ -1676,6 +1676,7 @@ def api_he_dashboard_data():
         cur = rango_ini
         while cur <= rango_fin:
             por_dia_todos.setdefault(cur.isoformat(), 0)
+            por_dia_reporte.setdefault(cur.isoformat(), 0)
             cur += timedelta(days=1)
 
     dias         = sorted(por_dia_todos.items())
