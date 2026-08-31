@@ -58,6 +58,11 @@
             <i class="bi bi-person-badge"></i> Usuarios NEO / Admin
         </a>
 
+        <a href="{{ url_for('admin_bp.parqueadero_usuarios') }}"
+           class="adm-nav-link {% if request.endpoint == 'admin_bp.parqueadero_usuarios' %}active{% endif %}">
+            <i class="bi bi-p-square"></i> Usuarios Parqueadero
+        </a>
+
         <a href="{{ url_for('admin_bp.personas') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.personas' %}active{% endif %}">
             <i class="bi bi-person-vcard"></i> Personas / Cédulas

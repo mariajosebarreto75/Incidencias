@@ -224,6 +224,15 @@ def neo_usuarios():
     )
 
 
+@admin_bp.route("/parqueadero-usuarios")
+@admin_required
+def parqueadero_usuarios():
+    lista = User.query.filter(
+        User.rol.in_(["parqueadero", "admin_parqueadero"])
+    ).order_by(User.rol, User.nombre_completo).all()
+    return render_template("admin/parqueadero_usuarios.html", usuarios=lista)
+
+
 @admin_bp.route("/api/usuarios", methods=["POST"])
 @admin_required
 def api_crear_usuario():
