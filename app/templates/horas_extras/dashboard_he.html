@@ -118,15 +118,15 @@
         <!-- Por día -->
         <div class="dh-card">
             <div class="dh-card-hdr" style="flex-wrap:wrap;gap:.5rem;">
-                <span class="dh-card-ttl"><i class="bi bi-graph-up me-1"></i>Horas extras por día</span>
+                <span class="dh-card-ttl"><i class="bi bi-graph-up me-1"></i><span id="chartDiaTitulo">Horas por día trabajado</span></span>
                 <div style="display:flex;gap:.4rem;margin-left:auto;">
-                    <button id="btnDiaTrabajado" onclick="toggleChartDia('trabajado')"
+                    <button id="btnDiaTrabajado" onclick="switchChartDia('trabajado')"
                         style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #38bdf8;background:#0e3a52;color:#38bdf8;">
-                        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#38bdf8;margin-right:4px;"></span>Por día trabajado
+                        Por día trabajado
                     </button>
-                    <button id="btnDiaReporte" onclick="toggleChartDia('reporte')"
+                    <button id="btnDiaReporte" onclick="switchChartDia('reporte')"
                         style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #334155;background:transparent;color:#64748b;">
-                        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#64748b;margin-right:4px;" id="dotReporte"></span>HE Reportadas
+                        Días de reporte
                     </button>
                 </div>
             </div>
@@ -204,73 +204,20 @@
 <script>
 let chartTipo = null, chartDia = null;
 let _diasTrabajado = [], _diasReporte = [];
-let _showTrabajado = true, _showReporte = false;
 
-function toggleChartDia(modo) {
-    if (modo === 'trabajado') _showTrabajado = !_showTrabajado;
-    else                      _showReporte   = !_showReporte;
-    // Al menos uno debe estar activo
-    if (!_showTrabajado && !_showReporte) {
-        if (modo === 'trabajado') _showTrabajado = true;
-        else                      _showReporte   = true;
-    }
-    _updateBtnDia('btnDiaTrabajado', _showTrabajado, '#38bdf8', '#0e3a52');
-    _updateBtnDia('btnDiaReporte',   _showReporte,   '#ff6b1a', '#2d1200');
-    document.getElementById('dotReporte').style.background = _showReporte ? '#ff6b1a' : '#64748b';
-    renderChartDia2();
-}
-function _updateBtnDia(id, activo, color, bg) {
-    const b = document.getElementById(id);
-    b.style.background  = activo ? bg          : 'transparent';
-    b.style.color       = activo ? color        : '#64748b';
-    b.style.borderColor = activo ? color        : '#334155';
-}
-function renderChartDia2() {
-    // Unión de todas las fechas presentes en ambas series
-    const fechasSet = new Set([
-        ..._diasTrabajado.map(d => d.fecha),
-        ..._diasReporte.map(d => d.fecha),
-    ]);
-    const fechas = Array.from(fechasSet).sort();
-    const mapT = Object.fromEntries(_diasTrabajado.map(d => [d.fecha, d.horas]));
-    const mapR = Object.fromEntries(_diasReporte.map(d => [d.fecha, d.horas]));
-
-    const datasets = [];
-    if (_showTrabajado) datasets.push({
-        label: 'Por día trabajado',
-        data: fechas.map(f => Math.round(mapT[f] || 0)),
-        borderColor: '#38bdf8', backgroundColor: '#38bdf822',
-        fill: true, tension: 0.3,
-        pointRadius: 4, pointBackgroundColor: '#38bdf8',
-        datalabels: { display: false }, order: 2,
-    });
-    if (_showReporte) datasets.push({
-        label: 'HE Reportadas',
-        data: fechas.map(f => Math.round(mapR[f] || 0)),
-        borderColor: '#ff6b1a', backgroundColor: 'transparent',
-        fill: false, tension: 0.3,
-        pointRadius: 4, pointBackgroundColor: '#ff6b1a',
-        borderWidth: 2,
-        datalabels: { display: false }, order: 1,
-    });
-
-    const ctx = document.getElementById('chartDia').getContext('2d');
-    if (chartDia) chartDia.destroy();
-    chartDia = new Chart(ctx, {
-        type: 'line',
-        data: { labels: fechas.map(fmtFecha), datasets },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { display: datasets.length > 1, labels: { color: '#94a3b8', font: { size: 11 } } },
-                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmtHrs(c.parsed.y) + 'h' } }
-            },
-            scales: {
-                x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font:{size:10}, maxRotation: 45 } },
-                y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10}, callback: v => fmtHrs(v) + 'h' } }
-            }
-        }
-    });
+function switchChartDia(modo) {
+    const esTrabajado = modo === 'trabajado';
+    document.getElementById('chartDiaTitulo').textContent = esTrabajado
+        ? 'Horas por día trabajado' : 'Horas por día de reporte';
+    const btnT = document.getElementById('btnDiaTrabajado');
+    const btnR = document.getElementById('btnDiaReporte');
+    btnT.style.background  = esTrabajado ? '#0e3a52'    : 'transparent';
+    btnT.style.color       = esTrabajado ? '#38bdf8'    : '#64748b';
+    btnT.style.borderColor = esTrabajado ? '#38bdf8'    : '#334155';
+    btnR.style.background  = !esTrabajado ? '#2d1f00'   : 'transparent';
+    btnR.style.color       = !esTrabajado ? '#fbbf24'   : '#64748b';
+    btnR.style.borderColor = !esTrabajado ? '#f59e0b'   : '#334155';
+    renderChartDia(esTrabajado ? _diasTrabajado : _diasReporte);
 }
 const fmt    = n => (n||0).toLocaleString('es-CO');
 const fmtHrs = n => Math.round(n||0).toLocaleString('es-CO');
@@ -306,11 +253,7 @@ async function cargar() {
     renderChartTipo(data.por_tipo);
     _diasTrabajado = data.por_dia         || [];
     _diasReporte   = data.por_dia_reporte || [];
-    _showTrabajado = true; _showReporte = false;
-    _updateBtnDia('btnDiaTrabajado', true,  '#38bdf8', '#0e3a52');
-    _updateBtnDia('btnDiaReporte',   false, '#ff6b1a', '#2d1200');
-    document.getElementById('dotReporte').style.background = '#64748b';
-    renderChartDia2();
+    switchChartDia('trabajado');
     renderLimite(data.limite_legal);
     renderSupervisores(data.supervisores);
 
