@@ -345,9 +345,7 @@ function renderChartDia(dias) {
                 label: 'Horas', data: vals,
                 borderColor: '#38bdf8', backgroundColor: '#38bdf822',
                 fill: true, tension: 0.3,
-                pointRadius: vals.map(v => v > 0 ? 4 : 0),
-                pointHoverRadius: vals.map(v => v > 0 ? 6 : 0),
-                pointBackgroundColor: '#38bdf8',
+                pointRadius: 4, pointBackgroundColor: '#38bdf8',
                 datalabels: { display: false }
             }]
         },

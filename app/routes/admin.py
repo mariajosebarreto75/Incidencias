@@ -1677,14 +1677,6 @@ def api_he_dashboard_data():
                 d = fd.isoformat()
                 por_dia_reporte[d] = por_dia_reporte.get(d, 0) + hrs
 
-    # Rellenar todos los días del rango con 0
-    if rango_ini and rango_fin:
-        cur = rango_ini
-        while cur <= rango_fin:
-            por_dia_todos.setdefault(cur.isoformat(), 0)
-            por_dia_reporte.setdefault(cur.isoformat(), 0)
-            cur += timedelta(days=1)
-
     dias         = sorted(por_dia_todos.items())
     dias_reporte = sorted(por_dia_reporte.items())
 
