@@ -286,6 +286,10 @@ body { background:var(--c-bg); }
                 <div class="he-kpi-val" id="kv-total">—</div>
                 <div class="he-kpi-lbl">Total Registros</div>
             </div>
+            <div class="he-kpi-card" style="border-top:3px solid #f59e0b;background:#fffbeb;">
+                <div class="he-kpi-val" id="kv-pendientes" style="color:#b45309;">—</div>
+                <div class="he-kpi-lbl">Pendientes por revisar</div>
+            </div>
             <div class="he-kpi-card info">
                 <div class="he-kpi-val" id="kv-hrs-rep">—</div>
                 <div class="he-kpi-lbl">Hrs Reportadas</div>
@@ -1186,7 +1190,6 @@ async function cargarKpisHistorial() {
         _hset("hk-hrs-rep",     (+d.hrs_reportadas   || 0).toFixed(0));
         _hset("hk-hrs-auth",    (+d.hrs_autorizadas  || 0).toFixed(0));
         _hset("hk-hrs-conf",    (+d.hrs_conf_auth    || 0).toFixed(0));
-        _hset("hk-hrs-noconf",  (+d.hrs_no_conformes || 0).toFixed(0));
         _hset("hk-hrs-desc",    (+d.hrs_desc_auth    || 0).toFixed(0));
     } catch(e) {
         ["hk-total","hk-pend","hk-conf","hk-noconf","hk-desc"].forEach(id => {
@@ -1790,7 +1793,6 @@ function _actualizarKpisDesdeFiltered(rows) {
     document.getElementById("kv-hrs-rep").textContent    = hrsRep.toFixed(0);
     document.getElementById("kv-hrs-auth").textContent   = (hrsConf + hrsDesc).toFixed(0);
     document.getElementById("kv-hrs-conf").textContent   = hrsConf.toFixed(0);
-    document.getElementById("kv-hrs-noconf").textContent = hrsNoconfRep.toFixed(0);
     document.getElementById("kv-hrs-desc").textContent   = Math.max(0, hrsRep - (hrsConf + hrsDesc)).toFixed(0);
 }
 
@@ -1824,7 +1826,6 @@ function _actualizarKpisHistorialDesdeFiltered(rows) {
     set("hk-hrs-rep",     hrsRep.toFixed(0));
     set("hk-hrs-auth",    (hrsConf + hrsDesc).toFixed(0));
     set("hk-hrs-conf",    hrsConf.toFixed(0));
-    set("hk-hrs-noconf",  hrsNoconfRep.toFixed(0));
     set("hk-hrs-desc",    hrsDesc.toFixed(0));
 }
 
@@ -1974,7 +1975,6 @@ async function cargarKpis() {
         document.getElementById("kv-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
         document.getElementById("kv-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
         document.getElementById("kv-hrs-conf").textContent   = (+d.hrs_conf_auth    || 0).toFixed(0);
-        document.getElementById("kv-hrs-noconf").textContent = (+d.hrs_no_conformes || 0).toFixed(0);
         const hrsReportadas = +d.hrs_reportadas || 0;
         const hrsAprobadas  = +d.hrs_autorizadas || 0;
         const hrsDescontadas = Math.max(0, hrsReportadas - hrsAprobadas);
