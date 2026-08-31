@@ -345,7 +345,9 @@ function renderChartDia(dias) {
                 label: 'Horas', data: vals,
                 borderColor: '#38bdf8', backgroundColor: '#38bdf822',
                 fill: true, tension: 0.3,
-                pointRadius: 4, pointBackgroundColor: '#38bdf8',
+                pointRadius: vals.map(v => v > 0 ? 4 : 0),
+                pointHoverRadius: vals.map(v => v > 0 ? 6 : 0),
+                pointBackgroundColor: '#38bdf8',
                 datalabels: { display: false }
             }]
         },
@@ -371,8 +373,6 @@ function renderChartDia(dias) {
                 const { ctx: c, scales: { x, y } } = chart;
                 const ds = chart.data.datasets[0];
                 const meta = chart.getDatasetMeta(0);
-                // Solo mostrar si hay pocos puntos para no saturar
-                if (ds.data.length > 20) return;
                 meta.data.forEach((pt, i) => {
                     const val = ds.data[i];
                     if (!val) return;
