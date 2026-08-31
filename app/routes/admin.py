@@ -1650,26 +1650,34 @@ def api_he_dashboard_data():
         por_dia[d_str] += r.horas_reportadas or 0
     dias = sorted(por_dia.items())
 
-    # ── Límite legal 48h (solo HE puras 03,04,05,06) por persona/mes ────────
+    # ── Límite legal 48h (solo HE puras 03,04,05,06) ────────────────────────
+    # Si hay corte activo, los registros ya están acotados al período del corte;
+    # agrupamos solo por cédula para no partir horas entre meses cuando el corte
+    # cruza dos meses (ej. Jul 17 – Ago 17).
+    # Sin corte, agrupamos por (cédula, mes) para mostrar el acumulado mensual.
     from collections import defaultdict
-    he_por_persona_mes = defaultdict(lambda: {"nombre":"","contratos":set(),"horas":0})
+    he_por_persona_mes = defaultdict(lambda: {"nombre":"","contratos":set(),"horas":0,"mes":""})
     for r in registros:
         if (r.id_concepto or "").strip().zfill(2) not in CODIGOS_HE: continue
         if not r.fecha_labor: continue
-        if not (r.cedula or "").strip(): continue   # ignorar registros sin cédula
-        llave = (r.cedula, r.fecha_labor.strftime("%Y-%m"))
-        he_por_persona_mes[llave]["nombre"]   = r.nombre or r.cedula
+        if not (r.cedula or "").strip(): continue
+        if corte_id:
+            llave = (r.cedula, "")
+        else:
+            llave = (r.cedula, r.fecha_labor.strftime("%Y-%m"))
+        he_por_persona_mes[llave]["nombre"] = r.nombre or r.cedula
+        he_por_persona_mes[llave]["mes"]    = r.fecha_labor.strftime("%Y-%m")
         if r.contrato:
             he_por_persona_mes[llave]["contratos"].add(r.contrato.contrato)
-        he_por_persona_mes[llave]["horas"]   += r.horas_reportadas or 0
+        he_por_persona_mes[llave]["horas"] += r.horas_reportadas or 0
     limite_legal = []
-    for (ced, mes_str), info in he_por_persona_mes.items():
+    for (ced, mes_key), info in he_por_persona_mes.items():
         if info["horas"] >= 36:  # mostrar desde 36h (alerta 75%)
             limite_legal.append({
                 "cedula":   ced,
                 "nombre":   info["nombre"],
                 "contrato": " / ".join(sorted(info["contratos"])) if info["contratos"] else "",
-                "mes":      mes_str,
+                "mes":      mes_key or info["mes"],
                 "horas":    info["horas"],
                 "excede":   info["horas"] >= 48,
             })
