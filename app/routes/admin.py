@@ -1640,19 +1640,7 @@ def api_he_dashboard_data():
     tipos_lista = sorted(por_tipo.values(), key=lambda x: -x["hrs_reportadas"])
     top_tipo = tipos_lista[0] if tipos_lista else None
 
-    # ── Horas por día trabajado y por día de reporte ─────────────────────────
-    por_dia_todos   = {}   # agrupado por fecha_labor (día en que se trabajó)
-    por_dia_reporte = {}   # agrupado por fecha_reporte (día en que se subió)
-    for r in registros:
-        hrs = r.horas_reportadas or 0
-        if r.fecha_labor:
-            d = r.fecha_labor.isoformat()
-            por_dia_todos[d] = por_dia_todos.get(d, 0) + hrs
-        if r.fecha_reporte:
-            d = r.fecha_reporte.date().isoformat()
-            por_dia_reporte[d] = por_dia_reporte.get(d, 0) + hrs
-
-    # Rellenar todos los días del rango con 0 para por_dia_todos
+    # ── Determinar rango del filtro activo ───────────────────────────────────
     from datetime import timedelta
     rango_ini = rango_fin = None
     if corte_id:
@@ -1672,10 +1660,28 @@ def api_he_dashboard_data():
             rango_ini = date(yr, mo, 1)
             rango_fin = date(yr, mo, _cal.monthrange(yr, mo)[1])
         except Exception: pass
+
+    # ── Horas por día trabajado y por día de reporte ─────────────────────────
+    por_dia_todos   = {}
+    por_dia_reporte = {}
+    for r in registros:
+        hrs = r.horas_reportadas or 0
+        if r.fecha_labor:
+            d = r.fecha_labor.isoformat()
+            por_dia_todos[d] = por_dia_todos.get(d, 0) + hrs
+        if r.fecha_reporte:
+            fd = r.fecha_reporte.date()
+            # Solo contar si cae dentro del rango activo (o si no hay rango)
+            if not rango_ini or not rango_fin or (rango_ini <= fd <= rango_fin):
+                d = fd.isoformat()
+                por_dia_reporte[d] = por_dia_reporte.get(d, 0) + hrs
+
+    # Rellenar todos los días del rango con 0
     if rango_ini and rango_fin:
         cur = rango_ini
         while cur <= rango_fin:
             por_dia_todos.setdefault(cur.isoformat(), 0)
+            por_dia_reporte.setdefault(cur.isoformat(), 0)
             cur += timedelta(days=1)
 
     dias         = sorted(por_dia_todos.items())
