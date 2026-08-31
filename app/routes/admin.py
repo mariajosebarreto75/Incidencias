@@ -1656,11 +1656,16 @@ def api_he_dashboard_data():
     # cruza dos meses (ej. Jul 17 – Ago 17).
     # Sin corte, agrupamos por (cédula, mes) para mostrar el acumulado mensual.
     from collections import defaultdict
+    # Para el límite legal usamos solo fecha_labor dentro del período del corte
+    # (evita doble conteo del filtro OR corte_id/fecha_labor del query principal)
+    co_obj = HeCorte.query.get(corte_id) if corte_id else None
     he_por_persona_mes = defaultdict(lambda: {"nombre":"","contratos":set(),"horas":0,"mes":""})
     for r in registros:
         if (r.id_concepto or "").strip().zfill(2) not in CODIGOS_HE: continue
         if not r.fecha_labor: continue
         if not (r.cedula or "").strip(): continue
+        if co_obj and not (co_obj.fecha_inicio <= r.fecha_labor <= co_obj.fecha_fin):
+            continue  # excluir registros fuera del rango exacto del corte
         if corte_id:
             llave = (r.cedula, "")
         else:
