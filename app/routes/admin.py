@@ -1650,8 +1650,37 @@ def api_he_dashboard_data():
         por_dia_todos[d_str] = por_dia_todos.get(d_str, 0) + hrs
         if (r.id_concepto or "").strip().zfill(2) in CODIGOS_HE:
             por_dia_he[d_str] = por_dia_he.get(d_str, 0) + hrs
-    dias       = sorted(por_dia_todos.items())
-    dias_he    = sorted(por_dia_he.items())
+
+    # Rellenar todos los días del rango con 0 (para ver días sin reporte)
+    from datetime import timedelta
+    rango_ini = rango_fin = None
+    if corte_id:
+        _co = HeCorte.query.get(corte_id)
+        if _co:
+            rango_ini, rango_fin = _co.fecha_inicio, _co.fecha_fin
+    if not rango_ini and fecha_desde:
+        try: rango_ini = date.fromisoformat(fecha_desde)
+        except Exception: pass
+    if not rango_fin and fecha_hasta:
+        try: rango_fin = date.fromisoformat(fecha_hasta)
+        except Exception: pass
+    if not rango_ini and mes:
+        try:
+            import calendar as _cal
+            yr, mo = int(mes.split("-")[0]), int(mes.split("-")[1])
+            rango_ini = date(yr, mo, 1)
+            rango_fin = date(yr, mo, _cal.monthrange(yr, mo)[1])
+        except Exception: pass
+    if rango_ini and rango_fin:
+        cur = rango_ini
+        while cur <= rango_fin:
+            d_str = cur.isoformat()
+            por_dia_todos.setdefault(d_str, 0)
+            por_dia_he.setdefault(d_str, 0)
+            cur += timedelta(days=1)
+
+    dias    = sorted(por_dia_todos.items())
+    dias_he = sorted(por_dia_he.items())
 
     # ── Límite legal 48h (solo HE puras 03,04,05,06) ────────────────────────
     # Si hay corte activo, los registros ya están acotados al período del corte;
