@@ -936,16 +936,45 @@ async function guardarGrid() {
     const contratoId = document.getElementById("gridContrato").value;
     if (!contratoId) { mostrarToast("Seleccione un contrato primero","warning"); return; }
 
+    const CAMPOS_OBL = [
+        { idx: C_FECHA,   nombre: "Fecha Labor" },
+        { idx: C_CED,     nombre: "Cédula" },
+        { idx: C_NOM,     nombre: "Nombre" },
+        { idx: C_REC,     nombre: "Recurso" },
+        { idx: C_PLACA,   nombre: "Placa" },
+        { idx: C_HRS,     nombre: "#Hrs Reportadas" },
+        { idx: C_HINICIO, nombre: "Hora Inicio" },
+        { idx: C_HFIN,    nombre: "Hora Fin" },
+        { idx: C_COD,     nombre: "Id Concepto" },
+    ];
+
     const rows  = hot.getData();
     const filas = [];
+    const erroresGrid = [];
     for (let i = 0; i < rows.length; i++) {
         if (_rowIds[i]) continue; // fila ya guardada en BD, no re-enviar
         const row = rows[i];
-        const fechaRaw = row[C_FECHA];
-        const ced      = (row[C_CED] || "").trim();
-        const hrs      = parseInt(row[C_HRS]) || 0;
-        if (!fechaRaw || !ced || hrs <= 0) continue;
-        const fecha = fechaParaBackend(fechaRaw);
+        // Fila completamente vacía → ignorar
+        if (!row.some(v => v !== "" && v !== null && v !== undefined)) continue;
+
+        const fecha = fechaParaBackend(row[C_FECHA]);
+        const ced   = (row[C_CED] || "").trim();
+        const hrs   = parseInt(row[C_HRS]) || 0;
+        // Si ni fecha, ni cédula, ni horas → fila vacía sin datos relevantes
+        if (!fecha && !ced && hrs <= 0) continue;
+
+        // Validar campos obligatorios
+        const faltantes = [];
+        for (const c of CAMPOS_OBL) {
+            const v = row[c.idx];
+            const vacio = (v === null || v === undefined || String(v).trim() === "");
+            const ceroHrs = (c.idx === C_HRS && (parseInt(v) || 0) <= 0);
+            if (vacio || ceroHrs) faltantes.push(c.nombre);
+        }
+        if (faltantes.length) {
+            erroresGrid.push({ fila: i + 1, faltantes });
+            continue;
+        }
         if (!fecha) continue;
         filas.push({
             contrato_id:       contratoId,
@@ -965,7 +994,20 @@ async function guardarGrid() {
         });
     }
 
-    if (!filas.length) { mostrarToast("No hay filas con fecha, cédula y horas > 0","warning"); return; }
+    if (erroresGrid.length) {
+        document.getElementById("dupMsg").textContent =
+            `⚠ No se puede guardar: ${erroresGrid.length} fila(s) tienen campos obligatorios vacíos. Corrija antes de guardar.`;
+        document.getElementById("dupBody").innerHTML = erroresGrid.map(e => `
+            <tr style="border-bottom:1px solid #f5c6cb;">
+                <td style="padding:5px 10px;font-weight:700;color:#dc3545;">Fila ${e.fila}</td>
+                <td style="padding:5px 10px;color:#dc3545;">${e.faltantes.join(", ")}</td>
+                <td style="padding:5px 10px;color:#6c757d;font-style:italic;">Campo(s) vacío(s)</td>
+            </tr>`).join("");
+        document.getElementById("modalDuplicados").querySelector("h6").textContent = "Campos obligatorios vacíos";
+        document.getElementById("modalDuplicados").style.display = "flex";
+        return;
+    }
+    if (!filas.length) { mostrarToast("No hay filas nuevas para guardar","warning"); return; }
 
     const btn = document.getElementById("btnGuardar");
     btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando…';
@@ -1495,17 +1537,50 @@ function procesarImport(input) {
 
         const usaContratoFijo = !!document.getElementById("importContrato").value;
 
+        // Campos obligatorios para importación
+        const CAMPOS_IMP_OBL = [
+            { key: "contrato",         idx: () => iContrato,  label: "Contrato",       skipSiFijo: true },
+            { key: "fecha_labor",      idx: () => iFecha,     label: "Fecha Labor",    skipSiFijo: false },
+            { key: "cedula",           idx: () => iCedula,    label: "Cédula",         skipSiFijo: false },
+            { key: "recurso",          idx: () => iRecurso,   label: "Recurso",        skipSiFijo: false },
+            { key: "placa",            idx: () => iPlaca,     label: "Placa",          skipSiFijo: false },
+            { key: "horas_reportadas", idx: () => iHrsRep,    label: "#Hrs Reportadas",skipSiFijo: false },
+            { key: "hora_inicio",      idx: null,             label: "Hora Inicio",    skipSiFijo: false, colIdxFn: () => colIdx(["hora ini","hora_ini","inicio"]) },
+            { key: "hora_fin",         idx: null,             label: "Hora Fin",       skipSiFijo: false, colIdxFn: () => colIdx(["hora fin","hora_fin","fin"]) },
+            { key: "id_concepto",      idx: () => iConcepto,  label: "Id Concepto",    skipSiFijo: false },
+        ];
+        // Resolver índices de hora inicio/fin (pueden no estar pre-calculados)
+        const iHoraIni = (() => { const i = colIdx(["hora ini","hora_ini","inicio"]); return i !== -1 ? i : -1; })();
+        const iHoraFin = (() => { const i = colIdx(["hora fin","hora_fin","fin"]);    return i !== -1 ? i : -1; })();
+
         const errores = [];
         const filasParsed = [];
 
         dataRows.forEach((r, idx) => {
             if (!r.some(v => v !== "")) return;
             const filaNum = idx + (isHeader ? 2 : 1);
-            const cedula = String(r[iCedula] || "").trim();
-            if (!cedula) {
-                errores.push({ fila: filaNum, campo: "Cédula", valor: "" });
-                return;
+
+            // Validar todos los campos obligatorios
+            for (const c of CAMPOS_IMP_OBL) {
+                if (c.skipSiFijo && usaContratoFijo) continue;
+                let colI;
+                if (c.key === "hora_inicio") colI = iHoraIni;
+                else if (c.key === "hora_fin") colI = iHoraFin;
+                else colI = c.idx();
+
+                let val = colI !== -1 ? r[colI] : "";
+                if (c.key === "fecha_labor") val = fmtFechaImport(val);
+                else val = String(val ?? "").trim();
+
+                const esVacio = (val === "" || val === null || val === undefined);
+                const esHrsCero = (c.key === "horas_reportadas" && (parseFloat(val) || 0) <= 0);
+                if (esVacio || esHrsCero) {
+                    errores.push({ fila: filaNum, campo: c.label, valor: String(r[colI] ?? "") });
+                }
             }
+            if (errores.some(e => e.fila === filaNum)) return;
+
+            const cedula = String(r[iCedula] || "").trim();
             filasParsed.push({
                 contrato:          String(r[iContrato]  || "").trim(),
                 fecha_labor:       fmtFechaImport(r[iFecha]),
@@ -1516,6 +1591,8 @@ function procesarImport(input) {
                 id_concepto:       String(r[iConcepto]  || "").trim(),
                 horas_reportadas:  parseFloat(r[iHrsRep])  || 0,
                 horas_compensadas: parseFloat(r[iHrsComp]) || 0,
+                hora_inicio:       iHoraIni !== -1 ? String(r[iHoraIni] || "").trim() : "",
+                hora_fin:          iHoraFin !== -1 ? String(r[iHoraFin] || "").trim() : "",
                 autorizacion_sup:  String(r[iAuthSup]   || "").trim(),
                 justificacion:     String(r[iJust]      || "").trim(),
                 observacion:       String(r[iObs]       || "").trim(),
@@ -2284,15 +2361,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }, true);
 });
 
-function mostrarToast(msg, tipo="success") {
+function mostrarToast(msg, tipo="success", duracion=4000) {
     const c = {success:"#198754", danger:"#dc3545", warning:"#d97706"};
     const t = document.createElement("div");
     t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;background:${c[tipo]||"#0d3b66"};
         color:#fff;border-radius:8px;padding:12px 18px;font-size:.84rem;font-weight:600;
-        box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:360px;`;
+        box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:420px;white-space:pre-wrap;`;
     t.textContent = msg;
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 4000);
+    setTimeout(() => t.remove(), duracion);
 }
 
 

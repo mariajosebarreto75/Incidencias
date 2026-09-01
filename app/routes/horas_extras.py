@@ -285,6 +285,24 @@ def api_he_guardar():
         if ids_permitidos is not None and cid not in ids_permitidos:
             return jsonify({"ok": False, "msg": "Contrato no asignado a su usuario"}), 403
 
+        # Validar campos obligatorios
+        fila_num = len(registros) + omitidos + 1
+        faltantes_be = []
+        if not str(f.get("cedula") or "").strip():       faltantes_be.append("Cédula")
+        if not str(f.get("recurso") or "").strip():      faltantes_be.append("Recurso")
+        if not str(f.get("placa") or "").strip():        faltantes_be.append("Placa")
+        if not str(f.get("hora_inicio") or "").strip():  faltantes_be.append("Hora Inicio")
+        if not str(f.get("hora_fin") or "").strip():     faltantes_be.append("Hora Fin")
+        if not str(f.get("id_concepto") or "").strip():  faltantes_be.append("Id Concepto")
+        hrs_rep_val = int(float(f.get("horas_reportadas") or 0))
+        if hrs_rep_val <= 0:                             faltantes_be.append("#Hrs Reportadas")
+        if not f.get("fecha_labor"):                     faltantes_be.append("Fecha Labor")
+        if faltantes_be:
+            return jsonify({
+                "ok": False,
+                "msg": f"Fila {fila_num}: campos obligatorios vacíos: {', '.join(faltantes_be)}"
+            }), 422
+
         try:
             fl = date.fromisoformat(str(f["fecha_labor"])) if f.get("fecha_labor") else date.today()
         except Exception:

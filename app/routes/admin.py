@@ -1677,8 +1677,8 @@ def api_he_dashboard_data():
                 d = fd.isoformat()
                 por_dia_reporte[d] = por_dia_reporte.get(d, 0) + hrs
 
-    dias         = sorted(por_dia_todos.items())
-    dias_reporte = sorted(por_dia_reporte.items())
+    dias         = sorted((d, h) for d, h in por_dia_todos.items()   if h > 0)
+    dias_reporte = sorted((d, h) for d, h in por_dia_reporte.items() if h > 0)
 
     # ── Límite legal 48h (solo HE puras 03,04,05,06) ────────────────────────
     # Si hay corte activo, los registros ya están acotados al período del corte;
