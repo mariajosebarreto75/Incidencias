@@ -1,4 +1,5 @@
 from app.models.recurso_contrato import RecursoContrato
+from app.models.semaforo import SemaforoCalificacion
 from app.models.notificacion import Notificacion
 from app.models.accion_tomar import AccionTomar
 from app.models.parametro_coor import ParametroCoor

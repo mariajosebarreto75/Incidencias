@@ -30,6 +30,7 @@ from app.models.supervisor import Supervisor
 from app.models.he_config import HeConfig
 from app.models.hora_extra import HoraExtra, CONCEPTOS_HE
 from app.models.he_corte import HeCorte
+from app.models.semaforo import SemaforoCalificacion
 
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
@@ -1908,3 +1909,75 @@ def api_he_config_guardar():
         return jsonify({"success": False, "mensaje": "Clave no permitida"}), 400
     HeConfig.set(clave, valor)
     return jsonify({"success": True})
+
+
+# ── Semáforo de actividades ───────────────────────────────────────────────────
+
+@admin_bp.route("/semaforo")
+@admin_required
+def semaforo():
+    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    return render_template("admin/semaforo.html", contratos=contratos)
+
+
+@admin_bp.route("/api/semaforo", methods=["GET"])
+@admin_required
+def api_semaforo_get():
+    fecha_str = request.args.get("fecha", "")
+    try:
+        fecha = date.fromisoformat(fecha_str)
+    except Exception:
+        fecha = date.today()
+    registros = SemaforoCalificacion.query.filter_by(fecha=fecha).all()
+    return jsonify({"ok": True, "fecha": str(fecha), "data": [r.to_dict() for r in registros]})
+
+
+@admin_bp.route("/api/semaforo", methods=["POST"])
+@admin_required
+def api_semaforo_guardar():
+    d = request.get_json(silent=True) or {}
+    fecha_str   = d.get("fecha", "")
+    contrato_id = d.get("contrato_id")
+    if not fecha_str or not contrato_id:
+        return jsonify({"ok": False, "msg": "fecha y contrato_id requeridos"}), 400
+    try:
+        fecha = date.fromisoformat(fecha_str)
+    except Exception:
+        return jsonify({"ok": False, "msg": "Fecha inválida"}), 400
+
+    reg = SemaforoCalificacion.query.filter_by(fecha=fecha, contrato_id=contrato_id).first()
+    if not reg:
+        reg = SemaforoCalificacion(fecha=fecha, contrato_id=contrato_id)
+        db.session.add(reg)
+
+    def _int_or_none(v):
+        try: return int(v) if v is not None and str(v).strip() != "" else None
+        except: return None
+
+    reg.arch_equipos  = _int_or_none(d.get("arch_equipos"))
+    reg.arch_ingresos = _int_or_none(d.get("arch_ingresos"))
+    reg.arch_personas = _int_or_none(d.get("arch_personas"))
+    reg.arch_nota     = str(d.get("arch_nota") or "").strip()[:300] or None
+    reg.distrib_valor = str(d.get("distrib_valor") or "").strip()[:100] or None
+    reg.he_valor      = _int_or_none(d.get("he_valor"))
+    reg.he_nota       = str(d.get("he_nota") or "").strip()[:300] or None
+
+    db.session.commit()
+    return jsonify({"ok": True, "id": reg.id})
+
+
+@admin_bp.route("/api/semaforo/rango", methods=["GET"])
+@admin_required
+def api_semaforo_rango():
+    desde_str = request.args.get("desde", "")
+    hasta_str = request.args.get("hasta", "")
+    try:
+        desde = date.fromisoformat(desde_str)
+        hasta = date.fromisoformat(hasta_str)
+    except Exception:
+        return jsonify({"ok": False, "msg": "Fechas inválidas"}), 400
+    registros = SemaforoCalificacion.query.filter(
+        SemaforoCalificacion.fecha >= desde,
+        SemaforoCalificacion.fecha <= hasta
+    ).order_by(SemaforoCalificacion.fecha).all()
+    return jsonify({"ok": True, "data": [r.to_dict() for r in registros]})

@@ -26,6 +26,11 @@
 
         <div class="adm-nav-section">General</div>
 
+        <a href="{{ url_for('admin_bp.semaforo') }}"
+           class="adm-nav-link {% if request.endpoint == 'admin_bp.semaforo' %}active{% endif %}">
+            <i class="bi bi-traffic-light"></i> Semáforo Actividades
+        </a>
+
         <a href="{{ url_for('admin_bp.dashboard') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.dashboard' %}active{% endif %}">
             <i class="bi bi-speedometer2"></i> Dashboard

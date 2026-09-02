@@ -1,0 +1,619 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Semáforo de Actividades{% endblock %}
+
+{% block head %}
+<style>
+/* ── Layout ── */
+.sf-page { max-width:1400px; margin:0 auto; }
+
+/* ── Filtro de fecha ── */
+.sf-toolbar {
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:#0f172a; border:1px solid #1e293b; border-radius:10px;
+    padding:12px 18px; margin-bottom:18px;
+}
+.sf-toolbar label { font-size:.75rem; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:.04em; margin-right:4px; }
+.sf-date-input {
+    background:#0a1628; border:1px solid #1e3a5f; color:#e2e8f0;
+    border-radius:7px; padding:6px 12px; font-size:.85rem; outline:none;
+}
+.sf-date-input:focus { border-color:#38bdf8; }
+.sf-btn {
+    padding:6px 16px; border-radius:7px; border:none; font-size:.8rem;
+    font-weight:700; cursor:pointer; transition:all .15s;
+}
+.sf-btn-primary { background:#0ea5e9; color:#fff; }
+.sf-btn-primary:hover { background:#0284c7; }
+.sf-btn-secondary { background:#1e293b; color:#94a3b8; border:1px solid #334155; }
+.sf-btn-secondary:hover { background:#334155; color:#e2e8f0; }
+.sf-btn-sm { padding:3px 10px; font-size:.72rem; }
+
+/* ── Semáforo tabla ── */
+.sf-table-wrap { overflow-x:auto; border-radius:10px; border:1px solid #1e293b; }
+.sf-table {
+    width:100%; border-collapse:collapse; font-size:.8rem;
+    background:#0f172a;
+}
+.sf-table thead tr { background:#0a1628; }
+.sf-table thead th {
+    padding:10px 12px; color:#94a3b8; font-weight:700;
+    font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    border-bottom:1px solid #1e293b; white-space:nowrap;
+}
+.sf-table th.sf-group {
+    text-align:center; background:#0d1f38; color:#38bdf8;
+    border-bottom:1px solid #1e293b; border-left:1px solid #1e293b;
+    font-size:.68rem; padding:5px 8px;
+}
+.sf-table tbody tr { border-bottom:1px solid #1e293b; transition:background .12s; }
+.sf-table tbody tr:hover { background:#132035; }
+.sf-table td { padding:7px 10px; color:#e2e8f0; vertical-align:middle; }
+.sf-table td.sf-contrato { font-weight:700; font-size:.78rem; color:#e2e8f0; min-width:200px; }
+.sf-table td.sf-coord { font-size:.72rem; color:#64748b; }
+.sf-table td.sf-sep { border-left:1px solid #1e293b; }
+
+/* ── Chips de calificación ── */
+.sf-cal-wrap { display:flex; align-items:center; gap:5px; flex-wrap:nowrap; }
+.sf-chip {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:32px; height:32px; border-radius:7px; font-weight:800;
+    font-size:.85rem; cursor:pointer; border:2px solid transparent;
+    transition:all .12s; user-select:none; flex-shrink:0;
+}
+.sf-chip:hover { filter:brightness(1.15); transform:scale(1.05); }
+.sf-chip.selected { border-color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,.25); }
+.sf-chip-1  { background:#065f46; color:#4ade80; }  /* cumple → verde */
+.sf-chip-1.selected  { background:#16a34a; color:#fff; }
+.sf-chip-0  { background:#7f1d1d; color:#f87171; }  /* no cumple → rojo */
+.sf-chip-0.selected  { background:#dc2626; color:#fff; }
+.sf-chip-3  { background:#713f12; color:#fbbf24; }  /* errores → amarillo */
+.sf-chip-3.selected  { background:#d97706; color:#fff; }
+
+/* ── Semáforo visual ── */
+.sf-dot {
+    width:14px; height:14px; border-radius:50%; flex-shrink:0;
+    display:inline-block;
+}
+.sf-dot-verde  { background:#22c55e; box-shadow:0 0 6px #22c55e99; }
+.sf-dot-rojo   { background:#ef4444; box-shadow:0 0 6px #ef444499; }
+.sf-dot-ambar  { background:#f59e0b; box-shadow:0 0 6px #f59e0b99; }
+.sf-dot-gris   { background:#475569; }
+
+/* ── Campo distribución operativa ── */
+.sf-distrib-wrap { display:flex; align-items:center; gap:5px; }
+.sf-distrib-input {
+    width:110px; background:#0a1628; border:1px solid #1e3a5f;
+    border-radius:6px; color:#e2e8f0; font-size:.8rem; font-weight:700;
+    padding:4px 8px; text-align:center; outline:none;
+}
+.sf-distrib-input:focus { border-color:#38bdf8; }
+.sf-distrib-input.verde  { border-color:#22c55e; color:#4ade80; }
+.sf-distrib-input.rojo   { border-color:#ef4444; color:#f87171; }
+.sf-distrib-input.ambar  { border-color:#f59e0b; color:#fbbf24; }
+
+/* ── Botón nota ── */
+.sf-nota-btn {
+    background:transparent; border:1px solid #334155; border-radius:5px;
+    color:#64748b; padding:3px 7px; font-size:.7rem; cursor:pointer;
+    transition:all .12s; white-space:nowrap;
+}
+.sf-nota-btn:hover { border-color:#38bdf8; color:#38bdf8; }
+.sf-nota-btn.has-nota { border-color:#a78bfa55; color:#a78bfa; background:#1e1040; }
+
+/* ── Nota inline ── */
+.sf-nota-input {
+    width:100%; background:#0a1628; border:1px solid #334155;
+    border-radius:6px; color:#94a3b8; font-size:.72rem; padding:3px 8px;
+    outline:none; resize:none;
+}
+.sf-nota-input:focus { border-color:#38bdf8; color:#e2e8f0; }
+
+/* ── Leyenda ── */
+.sf-leyenda {
+    display:flex; gap:14px; flex-wrap:wrap; align-items:center;
+    font-size:.72rem; color:#64748b; margin-bottom:14px;
+}
+.sf-leyenda-item { display:flex; align-items:center; gap:5px; }
+
+/* ── Resumen ── */
+.sf-resumen { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:18px; }
+.sf-res-card { background:#0f172a; border:1px solid #1e293b; border-radius:9px; padding:12px 16px; }
+.sf-res-val  { font-size:1.5rem; font-weight:800; line-height:1; }
+.sf-res-lbl  { font-size:.65rem; color:#64748b; text-transform:uppercase; letter-spacing:.04em; margin-top:3px; }
+
+/* ── Guardado ── */
+.sf-saving { position:fixed; bottom:20px; right:20px; background:#0ea5e9; color:#fff;
+    border-radius:8px; padding:8px 16px; font-size:.8rem; font-weight:700;
+    box-shadow:0 4px 14px rgba(0,0,0,.4); z-index:999; display:none; }
+
+/* ── Modal historial ── */
+.sf-modal-bg  { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:1000; display:none; align-items:center; justify-content:center; }
+.sf-modal-bg.open { display:flex; }
+.sf-modal { background:#0f172a; border:1px solid #1e293b; border-radius:12px; width:96%; max-width:900px; max-height:88vh; display:flex; flex-direction:column; }
+.sf-modal-hdr { padding:14px 20px; border-bottom:1px solid #1e293b; display:flex; align-items:center; justify-content:space-between; }
+.sf-modal-hdr h5 { margin:0; font-size:.95rem; color:#38bdf8; font-weight:700; }
+.sf-modal-body { padding:16px 20px; overflow-y:auto; flex:1; }
+.sf-modal-close { background:transparent; border:none; color:#64748b; font-size:1.3rem; cursor:pointer; line-height:1; }
+.sf-modal-close:hover { color:#e2e8f0; }
+
+/* ── Tabs historial ── */
+.sf-hist-tabs { display:flex; gap:6px; margin-bottom:14px; }
+.sf-hist-tab { padding:5px 14px; border-radius:6px; border:1px solid #334155; background:transparent; color:#64748b; font-size:.75rem; font-weight:600; cursor:pointer; }
+.sf-hist-tab.active { background:#0ea5e9; border-color:#0ea5e9; color:#fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <h1 class="adm-page-title"><i class="bi bi-traffic-light me-2" style="color:var(--adm-accent)"></i>Semáforo de Actividades</h1>
+    <p class="adm-page-sub">Calificación diaria por contrato — archivos de seguimiento, distribución operativa y horas extras</p>
+</div>
+
+<div class="sf-page">
+
+    <!-- Toolbar -->
+    <div class="sf-toolbar">
+        <label>Fecha</label>
+        <input type="date" id="sfFecha" class="sf-date-input">
+        <button class="sf-btn sf-btn-primary" onclick="cargarFecha()"><i class="bi bi-search me-1"></i>Cargar</button>
+        <button class="sf-btn sf-btn-secondary" onclick="irHoy()"><i class="bi bi-calendar-today me-1"></i>Hoy</button>
+        <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="sf-btn sf-btn-secondary" onclick="document.getElementById('modalHistorial').classList.add('open')">
+                <i class="bi bi-clock-history me-1"></i>Ver historial
+            </button>
+        </div>
+    </div>
+
+    <!-- Leyenda -->
+    <div class="sf-leyenda">
+        <strong style="color:#e2e8f0;margin-right:4px;">Calificación:</strong>
+        <div class="sf-leyenda-item"><span class="sf-dot sf-dot-verde"></span> <b style="color:#4ade80">1</b> Cumple</div>
+        <div class="sf-leyenda-item"><span class="sf-dot sf-dot-rojo"></span> <b style="color:#f87171">0</b> No cumple</div>
+        <div class="sf-leyenda-item"><span class="sf-dot sf-dot-ambar"></span> <b style="color:#fbbf24">3</b> Errores pero cumple</div>
+        <div style="margin-left:12px;border-left:1px solid #334155;padding-left:12px;">
+            <strong style="color:#e2e8f0;margin-right:4px;">Distribución:</strong>
+            Ingrese la hora de envío (HH:MM) <span style="color:#4ade80">antes de 08:00 = cumple</span> /
+            <span style="color:#f87171">08:00 o después = no cumple</span> /
+            texto libre: <i>no trabaja, problemas internet…</i>
+        </div>
+    </div>
+
+    <!-- Resumen del día -->
+    <div class="sf-resumen" id="sfResumen" style="display:none;">
+        <div class="sf-res-card">
+            <div class="sf-res-val" id="resTotal" style="color:#38bdf8">—</div>
+            <div class="sf-res-lbl">Contratos evaluados</div>
+        </div>
+        <div class="sf-res-card">
+            <div class="sf-res-val" id="resArch" style="color:#4ade80">—</div>
+            <div class="sf-res-lbl">Archivos OK (cumple)</div>
+        </div>
+        <div class="sf-res-card">
+            <div class="sf-res-val" id="resDistrib" style="color:#4ade80">—</div>
+            <div class="sf-res-lbl">Distribución a tiempo</div>
+        </div>
+        <div class="sf-res-card">
+            <div class="sf-res-val" id="resHE" style="color:#4ade80">—</div>
+            <div class="sf-res-lbl">HE reportadas OK</div>
+        </div>
+    </div>
+
+    <!-- Tabla principal -->
+    <div class="sf-table-wrap">
+        <table class="sf-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="min-width:220px;">Contrato</th>
+                    <th rowspan="2" style="min-width:130px;">Coordinador</th>
+                    <th colspan="4" class="sf-group">Archivos de Seguimiento</th>
+                    <th colspan="2" class="sf-group" style="border-left:2px solid #1e3a5f;">Distribución Operativa NEO</th>
+                    <th colspan="2" class="sf-group" style="border-left:2px solid #1e3a5f;">Horas Extras</th>
+                </tr>
+                <tr>
+                    <!-- Archivos -->
+                    <th>Equipos</th>
+                    <th>Ingresos</th>
+                    <th>Personas</th>
+                    <th>Nota</th>
+                    <!-- Distribución -->
+                    <th class="sf-sep" style="min-width:140px;">Hora envío / Estado</th>
+                    <th>Resultado</th>
+                    <!-- HE -->
+                    <th class="sf-sep">Calificación</th>
+                    <th>Nota</th>
+                </tr>
+            </thead>
+            <tbody id="sfTbody">
+                <tr><td colspan="10" style="text-align:center;padding:40px;color:#475569;">
+                    Seleccione una fecha y presione <strong>Cargar</strong>
+                </td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Indicador guardado -->
+<div class="sf-saving" id="sfSaving"><i class="bi bi-cloud-arrow-up-fill me-1"></i>Guardando…</div>
+
+<!-- Modal historial -->
+<div class="sf-modal-bg" id="modalHistorial">
+    <div class="sf-modal">
+        <div class="sf-modal-hdr">
+            <h5><i class="bi bi-clock-history me-2"></i>Historial de calificaciones</h5>
+            <button class="sf-modal-close" onclick="document.getElementById('modalHistorial').classList.remove('open')">&times;</button>
+        </div>
+        <div class="sf-modal-body">
+            <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap;">
+                <div>
+                    <div style="font-size:.72rem;color:#64748b;margin-bottom:3px;">Desde</div>
+                    <input type="date" id="histDesde" class="sf-date-input">
+                </div>
+                <div>
+                    <div style="font-size:.72rem;color:#64748b;margin-bottom:3px;">Hasta</div>
+                    <input type="date" id="histHasta" class="sf-date-input">
+                </div>
+                <button class="sf-btn sf-btn-primary" onclick="cargarHistorial()"><i class="bi bi-search me-1"></i>Buscar</button>
+            </div>
+            <div id="histTabla" style="overflow-x:auto;"></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CONTRATOS = {{ contratos | tojson }};
+// Map: contrato_id → datos guardados hoy
+let _data = {};
+let _savingTimer = null;
+let _fechaActual = "";
+
+function hoyISO() {
+    const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split("T")[0];
+}
+
+function irHoy() {
+    document.getElementById("sfFecha").value = hoyISO();
+    cargarFecha();
+}
+
+(function init() {
+    document.getElementById("sfFecha").value = hoyISO();
+    cargarFecha();
+
+    // Historial: rango último mes
+    const h = hoyISO();
+    const d30 = new Date(); d30.setDate(d30.getDate()-30);
+    d30.setMinutes(d30.getMinutes()-d30.getTimezoneOffset());
+    document.getElementById("histDesde").value = d30.toISOString().split("T")[0];
+    document.getElementById("histHasta").value = h;
+})();
+
+async function cargarFecha() {
+    const fecha = document.getElementById("sfFecha").value;
+    if (!fecha) return;
+    _fechaActual = fecha;
+    const r = await fetch(`/admin/api/semaforo?fecha=${fecha}`);
+    const d = await r.json();
+    if (!d.ok) return;
+    _data = {};
+    for (const reg of (d.data || [])) _data[reg.contrato_id] = reg;
+    renderTabla(fecha);
+    actualizarResumen();
+}
+
+function renderTabla(fecha) {
+    const tbody = document.getElementById("sfTbody");
+    if (!CONTRATOS.length) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:#475569;">No hay contratos activos</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = CONTRATOS.map(c => {
+        const reg = _data[c.id] || {};
+        return `<tr data-cid="${c.id}">
+            <td class="sf-contrato">${c.contrato}</td>
+            <td class="sf-coord">${c.coordinador || '—'}</td>
+            ${_celdaChips(c.id, 'arch_equipos', reg.arch_equipos)}
+            ${_celdaChips(c.id, 'arch_ingresos', reg.arch_ingresos)}
+            ${_celdaChips(c.id, 'arch_personas', reg.arch_personas)}
+            <td>${_celdaNota(c.id, 'arch_nota', reg.arch_nota)}</td>
+            <td class="sf-sep">${_celdaDistrib(c.id, reg.distrib_valor)}</td>
+            <td>${_dotDistrib(reg.distrib_valor)}</td>
+            <td class="sf-sep">${_celdaChipsHE(c.id, reg.he_valor)}</td>
+            <td>${_celdaNota(c.id, 'he_nota', reg.he_nota)}</td>
+        </tr>`;
+    }).join("");
+}
+
+function _celdaChips(cid, campo, val) {
+    const opts = [
+        { v:1, label:"1", cls:"sf-chip-1", title:"Cumple" },
+        { v:0, label:"0", cls:"sf-chip-0", title:"No cumple" },
+        { v:3, label:"3", cls:"sf-chip-3", title:"Errores pero cumple" },
+    ];
+    const chips = opts.map(o =>
+        `<span class="sf-chip ${o.cls}${val===o.v?' selected':''}"
+               title="${o.title}"
+               onclick="selChip(${cid},'${campo}',${o.v},this)">${o.label}</span>`
+    ).join("");
+    return `<td><div class="sf-cal-wrap">${chips}</div></td>`;
+}
+
+function _celdaChipsHE(cid, val) {
+    const opts = [
+        { v:1, label:"1", cls:"sf-chip-1", title:"Cumple" },
+        { v:0, label:"0", cls:"sf-chip-0", title:"No cumple" },
+        { v:3, label:"3", cls:"sf-chip-3", title:"Errores pero cumple" },
+    ];
+    const chips = opts.map(o =>
+        `<span class="sf-chip ${o.cls}${val===o.v?' selected':''}"
+               title="${o.title}"
+               onclick="selChipHE(${cid},${o.v},this)">${o.label}</span>`
+    ).join("");
+    return `<div class="sf-cal-wrap">${chips}</div>`;
+}
+
+function _celdaNota(cid, campo, nota) {
+    const tieneNota = nota && nota.trim();
+    const preview   = tieneNota ? nota.trim().substring(0,30) + (nota.length>30?"…":"") : "";
+    return `<div style="min-width:160px;">
+        <button class="sf-nota-btn${tieneNota?' has-nota':''}"
+                onclick="toggleNota(this,${cid},'${campo}')"
+                title="${tieneNota ? nota : 'Agregar anotación'}">
+            <i class="bi bi-${tieneNota?'pencil-fill':'chat-left-text'} me-1"></i>${tieneNota?preview:'Nota'}
+        </button>
+        <textarea class="sf-nota-input" rows="2" placeholder="Anotación…"
+                  style="display:none;margin-top:4px;"
+                  data-cid="${cid}" data-campo="${campo}"
+                  onblur="guardarNota(this)"
+                  onkeydown="if(event.key==='Escape')this.style.display='none'"
+        >${tieneNota?nota:""}</textarea>
+    </div>`;
+}
+
+function _celdaDistrib(cid, val) {
+    const cls = _clsDistrib(val);
+    return `<div class="sf-distrib-wrap">
+        <input class="sf-distrib-input ${cls}" value="${val||''}"
+               placeholder="HH:MM o texto"
+               data-cid="${cid}"
+               oninput="_actualizarClsDistrib(this)"
+               onblur="guardarDistrib(this)"
+               onkeydown="if(event.key==='Enter')this.blur()">
+    </div>`;
+}
+
+function _clsDistrib(val) {
+    if (!val || !val.trim()) return "";
+    const v = val.trim().toLowerCase();
+    if (/^\d{1,2}:\d{2}$/.test(v)) {
+        const [h,m] = v.split(":").map(Number);
+        const mins = h*60+m;
+        if (mins < 480) return "verde";    // antes de 08:00
+        if (mins < 510) return "ambar";   // 08:00-08:29
+        return "rojo";                    // 08:30 en adelante
+    }
+    // Textos especiales
+    if (v === "no trabaja" || v === "no cumple") return "rojo";
+    if (v.includes("error") || v.includes("problem") || v.includes("internet")) return "ambar";
+    return "";
+}
+
+function _dotDistrib(val) {
+    const cls = _clsDistrib(val);
+    const map = {verde:"sf-dot-verde", rojo:"sf-dot-rojo", ambar:"sf-dot-ambar"};
+    const dotCls = map[cls] || "sf-dot-gris";
+    const labels = {verde:"A tiempo", rojo:"Tarde / No cumple", ambar:"Con novedades"};
+    const lbl = labels[cls] || (val?"—":"Sin registrar");
+    return `<div style="display:flex;align-items:center;gap:6px;">
+        <span class="sf-dot ${dotCls}"></span>
+        <span style="font-size:.72rem;color:#64748b;">${lbl}</span>
+    </div>`;
+}
+
+function _actualizarClsDistrib(inp) {
+    inp.className = "sf-distrib-input " + _clsDistrib(inp.value);
+    // Actualizar dot en la celda de al lado
+    const tr = inp.closest("tr");
+    if (tr) {
+        const dotCell = tr.cells[7];
+        if (dotCell) dotCell.innerHTML = _dotDistrib(inp.value);
+    }
+}
+
+// ── Selección de chips ───────────────────────────────────────────────────────
+
+function selChip(cid, campo, val, el) {
+    const wrap = el.closest(".sf-cal-wrap");
+    wrap.querySelectorAll(".sf-chip").forEach(c => c.classList.remove("selected"));
+    // Toggle: si ya estaba seleccionado, deseleccionar
+    const reg = _data[cid] || {};
+    if (reg[campo] === val) {
+        reg[campo] = null;
+        _data[cid] = reg;
+    } else {
+        el.classList.add("selected");
+        if (!_data[cid]) _data[cid] = {};
+        _data[cid][campo] = val;
+    }
+    programarGuardado(cid);
+    actualizarResumen();
+}
+
+function selChipHE(cid, val, el) {
+    const wrap = el.closest(".sf-cal-wrap");
+    wrap.querySelectorAll(".sf-chip").forEach(c => c.classList.remove("selected"));
+    const reg = _data[cid] || {};
+    if (reg.he_valor === val) {
+        reg.he_valor = null;
+        _data[cid] = reg;
+    } else {
+        el.classList.add("selected");
+        if (!_data[cid]) _data[cid] = {};
+        _data[cid].he_valor = val;
+    }
+    programarGuardado(cid);
+    actualizarResumen();
+}
+
+function toggleNota(btn, cid, campo) {
+    const ta = btn.nextElementSibling;
+    if (ta.style.display === "none") {
+        ta.style.display = "block"; ta.focus();
+    } else {
+        ta.style.display = "none";
+    }
+}
+
+function guardarNota(ta) {
+    const cid   = parseInt(ta.dataset.cid);
+    const campo = ta.dataset.campo;
+    const val   = ta.value.trim();
+    if (!_data[cid]) _data[cid] = {};
+    _data[cid][campo] = val;
+    // Actualizar botón
+    const btn = ta.previousElementSibling;
+    if (btn) {
+        const preview = val ? val.substring(0,30)+(val.length>30?"…":"") : "";
+        btn.className = "sf-nota-btn" + (val?" has-nota":"");
+        btn.innerHTML = `<i class="bi bi-${val?'pencil-fill':'chat-left-text'} me-1"></i>${val||"Nota"}`;
+        btn.title = val || "Agregar anotación";
+    }
+    ta.style.display = "none";
+    programarGuardado(cid);
+}
+
+function guardarDistrib(inp) {
+    const cid = parseInt(inp.dataset.cid);
+    const val = inp.value.trim();
+    if (!_data[cid]) _data[cid] = {};
+    _data[cid].distrib_valor = val;
+    programarGuardado(cid);
+    actualizarResumen();
+}
+
+// ── Auto-guardado ─────────────────────────────────────────────────────────────
+
+const _pending = new Set();
+
+function programarGuardado(cid) {
+    _pending.add(cid);
+    clearTimeout(_savingTimer);
+    _savingTimer = setTimeout(ejecutarGuardado, 800);
+}
+
+async function ejecutarGuardado() {
+    if (!_pending.size || !_fechaActual) return;
+    const cids = [..._pending]; _pending.clear();
+    document.getElementById("sfSaving").style.display = "block";
+    for (const cid of cids) {
+        const reg = _data[cid] || {};
+        await fetch("/admin/api/semaforo", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({
+                fecha:        _fechaActual,
+                contrato_id:  cid,
+                arch_equipos: reg.arch_equipos ?? null,
+                arch_ingresos:reg.arch_ingresos ?? null,
+                arch_personas:reg.arch_personas ?? null,
+                arch_nota:    reg.arch_nota || "",
+                distrib_valor:reg.distrib_valor || "",
+                he_valor:     reg.he_valor ?? null,
+                he_nota:      reg.he_nota || "",
+            })
+        });
+    }
+    document.getElementById("sfSaving").style.display = "none";
+}
+
+// ── Resumen del día ───────────────────────────────────────────────────────────
+
+function actualizarResumen() {
+    const vals = Object.values(_data);
+    if (!vals.length) { document.getElementById("sfResumen").style.display="none"; return; }
+    document.getElementById("sfResumen").style.display="grid";
+
+    const total     = CONTRATOS.length;
+    const archOK    = vals.filter(v => v.arch_equipos===1 && v.arch_ingresos===1 && v.arch_personas===1).length;
+    const distribOK = vals.filter(v => _clsDistrib(v.distrib_valor)==="verde").length;
+    const heOK      = vals.filter(v => v.he_valor===1).length;
+
+    document.getElementById("resTotal").textContent   = `${vals.filter(v=>Object.keys(v).length>2).length}/${total}`;
+    document.getElementById("resArch").textContent    = `${archOK}/${total}`;
+    document.getElementById("resDistrib").textContent = `${distribOK}/${total}`;
+    document.getElementById("resHE").textContent      = `${heOK}/${total}`;
+    document.getElementById("resArch").style.color    = archOK===total?'#4ade80':archOK===0?'#f87171':'#fbbf24';
+    document.getElementById("resDistrib").style.color = distribOK===total?'#4ade80':distribOK===0?'#f87171':'#fbbf24';
+    document.getElementById("resHE").style.color      = heOK===total?'#4ade80':heOK===0?'#f87171':'#fbbf24';
+}
+
+// ── Historial ─────────────────────────────────────────────────────────────────
+
+async function cargarHistorial() {
+    const desde = document.getElementById("histDesde").value;
+    const hasta = document.getElementById("histHasta").value;
+    if (!desde || !hasta) return;
+    const r = await fetch(`/admin/api/semaforo/rango?desde=${desde}&hasta=${hasta}`);
+    const d = await r.json();
+    if (!d.ok) return;
+
+    // Agrupar por fecha → contrato
+    const porFecha = {};
+    for (const reg of d.data) {
+        if (!porFecha[reg.fecha]) porFecha[reg.fecha] = {};
+        porFecha[reg.fecha][reg.contrato_id] = reg;
+    }
+    const fechas = Object.keys(porFecha).sort().reverse();
+    if (!fechas.length) {
+        document.getElementById("histTabla").innerHTML = `<p style="color:#64748b;text-align:center;padding:20px;">Sin registros en el rango seleccionado.</p>`;
+        return;
+    }
+
+    const COLS = ["Contrato","Equipos","Ingresos","Personas","Distribución","HE"];
+    const rows = [];
+    for (const fecha of fechas) {
+        const regs = porFecha[fecha];
+        for (const c of CONTRATOS) {
+            const reg = regs[c.id];
+            if (!reg) continue;
+            const dotD = `<span class="sf-dot ${({verde:'sf-dot-verde',rojo:'sf-dot-rojo',ambar:'sf-dot-ambar'}[_clsDistrib(reg.distrib_valor)]||'sf-dot-gris')}"></span> ${reg.distrib_valor||'—'}`;
+            rows.push(`<tr>
+                <td style="padding:5px 10px;color:#94a3b8;font-size:.72rem;">${fecha}</td>
+                <td style="padding:5px 10px;font-weight:600;font-size:.78rem;">${c.contrato}</td>
+                <td style="padding:5px 10px;text-align:center;">${_chipSmall(reg.arch_equipos)}</td>
+                <td style="padding:5px 10px;text-align:center;">${_chipSmall(reg.arch_ingresos)}</td>
+                <td style="padding:5px 10px;text-align:center;">${_chipSmall(reg.arch_personas)}</td>
+                <td style="padding:5px 10px;">${dotD}</td>
+                <td style="padding:5px 10px;text-align:center;">${_chipSmall(reg.he_valor)}</td>
+            </tr>`);
+        }
+    }
+
+    document.getElementById("histTabla").innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+            <thead style="background:#0a1628;position:sticky;top:0;">
+                <tr>
+                    <th style="padding:7px 10px;text-align:left;color:#64748b;font-size:.68rem;text-transform:uppercase;">Fecha</th>
+                    <th style="padding:7px 10px;text-align:left;color:#64748b;font-size:.68rem;text-transform:uppercase;">Contrato</th>
+                    <th style="padding:7px 10px;text-align:center;color:#64748b;font-size:.68rem;">Equipos</th>
+                    <th style="padding:7px 10px;text-align:center;color:#64748b;font-size:.68rem;">Ingresos</th>
+                    <th style="padding:7px 10px;text-align:center;color:#64748b;font-size:.68rem;">Personas</th>
+                    <th style="padding:7px 10px;text-align:left;color:#64748b;font-size:.68rem;">Distribución</th>
+                    <th style="padding:7px 10px;text-align:center;color:#64748b;font-size:.68rem;">HE</th>
+                </tr>
+            </thead>
+            <tbody style="background:#0f172a;">${rows.join("")}</tbody>
+        </table>`;
+}
+
+function _chipSmall(val) {
+    if (val === null || val === undefined || val === "") return `<span style="color:#475569;">—</span>`;
+    const cfg = {1:{bg:"#065f46",color:"#4ade80"},0:{bg:"#7f1d1d",color:"#f87171"},3:{bg:"#713f12",color:"#fbbf24"}};
+    const c = cfg[val] || {bg:"#1e293b",color:"#94a3b8"};
+    return `<span style="background:${c.bg};color:${c.color};border-radius:5px;padding:2px 8px;font-weight:800;font-size:.78rem;">${val}</span>`;
+}
+</script>
+{% endblock %}

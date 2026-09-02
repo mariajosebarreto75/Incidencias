@@ -24,6 +24,7 @@ from app.models.hora_extra import HoraExtra
 from app.models.supervisor import Supervisor
 from app.models.he_corte import HeCorte
 from app.models.he_config import HeConfig
+from app.models.semaforo import SemaforoCalificacion
 
 from app.routes.auth import auth
 from app.routes.dashboard import dashboard
