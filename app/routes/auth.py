@@ -93,8 +93,8 @@ def login():
             return redirect(url_for("coordinador.dashboard_coordinador"))
         elif user.rol.lower() == "neo":
             return redirect(url_for("neo.home_neo"))
-        elif user.rol.lower() == "director":
-            return redirect(url_for("dashboard.indicadores"))
+        elif user.rol.lower() in ("director", "supervisor"):
+            return redirect(url_for("coordinador.dashboard_coordinador"))
         elif user.rol.lower() == "parqueadero":
             return redirect(url_for("parqueadero.operador"))
         elif user.rol.lower() == "admin_parqueadero":
