@@ -376,6 +376,8 @@ function _celdaNota(cid, campo, nota) {
 function _clsDistrib(val) {
     if (!val || !val.trim()) return "";
     const v = val.trim().toLowerCase();
+    // "0" o "0:00" → no cumple (no reportó)
+    if (v === "0" || v === "0:00" || v === "00:00") return "rojo";
     if (/^\d{1,2}:\d{2}$/.test(v)) {
         const [h,m] = v.split(":").map(Number);
         const mins = h*60+m;
