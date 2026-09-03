@@ -442,6 +442,28 @@
     const urlParams   = new URLSearchParams(window.location.search);
     const tieneParams = CAMPOS.some(k => urlParams.get(k));
 
+    /* ── Persistencia contrato seleccionado ── */
+    const CONTRATO_KEY = 'coor_panel_contrato';
+    const contratoUrl  = urlParams.get('contrato');
+    if (contratoUrl) {
+        sessionStorage.setItem(CONTRATO_KEY, contratoUrl);
+    } else if (!tieneParams) {
+        // Solo restaurar si no hay ningún filtro activo (no es un limpiar)
+        const contratoGuardado = sessionStorage.getItem(CONTRATO_KEY);
+        if (contratoGuardado) {
+            // Redirigir con el contrato guardado preservando otros filtros del form
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('contrato', contratoGuardado);
+            window.location.replace(newUrl.toString());
+        }
+    }
+    // Al hacer click en "Todos" limpiar el contrato guardado
+    document.querySelectorAll('.btn-contrato').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (!this.href.includes('contrato=')) sessionStorage.removeItem(CONTRATO_KEY);
+        });
+    });
+
     if (tieneParams) {
         const datos = {};
         CAMPOS.forEach(k => { datos[k] = urlParams.get(k) || ''; });
@@ -478,6 +500,7 @@
         btnLim.addEventListener('click', () => {
             sessionStorage.removeItem(KEY);
             sessionStorage.removeItem('coor_panel_chip');
+            sessionStorage.removeItem('coor_panel_contrato');
         });
     }
 })();
