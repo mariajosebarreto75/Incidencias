@@ -3,7 +3,8 @@ from flask import (
     render_template,
     request,
     url_for,
-    abort
+    abort,
+    redirect
 )
 
 from flask_login import (
@@ -31,20 +32,10 @@ dashboard = Blueprint(
 # DIRECTOR
 # ======================
 
-@dashboard.route(
-    "/director"
-)
-
+@dashboard.route("/director")
 @login_required
 def director():
-
-    return f"""
-
-    Bienvenido Director:
-
-    {current_user.nombre_completo}
-
-    """
+    return redirect(url_for("coordinador.dashboard_coordinador"))
 
 
 # =====================================
