@@ -100,7 +100,7 @@ def api_personas_nombres():
 @login_required
 def api_he_registros():
     q = HoraExtra.query
-    if current_user.rol.lower() == "coordinador":
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         ids = _ids_contratos_usuario()
         q = q.filter(HoraExtra.contrato_id.in_(ids))
 
@@ -170,7 +170,7 @@ def he_dashboard():
         abort(403)
     contratos = _contratos_del_usuario() if rol == "admin" else _contratos_del_usuario()
     cortes    = HeCorte.query.order_by(HeCorte.fecha_inicio.desc()).all()
-    if rol in ("coordinador",):
+    if rol in ("coordinador", "director", "supervisor"):
         base_template = "coordinador/navbarcoor.html"
     elif rol == "neo":
         base_template = "neo/navbNeo.html"
@@ -186,9 +186,9 @@ def he_dashboard():
 @login_required
 def he_hub():
     rol = current_user.rol.lower()
-    puede_ingresar = rol in ("coordinador", "admin")
+    puede_ingresar = rol in ("coordinador", "director", "supervisor", "admin")
     puede_validar  = rol in ("neo", "admin")
-    if rol == "coordinador":
+    if rol in ("coordinador", "director", "supervisor"):
         base_template = "coordinador/navbarcoor.html"
     elif rol == "neo":
         base_template = "neo/navbNeo.html"
@@ -227,7 +227,7 @@ def api_he_guardar():
     if not filas:
         return jsonify({"ok": False, "msg": "Sin filas"}), 400
 
-    ids_permitidos = _ids_contratos_usuario() if current_user.rol.lower() == "coordinador" else None
+    ids_permitidos = _ids_contratos_usuario() if current_user.rol.lower() in ("coordinador", "director", "supervisor") else None
 
     # Pre-cargar contratos y cortes en memoria (evita N+1 queries)
     _contratos_lista = Contrato.query.all()
@@ -428,7 +428,7 @@ def api_he_guardar():
 @login_required
 def api_he_get(id):
     he = HoraExtra.query.get_or_404(id)
-    if current_user.rol.lower() == "coordinador":
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         if he.contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
     return jsonify({"ok": True, "registro": he.to_dict()})
@@ -440,7 +440,7 @@ def api_he_get(id):
 def api_he_actualizar(id):
     he = HoraExtra.query.get_or_404(id)
     f = request.get_json(silent=True) or {}
-    if current_user.rol.lower() == "coordinador":
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         if he.contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
         # Coordinadores pueden editar todos los campos excepto los campos NEO
@@ -487,7 +487,7 @@ def api_he_actualizar(id):
 @login_required
 def api_he_eliminar(id):
     he = HoraExtra.query.get_or_404(id)
-    if current_user.rol.lower() == "coordinador":
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         if he.estado != "PENDIENTE":
             return jsonify({"ok": False, "msg": "Solo se pueden eliminar registros pendientes"}), 403
         if he.contrato_id not in _ids_contratos_usuario():
@@ -719,7 +719,7 @@ def api_he_resumen():
     contrato_id = request.args.get("contrato_id", type=int)
     if not contrato_id:
         return jsonify({"ok": False, "msg": "contrato_id requerido"}), 400
-    if current_user.rol.lower() == "coordinador":
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         if contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
 
@@ -817,8 +817,8 @@ def api_he_resumen():
 def api_he_kpis():
     q = HoraExtra.query
 
-    # Coordinadores solo ven sus contratos
-    if current_user.rol.lower() == "coordinador":
+    # Coordinadores/directores/supervisores solo ven sus contratos
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         q = q.filter(HoraExtra.contrato_id.in_(_ids_contratos_usuario()))
 
     contrato_id = request.args.get("contrato_id", type=int)
@@ -1017,7 +1017,7 @@ def api_he_cortes_list():
     )
     if contrato_id:
         q = q.filter((HeCorte.contrato_id == contrato_id) | (HeCorte.contrato_id == None))
-    elif current_user.rol.lower() == "coordinador":
+    elif current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         ids = _ids_contratos_usuario()
         q = q.filter((HeCorte.contrato_id.in_(ids)) | (HeCorte.contrato_id == None))
     cortes = q.order_by(HeCorte.fecha_inicio.desc()).all()
