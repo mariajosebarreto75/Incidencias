@@ -382,7 +382,6 @@ function _clsDistrib(val) {
         const [h,m] = v.split(":").map(Number);
         const mins = h*60+m;
         if (mins < 480) return "verde";
-        if (mins < 510) return "ambar";
         return "rojo";
     }
     if (v === "no trabaja" || v === "no cumple") return "rojo";
