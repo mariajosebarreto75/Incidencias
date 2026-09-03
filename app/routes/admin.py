@@ -234,6 +234,60 @@ def parqueadero_usuarios():
     return render_template("admin/parqueadero_usuarios.html", usuarios=lista)
 
 
+@admin_bp.route("/coordinador-usuarios")
+@admin_required
+def coordinador_usuarios():
+    lista = User.query.filter_by(rol="coordinador").order_by(User.nombre_completo).all()
+    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    asignados_por_usuario = {
+        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
+        for u in lista
+    }
+    return render_template("admin/usuarios_tipo.html",
+                           usuarios=lista, contratos=contratos,
+                           asignados_por_usuario=asignados_por_usuario,
+                           titulo="Usuarios Coordinador",
+                           rol_nuevo="coordinador",
+                           icono="bi-person-workspace",
+                           color_acento="#0ea5e9")
+
+
+@admin_bp.route("/supervisor-usuarios")
+@admin_required
+def supervisor_usuarios():
+    lista = User.query.filter_by(rol="supervisor").order_by(User.nombre_completo).all()
+    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    asignados_por_usuario = {
+        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
+        for u in lista
+    }
+    return render_template("admin/usuarios_tipo.html",
+                           usuarios=lista, contratos=contratos,
+                           asignados_por_usuario=asignados_por_usuario,
+                           titulo="Usuarios Supervisor",
+                           rol_nuevo="supervisor",
+                           icono="bi-person-check",
+                           color_acento="#22c55e")
+
+
+@admin_bp.route("/director-usuarios")
+@admin_required
+def director_usuarios():
+    lista = User.query.filter_by(rol="director").order_by(User.nombre_completo).all()
+    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    asignados_por_usuario = {
+        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
+        for u in lista
+    }
+    return render_template("admin/usuarios_tipo.html",
+                           usuarios=lista, contratos=contratos,
+                           asignados_por_usuario=asignados_por_usuario,
+                           titulo="Usuarios Director",
+                           rol_nuevo="director",
+                           icono="bi-briefcase",
+                           color_acento="#f59e0b")
+
+
 @admin_bp.route("/api/usuarios", methods=["POST"])
 @admin_required
 def api_crear_usuario():

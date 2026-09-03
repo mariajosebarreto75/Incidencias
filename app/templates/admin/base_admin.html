@@ -53,11 +53,6 @@
             <i class="bi bi-file-earmark-text"></i> Contratos
         </a>
 
-        <a href="{{ url_for('admin_bp.usuarios') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.usuarios' %}active{% endif %}">
-            <i class="bi bi-people"></i> Usuarios
-        </a>
-
         <a href="{{ url_for('admin_bp.neo_usuarios') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.neo_usuarios' %}active{% endif %}">
             <i class="bi bi-person-badge"></i> Usuarios NEO / Admin
@@ -66,6 +61,21 @@
         <a href="{{ url_for('admin_bp.parqueadero_usuarios') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.parqueadero_usuarios' %}active{% endif %}">
             <i class="bi bi-p-square"></i> Usuarios Parqueadero
+        </a>
+
+        <a href="{{ url_for('admin_bp.coordinador_usuarios') }}"
+           class="adm-nav-link {% if request.endpoint == 'admin_bp.coordinador_usuarios' %}active{% endif %}">
+            <i class="bi bi-person-workspace"></i> Usuarios Coordinador
+        </a>
+
+        <a href="{{ url_for('admin_bp.supervisor_usuarios') }}"
+           class="adm-nav-link {% if request.endpoint == 'admin_bp.supervisor_usuarios' %}active{% endif %}">
+            <i class="bi bi-person-check"></i> Usuarios Supervisor
+        </a>
+
+        <a href="{{ url_for('admin_bp.director_usuarios') }}"
+           class="adm-nav-link {% if request.endpoint == 'admin_bp.director_usuarios' %}active{% endif %}">
+            <i class="bi bi-briefcase"></i> Usuarios Director
         </a>
 
         <a href="{{ url_for('admin_bp.personas') }}"
