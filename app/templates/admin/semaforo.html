@@ -206,7 +206,7 @@
                     <th rowspan="2" style="min-width:220px;">Contrato</th>
                     <th rowspan="2" style="min-width:130px;">Coordinador</th>
                     <th colspan="4" class="sf-group">Archivos de Seguimiento</th>
-                    <th colspan="2" class="sf-group" style="border-left:2px solid #1e3a5f;">Distribución Operativa NEO</th>
+                    <th colspan="1" class="sf-group" style="border-left:2px solid #1e3a5f;">Distribución Operativa NEO</th>
                     <th colspan="2" class="sf-group" style="border-left:2px solid #1e3a5f;">Horas Extras</th>
                 </tr>
                 <tr>
@@ -216,8 +216,7 @@
                     <th>Personas</th>
                     <th>Nota</th>
                     <!-- Distribución -->
-                    <th class="sf-sep" style="min-width:140px;">Hora envío / Estado</th>
-                    <th>Resultado</th>
+                    <th class="sf-sep" style="min-width:260px;">Hora / Cumplimiento / Nota</th>
                     <!-- HE -->
                     <th class="sf-sep">Calificación</th>
                     <th>Nota</th>
@@ -320,8 +319,7 @@ function renderTabla(fecha) {
             ${_celdaChips(c.id, 'arch_ingresos', reg.arch_ingresos)}
             ${_celdaChips(c.id, 'arch_personas', reg.arch_personas)}
             <td>${_celdaNota(c.id, 'arch_nota', reg.arch_nota)}</td>
-            <td class="sf-sep">${_celdaDistrib(c.id, reg.distrib_valor)}</td>
-            <td>${_dotDistrib(reg.distrib_valor)}</td>
+            <td class="sf-sep">${_celdaDistribCompleta(c.id, reg.distrib_valor, reg.distrib_cumple, reg.distrib_nota)}</td>
             <td class="sf-sep">${_celdaChipsHE(c.id, reg.he_valor)}</td>
             <td>${_celdaNota(c.id, 'he_nota', reg.he_nota)}</td>
         </tr>`;
@@ -374,53 +372,121 @@ function _celdaNota(cid, campo, nota) {
     </div>`;
 }
 
-function _celdaDistrib(cid, val) {
-    const cls = _clsDistrib(val);
-    return `<div class="sf-distrib-wrap">
-        <input class="sf-distrib-input ${cls}" value="${val||''}"
-               placeholder="HH:MM o texto"
-               data-cid="${cid}"
-               oninput="_actualizarClsDistrib(this)"
-               onblur="guardarDistrib(this)"
-               onkeydown="if(event.key==='Enter')this.blur()">
-    </div>`;
-}
-
+// Calcula cumplimiento automático desde el valor de hora/texto
 function _clsDistrib(val) {
     if (!val || !val.trim()) return "";
     const v = val.trim().toLowerCase();
     if (/^\d{1,2}:\d{2}$/.test(v)) {
         const [h,m] = v.split(":").map(Number);
         const mins = h*60+m;
-        if (mins < 480) return "verde";    // antes de 08:00
-        if (mins < 510) return "ambar";   // 08:00-08:29
-        return "rojo";                    // 08:30 en adelante
+        if (mins < 480) return "verde";
+        if (mins < 510) return "ambar";
+        return "rojo";
     }
-    // Textos especiales
     if (v === "no trabaja" || v === "no cumple") return "rojo";
     if (v.includes("error") || v.includes("problem") || v.includes("internet")) return "ambar";
     return "";
 }
 
-function _dotDistrib(val) {
+// Determina cumplimiento efectivo: override manual si existe, si no, automático por hora
+function _cumpleEfectivo(val, cumpleOverride) {
+    if (cumpleOverride === 1) return 1;
+    if (cumpleOverride === 0) return 0;
     const cls = _clsDistrib(val);
-    const map = {verde:"sf-dot-verde", rojo:"sf-dot-rojo", ambar:"sf-dot-ambar"};
-    const dotCls = map[cls] || "sf-dot-gris";
-    const labels = {verde:"A tiempo", rojo:"Tarde / No cumple", ambar:"Con novedades"};
-    const lbl = labels[cls] || (val?"—":"Sin registrar");
-    return `<div style="display:flex;align-items:center;gap:6px;">
-        <span class="sf-dot ${dotCls}"></span>
-        <span style="font-size:.72rem;color:#64748b;">${lbl}</span>
+    if (cls === "verde") return 1;
+    if (cls === "rojo")  return 0;
+    return null; // ambar o sin datos → indefinido
+}
+
+function _celdaDistribCompleta(cid, val, cumpleOverride, nota) {
+    const efectivo = _cumpleEfectivo(val, cumpleOverride);
+    const esAuto   = (cumpleOverride === null || cumpleOverride === undefined);
+    const clsInp   = _clsDistrib(val);
+
+    // Botón de toggle cumple/no cumple
+    const btnCumple = _btnToggleDistrib(cid, efectivo, esAuto);
+
+    // Nota
+    const tieneNota = nota && nota.trim();
+    const preview   = tieneNota ? nota.trim().substring(0,25)+(nota.length>25?"…":"") : "";
+    const btnNota   = `<button class="sf-nota-btn${tieneNota?' has-nota':''}"
+            onclick="toggleNota(this,${cid},'distrib_nota')"
+            title="${tieneNota ? nota : 'Agregar anotación'}">
+        <i class="bi bi-${tieneNota?'pencil-fill':'chat-left-text'} me-1"></i>${tieneNota?preview:'Nota'}
+    </button>
+    <textarea class="sf-nota-input" rows="2" placeholder="Anotación…"
+              style="display:none;margin-top:4px;"
+              data-cid="${cid}" data-campo="distrib_nota"
+              onblur="guardarNota(this)"
+              onkeydown="if(event.key==='Escape')this.style.display='none'"
+    >${tieneNota?nota:""}</textarea>`;
+
+    return `<div style="display:flex;flex-direction:column;gap:5px;min-width:240px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+            <input class="sf-distrib-input ${clsInp}" value="${val||''}"
+                   placeholder="HH:MM o texto"
+                   data-cid="${cid}"
+                   oninput="_actualizarDistribFila(this)"
+                   onblur="guardarDistrib(this)"
+                   onkeydown="if(event.key==='Enter')this.blur()">
+            ${btnCumple}
+        </div>
+        <div>${btnNota}</div>
     </div>`;
 }
 
-function _actualizarClsDistrib(inp) {
+function _btnToggleDistrib(cid, efectivo, esAuto) {
+    // efectivo: 1=cumple, 0=no cumple, null=sin datos
+    let icon, color, bg, title, siguiente;
+    if (efectivo === 1) {
+        icon="check-circle-fill"; color="#4ade80"; bg="#065f46"; title=esAuto?"Cumple (auto) — clic para marcar No cumple":"Cumple (manual) — clic para quitar override";
+        siguiente = esAuto ? 0 : null;
+    } else if (efectivo === 0) {
+        icon="x-circle-fill"; color="#f87171"; bg="#7f1d1d"; title=esAuto?"No cumple (auto) — clic para marcar Cumple":"No cumple (manual) — clic para quitar override";
+        siguiente = esAuto ? 1 : null;
+    } else {
+        icon="circle"; color="#475569"; bg="#1e293b"; title="Sin datos";
+        siguiente = null;
+    }
+    const autoLabel = esAuto ? `<span style="font-size:.6rem;color:#64748b;margin-left:2px;">auto</span>` : `<span style="font-size:.6rem;color:#a78bfa;margin-left:2px;">manual</span>`;
+    return `<button onclick="toggleCumpleDistrib(${cid},${siguiente === null ? 'null' : siguiente},this)"
+            title="${title}"
+            style="display:flex;align-items:center;gap:4px;background:${bg};border:1px solid ${color}44;border-radius:7px;
+                   padding:4px 9px;cursor:pointer;color:${color};font-size:.75rem;font-weight:700;white-space:nowrap;">
+        <i class="bi bi-${icon}"></i> ${efectivo===1?'Cumple':efectivo===0?'No cumple':'—'}
+        ${autoLabel}
+    </button>`;
+}
+
+function toggleCumpleDistrib(cid, siguiente, btn) {
+    // siguiente: null=quitar override (volver a auto), 0=forzar no cumple, 1=forzar cumple
+    if (!_data[cid]) _data[cid] = {};
+    _data[cid].distrib_cumple = siguiente;
+    // Recalcular botón
+    const val = _data[cid].distrib_valor || "";
+    const efectivo = _cumpleEfectivo(val, siguiente);
+    const esAuto   = (siguiente === null);
+    const wrap = btn.closest("div[style*='flex']");
+    if (wrap) {
+        const btnOld = wrap.querySelector("button[onclick*='toggleCumpleDistrib']");
+        if (btnOld) btnOld.outerHTML = _btnToggleDistrib(cid, efectivo, esAuto);
+    }
+    programarGuardado(cid);
+    actualizarResumen();
+}
+
+function _actualizarDistribFila(inp) {
     inp.className = "sf-distrib-input " + _clsDistrib(inp.value);
-    // Actualizar dot en la celda de al lado
-    const tr = inp.closest("tr");
-    if (tr) {
-        const dotCell = tr.cells[7];
-        if (dotCell) dotCell.innerHTML = _dotDistrib(inp.value);
+    const cid = parseInt(inp.dataset.cid);
+    if (!_data[cid]) _data[cid] = {};
+    // Si no hay override manual, recalcular el botón de cumplimiento
+    const override = _data[cid].distrib_cumple ?? null;
+    const efectivo = _cumpleEfectivo(inp.value, override);
+    const esAuto   = (override === null);
+    const wrap = inp.closest("div[style*='flex']");
+    if (wrap) {
+        const btn = wrap.querySelector("button[onclick*='toggleCumpleDistrib']");
+        if (btn) btn.outerHTML = _btnToggleDistrib(cid, efectivo, esAuto);
     }
 }
 
@@ -491,6 +557,8 @@ function guardarDistrib(inp) {
     const val = inp.value.trim();
     if (!_data[cid]) _data[cid] = {};
     _data[cid].distrib_valor = val;
+    // Si no hay override manual, limpiar el cumple (volver a auto)
+    if (_data[cid].distrib_cumple === undefined) _data[cid].distrib_cumple = null;
     programarGuardado(cid);
     actualizarResumen();
 }
@@ -520,8 +588,10 @@ async function ejecutarGuardado() {
                 arch_ingresos:reg.arch_ingresos ?? null,
                 arch_personas:reg.arch_personas ?? null,
                 arch_nota:    reg.arch_nota || "",
-                distrib_valor:reg.distrib_valor || "",
-                he_valor:     reg.he_valor ?? null,
+                distrib_valor: reg.distrib_valor  || "",
+                distrib_cumple:reg.distrib_cumple ?? null,
+                distrib_nota:  reg.distrib_nota   || "",
+                he_valor:      reg.he_valor ?? null,
                 he_nota:      reg.he_nota || "",
             })
         });
@@ -579,7 +649,9 @@ async function cargarHistorial() {
         for (const c of CONTRATOS) {
             const reg = regs[c.id];
             if (!reg) continue;
-            const dotD = `<span class="sf-dot ${({verde:'sf-dot-verde',rojo:'sf-dot-rojo',ambar:'sf-dot-ambar'}[_clsDistrib(reg.distrib_valor)]||'sf-dot-gris')}"></span> ${reg.distrib_valor||'—'}`;
+            const efect = _cumpleEfectivo(reg.distrib_valor, reg.distrib_cumple);
+            const dotCls = efect===1?'sf-dot-verde':efect===0?'sf-dot-rojo':'sf-dot-gris';
+            const dotD = `<span class="sf-dot ${dotCls}"></span> ${reg.distrib_valor||'—'}${reg.distrib_cumple!==null&&reg.distrib_cumple!==undefined?' <span style="font-size:.6rem;color:#a78bfa;">(manual)</span>':''}`;
             rows.push(`<tr>
                 <td style="padding:5px 10px;color:#94a3b8;font-size:.72rem;">${fecha}</td>
                 <td style="padding:5px 10px;font-weight:600;font-size:.78rem;">${c.contrato}</td>

@@ -17,6 +17,8 @@ class SemaforoCalificacion(db.Model):
 
     # Distribución operativa NEO: hora enviada (ej. "07:30") o texto libre
     distrib_valor = db.Column(db.String(100),  nullable=True)   # "07:30", "no trabaja", "problemas internet", etc.
+    distrib_cumple= db.Column(db.SmallInteger, nullable=True)   # 1=cumple, 0=no cumple, null=auto (calculado por hora)
+    distrib_nota  = db.Column(db.String(300),  nullable=True)   # anotación libre distribución
 
     # Horas extras: 1=cumple, 0=no cumple, 3=errores pero cumple
     he_valor      = db.Column(db.SmallInteger, nullable=True)
@@ -37,7 +39,9 @@ class SemaforoCalificacion(db.Model):
             "arch_ingresos": self.arch_ingresos,
             "arch_personas": self.arch_personas,
             "arch_nota":     self.arch_nota or "",
-            "distrib_valor": self.distrib_valor or "",
-            "he_valor":      self.he_valor,
+            "distrib_valor":  self.distrib_valor or "",
+            "distrib_cumple": self.distrib_cumple,
+            "distrib_nota":   self.distrib_nota or "",
+            "he_valor":       self.he_valor,
             "he_nota":       self.he_nota or "",
         }
