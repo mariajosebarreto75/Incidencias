@@ -264,7 +264,7 @@
 
 {% block scripts %}
 <script>
-const CONTRATOS = {{ contratos | tojson }};
+const CONTRATOS = {{ contratos_json | tojson }};
 // Map: contrato_id → datos guardados hoy
 let _data = {};
 let _savingTimer = null;

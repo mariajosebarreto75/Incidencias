@@ -1917,7 +1917,8 @@ def api_he_config_guardar():
 @admin_required
 def semaforo():
     contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
-    return render_template("admin/semaforo.html", contratos=contratos)
+    contratos_json = [{"id": c.id, "contrato": c.contrato, "coordinador": c.coordinador or ""} for c in contratos]
+    return render_template("admin/semaforo.html", contratos=contratos, contratos_json=contratos_json)
 
 
 @admin_bp.route("/api/semaforo", methods=["GET"])
