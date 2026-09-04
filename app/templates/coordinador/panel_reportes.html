@@ -227,13 +227,11 @@
         <table class="vr-tabla" id="vrTabla">
             <thead>
                 <tr>
-                    <th>Fecha reporte</th>
-                    {% if lista_contratos|length > 1 and contrato_activo == 'todos' %}
-                    <th>Contrato</th>
-                    {% endif %}
-                    <th>Recurso</th>
-                    <th>Tipo incidencia</th>
-                    <th>Acción a tomar</th>
+                    <th class="vr-th-resize">Fecha reporte</th>
+                    <th class="vr-th-resize">Contrato</th>
+                    <th class="vr-th-resize">Recurso</th>
+                    <th class="vr-th-resize">Tipo incidencia</th>
+                    <th class="vr-th-resize">Acción a tomar</th>
                     <th class="vr-th-center">Impacto</th>
                     <th class="vr-th-center">Estado</th>
                     <th class="vr-th-center"></th>
@@ -258,11 +256,9 @@
                         <div class="vr-fecha-principal">{{ r.fecha_reporte.strftime('%d/%m/%Y') if r.fecha_reporte else '—' }}</div>
                         <div class="vr-fecha-sub">Creado {{ r.fecha_creado.strftime('%d/%m/%Y') if r.fecha_creado else '—' }}</div>
                     </td>
-                    {% if lista_contratos|length > 1 and contrato_activo == 'todos' %}
                     <td class="vr-td-contrato" title="{{ r.contrato }}">
                         <span class="vr-contrato-chip">{{ r.contrato }}</span>
                     </td>
-                    {% endif %}
                     <td class="vr-td-recurso">{{ r.recurso or '—' }}</td>
                     <td class="vr-td-tipo">{{ r.tipo_incidencia or '—' }}</td>
                     <td class="vr-td-tipo" style="color:#475569;font-size:.82rem;">{{ r.accion_a_tomar or '—' }}</td>
