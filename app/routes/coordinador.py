@@ -47,6 +47,7 @@ from app.models.contrato import (
 )
 from app.models.user import User
 from app.models.user_contrato import UserContrato
+from app.models.semaforo import SemaforoCalificacion
 from app.routes.notificaciones import crear_notificacion
 
 coordinador = Blueprint(
@@ -832,6 +833,15 @@ def guardar_consiliacion(id):
 # =====================================
 # SERVIR IMAGEN COORDINADOR
 # =====================================
+
+@coordinador.route("/coordinador/semaforo-dashboard")
+@login_required
+def semaforo_dashboard():
+    rol = current_user.rol.lower()
+    if rol not in ("admin", "coordinador", "supervisor", "director"):
+        return redirect(url_for("auth.login"))
+    return render_template("coordinador/semaforo_dashboard.html")
+
 
 @coordinador.route("/coordinador/evidencia-coor/<path:ruta>")
 @login_required

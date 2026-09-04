@@ -153,6 +153,14 @@
                         </ul>
                     </li>
 
+                    {% if current_user.rol.lower() == 'admin' or current_user.tiene_permiso('semaforo') %}
+                    <li class="nav-item">
+                        <a class="nav-link coor-nav-link" href="{{ url_for('coordinador.semaforo_dashboard') }}">
+                            <i class="bi bi-traffic-light me-1"></i>Semáforo
+                        </a>
+                    </li>
+                    {% endif %}
+
                     {% if current_user.rol.lower() == 'admin' or current_user.acceso_dashboard %}
                     <li class="nav-item">
                         <a class="nav-link coor-nav-link" href="{{ url_for('dashboard.indicadores') }}">

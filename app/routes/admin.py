@@ -2040,3 +2040,49 @@ def api_semaforo_rango():
         SemaforoCalificacion.fecha <= hasta
     ).order_by(SemaforoCalificacion.fecha).all()
     return jsonify({"ok": True, "data": [r.to_dict() for r in registros]})
+
+
+@admin_bp.route("/api/semaforo/dashboard", methods=["GET"])
+@login_required
+def api_semaforo_dashboard():
+    """API pública (todos los roles) para el dashboard consolidado de semáforo."""
+    desde_str = request.args.get("desde", "")
+    hasta_str = request.args.get("hasta", "")
+    try:
+        desde = date.fromisoformat(desde_str)
+        hasta = date.fromisoformat(hasta_str)
+    except Exception:
+        return jsonify({"ok": False, "msg": "Fechas inválidas"}), 400
+
+    rol = current_user.rol.lower()
+    # Filtrar contratos por usuario si no es admin
+    if rol == "admin":
+        contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    else:
+        ids_uc = [uc.contrato_id for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
+        contratos = Contrato.query.filter(Contrato.id.in_(ids_uc), Contrato.activo == True).order_by(Contrato.contrato).all()
+
+    contrato_ids = [c.id for c in contratos]
+    contrato_map = {c.id: c for c in contratos}
+
+    registros = SemaforoCalificacion.query.filter(
+        SemaforoCalificacion.fecha >= desde,
+        SemaforoCalificacion.fecha <= hasta,
+        SemaforoCalificacion.contrato_id.in_(contrato_ids)
+    ).order_by(SemaforoCalificacion.fecha).all()
+
+    # Agrupar por contrato
+    data = {}
+    for c in contratos:
+        data[c.id] = {
+            "contrato_id": c.id,
+            "contrato": c.contrato,
+            "coordinador": c.coordinador or "",
+            "director": c.director or "",
+            "dias": {}
+        }
+    for r in registros:
+        if r.contrato_id in data:
+            data[r.contrato_id]["dias"][str(r.fecha)] = r.to_dict()
+
+    return jsonify({"ok": True, "contratos": list(data.values())})
