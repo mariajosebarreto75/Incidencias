@@ -233,6 +233,7 @@
                     {% endif %}
                     <th>Recurso</th>
                     <th>Tipo incidencia</th>
+                    <th>Acción a tomar</th>
                     <th class="vr-th-center">Impacto</th>
                     <th class="vr-th-center">Estado</th>
                     <th class="vr-th-center"></th>
@@ -264,6 +265,7 @@
                     {% endif %}
                     <td class="vr-td-recurso">{{ r.recurso or '—' }}</td>
                     <td class="vr-td-tipo">{{ r.tipo_incidencia or '—' }}</td>
+                    <td class="vr-td-tipo" style="color:#475569;font-size:.82rem;">{{ r.accion_a_tomar or '—' }}</td>
                     <td class="vr-th-center">
                         {% if r.impacto == 'Alto' %}
                             <span class="vr-badge-imp alto"><i class="bi bi-exclamation-triangle-fill"></i> Alto</span>
