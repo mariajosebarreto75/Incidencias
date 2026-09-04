@@ -56,6 +56,9 @@ _MIGRACIONES = [
     "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS placa VARCHAR(20)",
     "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS hora_inicio VARCHAR(10)",
     "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS hora_fin VARCHAR(10)",
+    "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS revisado_reunion BOOLEAN NOT NULL DEFAULT FALSE",
+    "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS revisado_reunion_por VARCHAR(150)",
+    "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS fecha_revision_reunion TIMESTAMP",
 ]
 
 _SUPERVISORES_SEED = [

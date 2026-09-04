@@ -834,6 +834,24 @@ def guardar_consiliacion(id):
 # SERVIR IMAGEN COORDINADOR
 # =====================================
 
+@coordinador.route("/coordinador/reporte/<int:id>/marcar-reunion", methods=["POST"])
+@login_required
+def marcar_revision_reunion(id):
+    rol = current_user.rol.lower()
+    if rol not in ("admin", "coordinador", "supervisor", "director"):
+        return jsonify({"ok": False, "msg": "Sin permiso"}), 403
+    r = ReporteOperacional.query.get_or_404(id)
+    r.revisado_reunion = not r.revisado_reunion
+    if r.revisado_reunion:
+        r.revisado_reunion_por = current_user.username
+        r.fecha_revision_reunion = datetime.utcnow()
+    else:
+        r.revisado_reunion_por = None
+        r.fecha_revision_reunion = None
+    db.session.commit()
+    return jsonify({"ok": True, "revisado": r.revisado_reunion, "por": r.revisado_reunion_por or ""})
+
+
 @coordinador.route("/coordinador/semaforo-dashboard")
 @login_required
 def semaforo_dashboard():

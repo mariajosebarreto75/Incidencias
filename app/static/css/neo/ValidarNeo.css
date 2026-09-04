@@ -169,6 +169,23 @@
 .vr-tabla tbody tr:hover { background: #f0fafb; }
 .vr-tabla tbody td { padding: 10px 14px; vertical-align: middle; }
 .vr-td-chk   { text-align: center; }
+
+/* Botón de revisión en reunión */
+.vr-btn-reunion {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 20px; border: 1.5px solid #cbd5e1;
+    background: #f8fafc; color: #94a3b8;
+    font-size: .72rem; font-weight: 600; cursor: pointer;
+    transition: all .18s; white-space: nowrap;
+    line-height: 1.4;
+}
+.vr-btn-reunion:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+.vr-btn-reunion.revisado {
+    background: #f0fdf4; border-color: #22c55e; color: #15803d;
+}
+.vr-btn-reunion.revisado:hover { background: #dcfce7; }
+.vr-btn-reunion .vr-reunion-icon { font-size: .82rem; }
+.vr-td-reunion { text-align: center; white-space: nowrap; }
 .vr-td-fecha .vr-fecha-principal { font-weight: 600; color: #1a2e35; font-size: .83rem; }
 .vr-td-fecha .vr-fecha-sub       { font-size: .7rem; color: #a0aab4; margin-top: 1px; }
 .vr-td-contrato { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }

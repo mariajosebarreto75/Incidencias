@@ -237,6 +237,14 @@ class ReporteOperacional(db.Model):
         db.DateTime
     )
 
+    # =====================
+    # REVISIÓN EN REUNIÓN
+    # =====================
+
+    revisado_reunion = db.Column(db.Boolean, default=False, nullable=False, server_default="FALSE")
+    revisado_reunion_por = db.Column(db.String(150))
+    fecha_revision_reunion = db.Column(db.DateTime)
+
     def __repr__(self):
 
         return (
