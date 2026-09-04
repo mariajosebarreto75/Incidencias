@@ -1,170 +1,160 @@
 {% extends "coordinador/navbarcoor.html" %}
 {% block title %}Dashboard Semáforo{% endblock %}
 
-{% block content %}
+{% block head %}
 <style>
-/* ── Layout ─────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+body { background: #f1f5f9 !important; }
+
 .sd-wrap {
-    padding: 24px 28px;
+    padding: 28px 32px;
     min-height: 100vh;
-    background: #0a1628;
-    color: #e2e8f0;
+    background: #f1f5f9;
     font-family: 'Segoe UI', system-ui, sans-serif;
+    color: #1e293b;
 }
 
 /* ── Header ─────────────────────────────────────────── */
 .sd-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 16px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
 }
-.sd-header h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #f1f5f9;
-    letter-spacing: -.3px;
-    margin: 0;
-}
-.sd-header h1 span { color: #38bdf8; }
+.sd-title { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0 0 2px; letter-spacing: -.4px; }
+.sd-title span { color: #2563eb; }
+.sd-subtitle { font-size: .78rem; color: #64748b; }
 
-/* ── Controles de fecha ─────────────────────────────── */
+/* ── Controles ───────────────────────────────────────── */
 .sd-controls {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
 }
 .sd-btn-range {
-    padding: 6px 14px;
-    border-radius: 6px;
-    border: 1px solid #1e3a5f;
-    background: #0f172a;
-    color: #94a3b8;
+    padding: 6px 16px;
+    border-radius: 7px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
     font-size: .8rem;
+    font-weight: 500;
     cursor: pointer;
     transition: all .15s;
 }
-.sd-btn-range:hover, .sd-btn-range.active {
-    background: #1e40af;
-    border-color: #3b82f6;
-    color: #fff;
-}
-.sd-date-inputs {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+.sd-btn-range:hover { background: #e0e7ff; border-color: #c7d2fe; color: #3730a3; }
+.sd-btn-range.active { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 600; }
+.sd-divider { width: 1px; height: 24px; background: #e2e8f0; }
+.sd-date-inputs { display: flex; align-items: center; gap: 6px; }
 .sd-date-inputs input[type=date] {
     padding: 5px 10px;
-    border-radius: 6px;
-    border: 1px solid #1e3a5f;
-    background: #0f172a;
-    color: #e2e8f0;
-    font-size: .82rem;
+    border-radius: 7px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #1e293b;
+    font-size: .8rem;
 }
 .sd-btn-buscar {
-    padding: 6px 18px;
-    border-radius: 6px;
+    padding: 7px 20px;
+    border-radius: 7px;
     border: none;
-    background: #0ea5e9;
+    background: #2563eb;
     color: #fff;
     font-size: .82rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: background .15s;
 }
-.sd-btn-buscar:hover { background: #0284c7; }
+.sd-btn-buscar:hover { background: #1d4ed8; }
 
 /* ── KPI Cards ──────────────────────────────────────── */
 .sd-kpis {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 14px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
 }
 .sd-kpi {
-    background: #0f172a;
-    border: 1px solid #1e293b;
-    border-radius: 12px;
-    padding: 16px 18px;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
     position: relative;
     overflow: hidden;
 }
-.sd-kpi::before {
+.sd-kpi::after {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
+    bottom: 0; left: 0; right: 0;
+    height: 4px;
+    border-radius: 0 0 14px 14px;
 }
-.sd-kpi.k-total::before  { background: #38bdf8; }
-.sd-kpi.k-verde::before  { background: #22c55e; }
-.sd-kpi.k-rojo::before   { background: #ef4444; }
-.sd-kpi.k-ambar::before  { background: #f59e0b; }
-.sd-kpi.k-nd::before     { background: #475569; }
-.sd-kpi-label {
-    font-size: .7rem;
-    text-transform: uppercase;
-    letter-spacing: .07em;
-    color: #64748b;
-    margin-bottom: 6px;
-}
+.sd-kpi.k-total::after  { background: #3b82f6; }
+.sd-kpi.k-verde::after  { background: #22c55e; }
+.sd-kpi.k-rojo::after   { background: #ef4444; }
+.sd-kpi.k-ambar::after  { background: #f59e0b; }
+.sd-kpi.k-nd::after     { background: #cbd5e1; }
+.sd-kpi-icon { font-size: 1.4rem; margin-bottom: 8px; }
 .sd-kpi-val {
-    font-size: 2rem;
-    font-weight: 800;
+    font-size: 2.2rem;
+    font-weight: 900;
     line-height: 1;
-    color: #f1f5f9;
+    color: #0f172a;
+    font-variant-numeric: tabular-nums;
 }
-.sd-kpi-sub {
-    font-size: .7rem;
-    color: #64748b;
-    margin-top: 4px;
-}
+.sd-kpi-label { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: #94a3b8; margin-top: 4px; }
+.sd-kpi-sub { font-size: .72rem; color: #64748b; margin-top: 3px; }
 
-/* ── Filtro texto ───────────────────────────────────── */
+/* ── Toolbar ─────────────────────────────────────────── */
 .sd-toolbar {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     margin-bottom: 14px;
     flex-wrap: wrap;
 }
 .sd-search {
     flex: 1;
-    min-width: 200px;
-    max-width: 340px;
-    padding: 7px 12px;
-    border-radius: 8px;
-    border: 1px solid #1e3a5f;
-    background: #0f172a;
-    color: #e2e8f0;
-    font-size: .82rem;
+    min-width: 220px;
+    max-width: 360px;
+    padding: 8px 14px 8px 36px;
+    border-radius: 9px;
+    border: 1px solid #e2e8f0;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.44 1.406a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E") 12px center no-repeat;
+    color: #1e293b;
+    font-size: .83rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
 }
-.sd-search::placeholder { color: #475569; }
+.sd-search:focus { outline: none; border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
 .sd-legend {
     display: flex;
-    gap: 14px;
+    gap: 16px;
     flex-wrap: wrap;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    padding: 7px 14px;
 }
-.sd-leg-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: .73rem;
-    color: #94a3b8;
-}
-.sd-leg-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-}
+.sd-leg-item { display: flex; align-items: center; gap: 6px; font-size: .74rem; color: #475569; font-weight: 500; }
+.sd-leg-dot { width: 10px; height: 10px; border-radius: 3px; }
 
 /* ── Tabla ──────────────────────────────────────────── */
 .sd-table-wrap {
     overflow-x: auto;
-    border-radius: 12px;
-    border: 1px solid #1e293b;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    background: #fff;
 }
 .sd-table {
     width: 100%;
@@ -172,161 +162,175 @@
     font-size: .78rem;
     white-space: nowrap;
 }
-.sd-table thead tr:first-child th {
-    background: #0a1e38;
-    padding: 10px 12px;
+
+/* Encabezado fila 1 - categorías */
+.sd-table thead tr.tr-cat th {
+    padding: 11px 10px 8px;
     font-size: .68rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .08em;
-    color: #64748b;
-    border-bottom: 1px solid #1e293b;
     text-align: center;
+    border-bottom: 1px solid #e2e8f0;
 }
-.sd-table thead tr:first-child th.th-info {
+.sd-table thead tr.tr-cat th.th-info {
     text-align: left;
     position: sticky;
     left: 0;
-    z-index: 3;
-    background: #0a1e38;
+    z-index: 4;
+    background: #fff;
+    min-width: 210px;
 }
-.sd-table thead tr.tr-sub th {
-    background: #071428;
+.sd-table thead tr.tr-cat .th-cat-archivos { background: #eff6ff; color: #2563eb; border-left: 2px solid #bfdbfe; }
+.sd-table thead tr.tr-cat .th-cat-distrib  { background: #faf5ff; color: #7c3aed; border-left: 2px solid #ddd6fe; }
+.sd-table thead tr.tr-cat .th-cat-preop    { background: #f0fdf4; color: #16a34a; border-left: 2px solid #bbf7d0; }
+.sd-table thead tr.tr-cat .th-cat-he       { background: #fffbeb; color: #d97706; border-left: 2px solid #fde68a; }
+.sd-table thead tr.tr-cat .th-cat-resumen  { background: #f8fafc; color: #475569; border-left: 2px solid #e2e8f0; }
+
+/* Encabezado fila 2 - fechas */
+.sd-table thead tr.tr-fechas th {
     padding: 6px 8px;
     font-size: .66rem;
-    color: #475569;
-    border-bottom: 2px solid #1e293b;
+    color: #64748b;
     text-align: center;
-    letter-spacing: .04em;
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    font-weight: 500;
 }
-.sd-table thead tr.tr-sub th.th-contrato-sub,
-.sd-table thead tr.tr-sub th.th-coor-sub {
+.sd-table thead tr.tr-fechas th.th-contrato-sub {
     text-align: left;
-    position: sticky;
-    background: #071428;
-    z-index: 3;
+    position: sticky; left: 0; z-index: 4;
+    background: #f8fafc;
+    min-width: 210px;
 }
-.sd-table thead tr.tr-sub th.th-contrato-sub { left: 0; }
-.sd-table thead tr.tr-sub th.th-coor-sub     { left: 200px; }
+.sd-table thead tr.tr-fechas th.th-coor-sub {
+    text-align: left;
+    position: sticky; left: 210px; z-index: 4;
+    background: #f8fafc;
+    min-width: 140px;
+    border-right: 2px solid #e2e8f0;
+}
+.sd-table thead tr.tr-fechas th.sep-l { border-left: 2px solid #e2e8f0; }
 
-/* Filas */
+/* Filas de datos */
 .sd-table tbody tr { transition: background .1s; }
-.sd-table tbody tr:hover { background: #112033; }
+.sd-table tbody tr:hover { background: #f8fafc; }
+.sd-table tbody tr:nth-child(even) { background: #fafbfc; }
+.sd-table tbody tr:nth-child(even):hover { background: #f1f5f9; }
 .sd-table tbody td {
-    padding: 8px 10px;
-    border-bottom: 1px solid #0f1f35;
+    padding: 9px 8px;
+    border-bottom: 1px solid #f1f5f9;
     vertical-align: middle;
     text-align: center;
+    color: #334155;
 }
 .sd-table tbody td.td-contrato {
     text-align: left;
     font-weight: 600;
     font-size: .77rem;
-    color: #e2e8f0;
-    min-width: 200px;
-    max-width: 200px;
+    color: #0f172a;
+    min-width: 210px;
+    max-width: 210px;
     white-space: normal;
     line-height: 1.3;
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: #0f172a;
+    position: sticky; left: 0; z-index: 2;
+    background: inherit;
 }
-.sd-table tbody tr:hover td.td-contrato { background: #112033; }
 .sd-table tbody td.td-coor {
     text-align: left;
-    font-size: .71rem;
+    font-size: .72rem;
     color: #64748b;
-    min-width: 130px;
-    max-width: 130px;
+    min-width: 140px;
+    max-width: 140px;
     white-space: normal;
-    position: sticky;
-    left: 200px;
-    z-index: 2;
-    background: #0f172a;
-    border-right: 2px solid #1e3a5f;
+    position: sticky; left: 210px; z-index: 2;
+    background: inherit;
+    border-right: 2px solid #e2e8f0;
 }
-.sd-table tbody tr:hover td.td-coor { background: #112033; }
 
-/* Indicadores de celda */
+/* Chips de estado */
 .sd-cell {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px; height: 28px;
-    border-radius: 6px;
-    font-size: .8rem;
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    font-size: .82rem;
     font-weight: 700;
 }
-.sd-cell.cv  { background: rgba(34,197,94,.15);  color: #22c55e; border: 1px solid rgba(34,197,94,.3); }
-.sd-cell.cr  { background: rgba(239,68,68,.15);  color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
-.sd-cell.ca  { background: rgba(245,158,11,.15); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
-.sd-cell.nd  { background: transparent; color: #334155; border: 1px solid #1e293b; }
-.sd-cell.nd::before { content: '—'; font-size: .65rem; }
+.sd-cell.cv  { background: #dcfce7; color: #15803d; }
+.sd-cell.cr  { background: #fee2e2; color: #dc2626; }
+.sd-cell.ca  { background: #fef3c7; color: #b45309; }
+.sd-cell.nd  { background: #f1f5f9; color: #cbd5e1; font-size: .6rem; }
 
-/* Columna promedio */
+/* Badge resumen */
 .sd-pct {
     display: inline-block;
-    padding: 3px 8px;
+    padding: 3px 10px;
     border-radius: 20px;
-    font-size: .72rem;
+    font-size: .73rem;
     font-weight: 700;
 }
-.sd-pct.pv { background: rgba(34,197,94,.15);  color: #22c55e; }
-.sd-pct.pa { background: rgba(245,158,11,.15); color: #f59e0b; }
-.sd-pct.pr { background: rgba(239,68,68,.15);  color: #ef4444; }
-.sd-pct.pg { background: rgba(100,116,139,.15); color: #64748b; }
+.sd-pct.pv { background: #dcfce7; color: #15803d; }
+.sd-pct.pa { background: #fef3c7; color: #b45309; }
+.sd-pct.pr { background: #fee2e2; color: #dc2626; }
+.sd-pct.pg { background: #f1f5f9; color: #94a3b8; }
 
-/* Loading / empty */
+/* Fin de semana - fondo sutil */
+.sd-weekend { background: #fafafa; }
+
+/* Loading */
 .sd-loading {
     text-align: center;
-    padding: 60px 20px;
-    color: #475569;
+    padding: 70px 20px;
+    color: #94a3b8;
     font-size: .9rem;
 }
 .sd-spinner {
-    width: 32px; height: 32px;
-    border: 3px solid #1e3a5f;
-    border-top-color: #38bdf8;
+    width: 34px; height: 34px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #3b82f6;
     border-radius: 50%;
     animation: spin .7s linear infinite;
-    margin: 0 auto 12px;
+    margin: 0 auto 14px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Separador de grupos de categoría */
-.sep-cat { border-left: 1px solid #1e293b !important; }
+/* Separadores de categoría */
+.sep-l { border-left: 2px solid #e2e8f0 !important; }
 
-/* Encabezado de categoría */
-.th-cat-archivos { background: rgba(14,165,233,.08) !important; color: #38bdf8 !important; }
-.th-cat-distrib  { background: rgba(168,85,247,.08) !important; color: #a78bfa !important; }
-.th-cat-preop    { background: rgba(34,197,94,.08)  !important; color: #4ade80 !important; }
-.th-cat-he       { background: rgba(245,158,11,.08) !important; color: #fbbf24 !important; }
-.th-cat-resumen  { background: rgba(100,116,139,.08)!important; color: #94a3b8 !important; }
+/* Sticky row de thead bg fix */
+.sd-table tbody tr:nth-child(even) td.td-contrato,
+.sd-table tbody tr:nth-child(even) td.td-coor { background: #fafbfc; }
+.sd-table tbody tr:nth-child(odd) td.td-contrato,
+.sd-table tbody tr:nth-child(odd) td.td-coor   { background: #fff; }
+.sd-table tbody tr:hover td.td-contrato,
+.sd-table tbody tr:hover td.td-coor { background: #f8fafc; }
 
-/* Responsive */
 @media (max-width: 700px) {
-    .sd-wrap { padding: 14px 10px; }
-    .sd-header h1 { font-size: 1.1rem; }
+    .sd-wrap { padding: 14px 12px; }
+    .sd-title { font-size: 1.2rem; }
 }
 </style>
+{% endblock %}
 
+{% block content %}
 <div class="sd-wrap">
 
     <!-- Header -->
     <div class="sd-header">
         <div>
-            <h1>Dashboard <span>Semáforo</span></h1>
-            <div style="font-size:.75rem; color:#475569; margin-top:3px;">
-                Consolidado de calificaciones por contrato y categoría
-            </div>
+            <h1 class="sd-title">Dashboard <span>Semáforo</span></h1>
+            <div class="sd-subtitle">Consolidado de calificaciones por contrato y categoría</div>
         </div>
         <div class="sd-controls">
             <button class="sd-btn-range active" data-r="semana">Esta semana</button>
             <button class="sd-btn-range" data-r="mes">Este mes</button>
             <button class="sd-btn-range" data-r="personalizado">Personalizado</button>
+            <div class="sd-divider"></div>
             <div class="sd-date-inputs" id="customDates" style="display:none;">
                 <input type="date" id="desdeFecha">
-                <span style="color:#475569">–</span>
+                <span style="color:#94a3b8">–</span>
                 <input type="date" id="hastaFecha">
             </div>
             <button class="sd-btn-buscar" onclick="cargar()">Consultar</button>
@@ -334,30 +338,35 @@
     </div>
 
     <!-- KPIs -->
-    <div class="sd-kpis" id="kpiArea">
+    <div class="sd-kpis">
         <div class="sd-kpi k-total">
-            <div class="sd-kpi-label">Contratos</div>
+            <div class="sd-kpi-icon">📋</div>
             <div class="sd-kpi-val" id="kTotal">—</div>
+            <div class="sd-kpi-label">Contratos</div>
             <div class="sd-kpi-sub">en el rango</div>
         </div>
         <div class="sd-kpi k-verde">
-            <div class="sd-kpi-label">Cumple (total celdas)</div>
+            <div class="sd-kpi-icon">✅</div>
             <div class="sd-kpi-val" id="kVerde">—</div>
-            <div class="sd-kpi-sub" id="kVerdePct"></div>
+            <div class="sd-kpi-label">Cumple</div>
+            <div class="sd-kpi-sub" id="kVerdePct">celdas calificadas</div>
         </div>
         <div class="sd-kpi k-rojo">
-            <div class="sd-kpi-label">No cumple</div>
+            <div class="sd-kpi-icon">❌</div>
             <div class="sd-kpi-val" id="kRojo">—</div>
-            <div class="sd-kpi-sub" id="kRojoPct"></div>
+            <div class="sd-kpi-label">No cumple</div>
+            <div class="sd-kpi-sub" id="kRojoPct">celdas calificadas</div>
         </div>
         <div class="sd-kpi k-ambar">
-            <div class="sd-kpi-label">Con novedad / parcial</div>
+            <div class="sd-kpi-icon">⚠️</div>
             <div class="sd-kpi-val" id="kAmbar">—</div>
-            <div class="sd-kpi-sub" id="kAmbarPct"></div>
+            <div class="sd-kpi-label">Con novedad</div>
+            <div class="sd-kpi-sub" id="kAmbarPct">parcial / falta aprob.</div>
         </div>
         <div class="sd-kpi k-nd">
-            <div class="sd-kpi-label">Sin calificar</div>
+            <div class="sd-kpi-icon">○</div>
             <div class="sd-kpi-val" id="kNd">—</div>
+            <div class="sd-kpi-label">Sin calificar</div>
             <div class="sd-kpi-sub">celdas vacías</div>
         </div>
     </div>
@@ -369,7 +378,7 @@
             <div class="sd-leg-item"><div class="sd-leg-dot" style="background:#22c55e"></div>Cumple</div>
             <div class="sd-leg-item"><div class="sd-leg-dot" style="background:#ef4444"></div>No cumple</div>
             <div class="sd-leg-item"><div class="sd-leg-dot" style="background:#f59e0b"></div>Con novedad</div>
-            <div class="sd-leg-item"><div class="sd-leg-dot" style="background:#334155;border-radius:50%"></div>Sin calificar</div>
+            <div class="sd-leg-item"><div class="sd-leg-dot" style="background:#e2e8f0"></div>Sin calificar</div>
         </div>
     </div>
 
@@ -389,309 +398,229 @@
 </div>
 
 <script>
-// ── Estado ─────────────────────────────────────────────────────────────────
-let _datos   = [];    // { contrato, coordinador, director, dias: {fecha: record} }
-let _fechas  = [];    // fechas en rango, ordenadas
-let _filtro  = "";
+// ── Estado ──────────────────────────────────────────────────────────────────
+let _datos  = [];
+let _fechas = [];
+let _filtro = "";
+let _rango  = "semana";
 
 // ── Util fechas ─────────────────────────────────────────────────────────────
-function hoy() {
-    return new Date().toISOString().slice(0,10);
-}
-function addDays(d, n) {
-    const dt = new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10);
-}
-function lunes(d) {
-    const dt = new Date(d);
-    const day = dt.getDay() || 7;
-    dt.setDate(dt.getDate() - (day-1));
-    return dt.toISOString().slice(0,10);
-}
-function primerDiaMes(d) {
-    return d.slice(0,7)+"-01";
-}
-function ultimoDiaMes(d) {
-    const dt = new Date(d);
-    return new Date(dt.getFullYear(), dt.getMonth()+1, 0).toISOString().slice(0,10);
-}
+function hoy() { return new Date().toISOString().slice(0,10); }
+function addDays(d, n) { const dt=new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().slice(0,10); }
+function lunes(d) { const dt=new Date(d); const day=dt.getDay()||7; dt.setDate(dt.getDate()-(day-1)); return dt.toISOString().slice(0,10); }
+function primerDiaMes(d) { return d.slice(0,7)+"-01"; }
+function ultimoDiaMes(d) { const dt=new Date(d); return new Date(dt.getFullYear(),dt.getMonth()+1,0).toISOString().slice(0,10); }
 function formatFecha(iso) {
-    const [y,m,d] = iso.split('-');
-    const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const [y,m,d]=iso.split('-');
+    const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
     return `${parseInt(d)} ${meses[parseInt(m)-1]}`;
 }
 function diaSemana(iso) {
-    const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    return dias[new Date(iso).getDay()];
+    const dias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    return dias[new Date(iso+'T00:00:00').getDay()];
 }
-function rangoFechas(desde, hasta) {
-    const out = [];
-    let cur = desde;
-    while (cur <= hasta) { out.push(cur); cur = addDays(cur,1); }
+function esFinDeSemana(iso) {
+    const d=new Date(iso+'T00:00:00').getDay();
+    return d===0||d===6;
+}
+function rangoFechas(desde,hasta) {
+    const out=[];let cur=desde;
+    while(cur<=hasta){out.push(cur);cur=addDays(cur,1);}
     return out;
 }
 
-// ── Rango activo ─────────────────────────────────────────────────────────────
-let _rango = "semana";
-let _desde = "", _hasta = "";
-
 function setRango(r) {
-    _rango = r;
-    document.querySelectorAll('.sd-btn-range').forEach(b => b.classList.remove('active'));
+    _rango=r;
+    document.querySelectorAll('.sd-btn-range').forEach(b=>b.classList.remove('active'));
     document.querySelector(`[data-r="${r}"]`).classList.add('active');
-    document.getElementById('customDates').style.display = r==="personalizado" ? "flex" : "none";
-    if (r !== "personalizado") cargar();
+    document.getElementById('customDates').style.display=r==="personalizado"?"flex":"none";
+    if(r!=="personalizado") cargar();
 }
-
 function calcDates() {
-    const h = hoy();
-    if (_rango === "semana")  return { desde: lunes(h), hasta: addDays(lunes(h),6) };
-    if (_rango === "mes")     return { desde: primerDiaMes(h), hasta: ultimoDiaMes(h) };
+    const h=hoy();
+    if(_rango==="semana")  return {desde:lunes(h),hasta:addDays(lunes(h),6)};
+    if(_rango==="mes")     return {desde:primerDiaMes(h),hasta:ultimoDiaMes(h)};
     return {
-        desde: document.getElementById('desdeFecha').value || h,
-        hasta: document.getElementById('hastaFecha').value || h
+        desde:document.getElementById('desdeFecha').value||h,
+        hasta:document.getElementById('hastaFecha').value||h
     };
 }
 
 // ── Lógica semáforo ──────────────────────────────────────────────────────────
 function colorArch(v) {
-    if (v === null || v === undefined) return "nd";
-    if (v === 1) return "cv";
-    if (v === 0) return "cr";
-    if (v === 3) return "ca";
-    return "nd";
+    if(v===null||v===undefined)return"nd";
+    if(v===1)return"cv"; if(v===0)return"cr"; if(v===3)return"ca"; return"nd";
 }
 function colorDistrib(rec) {
-    if (!rec) return "nd";
-    // cumple manual override
-    if (rec.distrib_cumple === 1) return "cv";
-    if (rec.distrib_cumple === 0) return "cr";
-    // auto por hora
-    const v = (rec.distrib_valor || "").trim().toLowerCase();
-    if (!v) return "nd";
-    if (v === "0" || v === "0:00" || v === "00:00") return "cr";
-    const m = v.match(/^(\d{1,2}):(\d{2})$/);
-    if (!m) return "ca";
-    const mins = parseInt(m[1])*60 + parseInt(m[2]);
-    return mins <= 480 ? "cv" : "cr";
+    if(!rec)return"nd";
+    if(rec.distrib_cumple===1)return"cv";
+    if(rec.distrib_cumple===0)return"cr";
+    const v=(rec.distrib_valor||"").trim().toLowerCase();
+    if(!v)return"nd";
+    if(v==="0"||v==="0:00"||v==="00:00")return"cr";
+    const m=v.match(/^(\d{1,2}):(\d{2})$/);
+    if(!m)return"ca";
+    const mins=parseInt(m[1])*60+parseInt(m[2]);
+    return mins<=480?"cv":"cr";
 }
 function colorPreop(v) {
-    if (v === null || v === undefined) return "nd";
-    if (v === 1) return "cv";
-    if (v === 0) return "cr";
-    if (v === 3) return "ca";
-    return "nd";
+    if(v===null||v===undefined)return"nd";
+    if(v===1)return"cv"; if(v===0)return"cr"; if(v===3)return"ca"; return"nd";
 }
 function colorHE(v) {
-    if (v === null || v === undefined) return "nd";
-    if (v === 1) return "cv";
-    if (v === 0) return "cr";
-    if (v === 3) return "ca";
-    return "nd";
+    if(v===null||v===undefined)return"nd";
+    if(v===1)return"cv"; if(v===0)return"cr"; if(v===3)return"ca"; return"nd";
 }
-
 function labelColor(cls) {
-    if (cls==="cv") return "✓";
-    if (cls==="cr") return "✗";
-    if (cls==="ca") return "!";
-    return "";
+    if(cls==="cv")return"✓"; if(cls==="cr")return"✗"; if(cls==="ca")return"!"; return"—";
 }
-function titleColor(cls, campo) {
-    if (cls==="cv") return "Cumple";
-    if (cls==="cr") return "No cumple";
-    if (cls==="ca") return campo==="preop" ? "Cumple, falta aprobación" : "Con novedad";
-    return "Sin calificar";
+function titleColor(cls,campo) {
+    if(cls==="cv")return"Cumple";
+    if(cls==="cr")return"No cumple";
+    if(cls==="ca")return campo==="preop"?"Cumple, falta aprobación":"Con novedad";
+    return"Sin calificar";
 }
 
-// ── Cargar datos ─────────────────────────────────────────────────────────────
+// ── Cargar ───────────────────────────────────────────────────────────────────
 async function cargar() {
-    const { desde, hasta } = calcDates();
-    _desde = desde; _hasta = hasta;
-
-    document.getElementById('sdTbody').innerHTML = `
-        <tr><td colspan="99" class="sd-loading">
-            <div class="sd-spinner"></div>Cargando…
-        </td></tr>`;
-    document.getElementById('sdThead').innerHTML = '';
-
+    const {desde,hasta}=calcDates();
+    document.getElementById('sdTbody').innerHTML=`<tr><td colspan="99" class="sd-loading"><div class="sd-spinner"></div>Cargando…</td></tr>`;
+    document.getElementById('sdThead').innerHTML='';
     try {
-        const r = await fetch(`/admin/api/semaforo/dashboard?desde=${desde}&hasta=${hasta}`);
-        const json = await r.json();
-        if (!json.ok) throw new Error(json.msg);
-        _datos  = json.contratos;
-        _fechas = rangoFechas(desde, hasta);
+        const r=await fetch(`/admin/api/semaforo/dashboard?desde=${desde}&hasta=${hasta}`);
+        const json=await r.json();
+        if(!json.ok)throw new Error(json.msg);
+        _datos=json.contratos;
+        _fechas=rangoFechas(desde,hasta);
         renderizar();
     } catch(e) {
-        document.getElementById('sdTbody').innerHTML = `
-            <tr><td colspan="99" class="sd-loading">Error: ${e.message}</td></tr>`;
+        document.getElementById('sdTbody').innerHTML=`<tr><td colspan="99" class="sd-loading" style="color:#ef4444;">Error: ${e.message}</td></tr>`;
     }
 }
 
 // ── Render ───────────────────────────────────────────────────────────────────
 function renderizar() {
-    const datos = _filtro
-        ? _datos.filter(d => (d.contrato+d.coordinador+d.director).toLowerCase().includes(_filtro))
-        : _datos;
+    const datos=_filtro ? _datos.filter(d=>(d.contrato+d.coordinador+d.director).toLowerCase().includes(_filtro)) : _datos;
 
-    // ── KPIs ────────────────────────────────────────────────────────────────
-    let cv=0, cr=0, ca=0, nd=0;
-    const CAMPOS = ['arch_equipos','arch_ingresos','arch_personas','distrib','preop_valor','he_valor'];
-    for (const row of _datos) {
-        for (const f of _fechas) {
-            const rec = row.dias[f] || null;
-            const colors = [
-                colorArch(rec?.arch_equipos),
-                colorArch(rec?.arch_ingresos),
-                colorArch(rec?.arch_personas),
-                colorDistrib(rec),
-                colorPreop(rec?.preop_valor),
-                colorHE(rec?.he_valor),
+    // KPIs
+    let cv=0,cr=0,ca=0,nd=0;
+    for(const row of _datos){
+        for(const f of _fechas){
+            const rec=row.dias[f]||null;
+            const colors=[
+                colorArch(rec?.arch_equipos),colorArch(rec?.arch_ingresos),colorArch(rec?.arch_personas),
+                colorDistrib(rec),colorPreop(rec?.preop_valor),colorHE(rec?.he_valor)
             ];
-            for (const c of colors) {
-                if (c==="cv") cv++;
-                else if (c==="cr") cr++;
-                else if (c==="ca") ca++;
-                else nd++;
-            }
+            for(const c of colors){if(c==="cv")cv++;else if(c==="cr")cr++;else if(c==="ca")ca++;else nd++;}
         }
     }
-    const total = cv+cr+ca+nd || 1;
-    document.getElementById('kTotal').textContent   = _datos.length;
-    document.getElementById('kVerde').textContent   = cv;
-    document.getElementById('kVerdePct').textContent= `${((cv/total)*100).toFixed(0)}% de celdas`;
-    document.getElementById('kRojo').textContent    = cr;
-    document.getElementById('kRojoPct').textContent = `${((cr/total)*100).toFixed(0)}% de celdas`;
-    document.getElementById('kAmbar').textContent   = ca;
-    document.getElementById('kAmbarPct').textContent= `${((ca/total)*100).toFixed(0)}% de celdas`;
-    document.getElementById('kNd').textContent      = nd;
+    const tot=cv+cr+ca+nd||1;
+    document.getElementById('kTotal').textContent=_datos.length;
+    document.getElementById('kVerde').textContent=cv;
+    document.getElementById('kVerdePct').textContent=`${((cv/tot)*100).toFixed(0)}% del total`;
+    document.getElementById('kRojo').textContent=cr;
+    document.getElementById('kRojoPct').textContent=`${((cr/tot)*100).toFixed(0)}% del total`;
+    document.getElementById('kAmbar').textContent=ca;
+    document.getElementById('kAmbarPct').textContent=`${((ca/tot)*100).toFixed(0)}% del total`;
+    document.getElementById('kNd').textContent=nd;
 
-    // ── Encabezados ─────────────────────────────────────────────────────────
-    const nDias  = _fechas.length;
-    const nCats  = 6; // arch_eq, arch_ing, arch_per, distrib, preop, he
-    // Fila 1: Info + categorías + resumen
-    let thead1 = `<tr>
-        <th class="th-info" rowspan="2">Contrato</th>
-        <th class="th-info" style="left:200px;position:sticky;z-index:3;background:#0a1e38;min-width:130px;" rowspan="2">Coordinador</th>
-        <th class="th-cat-archivos sep-cat" colspan="${nDias}">📁 Archivos (Eq / Ing / Per)</th>
-        <th class="th-cat-distrib  sep-cat" colspan="${nDias}">🕐 Distribución</th>
-        <th class="th-cat-preop    sep-cat" colspan="${nDias}">📋 Preoperacional</th>
-        <th class="th-cat-he       sep-cat" colspan="${nDias}">⏱ Horas Extras</th>
-        <th class="th-cat-resumen  sep-cat" colspan="2">Resumen</th>
+    // Encabezados
+    const N=_fechas.length;
+    let h1=`<tr class="tr-cat">
+        <th class="th-info" rowspan="2" style="min-width:210px;border-bottom:2px solid #e2e8f0;">Contrato</th>
+        <th style="text-align:left;position:sticky;left:210px;z-index:4;background:#fff;min-width:140px;border-right:2px solid #e2e8f0;border-bottom:2px solid #e2e8f0;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:11px 10px 8px;" rowspan="2">Coordinador</th>
+        <th class="th-cat-archivos" colspan="${N}">📁 Archivos (Eq / Ing / Per)</th>
+        <th class="th-cat-distrib sep-l"  colspan="${N}">🕐 Distribución</th>
+        <th class="th-cat-preop   sep-l"  colspan="${N}">📋 Preoperacional</th>
+        <th class="th-cat-he      sep-l"  colspan="${N}">⏱ Horas Extras</th>
+        <th class="th-cat-resumen sep-l"  colspan="2">Resultado</th>
     </tr>`;
 
-    // Fila 2: fechas repetidas x4 + col resumen
-    let subRow = '<tr class="tr-sub"><th class="th-contrato-sub" style="min-width:200px;"></th><th class="th-coor-sub" style="left:200px;min-width:130px;"></th>';
-    const grupos = [
-        { cls:'th-cat-archivos', sep:true },
-        { cls:'th-cat-distrib',  sep:true },
-        { cls:'th-cat-preop',    sep:true },
-        { cls:'th-cat-he',       sep:true },
+    let h2=`<tr class="tr-fechas">
+        <th class="th-contrato-sub"></th>
+        <th class="th-coor-sub"></th>`;
+    const grupos=[
+        {sep:false},{sep:true},{sep:true},{sep:true}
     ];
-    for (const g of grupos) {
-        _fechas.forEach((f, i) => {
-            const sepClass = (i===0) ? 'sep-cat' : '';
-            subRow += `<th class="${g.cls} ${sepClass}" title="${f}">${diaSemana(f)}<br><span style="font-weight:400">${formatFecha(f)}</span></th>`;
+    const names=["archivos","distrib","preop","he"];
+    for(let g=0;g<4;g++){
+        _fechas.forEach((f,i)=>{
+            const fds=esFinDeSemana(f);
+            const sepCls=(g>0&&i===0)?"sep-l":"";
+            const bgStyle=fds?"background:#fafafa;":"";
+            h2+=`<th class="${sepCls}" style="${bgStyle}" title="${f}">${diaSemana(f)}<br><span style="font-weight:400;font-size:.64rem;">${formatFecha(f)}</span></th>`;
         });
     }
-    subRow += `<th class="th-cat-resumen sep-cat">% Cumple</th>
-               <th class="th-cat-resumen">Estado</th></tr>`;
-    thead1 += subRow;
-    document.getElementById('sdThead').innerHTML = thead1;
+    h2+=`<th class="sep-l" style="font-weight:600;">% Cumple</th>
+         <th style="font-weight:600;">Estado</th></tr>`;
+    document.getElementById('sdThead').innerHTML=h1+h2;
 
-    // ── Filas ────────────────────────────────────────────────────────────────
-    if (!datos.length) {
-        document.getElementById('sdTbody').innerHTML = `
-            <tr><td colspan="99" class="sd-loading">No hay contratos asignados en este rango.</td></tr>`;
+    // Cuerpo
+    if(!datos.length){
+        document.getElementById('sdTbody').innerHTML=`<tr><td colspan="99" class="sd-loading">No hay contratos asignados en este rango.</td></tr>`;
         return;
     }
 
-    let html = '';
-    for (const row of datos) {
-        const fila_cv = [], fila_cr = [], fila_ca = [];
-        // Archivos (3 cols)
-        let tdArch = '';
-        _fechas.forEach((f, i) => {
-            const rec = row.dias[f] || null;
-            const eq  = colorArch(rec?.arch_equipos);
-            const ing = colorArch(rec?.arch_ingresos);
-            const per = colorArch(rec?.arch_personas);
-            const worst = [eq,ing,per].includes('cr') ? 'cr' : [eq,ing,per].includes('ca') ? 'ca' : [eq,ing,per].every(x=>x==='cv') ? 'cv' : 'nd';
-            const sep = i===0 ? ' sep-cat' : '';
-            tdArch += `<td class="${sep}" title="Eq:${titleColor(eq)} | Ing:${titleColor(ing)} | Per:${titleColor(per)}">
-                <div class="sd-cell ${worst}">${worst==='nd'?'':labelColor(worst)}</div>
-            </td>`;
-            if(worst==='cv')fila_cv.push(1); else if(worst==='cr')fila_cr.push(1); else if(worst==='ca')fila_ca.push(1);
+    let html='';
+    for(const row of datos){
+        let cv2=0,cr2=0,ca2=0;
+
+        const mkCell=(cls,fds,sep)=>{
+            const fdsStyle=fds?"background:#fafafa;":"";
+            const sepCls=sep?"sep-l":"";
+            return`<td class="${sepCls}" style="${fdsStyle}"><div class="sd-cell ${cls}">${labelColor(cls)}</div></td>`;
+        };
+
+        let tdArch='',tdDistrib='',tdPreop='',tdHE='';
+        _fechas.forEach((f,i)=>{
+            const rec=row.dias[f]||null;
+            const fds=esFinDeSemana(f);
+            const eq=colorArch(rec?.arch_equipos);
+            const ing=colorArch(rec?.arch_ingresos);
+            const per=colorArch(rec?.arch_personas);
+            const worst=[eq,ing,per].includes('cr')?'cr':[eq,ing,per].includes('ca')?'ca':[eq,ing,per].every(x=>x==='cv')?'cv':'nd';
+            tdArch+=mkCell(worst,fds,false);
+
+            const d=colorDistrib(rec);
+            tdDistrib+=mkCell(d,fds,i===0);
+
+            const p=colorPreop(rec?.preop_valor);
+            tdPreop+=mkCell(p,fds,i===0);
+
+            const h=colorHE(rec?.he_valor);
+            tdHE+=mkCell(h,fds,i===0);
+
+            for(const c of[worst,d,p,h]){if(c==='cv')cv2++;else if(c==='cr')cr2++;else if(c==='ca')ca2++;}
         });
 
-        // Distribución
-        let tdDistrib = '';
-        _fechas.forEach((f, i) => {
-            const rec = row.dias[f] || null;
-            const cls = colorDistrib(rec);
-            const sep = i===0 ? ' sep-cat' : '';
-            const tt  = rec?.distrib_valor ? `${rec.distrib_valor} → ${titleColor(cls)}` : titleColor(cls);
-            tdDistrib += `<td class="${sep}" title="${tt}">
-                <div class="sd-cell ${cls}">${cls==='nd'?'':labelColor(cls)}</div>
-            </td>`;
-            if(cls==='cv')fila_cv.push(1); else if(cls==='cr')fila_cr.push(1); else if(cls==='ca')fila_ca.push(1);
-        });
+        const tot2=cv2+cr2+ca2;
+        const pct=tot2?Math.round((cv2/tot2)*100):null;
+        const pctCls=pct===null?'pg':pct>=80?'pv':pct>=50?'pa':'pr';
+        const pctTxt=pct===null?'N/D':pct+'%';
+        const estadoTxt=pct===null?'—':pct>=80?'✔ Bien':pct>=50?'⚠ Regular':'✖ Crítico';
 
-        // Preoperacional
-        let tdPreop = '';
-        _fechas.forEach((f, i) => {
-            const rec = row.dias[f] || null;
-            const cls = colorPreop(rec?.preop_valor);
-            const sep = i===0 ? ' sep-cat' : '';
-            tdPreop += `<td class="${sep}" title="${titleColor(cls,'preop')}">
-                <div class="sd-cell ${cls}">${cls==='nd'?'':labelColor(cls)}</div>
-            </td>`;
-            if(cls==='cv')fila_cv.push(1); else if(cls==='cr')fila_cr.push(1); else if(cls==='ca')fila_ca.push(1);
-        });
-
-        // HE
-        let tdHE = '';
-        _fechas.forEach((f, i) => {
-            const rec = row.dias[f] || null;
-            const cls = colorHE(rec?.he_valor);
-            const sep = i===0 ? ' sep-cat' : '';
-            tdHE += `<td class="${sep}" title="${titleColor(cls)}">
-                <div class="sd-cell ${cls}">${cls==='nd'?'':labelColor(cls)}</div>
-            </td>`;
-            if(cls==='cv')fila_cv.push(1); else if(cls==='cr')fila_cr.push(1); else if(cls==='ca')fila_ca.push(1);
-        });
-
-        // Resumen
-        const tot2 = fila_cv.length + fila_cr.length + fila_ca.length;
-        const pct  = tot2 ? Math.round((fila_cv.length / tot2)*100) : null;
-        const pctCls = pct===null ? 'pg' : pct>=80 ? 'pv' : pct>=50 ? 'pa' : 'pr';
-        const pctTxt = pct===null ? 'N/D' : pct+'%';
-        const estadoCls = pct===null ? 'pg' : pct>=80 ? 'pv' : pct>=50 ? 'pa' : 'pr';
-        const estadoTxt = pct===null ? '—' : pct>=80 ? '✔ Bien' : pct>=50 ? '⚠ Regular' : '✖ Crítico';
-
-        html += `<tr data-search="${(row.contrato+' '+row.coordinador+' '+row.director).toLowerCase()}">
+        html+=`<tr data-search="${(row.contrato+' '+row.coordinador+' '+row.director).toLowerCase()}">
             <td class="td-contrato">${row.contrato}</td>
-            <td class="td-coor">${row.coordinador || '<span style="color:#334155">Sin asignar</span>'}</td>
+            <td class="td-coor">${row.coordinador||'<span style="color:#cbd5e1;font-style:italic;font-size:.7rem;">Sin asignar</span>'}</td>
             ${tdArch}${tdDistrib}${tdPreop}${tdHE}
-            <td class="sep-cat"><span class="sd-pct ${pctCls}">${pctTxt}</span></td>
-            <td><span class="sd-pct ${estadoCls}">${estadoTxt}</span></td>
+            <td class="sep-l"><span class="sd-pct ${pctCls}">${pctTxt}</span></td>
+            <td><span class="sd-pct ${pctCls}">${estadoTxt}</span></td>
         </tr>`;
     }
-    document.getElementById('sdTbody').innerHTML = html;
+    document.getElementById('sdTbody').innerHTML=html;
 }
 
-// ── Filtro ───────────────────────────────────────────────────────────────────
 function filtrarTabla(txt) {
-    _filtro = txt.toLowerCase().trim();
-    document.querySelectorAll('#sdTbody tr[data-search]').forEach(tr => {
-        tr.style.display = !_filtro || tr.dataset.search.includes(_filtro) ? '' : 'none';
+    _filtro=txt.toLowerCase().trim();
+    document.querySelectorAll('#sdTbody tr[data-search]').forEach(tr=>{
+        tr.style.display=!_filtro||tr.dataset.search.includes(_filtro)?'':'none';
     });
 }
 
-// ── Botones de rango ─────────────────────────────────────────────────────────
-document.querySelectorAll('.sd-btn-range').forEach(b => {
-    b.addEventListener('click', () => setRango(b.dataset.r));
+document.querySelectorAll('.sd-btn-range').forEach(b=>{
+    b.addEventListener('click',()=>setRango(b.dataset.r));
 });
 
-// ── Init ─────────────────────────────────────────────────────────────────────
 cargar();
 </script>
 {% endblock %}
