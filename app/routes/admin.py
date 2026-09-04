@@ -2016,8 +2016,10 @@ def api_semaforo_guardar():
     reg.distrib_valor  = str(d.get("distrib_valor") or "").strip()[:100] or None
     reg.distrib_cumple = _int_or_none(d.get("distrib_cumple"))
     reg.distrib_nota   = str(d.get("distrib_nota") or "").strip()[:300] or None
+    reg.preop_valor    = _int_or_none(d.get("preop_valor"))
+    reg.preop_nota     = str(d.get("preop_nota") or "").strip()[:300] or None
     reg.he_valor       = _int_or_none(d.get("he_valor"))
-    reg.he_nota       = str(d.get("he_nota") or "").strip()[:300] or None
+    reg.he_nota        = str(d.get("he_nota") or "").strip()[:300] or None
 
     db.session.commit()
     return jsonify({"ok": True, "id": reg.id})

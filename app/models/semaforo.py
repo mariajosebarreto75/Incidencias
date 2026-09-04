@@ -20,6 +20,10 @@ class SemaforoCalificacion(db.Model):
     distrib_cumple= db.Column(db.SmallInteger, nullable=True)   # 1=cumple, 0=no cumple, null=auto (calculado por hora)
     distrib_nota  = db.Column(db.String(300),  nullable=True)   # anotación libre distribución
 
+    # Preoperacional: 1=cumple, 0=no cumple, 3=cumple pero falta aprobación
+    preop_valor   = db.Column(db.SmallInteger, nullable=True)
+    preop_nota    = db.Column(db.String(300),  nullable=True)
+
     # Horas extras: 1=cumple, 0=no cumple, 3=errores pero cumple
     he_valor      = db.Column(db.SmallInteger, nullable=True)
     he_nota       = db.Column(db.String(300),  nullable=True)
@@ -42,6 +46,8 @@ class SemaforoCalificacion(db.Model):
             "distrib_valor":  self.distrib_valor or "",
             "distrib_cumple": self.distrib_cumple,
             "distrib_nota":   self.distrib_nota or "",
+            "preop_valor":    self.preop_valor,
+            "preop_nota":     self.preop_nota or "",
             "he_valor":       self.he_valor,
-            "he_nota":       self.he_nota or "",
+            "he_nota":        self.he_nota or "",
         }

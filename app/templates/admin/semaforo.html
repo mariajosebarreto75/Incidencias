@@ -169,7 +169,7 @@
         <strong style="color:#e2e8f0;margin-right:4px;">Calificación:</strong>
         <div class="sf-leyenda-item"><span class="sf-dot sf-dot-verde"></span> <b style="color:#4ade80">1</b> Cumple</div>
         <div class="sf-leyenda-item"><span class="sf-dot sf-dot-rojo"></span> <b style="color:#f87171">0</b> No cumple</div>
-        <div class="sf-leyenda-item"><span class="sf-dot sf-dot-ambar"></span> <b style="color:#fbbf24">3</b> Errores pero cumple</div>
+        <div class="sf-leyenda-item"><span class="sf-dot sf-dot-ambar"></span> <b style="color:#fbbf24">3</b> Errores pero cumple / Falta aprobación</div>
         <div style="margin-left:12px;border-left:1px solid #334155;padding-left:12px;">
             <strong style="color:#e2e8f0;margin-right:4px;">Distribución:</strong>
             Ingrese la hora de envío (HH:MM) <span style="color:#4ade80">antes de 08:00 = cumple</span> /
@@ -189,6 +189,10 @@
             <div class="sf-res-lbl">Archivos OK (cumple)</div>
         </div>
         <div class="sf-res-card">
+            <div class="sf-res-val" id="resPreop" style="color:#4ade80">—</div>
+            <div class="sf-res-lbl">Preoperacional OK</div>
+        </div>
+        <div class="sf-res-card">
             <div class="sf-res-val" id="resDistrib" style="color:#4ade80">—</div>
             <div class="sf-res-lbl">Distribución a tiempo</div>
         </div>
@@ -206,6 +210,7 @@
                     <th rowspan="2" style="min-width:220px;">Contrato</th>
                     <th rowspan="2" style="min-width:130px;">Coordinador</th>
                     <th colspan="4" class="sf-group">Archivos de Seguimiento</th>
+                    <th colspan="2" class="sf-group" style="border-left:2px solid #1e3a5f;">Preoperacional</th>
                     <th colspan="1" class="sf-group" style="border-left:2px solid #1e3a5f;">Distribución Operativa NEO</th>
                     <th colspan="2" class="sf-group" style="border-left:2px solid #1e3a5f;">Horas Extras</th>
                 </tr>
@@ -215,6 +220,9 @@
                     <th>Ingresos</th>
                     <th>Personas</th>
                     <th>Nota</th>
+                    <!-- Preoperacional -->
+                    <th class="sf-sep">Calificación</th>
+                    <th>Nota</th>
                     <!-- Distribución -->
                     <th class="sf-sep" style="min-width:260px;">Hora / Cumplimiento / Nota</th>
                     <!-- HE -->
@@ -223,7 +231,7 @@
                 </tr>
             </thead>
             <tbody id="sfTbody">
-                <tr><td colspan="10" style="text-align:center;padding:40px;color:#475569;">
+                <tr><td colspan="12" style="text-align:center;padding:40px;color:#475569;">
                     Seleccione una fecha y presione <strong>Cargar</strong>
                 </td></tr>
             </tbody>
@@ -307,7 +315,7 @@ async function cargarFecha() {
 function renderTabla(fecha) {
     const tbody = document.getElementById("sfTbody");
     if (!CONTRATOS.length) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:30px;color:#475569;">No hay contratos activos</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:30px;color:#475569;">No hay contratos activos</td></tr>`;
         return;
     }
     tbody.innerHTML = CONTRATOS.map(c => {
@@ -319,6 +327,8 @@ function renderTabla(fecha) {
             ${_celdaChips(c.id, 'arch_ingresos', reg.arch_ingresos)}
             ${_celdaChips(c.id, 'arch_personas', reg.arch_personas)}
             <td>${_celdaNota(c.id, 'arch_nota', reg.arch_nota)}</td>
+            <td class="sf-sep">${_celdaChipsPreop(c.id, reg.preop_valor)}</td>
+            <td>${_celdaNota(c.id, 'preop_nota', reg.preop_nota)}</td>
             <td class="sf-sep">${_celdaDistribCompleta(c.id, reg.distrib_valor, reg.distrib_cumple, reg.distrib_nota)}</td>
             <td class="sf-sep">${_celdaChipsHE(c.id, reg.he_valor)}</td>
             <td>${_celdaNota(c.id, 'he_nota', reg.he_nota)}</td>
@@ -352,6 +362,36 @@ function _celdaChipsHE(cid, val) {
                onclick="selChipHE(${cid},${o.v},this)">${o.label}</span>`
     ).join("");
     return `<div class="sf-cal-wrap">${chips}</div>`;
+}
+
+function _celdaChipsPreop(cid, val) {
+    const opts = [
+        { v:1, label:"1", cls:"sf-chip-1", title:"Cumple" },
+        { v:0, label:"0", cls:"sf-chip-0", title:"No cumple" },
+        { v:3, label:"3", cls:"sf-chip-3", title:"Cumple pero falta aprobación" },
+    ];
+    const chips = opts.map(o =>
+        `<span class="sf-chip ${o.cls}${val===o.v?' selected':''}"
+               title="${o.title}"
+               onclick="selChipPreop(${cid},${o.v},this)">${o.label}</span>`
+    ).join("");
+    return `<div class="sf-cal-wrap">${chips}</div>`;
+}
+
+function selChipPreop(cid, val, el) {
+    const wrap = el.closest(".sf-cal-wrap");
+    wrap.querySelectorAll(".sf-chip").forEach(c => c.classList.remove("selected"));
+    const reg = _data[cid] || {};
+    if (reg.preop_valor === val) {
+        reg.preop_valor = null;
+        _data[cid] = reg;
+    } else {
+        el.classList.add("selected");
+        if (!_data[cid]) _data[cid] = {};
+        _data[cid].preop_valor = val;
+    }
+    programarGuardado(cid);
+    actualizarResumen();
 }
 
 function _celdaNota(cid, campo, nota) {
@@ -589,6 +629,8 @@ async function ejecutarGuardado() {
                 arch_ingresos:reg.arch_ingresos ?? null,
                 arch_personas:reg.arch_personas ?? null,
                 arch_nota:    reg.arch_nota || "",
+                preop_valor:   reg.preop_valor ?? null,
+                preop_nota:    reg.preop_nota  || "",
                 distrib_valor: reg.distrib_valor  || "",
                 distrib_cumple:reg.distrib_cumple ?? null,
                 distrib_nota:  reg.distrib_nota   || "",
@@ -609,14 +651,17 @@ function actualizarResumen() {
 
     const total     = CONTRATOS.length;
     const archOK    = vals.filter(v => v.arch_equipos===1 && v.arch_ingresos===1 && v.arch_personas===1).length;
+    const preopOK   = vals.filter(v => v.preop_valor===1).length;
     const distribOK = vals.filter(v => _clsDistrib(v.distrib_valor)==="verde").length;
     const heOK      = vals.filter(v => v.he_valor===1).length;
 
     document.getElementById("resTotal").textContent   = `${vals.filter(v=>Object.keys(v).length>2).length}/${total}`;
     document.getElementById("resArch").textContent    = `${archOK}/${total}`;
+    document.getElementById("resPreop").textContent   = `${preopOK}/${total}`;
     document.getElementById("resDistrib").textContent = `${distribOK}/${total}`;
     document.getElementById("resHE").textContent      = `${heOK}/${total}`;
     document.getElementById("resArch").style.color    = archOK===total?'#4ade80':archOK===0?'#f87171':'#fbbf24';
+    document.getElementById("resPreop").style.color   = preopOK===total?'#4ade80':preopOK===0?'#f87171':'#fbbf24';
     document.getElementById("resDistrib").style.color = distribOK===total?'#4ade80':distribOK===0?'#f87171':'#fbbf24';
     document.getElementById("resHE").style.color      = heOK===total?'#4ade80':heOK===0?'#f87171':'#fbbf24';
 }
@@ -659,6 +704,7 @@ async function cargarHistorial() {
                 <td style="padding:5px 10px;text-align:center;">${_chipSmall(reg.arch_equipos)}</td>
                 <td style="padding:5px 10px;text-align:center;">${_chipSmall(reg.arch_ingresos)}</td>
                 <td style="padding:5px 10px;text-align:center;">${_chipSmall(reg.arch_personas)}</td>
+                <td style="padding:5px 10px;text-align:center;">${_chipSmall(reg.preop_valor)}</td>
                 <td style="padding:5px 10px;">${dotD}</td>
                 <td style="padding:5px 10px;text-align:center;">${_chipSmall(reg.he_valor)}</td>
             </tr>`);
@@ -674,6 +720,7 @@ async function cargarHistorial() {
                     <th style="padding:7px 10px;text-align:center;color:#64748b;font-size:.68rem;">Equipos</th>
                     <th style="padding:7px 10px;text-align:center;color:#64748b;font-size:.68rem;">Ingresos</th>
                     <th style="padding:7px 10px;text-align:center;color:#64748b;font-size:.68rem;">Personas</th>
+                    <th style="padding:7px 10px;text-align:center;color:#64748b;font-size:.68rem;">Preop</th>
                     <th style="padding:7px 10px;text-align:left;color:#64748b;font-size:.68rem;">Distribución</th>
                     <th style="padding:7px 10px;text-align:center;color:#64748b;font-size:.68rem;">HE</th>
                 </tr>
