@@ -227,7 +227,8 @@ def panel_reportes():
     kpis = {
         "total":        len(reportes),
         "pendientes":   sum(1 for r in reportes if r.conformidad_neo not in ("Conforme", "No conforme", "Consiliado") and r.estado != "Respondido"),
-        "no_conformes": sum(1 for r in reportes if r.conformidad_neo in ("No conforme", "Consiliado")),
+        "no_conformes": sum(1 for r in reportes if r.conformidad_neo == "No conforme"),
+        "conciliados":  sum(1 for r in reportes if r.conformidad_neo == "Consiliado"),
         "conformes":    sum(1 for r in reportes if r.conformidad_neo == "Conforme"),
     }
 
