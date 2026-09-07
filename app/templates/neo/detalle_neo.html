@@ -1,4 +1,4 @@
-{% extends "neo/navbNeo.html" %}
+﻿{% extends "neo/navbNeo.html" %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/neo/ValidarNeo.css') }}">
@@ -346,7 +346,7 @@
                                         </span>
                                         {% elif reporte.conformidad_neo == 'Consiliado' %}
                                         <span class="badge-conf" style="background:#f3e8ff;color:#6d28d9;border:1px solid #c4b5fd;">
-                                            <i class="bi bi-shield-check me-1"></i>Consiliado
+                                            <i class="bi bi-shield-check me-1"></i>Conciliado
                                         </span>
                                         {% else %}
                                         <span class="badge-conf no-conforme">
@@ -374,7 +374,7 @@
                                 <button class="btn btn-sm rounded-pill px-3 fw-semibold"
                                         id="btnMarcarConsiliado"
                                         style="background:#7c3aed;color:#fff;border:none;font-size:.75rem;">
-                                    <i class="bi bi-shield-check me-1"></i>Marcar Consiliado
+                                    <i class="bi bi-shield-check me-1"></i>Marcar Conciliado
                                 </button>
                                 {% endif %}
                                 {% endif %}
@@ -583,11 +583,11 @@
         });
     });
 
-    /* ---- Botón Marcar Consiliado (aparece solo cuando conformidad == No conforme) ---- */
+    /* ---- Botón Marcar Conciliado (aparece solo cuando conformidad == No conforme) ---- */
     const btnCons = document.getElementById("btnMarcarConsiliado");
     if (btnCons) {
         btnCons.addEventListener("click", function () {
-            if (!confirm("¿Confirma que este reporte fue consiliado con el coordinador?")) return;
+            if (!confirm("¿Confirma que este reporte fue conciliado con el coordinador?")) return;
             btnCons.disabled = true;
             fetch("/neo/reporte/" + REPORTE_ID + "/validar", {
                 method: "POST",
@@ -611,3 +611,4 @@
 </script>
 
 {% endblock %}
+

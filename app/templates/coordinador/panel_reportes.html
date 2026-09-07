@@ -1,4 +1,4 @@
-{% extends 'coordinador/navbarcoor.html' %}
+﻿{% extends 'coordinador/navbarcoor.html' %}
 
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/neo/ValidarNeo.css') }}">
@@ -210,7 +210,7 @@
         <button class="vr-tab no-conforme" data-filtro="no-conforme"><i class="bi bi-x-circle-fill"></i> No conformes <span class="vr-tab-cnt" id="cnt-no-conforme">0</span></button>
         <button class="vr-tab" data-filtro="consiliado"
                 style="background:rgba(109,40,217,.12);color:#6d28d9;border-color:rgba(109,40,217,.3)">
-            <i class="bi bi-shield-check"></i> Consiliados <span class="vr-tab-cnt" id="cnt-consiliado">0</span>
+            <i class="bi bi-shield-check"></i> Conciliados <span class="vr-tab-cnt" id="cnt-consiliado">0</span>
         </button>
     </div>
 
@@ -276,7 +276,7 @@
                         {% if cat == 'no-conforme' %}
                             <span class="vr-badge-est no-conforme"><i class="bi bi-x-circle-fill"></i> No conforme</span>
                         {% elif cat == 'consiliado' %}
-                            <span class="vr-badge-est" style="background:#f3e8ff;color:#6d28d9;"><i class="bi bi-shield-check"></i> Consiliado</span>
+                            <span class="vr-badge-est" style="background:#f3e8ff;color:#6d28d9;"><i class="bi bi-shield-check"></i> Conciliado</span>
                         {% elif cat == 'conforme' %}
                             <span class="vr-badge-est conforme"><i class="bi bi-check-circle-fill"></i> Conforme</span>
                         {% elif cat == 'con-respuesta' %}
@@ -662,3 +662,4 @@ async function toggleReunion(btn) {
 </script>
 
 {% endblock %}
+
