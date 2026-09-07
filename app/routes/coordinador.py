@@ -838,7 +838,7 @@ def guardar_consiliacion(id):
 @login_required
 def marcar_revision_reunion(id):
     rol = current_user.rol.lower()
-    if rol not in ("admin", "coordinador", "supervisor", "director"):
+    if rol not in ("admin", "coordinador", "supervisor", "director", "neo"):
         return jsonify({"ok": False, "msg": "Sin permiso"}), 403
     r = ReporteOperacional.query.get_or_404(id)
     r.revisado_reunion = not r.revisado_reunion
