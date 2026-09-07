@@ -215,6 +215,7 @@
         {% endif %}
 
         <!-- ARCHIVO DE SEGUIMIENTO -->
+        {% if current_user.rol.lower() != 'supervisor' %}
         <div class="col-sm-6 col-lg-4">
             <a href="https://informesseguimientos.infinityfreeapp.com/dashboard.php"
                target="_blank" class="text-decoration-none">
@@ -233,6 +234,7 @@
                 </div>
             </a>
         </div>
+        {% endif %}
 
         <!-- INSPECCIONES (Power BI) -->
         <div class="col-sm-6 col-lg-4">
@@ -255,6 +257,7 @@
         </div>
 
         <!-- AGENDA DE COMPROMISOS -->
+        {% if current_user.rol.lower() != 'supervisor' %}
         <div class="col-sm-6 col-lg-4">
             <a href="https://agendacompromisos.pages.dev/Compromisos"
                target="_blank" class="text-decoration-none">
@@ -273,6 +276,7 @@
                 </div>
             </a>
         </div>
+        {% endif %}
 
     </div>
 
