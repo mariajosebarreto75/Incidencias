@@ -501,11 +501,20 @@ def api_he_eliminar(id):
 @he_bp.route("/api/he/bulk-delete", methods=["POST"])
 @login_required
 def api_he_bulk_delete():
-    if current_user.rol.lower() not in ("neo", "admin"):
+    rol = current_user.rol.lower()
+    if rol not in ("neo", "admin", "coordinador", "director", "supervisor"):
         return jsonify({"ok": False, "msg": "No autorizado"}), 403
     ids = request.get_json(silent=True) or []
     if not ids:
         return jsonify({"ok": False, "msg": "Sin IDs"}), 400
+    # Coordinadores/supervisores/directores solo pueden borrar sus propios PENDIENTES
+    if rol in ("coordinador", "director", "supervisor"):
+        ids_contratos = _ids_contratos_usuario()
+        registros = HoraExtra.query.filter(HoraExtra.id.in_(ids)).all()
+        ids = [r.id for r in registros
+               if r.estado == "PENDIENTE" and r.contrato_id in ids_contratos]
+        if not ids:
+            return jsonify({"ok": False, "msg": "No hay registros PENDIENTE eliminables"}), 400
     deleted = HoraExtra.query.filter(HoraExtra.id.in_(ids)).delete(synchronize_session=False)
     db.session.commit()
     return jsonify({"ok": True, "eliminados": deleted})
