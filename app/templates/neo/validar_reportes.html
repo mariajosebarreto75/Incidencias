@@ -194,8 +194,10 @@
                     <th>Contrato</th>
                     <th>Recurso</th>
                     <th>Tipo incidencia</th>
+                    <th>Acción a tomar</th>
                     <th class="vr-th-center">Impacto</th>
                     <th class="vr-th-center">Estado</th>
+                    <th class="vr-th-center">Reunión</th>
                     <th class="vr-th-center"></th>
                 </tr>
             </thead>
@@ -226,6 +228,7 @@
                     </td>
                     <td class="vr-td-recurso">{{ r.recurso or '—' }}</td>
                     <td class="vr-td-tipo">{{ r.tipo_incidencia or '—' }}</td>
+                    <td class="vr-td-tipo" style="color:#475569;font-size:.82rem;">{{ r.accion_a_tomar or '—' }}</td>
                     <td class="vr-th-center">
                         {% if r.impacto == 'Alto' %}
                             <span class="vr-badge-imp alto"><i class="bi bi-exclamation-triangle-fill"></i> Alto</span>
@@ -249,6 +252,18 @@
                         {% else %}
                             <span class="vr-badge-est abierto"><i class="bi bi-hourglass-split"></i> Sin respuesta</span>
                         {% endif %}
+                    </td>
+                    <td class="vr-td-reunion">
+                        <button class="vr-btn-reunion {% if r.revisado_reunion %}revisado{% endif %}"
+                                data-id="{{ r.id }}"
+                                onclick="toggleReunion(this)"
+                                title="{% if r.revisado_reunion %}Revisado en reunión por {{ r.revisado_reunion_por }}{% else %}Marcar como revisado en reunión{% endif %}">
+                            {% if r.revisado_reunion %}
+                                <i class="bi bi-check-circle-fill vr-reunion-icon"></i> Revisado
+                            {% else %}
+                                <i class="bi bi-circle vr-reunion-icon"></i> Reunión
+                            {% endif %}
+                        </button>
                     </td>
                     <td class="vr-th-center">
                         <a href="{{ url_for('neo.detalle_neo', id=r.id) }}" class="vr-btn-ver">
@@ -513,6 +528,26 @@
         });
     }
 })();
+
+async function toggleReunion(btn) {
+    const id = btn.dataset.id;
+    btn.disabled = true;
+    try {
+        const r = await fetch(`/coordinador/reporte/${id}/marcar-reunion`, { method: "POST" });
+        const d = await r.json();
+        if (!d.ok) throw new Error(d.msg);
+        if (d.revisado) {
+            btn.classList.add("revisado");
+            btn.innerHTML = `<i class="bi bi-check-circle-fill vr-reunion-icon"></i> Revisado`;
+            btn.title = `Revisado en reunión por ${d.por}`;
+        } else {
+            btn.classList.remove("revisado");
+            btn.innerHTML = `<i class="bi bi-circle vr-reunion-icon"></i> Reunión`;
+            btn.title = "Marcar como revisado en reunión";
+        }
+    } catch(e) { alert("Error al guardar: " + e.message); }
+    btn.disabled = false;
+}
 </script>
 
 {% endblock %}
