@@ -1691,7 +1691,7 @@ def api_he_dashboard_data():
     # ── KPIs ─────────────────────────────────────────────────────────────────
     total            = len(registros)
     hrs_reportadas   = sum(r.horas_reportadas or 0 for r in registros)
-    hrs_autorizadas  = sum((r.horas_autorizadas or 0) for r in registros if r.horas_autorizadas is not None)
+    hrs_autorizadas  = sum((r.horas_autorizadas or 0) for r in registros if r.estado in ("CONFORME", "DESCONTADA"))
     hrs_descontadas  = sum(r.horas_autorizadas or 0 for r in registros if r.estado == "DESCONTADA")
     hrs_no_conforme  = sum(r.horas_reportadas or 0 for r in registros if r.estado == "NO CONFORME")
     hrs_conformes    = sum(r.horas_autorizadas or 0 for r in registros if r.estado == "CONFORME")
