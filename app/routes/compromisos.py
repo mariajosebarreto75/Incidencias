@@ -126,6 +126,7 @@ def index():
         est_rep_sel=est_rep,
         est_cerr_sel=est_cerr,
         es_neo=_es_neo(),
+        base_template="neo/navbNeo.html" if _es_neo() else "coordinador/navbarcoor.html",
         kpi=dict(total=total, pendientes=pendientes,
                  reprogramados=reprogramados, cerrados=cerrados, atrasados=atrasados),
     )
