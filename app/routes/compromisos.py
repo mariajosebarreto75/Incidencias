@@ -14,6 +14,11 @@ from app.models.user_contrato import UserContrato
 
 compromisos_bp = Blueprint("compromisos", __name__, url_prefix="/compromisos")
 
+
+def _es_neo():
+    """Retorna True si el usuario tiene permisos completos (neo o admin)."""
+    return current_user.rol.lower() in ("neo", "admin")
+
 ALLOWED_EXT = {"png", "jpg", "jpeg", "webp", "pdf"}
 UPLOAD_FOLDER_NAME = "evidencias_compromisos"
 
@@ -120,6 +125,7 @@ def index():
         est_pend_sel=est_pend,
         est_rep_sel=est_rep,
         est_cerr_sel=est_cerr,
+        es_neo=_es_neo(),
         kpi=dict(total=total, pendientes=pendientes,
                  reprogramados=reprogramados, cerrados=cerrados, atrasados=atrasados),
     )
@@ -130,6 +136,8 @@ def index():
 @compromisos_bp.route("/nuevo", methods=["GET", "POST"])
 @login_required
 def nuevo():
+    if not _es_neo():
+        abort(403)
     contratos = _contratos_usuario()
     if request.method == "POST":
         contrato_id = request.form.get("contrato_id", type=int)
@@ -194,6 +202,8 @@ def detalle(comp_id):
 @compromisos_bp.route("/<int:comp_id>/reprogramar", methods=["POST"])
 @login_required
 def reprogramar(comp_id):
+    if not _es_neo():
+        abort(403)
     comp = Compromiso.query.get_or_404(comp_id)
     if not _puede_ver_contrato(comp.contrato_id):
         abort(403)
@@ -227,6 +237,8 @@ def reprogramar(comp_id):
 @compromisos_bp.route("/<int:comp_id>/cerrar", methods=["POST"])
 @login_required
 def cerrar(comp_id):
+    if not _es_neo():
+        abort(403)
     comp = Compromiso.query.get_or_404(comp_id)
     if not _puede_ver_contrato(comp.contrato_id):
         abort(403)
@@ -342,6 +354,8 @@ def eliminar_evidencia(comp_id):
 @compromisos_bp.route("/<int:comp_id>/eliminar", methods=["POST"])
 @login_required
 def eliminar(comp_id):
+    if not _es_neo():
+        abort(403)
     comp = Compromiso.query.get_or_404(comp_id)
     if not _puede_ver_contrato(comp.contrato_id):
         abort(403)
@@ -384,6 +398,8 @@ def guardar_obs(comp_id):
 @compromisos_bp.route("/eliminar-masivo", methods=["POST"])
 @login_required
 def eliminar_masivo():
+    if not _es_neo():
+        abort(403)
     ids_raw = request.form.get("ids", "")
     try:
         ids = [int(x) for x in ids_raw.split(",") if x.strip().isdigit()]
