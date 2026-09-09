@@ -1,0 +1,425 @@
+{% extends "coordinador/navbarcoor.html" %}
+{% block title %}Agenda de Compromisos{% endblock %}
+
+{% block head %}
+<style>
+/* ── variables ── */
+:root {
+  --c-pendiente: #f59e0b;
+  --c-reprog:    #3b82f6;
+  --c-cerrado:   #22c55e;
+  --c-atrasado:  #ef4444;
+}
+
+/* ── kpi cards ── */
+.kpi-card { border-radius: 12px; padding: 1rem 1.25rem; color: #fff; display: flex; align-items: center; gap: .75rem; }
+.kpi-card .kpi-icon { font-size: 1.8rem; opacity: .85; }
+.kpi-card .kpi-num  { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.kpi-card .kpi-label{ font-size: .75rem; opacity: .85; text-transform: uppercase; letter-spacing: .05em; }
+
+/* ── estado badges ── */
+.badge-pendiente  { background: var(--c-pendiente); color:#fff; }
+.badge-reprog     { background: var(--c-reprog);    color:#fff; }
+.badge-cerrado    { background: var(--c-cerrado);   color:#fff; }
+.badge-atrasado   { background: var(--c-atrasado);  color:#fff; }
+
+/* ── tabla ── */
+.compromisos-table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+.compromisos-table td { vertical-align: middle; font-size: .88rem; }
+.compromisos-table tr.is-atrasado td { background: rgba(239,68,68,.06); }
+
+/* ── truncate texto largo ── */
+.cell-texto { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+
+/* ── acciones ── */
+.btn-accion { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+
+  <!-- ENCABEZADO -->
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+      <h4 class="mb-0 fw-bold"><i class="bi bi-calendar-check me-2 text-primary"></i>Agenda de Compromisos</h4>
+      <p class="text-muted mb-0" style="font-size:.83rem;">Seguimiento de compromisos por contrato</p>
+    </div>
+    <a href="{{ url_for('compromisos.nuevo') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Nuevo Compromiso
+    </a>
+  </div>
+
+  <!-- KPIs -->
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="kpi-card" style="background:#6366f1;">
+        <i class="bi bi-list-check kpi-icon"></i>
+        <div><div class="kpi-num">{{ kpi.total }}</div><div class="kpi-label">Total</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="kpi-card" style="background:#f59e0b;">
+        <i class="bi bi-hourglass-split kpi-icon"></i>
+        <div><div class="kpi-num">{{ kpi.pendientes }}</div><div class="kpi-label">Pendientes</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="kpi-card" style="background:#3b82f6;">
+        <i class="bi bi-arrow-repeat kpi-icon"></i>
+        <div><div class="kpi-num">{{ kpi.reprogramados }}</div><div class="kpi-label">Reprogramados</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="kpi-card" style="background:#22c55e;">
+        <i class="bi bi-check-circle kpi-icon"></i>
+        <div><div class="kpi-num">{{ kpi.cerrados }}</div><div class="kpi-label">Cerrados</div></div>
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <div class="kpi-card" style="background:#ef4444;">
+        <i class="bi bi-exclamation-triangle kpi-icon"></i>
+        <div><div class="kpi-num">{{ kpi.atrasados }}</div><div class="kpi-label">Atrasados</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <form method="get" class="card card-body mb-3 p-2">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-4 col-lg-3">
+        <label class="form-label mb-1" style="font-size:.8rem;">Contrato</label>
+        <select name="contrato_id" class="form-select form-select-sm">
+          <option value="">— Todos —</option>
+          {% for c in contratos %}
+          <option value="{{ c.id }}" {% if c.id == contrato_id_sel %}selected{% endif %}>{{ c.contrato }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1" style="font-size:.8rem;">Estado</label>
+        <select name="estado" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="Pendiente"     {% if estado_sel=='Pendiente'     %}selected{% endif %}>Pendiente</option>
+          <option value="Reprogramado"  {% if estado_sel=='Reprogramado'  %}selected{% endif %}>Reprogramado</option>
+          <option value="Cerrado"       {% if estado_sel=='Cerrado'       %}selected{% endif %}>Cerrado</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label mb-1" style="font-size:.8rem;">Atraso</label>
+        <select name="atrasado" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="1" {% if atrasado_sel=='1' %}selected{% endif %}>Solo atrasados</option>
+          <option value="0" {% if atrasado_sel=='0' %}selected{% endif %}>Al día</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-auto">
+        <button type="submit" class="btn btn-primary btn-sm w-100">
+          <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+      </div>
+      <div class="col-12 col-md-auto">
+        <a href="{{ url_for('compromisos.index') }}" class="btn btn-outline-secondary btn-sm w-100">
+          <i class="bi bi-x-circle me-1"></i>Limpiar
+        </a>
+      </div>
+    </div>
+  </form>
+
+  <!-- TABLA -->
+  {% if compromisos %}
+  <div class="table-responsive">
+    <table class="table table-hover compromisos-table align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Contrato</th>
+          <th>Responsable</th>
+          <th>Compromiso</th>
+          <th>F. Entrega</th>
+          <th>Estado</th>
+          <th>Reprog.</th>
+          <th>Evidencia</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in compromisos %}
+        <tr class="{% if c.atrasado %}is-atrasado{% endif %}">
+          <td>{{ c.id }}</td>
+          <td><span class="badge bg-secondary bg-opacity-75 text-wrap text-start" style="max-width:130px;font-size:.75rem;">{{ c.contrato.contrato }}</span></td>
+          <td>{{ c.responsable }}</td>
+          <td>
+            <span class="cell-texto" data-bs-toggle="tooltip" title="{{ c.compromiso }}">{{ c.compromiso }}</span>
+            {% if c.observacion_general %}
+            <button class="btn btn-link btn-sm p-0 ms-1 text-info"
+                    data-bs-toggle="modal" data-bs-target="#modalObs{{ c.id }}"
+                    title="Ver observación"><i class="bi bi-chat-text"></i></button>
+            {% endif %}
+          </td>
+          <td class="{% if c.atrasado %}text-danger fw-semibold{% endif %}">
+            {{ c.fecha_entrega.strftime('%d/%m/%Y') }}
+            {% if c.atrasado %}<i class="bi bi-exclamation-circle ms-1"></i>{% endif %}
+          </td>
+          <td>
+            {% if c.estado == 'Pendiente' %}
+            <span class="badge badge-pendiente">Pendiente</span>
+            {% elif c.estado == 'Reprogramado' %}
+            <span class="badge badge-reprog">Reprogramado</span>
+            {% else %}
+            <span class="badge badge-cerrado">Cerrado</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if c.cantidad_reprogramaciones > 0 %}
+            <button class="btn btn-link btn-sm p-0 text-primary"
+                    data-bs-toggle="modal" data-bs-target="#modalHist{{ c.id }}"
+                    title="Ver historial">
+              {{ c.cantidad_reprogramaciones }} <i class="bi bi-clock-history"></i>
+            </button>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if c.evidencia_path %}
+            <a href="{{ url_for('compromisos.ver_evidencia', comp_id=c.id) }}"
+               class="btn btn-accion btn-outline-success" target="_blank" title="Ver evidencia">
+              <i class="bi bi-file-earmark-check"></i>
+            </a>
+            {% if c.estado != 'Cerrado' %}
+            <form action="{{ url_for('compromisos.eliminar_evidencia', comp_id=c.id) }}"
+                  method="post" class="d-inline"
+                  onsubmit="return confirm('¿Eliminar evidencia?')">
+              <button class="btn btn-accion btn-outline-danger" title="Eliminar evidencia">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+            {% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-1 flex-wrap">
+              {% if c.estado != 'Cerrado' %}
+              <!-- Reprogramar -->
+              <button class="btn btn-accion btn-outline-primary"
+                      data-bs-toggle="modal" data-bs-target="#modalReprog{{ c.id }}"
+                      title="Reprogramar"><i class="bi bi-calendar-plus"></i></button>
+              <!-- Cerrar -->
+              <button class="btn btn-accion btn-outline-success"
+                      data-bs-toggle="modal" data-bs-target="#modalCerrar{{ c.id }}"
+                      title="Cerrar compromiso"><i class="bi bi-check-circle"></i></button>
+              <!-- Subir evidencia -->
+              <button class="btn btn-accion btn-outline-warning"
+                      data-bs-toggle="modal" data-bs-target="#modalEvidencia{{ c.id }}"
+                      title="Subir evidencia"><i class="bi bi-upload"></i></button>
+              {% endif %}
+              <!-- Observación -->
+              <button class="btn btn-accion btn-outline-info"
+                      data-bs-toggle="modal" data-bs-target="#modalAddObs{{ c.id }}"
+                      title="Añadir observación"><i class="bi bi-chat-left-text"></i></button>
+              <!-- Eliminar -->
+              <form action="{{ url_for('compromisos.eliminar', comp_id=c.id) }}"
+                    method="post" class="d-inline"
+                    onsubmit="return confirm('¿Eliminar este compromiso permanentemente?')">
+                <button class="btn btn-accion btn-outline-danger" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+
+        <!-- MODAL: Ver Observación -->
+        <div class="modal fade" id="modalObs{{ c.id }}" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-chat-text me-2"></i>Observación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body"><pre class="mb-0" style="white-space:pre-wrap;font-family:inherit;">{{ c.observacion_general or '' }}</pre></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: Historial reprogramaciones -->
+        {% if c.cantidad_reprogramaciones > 0 %}
+        <div class="modal fade" id="modalHist{{ c.id }}" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-clock-history me-2"></i>Historial de Reprogramaciones</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body p-0">
+                <table class="table table-sm mb-0">
+                  <thead class="table-light"><tr><th>#</th><th>Fecha anterior</th><th>Nueva fecha</th><th>Cambio</th></tr></thead>
+                  <tbody>
+                    {% for h in c.historial %}
+                    <tr>
+                      <td>{{ loop.index }}</td>
+                      <td>{{ h.fecha_anterior.strftime('%d/%m/%Y') }}</td>
+                      <td>{{ h.nueva_fecha.strftime('%d/%m/%Y') }}</td>
+                      <td>{{ h.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- MODAL: Reprogramar -->
+        {% if c.estado != 'Cerrado' %}
+        <div class="modal fade" id="modalReprog{{ c.id }}" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i>Reprogramar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <form action="{{ url_for('compromisos.reprogramar', comp_id=c.id) }}" method="post">
+                <div class="modal-body">
+                  <p class="text-muted mb-2" style="font-size:.85rem;">Fecha actual: <strong>{{ c.fecha_entrega.strftime('%d/%m/%Y') }}</strong></p>
+                  <label class="form-label fw-semibold">Nueva fecha de entrega</label>
+                  <input type="date" name="nueva_fecha" class="form-control" required
+                         min="{{ 'today' }}">
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Reprogramar</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: Cerrar -->
+        <div class="modal fade" id="modalCerrar{{ c.id }}" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Cerrar Compromiso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <form action="{{ url_for('compromisos.cerrar', comp_id=c.id) }}" method="post"
+                    enctype="multipart/form-data">
+                <div class="modal-body">
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Fecha real de entrega <span class="text-danger">*</span></label>
+                    <input type="date" name="fecha_entrega_real" class="form-control" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold">Observación de cierre</label>
+                    <textarea name="obs_cierre" class="form-control" rows="3"
+                              placeholder="Observación (opcional si sube evidencia)"></textarea>
+                  </div>
+                  <div class="mb-0">
+                    <label class="form-label fw-semibold">Evidencia (imagen/PDF)</label>
+                    <input type="file" name="evidencia" class="form-control"
+                           accept=".jpg,.jpeg,.png,.webp,.pdf">
+                    <div class="form-text">Debe subir evidencia o ingresar una observación.</div>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i>Cerrar</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODAL: Subir Evidencia -->
+        <div class="modal fade" id="modalEvidencia{{ c.id }}" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-upload me-2"></i>Subir Evidencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <form action="{{ url_for('compromisos.subir_evidencia', comp_id=c.id) }}" method="post"
+                    enctype="multipart/form-data">
+                <div class="modal-body">
+                  {% if c.evidencia_nombre %}
+                  <p class="text-muted mb-2" style="font-size:.85rem;">Actual: <strong>{{ c.evidencia_nombre }}</strong> (se reemplazará)</p>
+                  {% endif %}
+                  <input type="file" name="evidencia" class="form-control"
+                         accept=".jpg,.jpeg,.png,.webp,.pdf" required>
+                  <div class="form-text">Formatos: JPG, PNG, WEBP, PDF. Máx 10 MB.</div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn btn-warning"><i class="bi bi-upload me-1"></i>Subir</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- MODAL: Añadir Observación -->
+        <div class="modal fade" id="modalAddObs{{ c.id }}" tabindex="-1">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-chat-left-text me-2"></i>Observación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-body">
+                {% if c.observacion_general %}
+                <p class="p-2 bg-light rounded mb-3" style="font-size:.83rem;white-space:pre-wrap;">{{ c.observacion_general }}</p>
+                {% endif %}
+                <textarea class="form-control mb-2" id="obsTexto{{ c.id }}" rows="3"
+                          placeholder="Nueva anotación..."></textarea>
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="obsReemp{{ c.id }}">
+                  <label class="form-check-label text-danger" for="obsReemp{{ c.id }}" style="font-size:.83rem;">
+                    Reemplazar observación existente
+                  </label>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info text-white"
+                        onclick="guardarObs({{ c.id }})">
+                  <i class="bi bi-floppy me-1"></i>Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-calendar-x" style="font-size:3rem;"></i>
+    <p class="mt-2 mb-0">No hay compromisos con los filtros seleccionados.</p>
+    <a href="{{ url_for('compromisos.nuevo') }}" class="btn btn-primary mt-3">
+      <i class="bi bi-plus-lg me-1"></i>Crear el primero
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+// Tooltips Bootstrap
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+  new bootstrap.Tooltip(el, { trigger: 'hover' });
+});
+
+function guardarObs(id) {
+  const texto = document.getElementById('obsTexto' + id).value.trim();
+  if (!texto) { alert('Escribe una observación antes de guardar.'); return; }
+  const reemplazar = document.getElementById('obsReemp' + id).checked;
+  const fd = new FormData();
+  fd.append('texto', texto);
+  fd.append('modo', reemplazar ? 'replace' : 'append');
+
+  fetch('/compromisos/' + id + '/observacion', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        // Cierra el modal y recarga para reflejar cambios
+        bootstrap.Modal.getInstance(document.getElementById('modalAddObs' + id)).hide();
+        location.reload();
+      } else {
+        alert(data.error || 'Error al guardar.');
+      }
+    })
+    .catch(() => alert('Error de red.'));
+}
+</script>
+{% endblock %}

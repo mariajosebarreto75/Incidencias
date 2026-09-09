@@ -1,0 +1,57 @@
+{% extends "coordinador/navbarcoor.html" %}
+{% block title %}Nuevo Compromiso{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:680px;">
+  <div class="card shadow-sm">
+    <div class="card-header py-3">
+      <h5 class="mb-0 fw-bold"><i class="bi bi-plus-circle me-2 text-primary"></i>Nuevo Compromiso</h5>
+    </div>
+    <div class="card-body">
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Contrato <span class="text-danger">*</span></label>
+          <select name="contrato_id" class="form-select" required>
+            <option value="">— Selecciona —</option>
+            {% for c in contratos %}
+            <option value="{{ c.id }}"
+              {% if form.get('contrato_id')|string == c.id|string %}selected{% endif %}>
+              {{ c.contrato }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Responsable <span class="text-danger">*</span></label>
+          <input type="text" name="responsable" class="form-control"
+                 value="{{ form.get('responsable', '') }}"
+                 placeholder="Nombre del responsable" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Compromiso <span class="text-danger">*</span></label>
+          <textarea name="compromiso" class="form-control" rows="4"
+                    placeholder="Describe el compromiso..." required>{{ form.get('compromiso', '') }}</textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Fecha de entrega <span class="text-danger">*</span></label>
+          <input type="date" name="fecha_entrega" class="form-control"
+                 value="{{ form.get('fecha_entrega', '') }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Observación inicial</label>
+          <textarea name="observacion_general" class="form-control" rows="3"
+                    placeholder="(Opcional) Observaciones iniciales">{{ form.get('observacion_general', '') }}</textarea>
+        </div>
+        <div class="d-flex gap-2 justify-content-end">
+          <a href="{{ url_for('compromisos.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Cancelar
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-floppy me-1"></i>Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
