@@ -1121,14 +1121,7 @@ async function cargarResumen() {
         const d = await r.json();
         if (!d.ok) return;
 
-        const _hrsRep  = +d.hrs_reportadas  || 0;
-        const _hrsAuth = +d.hrs_autorizadas || 0;
-        document.getElementById("rs-total").textContent      = d.total.toLocaleString("es-CO");
-        document.getElementById("rs-pendientes").textContent = (d.pendientes || 0).toLocaleString("es-CO");
-        document.getElementById("rs-hrs-rep").textContent    = _hrsRep.toFixed(0);
-        document.getElementById("rs-hrs-auth").textContent   = _hrsAuth.toFixed(0);
-        document.getElementById("rs-hrs-desc").textContent   = Math.max(0, _hrsRep - _hrsAuth).toFixed(0);
-
+        // Las tarjetas rs-* las actualiza cargarKpis(); aquí solo actualizamos el desglose por concepto
         const cont = document.getElementById("resumenConceptos");
         if (!d.por_concepto.length) {
             cont.innerHTML = `<div style="color:#94a3b8;font-size:.8rem;grid-column:1/-1;">Sin registros aún</div>`;
@@ -1244,12 +1237,30 @@ async function cargarKpis() {
         const r = await fetch(url);
         const d = await r.json();
         const _set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-        _set("k-total",   d.total      ?? "—");
-        _set("k-pend",    d.pendientes ?? "—");
-        _set("k-conf",    d.conformes  ?? "—");
+        // Chips del panel validación
+        _set("k-total",   d.total        ?? "—");
+        _set("k-pend",    d.pendientes   ?? "—");
+        _set("k-conf",    d.conformes    ?? "—");
         _set("k-noconf",  d.no_conformes ?? "—");
-        _set("k-desc",    d.descontadas ?? "—");
-        _set("tb-pend",   d.pendientes ?? "—");
+        _set("k-desc",    d.descontadas  ?? "—");
+        _set("tb-pend",   d.pendientes   ?? "—");
+        // Tarjetas grandes del resumen dashboard
+        if (cid) {
+            const hrsRep  = +d.hrs_reportadas  || 0;
+            const hrsAuth = +d.hrs_autorizadas || 0;
+            _set("rs-total",      (d.total      || 0).toLocaleString("es-CO"));
+            _set("rs-pendientes", (d.pendientes || 0).toLocaleString("es-CO"));
+            _set("rs-hrs-rep",    hrsRep.toFixed(0));
+            _set("rs-hrs-auth",   hrsAuth.toFixed(0));
+            _set("rs-hrs-desc",   Math.max(0, hrsRep - hrsAuth).toFixed(0));
+            // Mostrar contenido si estaba oculto
+            const vacio    = document.getElementById("resumenVacio");
+            const contenido= document.getElementById("resumenContenido");
+            if (contenido && d.total > 0) {
+                if (vacio) vacio.style.display = "none";
+                contenido.style.display = "";
+            }
+        }
     } catch(e) {}
 }
 
@@ -2372,13 +2383,6 @@ function _actualizarKpisCoor(rows) {
     _sk("k-desc",      desc);
     _sk("tb-pend",     pend);
     _sk("kv-pend-val", hrsPend.toLocaleString("es-CO"));
-    // Tarjetas grandes del dashboard superior
-    const _totAprobadas = hrsConf + hrsDesc;
-    document.getElementById("rs-total").textContent      = total.toLocaleString("es-CO");
-    document.getElementById("rs-pendientes").textContent = pend.toLocaleString("es-CO");
-    document.getElementById("rs-hrs-rep").textContent    = hrsRep.toFixed(0);
-    document.getElementById("rs-hrs-auth").textContent   = _totAprobadas.toFixed(0);
-    document.getElementById("rs-hrs-desc").textContent   = Math.max(0, hrsRep - _totAprobadas).toFixed(0);
     // Mostrar el contenido del resumen si estaba oculto
     const vacio    = document.getElementById("resumenVacio");
     const contenido= document.getElementById("resumenContenido");
