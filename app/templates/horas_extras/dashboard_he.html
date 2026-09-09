@@ -222,6 +222,9 @@ let _serieActiva = { trabajado: true, reporte: false };
 let _drill = {};   // {cedula, supervisor, tipo, fecha_drill, label}
 
 function aplicarDrill(params, label) {
+    // Si el mismo elemento ya está activo, quitar el filtro (toggle)
+    const key = Object.keys(params)[0];
+    if (_drill[key] === params[key]) { limpiarDrill(); return; }
     _drill = { ...params, label };
     const chip = document.getElementById('drillChip');
     chip.hidden = false;
