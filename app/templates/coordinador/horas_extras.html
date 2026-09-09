@@ -2371,9 +2371,9 @@ function _actualizarKpisCoor(rows) {
         if (est === "CONFORME")        { conf++;   hrsConf      += auth; }
         else if (est === "NO CONFORME"){ noconf++; hrsNoconfRep += rep;  }
         else if (est === "DESCONTADA") { desc++;   hrsDesc      += auth; }
-
         else                           { pend++;   hrsPend      += rep;  }
     }
+    const hrsAuth = hrsConf + hrsDesc;
     // Chips y métricas del panel validación
     const _sk = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     _sk("k-total",     total);
@@ -2383,6 +2383,12 @@ function _actualizarKpisCoor(rows) {
     _sk("k-desc",      desc);
     _sk("tb-pend",     pend);
     _sk("kv-pend-val", hrsPend.toLocaleString("es-CO"));
+    // Tarjetas grandes del resumen dashboard
+    _sk("rs-total",      total.toLocaleString("es-CO"));
+    _sk("rs-pendientes", pend.toLocaleString("es-CO"));
+    _sk("rs-hrs-rep",    hrsRep.toFixed(0));
+    _sk("rs-hrs-auth",   hrsAuth.toFixed(0));
+    _sk("rs-hrs-desc",   Math.max(0, hrsRep - hrsAuth).toFixed(0));
     // Mostrar el contenido del resumen si estaba oculto
     const vacio    = document.getElementById("resumenVacio");
     const contenido= document.getElementById("resumenContenido");
