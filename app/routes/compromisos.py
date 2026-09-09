@@ -393,6 +393,24 @@ def guardar_obs(comp_id):
     return jsonify(ok=True, obs=comp.observacion_general)
 
 
+# ── CREAR CONTRATO RÁPIDO (AJAX) ───────────────────────────────────────────────
+
+@compromisos_bp.route("/contratos/nuevo", methods=["POST"])
+@login_required
+def crear_contrato_rapido():
+    if not _es_neo():
+        return jsonify(ok=False, error="Sin permisos"), 403
+    nombre = request.form.get("nombre", "").strip()
+    if not nombre:
+        return jsonify(ok=False, error="El nombre es obligatorio"), 400
+    if Contrato.query.filter_by(contrato=nombre).first():
+        return jsonify(ok=False, error="Ya existe un contrato con ese nombre"), 409
+    c = Contrato(contrato=nombre, activo=True)
+    db.session.add(c)
+    db.session.commit()
+    return jsonify(ok=True, id=c.id, nombre=c.contrato)
+
+
 # ── ELIMINAR MASIVO ────────────────────────────────────────────────────────────
 
 @compromisos_bp.route("/eliminar-masivo", methods=["POST"])

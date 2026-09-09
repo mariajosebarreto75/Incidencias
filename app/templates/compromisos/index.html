@@ -540,12 +540,28 @@
             <!-- Contrato -->
             <div class="col-12 col-md-5">
               <label class="form-label fw-semibold" style="font-size:.83rem;">Contrato</label>
-              <select name="contrato_id" class="form-select" required>
+              <select name="contrato_id" id="selectContrato" class="form-select" required
+                      onchange="onContratoChange(this)">
                 <option value="">— Selecciona un contrato —</option>
                 {% for c in contratos %}
                 <option value="{{ c.id }}">{{ c.contrato }}</option>
                 {% endfor %}
+                <option value="__nuevo__" style="color:var(--ag-primary);font-weight:600;">
+                  + Crear nuevo contrato...
+                </option>
               </select>
+              <!-- fila de creación rápida (oculta por defecto) -->
+              <div id="rowNuevoContrato" class="d-none mt-2 d-flex gap-1 align-items-center">
+                <input type="text" id="inputNuevoContrato" class="form-control form-control-sm"
+                       placeholder="Nombre del nuevo contrato..." style="flex:1;">
+                <button type="button" class="btn btn-sm text-white fw-semibold px-3"
+                        style="background:var(--ag-primary);border-color:var(--ag-primary);"
+                        onclick="crearContratoRapido()">Crear</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary"
+                        onclick="cancelarNuevoContrato()">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
             </div>
             <!-- Responsable -->
             <div class="col-12 col-md-4">
@@ -608,6 +624,49 @@ function eliminarSeleccionados() {
   if (!confirm(`¿Eliminar ${ids.length} compromiso(s) seleccionado(s)? Esta acción no se puede deshacer.`)) return;
   document.getElementById('inputIdsMasivo').value = ids.join(',');
   document.getElementById('formElimMasivo').submit();
+}
+
+// ── Contrato rápido ──────────────────────────────────────────────────────────
+function onContratoChange(sel) {
+  if (sel.value === '__nuevo__') {
+    document.getElementById('rowNuevoContrato').classList.remove('d-none');
+    sel.value = '';          // deselecciona para que required funcione
+    document.getElementById('inputNuevoContrato').focus();
+  }
+}
+
+function cancelarNuevoContrato() {
+  document.getElementById('rowNuevoContrato').classList.add('d-none');
+  document.getElementById('inputNuevoContrato').value = '';
+  document.getElementById('selectContrato').value = '';
+}
+
+function crearContratoRapido() {
+  const nombre = document.getElementById('inputNuevoContrato').value.trim();
+  if (!nombre) { alert('Escribe el nombre del contrato.'); return; }
+
+  const fd = new FormData();
+  fd.append('nombre', nombre);
+
+  fetch('{{ url_for("compromisos.crear_contrato_rapido") }}', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) { alert(data.error || 'Error al crear contrato.'); return; }
+
+      // Agrega la nueva opción antes de "+ Crear nuevo..."
+      const sel = document.getElementById('selectContrato');
+      const nuevoOpt = document.createElement('option');
+      nuevoOpt.value = data.id;
+      nuevoOpt.text  = data.nombre;
+      // insertar antes de la última opción (__nuevo__)
+      sel.insertBefore(nuevoOpt, sel.lastElementChild);
+      sel.value = data.id;
+
+      // Oculta la fila de creación
+      document.getElementById('rowNuevoContrato').classList.add('d-none');
+      document.getElementById('inputNuevoContrato').value = '';
+    })
+    .catch(() => alert('Error de red.'));
 }
 
 // Observación AJAX
