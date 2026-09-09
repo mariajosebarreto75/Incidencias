@@ -1181,14 +1181,14 @@ async function _asegurarCorteActivo() {
     let corte = _corteActivo();
     if (!corte) {
         const p = _periodoActual();
+        const cid = document.getElementById("gridContrato").value || null;
         const r = await fetch("/api/he/cortes", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
-                nombre: `Corte ${p.ini} → ${p.fin}`,
                 fecha_inicio: p.ini,
                 fecha_fin: p.fin,
-                contrato_id: null,
+                contrato_id: cid ? parseInt(cid) : null,
                 observacion: ""
             })
         });
