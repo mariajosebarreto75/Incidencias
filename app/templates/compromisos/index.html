@@ -178,9 +178,10 @@
 
   <!-- BARRA DE ACCIONES -->
   <div class="action-bar mb-2">
-    <a href="{{ url_for('compromisos.nuevo') }}" class="btn btn-sm btn-crear">
+    <button type="button" class="btn btn-sm btn-crear"
+            data-bs-toggle="modal" data-bs-target="#modalCrear">
       <i class="bi bi-plus-lg me-1"></i>Crear compromiso
-    </a>
+    </button>
     <a href="{{ url_for('compromisos.exportar_excel') }}?{{ request.query_string.decode() }}"
        class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
@@ -469,6 +470,76 @@
 <form id="formElimMasivo" action="{{ url_for('compromisos.eliminar_masivo') }}" method="post">
   <input type="hidden" name="ids" id="inputIdsMasivo">
 </form>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     MODAL: CREAR COMPROMISO
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalCrear" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <div class="modal-header" style="background:var(--ag-primary);">
+        <h5 class="modal-title text-white fw-bold">
+          <i class="bi bi-plus-circle me-2"></i>Crear compromiso
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form action="{{ url_for('compromisos.nuevo') }}" method="post">
+        <div class="modal-body">
+
+          <div class="row g-3 mb-3">
+            <!-- Contrato -->
+            <div class="col-12 col-md-5">
+              <label class="form-label fw-semibold" style="font-size:.83rem;">Contrato</label>
+              <select name="contrato_id" class="form-select" required>
+                <option value="">— Selecciona un contrato —</option>
+                {% for c in contratos %}
+                <option value="{{ c.id }}">{{ c.contrato }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <!-- Responsable -->
+            <div class="col-12 col-md-4">
+              <label class="form-label fw-semibold" style="font-size:.83rem;">Responsable</label>
+              <input type="text" name="responsable" class="form-control"
+                     placeholder="Nombre completo" required>
+            </div>
+            <!-- Fecha entrega -->
+            <div class="col-12 col-md-3">
+              <label class="form-label fw-semibold" style="font-size:.83rem;">Fecha entrega (acordada)</label>
+              <input type="date" name="fecha_entrega" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <!-- Compromiso -->
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold" style="font-size:.83rem;">Compromiso</label>
+              <textarea name="compromiso" class="form-control" rows="5"
+                        placeholder="Describe el compromiso con detalle..." required></textarea>
+            </div>
+            <!-- Observación -->
+            <div class="col-12 col-md-6">
+              <label class="form-label fw-semibold" style="font-size:.83rem;">Observación general (opcional)</label>
+              <textarea name="observacion_general" class="form-control" rows="5"
+                        placeholder="Notas, contexto o seguimiento..."></textarea>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn text-white fw-semibold"
+                  style="background:var(--ag-primary); border-color:var(--ag-primary);">
+            <i class="bi bi-floppy me-1"></i>Guardar
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
 
 <script>
 // Tooltips
