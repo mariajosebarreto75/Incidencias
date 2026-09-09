@@ -838,10 +838,7 @@ body {
           </td>
           <td style="text-align:center;">
             {% if c.cantidad_reprogramaciones > 0 %}
-            <button class="reprog-btn"
-                    data-bs-toggle="modal" data-bs-target="#modalHist{{ c.id }}">
-              {{ c.cantidad_reprogramaciones }}×
-            </button>
+              <span class="reprog-none">{{ c.cantidad_reprogramaciones }}×</span>
             {% else %}<span class="reprog-none">—</span>{% endif %}
           </td>
           <td>
@@ -897,6 +894,12 @@ body {
                 <i class="bi bi-upload"></i>
               </button>
               {% endif %}
+              {% if c.cantidad_reprogramaciones > 0 %}
+              <button class="act-btn" data-bs-toggle="modal"
+                      data-bs-target="#modalHist{{ c.id }}" title="Ver historial de reprogramaciones">
+                <i class="bi bi-clock-history"></i>
+              </button>
+              {% endif %}
               <button class="act-btn" data-bs-toggle="modal"
                       data-bs-target="#modalAddObs{{ c.id }}" title="Observación">
                 <i class="bi bi-chat-left-text"></i>
@@ -913,199 +916,199 @@ body {
             </div>
           </td>
         </tr>
-
-        <!-- ── modales de fila ── -->
-
-        {% if c.observacion_general %}
-        <div class="modal fade" id="modalObs{{ c.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header-ag">
-                <h5><i class="bi bi-chat-text"></i>Observación</h5>
-                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-              </div>
-              <div class="modal-body-ag">
-                <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:.75rem;">{{ c.responsable }} · {{ c.contrato.contrato }}</p>
-                <pre style="white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:.88rem;
-                            background:var(--surface-2);border-radius:var(--radius-sm);
-                            padding:.85rem;border:1px solid var(--border);margin:0;
-                            color:var(--ink-2);">{{ c.observacion_general }}</pre>
-              </div>
-            </div>
-          </div>
-        </div>
-        {% endif %}
-
-        {% if c.cantidad_reprogramaciones > 0 %}
-        <div class="modal fade" id="modalHist{{ c.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header-ag">
-                <h5><i class="bi bi-clock-history"></i>Historial · {{ c.cantidad_reprogramaciones }} reprogramación(es)</h5>
-                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-              </div>
-              <div class="modal-body-ag" style="padding:0;">
-                <table style="width:100%;border-collapse:collapse;font-size:.83rem;">
-                  <thead>
-                    <tr style="background:var(--surface-2);border-bottom:1px solid var(--border);">
-                      <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">#</th>
-                      <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Fecha anterior</th>
-                      <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Nueva fecha</th>
-                      <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Registrado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for h in c.historial %}
-                    <tr style="border-bottom:1px solid var(--border);">
-                      <td style="padding:.55rem .85rem;color:var(--ink-3);">{{ loop.index }}</td>
-                      <td style="padding:.55rem .85rem;font-variant-numeric:tabular-nums;">{{ h.fecha_anterior.strftime('%d/%m/%Y') }}</td>
-                      <td style="padding:.55rem .85rem;font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue);">{{ h.nueva_fecha.strftime('%d/%m/%Y') }}</td>
-                      <td style="padding:.55rem .85rem;font-size:.78rem;color:var(--ink-3);">{{ h.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-        {% endif %}
-
-        {% if c.estado != 'Cerrado' %}
-        <!-- Subir evidencia -->
-        <div class="modal fade" id="modalEvidencia{{ c.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header-ag">
-                <h5><i class="bi bi-upload"></i>Subir Evidencia</h5>
-                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-              </div>
-              <form action="{{ url_for('compromisos.subir_evidencia', comp_id=c.id) }}" method="post" enctype="multipart/form-data">
-                <div class="modal-body-ag">
-                  <p style="font-size:.82rem;color:var(--ink-2);margin-bottom:1rem;line-height:1.5;">{{ c.compromiso[:100] }}{% if c.compromiso|length > 100 %}…{% endif %}</p>
-                  {% if c.evidencia_nombre %}
-                  <div style="background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:var(--radius-sm);padding:.5rem .75rem;margin-bottom:.85rem;font-size:.78rem;color:var(--amber);">
-                    <i class="bi bi-info-circle me-1"></i>Evidencia actual: <strong>{{ c.evidencia_nombre }}</strong> — se reemplazará
-                  </div>
-                  {% endif %}
-                  <label class="ag-label">Archivo (JPG, PNG, WEBP, PDF)</label>
-                  <input type="file" name="evidencia" class="ag-input" accept=".jpg,.jpeg,.png,.webp,.pdf" required>
-                  <p style="font-size:.72rem;color:var(--ink-3);margin-top:.4rem;">Máximo 10 MB</p>
-                </div>
-                <div class="modal-foot-ag">
-                  <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn-amber"><i class="bi bi-upload"></i>Subir</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-        {% endif %}
-
-        {% if es_neo and c.estado != 'Cerrado' %}
-        <!-- Reprogramar -->
-        <div class="modal fade" id="modalReprog{{ c.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header-ag">
-                <h5><i class="bi bi-calendar-plus"></i>Reprogramar</h5>
-                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-              </div>
-              <form action="{{ url_for('compromisos.reprogramar', comp_id=c.id) }}" method="post">
-                <div class="modal-body-ag">
-                  <p style="font-size:.82rem;color:var(--ink-2);margin-bottom:.5rem;line-height:1.5;">{{ c.compromiso[:100] }}{% if c.compromiso|length > 100 %}…{% endif %}</p>
-                  <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:.5rem .75rem;margin-bottom:1rem;font-size:.82rem;color:var(--ink-2);border:1px solid var(--border);">
-                    Fecha actual: <strong style="color:var(--ink);">{{ c.fecha_entrega.strftime('%d/%m/%Y') }}</strong>
-                    {% if c.cantidad_reprogramaciones > 0 %}
-                    · <span style="color:var(--amber);">{{ c.cantidad_reprogramaciones }} reprogramación(es) prev.</span>
-                    {% endif %}
-                  </div>
-                  <label class="ag-label">Nueva fecha de entrega</label>
-                  <input type="date" name="nueva_fecha" class="ag-input" required>
-                </div>
-                <div class="modal-foot-ag">
-                  <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn-teal"><i class="bi bi-check-lg"></i>Reprogramar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cerrar -->
-        <div class="modal fade" id="modalCerrar{{ c.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header-ag" style="background:var(--green);">
-                <h5><i class="bi bi-check-circle"></i>Cerrar Compromiso</h5>
-                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-              </div>
-              <form action="{{ url_for('compromisos.cerrar', comp_id=c.id) }}" method="post" enctype="multipart/form-data">
-                <div class="modal-body-ag">
-                  <div style="background:var(--green-bg);border:1px solid var(--green-bd);border-radius:var(--radius-sm);
-                              padding:.5rem .75rem;margin-bottom:1rem;font-size:.78rem;color:var(--green);
-                              display:flex;align-items:center;gap:.4rem;">
-                    <i class="bi bi-file-earmark-check-fill"></i>
-                    Evidencia cargada: <strong>{{ c.evidencia_nombre }}</strong>
-                  </div>
-                  <div style="margin-bottom:1rem;">
-                    <label class="ag-label">Fecha real de entrega *</label>
-                    <input type="date" name="fecha_entrega_real" class="ag-input" required>
-                  </div>
-                  <div>
-                    <label class="ag-label">Observación de cierre (opcional)</label>
-                    <textarea name="obs_cierre" class="ag-input ag-textarea"
-                              placeholder="Describe cómo se cumplió el compromiso..."></textarea>
-                  </div>
-                </div>
-                <div class="modal-foot-ag">
-                  <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn-green"><i class="bi bi-check-circle"></i>Cerrar compromiso</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-        {% endif %}
-
-        <!-- Observación -->
-        <div class="modal fade" id="modalAddObs{{ c.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header-ag">
-                <h5><i class="bi bi-chat-left-text"></i>Observación</h5>
-                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-              </div>
-              <div class="modal-body-ag">
-                {% if c.observacion_general %}
-                <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);
-                            padding:.75rem;margin-bottom:1rem;font-size:.8rem;color:var(--ink-2);
-                            white-space:pre-wrap;max-height:110px;overflow-y:auto;line-height:1.5;">{{ c.observacion_general }}</div>
-                {% endif %}
-                <label class="ag-label">Nueva anotación</label>
-                <textarea class="ag-input ag-textarea" id="obsTexto{{ c.id }}"
-                          placeholder="Escribe tu observación..."></textarea>
-                <label style="display:flex;align-items:center;gap:.4rem;margin-top:.65rem;cursor:pointer;font-size:.8rem;color:var(--red);">
-                  <input type="checkbox" id="obsReemp{{ c.id }}"
-                         style="accent-color:var(--red);width:14px;height:14px;">
-                  Reemplazar observación existente
-                </label>
-              </div>
-              <div class="modal-foot-ag">
-                <button class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-                <button class="btn-teal" onclick="guardarObs({{ c.id }})">
-                  <i class="bi bi-floppy"></i>Guardar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {% endfor %}
       </tbody>
     </table>
     </div>
   </div>
+
+  <!-- ══ MODALES (fuera del tbody para evitar renderizado como filas) ══ -->
+  {% for c in compromisos %}
+
+  {% if c.observacion_general %}
+  <div class="modal fade" id="modalObs{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header-ag">
+          <h5><i class="bi bi-chat-text"></i>Observación</h5>
+          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body-ag">
+          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:.75rem;">{{ c.responsable }} · {{ c.contrato.contrato }}</p>
+          <pre style="white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:.88rem;
+                      background:var(--surface-2);border-radius:var(--radius-sm);
+                      padding:.85rem;border:1px solid var(--border);margin:0;
+                      color:var(--ink-2);">{{ c.observacion_general }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if c.cantidad_reprogramaciones > 0 %}
+  <div class="modal fade" id="modalHist{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header-ag">
+          <h5><i class="bi bi-clock-history"></i>Historial · {{ c.cantidad_reprogramaciones }} reprogramación(es)</h5>
+          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body-ag" style="padding:0;">
+          <table style="width:100%;border-collapse:collapse;font-size:.83rem;">
+            <thead>
+              <tr style="background:var(--surface-2);border-bottom:1px solid var(--border);">
+                <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">#</th>
+                <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Fecha anterior</th>
+                <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Nueva fecha</th>
+                <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Registrado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in c.historial %}
+              <tr style="border-bottom:1px solid var(--border);">
+                <td style="padding:.55rem .85rem;color:var(--ink-3);">{{ loop.index }}</td>
+                <td style="padding:.55rem .85rem;font-variant-numeric:tabular-nums;">{{ h.fecha_anterior.strftime('%d/%m/%Y') }}</td>
+                <td style="padding:.55rem .85rem;font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue);">{{ h.nueva_fecha.strftime('%d/%m/%Y') }}</td>
+                <td style="padding:.55rem .85rem;font-size:.78rem;color:var(--ink-3);">{{ h.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if c.estado != 'Cerrado' %}
+  <div class="modal fade" id="modalEvidencia{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header-ag">
+          <h5><i class="bi bi-upload"></i>Subir Evidencia</h5>
+          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form action="{{ url_for('compromisos.subir_evidencia', comp_id=c.id) }}" method="post" enctype="multipart/form-data">
+          <div class="modal-body-ag">
+            <p style="font-size:.82rem;color:var(--ink-2);margin-bottom:1rem;line-height:1.5;">{{ c.compromiso[:100] }}{% if c.compromiso|length > 100 %}…{% endif %}</p>
+            {% if c.evidencia_nombre %}
+            <div style="background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:var(--radius-sm);padding:.5rem .75rem;margin-bottom:.85rem;font-size:.78rem;color:var(--amber);">
+              <i class="bi bi-info-circle me-1"></i>Evidencia actual: <strong>{{ c.evidencia_nombre }}</strong> — se reemplazará
+            </div>
+            {% endif %}
+            <label class="ag-label">Archivo (JPG, PNG, WEBP, PDF)</label>
+            <input type="file" name="evidencia" class="ag-input" accept=".jpg,.jpeg,.png,.webp,.pdf" required>
+            <p style="font-size:.72rem;color:var(--ink-3);margin-top:.4rem;">Máximo 10 MB</p>
+          </div>
+          <div class="modal-foot-ag">
+            <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-amber"><i class="bi bi-upload"></i>Subir</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if es_neo and c.estado != 'Cerrado' %}
+  <div class="modal fade" id="modalReprog{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header-ag">
+          <h5><i class="bi bi-calendar-plus"></i>Reprogramar</h5>
+          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form action="{{ url_for('compromisos.reprogramar', comp_id=c.id) }}" method="post">
+          <div class="modal-body-ag">
+            <p style="font-size:.82rem;color:var(--ink-2);margin-bottom:.5rem;line-height:1.5;">{{ c.compromiso[:100] }}{% if c.compromiso|length > 100 %}…{% endif %}</p>
+            <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:.5rem .75rem;margin-bottom:1rem;font-size:.82rem;color:var(--ink-2);border:1px solid var(--border);">
+              Fecha actual: <strong style="color:var(--ink);">{{ c.fecha_entrega.strftime('%d/%m/%Y') }}</strong>
+              {% if c.cantidad_reprogramaciones > 0 %}
+              · <span style="color:var(--amber);">{{ c.cantidad_reprogramaciones }} reprogramación(es) prev.</span>
+              {% endif %}
+            </div>
+            <label class="ag-label">Nueva fecha de entrega</label>
+            <input type="date" name="nueva_fecha" class="ag-input" required>
+          </div>
+          <div class="modal-foot-ag">
+            <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-teal"><i class="bi bi-check-lg"></i>Reprogramar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if c.evidencia_path %}
+  <div class="modal fade" id="modalCerrar{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header-ag" style="background:var(--green);">
+          <h5><i class="bi bi-check-circle"></i>Cerrar Compromiso</h5>
+          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form action="{{ url_for('compromisos.cerrar', comp_id=c.id) }}" method="post" enctype="multipart/form-data">
+          <div class="modal-body-ag">
+            <div style="background:var(--green-bg);border:1px solid var(--green-bd);border-radius:var(--radius-sm);
+                        padding:.5rem .75rem;margin-bottom:1rem;font-size:.78rem;color:var(--green);
+                        display:flex;align-items:center;gap:.4rem;">
+              <i class="bi bi-file-earmark-check-fill"></i>
+              Evidencia cargada: <strong>{{ c.evidencia_nombre }}</strong>
+            </div>
+            <div style="margin-bottom:1rem;">
+              <label class="ag-label">Fecha real de entrega *</label>
+              <input type="date" name="fecha_entrega_real" class="ag-input" required>
+            </div>
+            <div>
+              <label class="ag-label">Observación de cierre (opcional)</label>
+              <textarea name="obs_cierre" class="ag-input ag-textarea"
+                        placeholder="Describe cómo se cumplió el compromiso..."></textarea>
+            </div>
+          </div>
+          <div class="modal-foot-ag">
+            <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-green"><i class="bi bi-check-circle"></i>Cerrar compromiso</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <div class="modal fade" id="modalAddObs{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header-ag">
+          <h5><i class="bi bi-chat-left-text"></i>Observación</h5>
+          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body-ag">
+          {% if c.observacion_general %}
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);
+                      padding:.75rem;margin-bottom:1rem;font-size:.8rem;color:var(--ink-2);
+                      white-space:pre-wrap;max-height:110px;overflow-y:auto;line-height:1.5;">{{ c.observacion_general }}</div>
+          {% endif %}
+          <label class="ag-label">Nueva anotación</label>
+          <textarea class="ag-input ag-textarea" id="obsTexto{{ c.id }}"
+                    placeholder="Escribe tu observación..."></textarea>
+          <label style="display:flex;align-items:center;gap:.4rem;margin-top:.65rem;cursor:pointer;font-size:.8rem;color:var(--red);">
+            <input type="checkbox" id="obsReemp{{ c.id }}"
+                   style="accent-color:var(--red);width:14px;height:14px;">
+            Reemplazar observación existente
+          </label>
+        </div>
+        <div class="modal-foot-ag">
+          <button class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn-teal" onclick="guardarObs({{ c.id }})">
+            <i class="bi bi-floppy"></i>Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% endfor %}
 
   {% else %}
   <!-- ── EMPTY STATE ── -->
