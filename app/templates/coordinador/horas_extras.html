@@ -2344,13 +2344,13 @@ function _applyAllFiltersCoor() {
 
 // Actualiza las tarjetas KPI del panel de registro a partir de los registros filtrados
 function _actualizarKpisCoorReg(registros) {
-    let total = registros.length, hrsPend = 0, hrsRep = 0, hrsAuth = 0, hrsNoAuth = 0;
+    let total = registros.length, pend = 0, hrsPend = 0, hrsRep = 0, hrsAuth = 0, hrsNoAuth = 0;
     for (const r of registros) {
         const est  = (r.estado || "").trim().toUpperCase();
         hrsRep  += r.horas_reportadas || 0;
-        if (est === "PENDIENTE") hrsPend += r.horas_reportadas || 0;
         if (est === "CONFORME" || est === "DESCONTADA") hrsAuth += r.horas_autorizadas || 0;
-        if (est === "NO CONFORME") hrsNoAuth += r.horas_reportadas || 0;
+        else if (est === "NO CONFORME") hrsNoAuth += r.horas_reportadas || 0;
+        else { pend++; hrsPend += r.horas_reportadas || 0; }
     }
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     set("coor-ck-total",  total.toLocaleString("es-CO"));
@@ -2358,6 +2358,12 @@ function _actualizarKpisCoorReg(registros) {
     set("coor-ck-rep",    hrsRep.toFixed(0));
     set("coor-ck-auth",   hrsAuth.toFixed(0));
     set("coor-ck-noauth", hrsNoAuth.toFixed(0));
+    // Tarjetas grandes del resumen dashboard
+    set("rs-total",      total.toLocaleString("es-CO"));
+    set("rs-pendientes", pend.toLocaleString("es-CO"));
+    set("rs-hrs-rep",    hrsRep.toFixed(0));
+    set("rs-hrs-auth",   hrsAuth.toFixed(0));
+    set("rs-hrs-desc",   Math.max(0, hrsRep - hrsAuth).toFixed(0));
 }
 
 function _actualizarKpisCoor(rows) {
