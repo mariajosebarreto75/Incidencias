@@ -2,212 +2,793 @@
 {% block title %}Agenda de Compromisos{% endblock %}
 
 {% block head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-/* ── paleta ── */
+/* ── tokens ── */
 :root {
-  --ag-primary:   #0d6e6e;
-  --ag-primary-d: #094f4f;
-  --ag-header-bg: #0d6e6e;
-  --ag-pendiente: #f59e0b;
-  --ag-reprog:    #3b82f6;
-  --ag-cerrado:   #22c55e;
-  --ag-atrasado:  #ef4444;
-  --ag-row-atras: rgba(239,68,68,.06);
-  --ag-border-atras: #ef4444;
+  --bg:        #F1F5F9;
+  --surface:   #FFFFFF;
+  --surface-2: #F8FAFC;
+  --border:    #E2E8F0;
+  --border-2:  #CBD5E1;
+  --ink:       #0F172A;
+  --ink-2:     #475569;
+  --ink-3:     #94A3B8;
+
+  --teal:      #0F766E;
+  --teal-2:    #0D9488;
+  --teal-bg:   #F0FDF9;
+
+  --amber:     #D97706;
+  --amber-bg:  #FFFBEB;
+  --amber-bd:  #FDE68A;
+
+  --blue:      #2563EB;
+  --blue-bg:   #EFF6FF;
+  --blue-bd:   #BFDBFE;
+
+  --green:     #16A34A;
+  --green-bg:  #F0FDF4;
+  --green-bd:  #BBF7D0;
+
+  --red:       #DC2626;
+  --red-bg:    #FEF2F2;
+  --red-bd:    #FECACA;
+
+  --shadow-sm: 0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
+  --shadow-md: 0 4px 12px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.04);
+  --radius:    10px;
+  --radius-sm: 6px;
 }
 
-/* ── kpi bar ── */
-.kpi-bar { display:flex; gap:0; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.1); }
-.kpi-item {
-  flex:1; display:flex; align-items:center; gap:.75rem;
-  padding:.85rem 1.1rem; border-right:1px solid rgba(255,255,255,.15);
-  cursor:default;
+/* ── reset / base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.55;
 }
-.kpi-item:last-child { border-right:none; }
-.kpi-icon { font-size:1.6rem; opacity:.9; }
-.kpi-num  { font-size:1.5rem; font-weight:700; line-height:1; color:#fff; }
-.kpi-lbl  { font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:rgba(255,255,255,.8); }
 
-/* ── filtros ── */
-.filter-bar { background:#f8f9fa; border:1px solid #e2e8f0; border-radius:8px; padding:.75rem 1rem; }
+/* ── page shell ── */
+.ag-page {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
+}
 
-/* ── tabla ── */
+/* ── page header ── */
+.ag-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.ag-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  text-wrap: balance;
+  margin: 0;
+}
+.ag-subtitle {
+  font-size: .82rem;
+  color: var(--ink-3);
+  margin: .15rem 0 0;
+}
+
+/* ── KPI strip ── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: .75rem;
+  margin-bottom: 1.25rem;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem .9rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow .15s;
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 4px 0 0 4px;
+}
+.kpi-card:hover { box-shadow: var(--shadow-md); }
+.kpi-card--total::before  { background: var(--ink-2); }
+.kpi-card--pend::before   { background: var(--amber); }
+.kpi-card--rep::before    { background: var(--blue); }
+.kpi-card--cerr::before   { background: var(--green); }
+.kpi-card--atr::before    { background: var(--red); }
+
+.kpi-icon-wrap {
+  width: 38px; height: 38px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+.kpi-card--total  .kpi-icon-wrap { background:#F1F5F9; color:var(--ink-2); }
+.kpi-card--pend   .kpi-icon-wrap { background:var(--amber-bg); color:var(--amber); }
+.kpi-card--rep    .kpi-icon-wrap { background:var(--blue-bg); color:var(--blue); }
+.kpi-card--cerr   .kpi-icon-wrap { background:var(--green-bg); color:var(--green); }
+.kpi-card--atr    .kpi-icon-wrap { background:var(--red-bg); color:var(--red); }
+
+.kpi-body {}
+.kpi-num {
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-card--total  .kpi-num { color: var(--ink); }
+.kpi-card--pend   .kpi-num { color: var(--amber); }
+.kpi-card--rep    .kpi-num { color: var(--blue); }
+.kpi-card--cerr   .kpi-num { color: var(--green); }
+.kpi-card--atr    .kpi-num { color: var(--red); }
+
+.kpi-label {
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-3);
+  margin-top: .15rem;
+}
+
+/* ── filter panel ── */
+.filter-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .7rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color .15s;
+}
+.filter-header.open { border-bottom-color: var(--border); }
+.filter-header-left {
+  display: flex; align-items: center; gap: .5rem;
+  font-weight: 600; font-size: .82rem; color: var(--ink-2);
+}
+.filter-body {
+  padding: .9rem 1rem 1rem;
+  display: grid;
+  grid-template-columns: minmax(180px,1fr) auto auto minmax(130px,.6fr) auto auto auto;
+  gap: .75rem;
+  align-items: end;
+}
+.filter-field label {
+  display: block;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ink-3);
+  margin-bottom: .35rem;
+}
+.filter-field .form-control,
+.filter-field .form-select {
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .84rem;
+  color: var(--ink);
+  background: var(--surface);
+  padding: .38rem .65rem;
+  transition: border-color .15s, box-shadow .15s;
+}
+.filter-field .form-control:focus,
+.filter-field .form-select:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(15,118,110,.12);
+  outline: none;
+}
+.check-group {
+  display: flex; gap: .5rem; align-items: center; padding-bottom: .1rem;
+  flex-wrap: wrap;
+}
+.check-pill {
+  display: flex; align-items: center; gap: .3rem;
+  padding: .28rem .65rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border-2);
+  font-size: .78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.check-pill input { display: none; }
+.check-pill.pill-pend  { color: var(--amber); border-color: var(--amber-bd); background: var(--amber-bg); }
+.check-pill.pill-rep   { color: var(--blue);  border-color: var(--blue-bd);  background: var(--blue-bg); }
+.check-pill.pill-cerr  { color: var(--green); border-color: var(--green-bd); background: var(--green-bg); }
+.check-pill:has(input:not(:checked)) {
+  color: var(--ink-3); border-color: var(--border); background: var(--surface-2); opacity: .65;
+}
+
+/* ── action bar ── */
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .85rem;
+  flex-wrap: wrap;
+}
+.btn-primary-ag {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .45rem 1rem;
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s;
+  text-decoration: none;
+}
+.btn-primary-ag:hover { background: var(--teal-2); color: #fff; box-shadow: 0 2px 8px rgba(15,118,110,.3); }
+
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .42rem .85rem;
+  background: var(--surface);
+  color: var(--ink-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  text-decoration: none;
+}
+.btn-ghost:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-bg); }
+
+.btn-danger-ghost {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .42rem .85rem;
+  background: var(--surface);
+  color: var(--red);
+  border: 1px solid var(--red-bd);
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-danger-ghost:hover:not(:disabled) { background: var(--red-bg); border-color: var(--red); }
+.btn-danger-ghost:disabled { opacity: .4; cursor: not-allowed; }
+
+.select-all-label {
+  display: flex; align-items: center; gap: .4rem;
+  font-size: .82rem; color: var(--ink-2); cursor: pointer;
+  margin-left: .25rem;
+}
+.ag-count {
+  margin-left: auto;
+  font-size: .78rem;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+/* ── table ── */
+.table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.ag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .83rem;
+}
 .ag-table thead th {
-  background: var(--ag-header-bg); color:#fff;
-  font-size:.73rem; text-transform:uppercase; letter-spacing:.05em;
-  white-space:nowrap; vertical-align:middle; padding:.55rem .6rem;
-  border-color: var(--ag-primary-d);
+  background: #F8FAFC;
+  color: var(--ink-3);
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: .65rem .85rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
 }
-.ag-table tbody td { font-size:.83rem; vertical-align:middle; padding:.45rem .6rem; }
-.ag-table tbody tr.row-atras { background: var(--ag-row-atras); }
-.ag-table tbody tr.row-atras td:first-child { border-left:3px solid var(--ag-border-atras); }
-.ag-table tbody tr:hover { background: rgba(13,110,110,.06); }
+.ag-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+}
+.ag-table tbody tr:last-child { border-bottom: none; }
+.ag-table tbody tr:hover { background: #F8FAFC; }
+.ag-table tbody tr.row-atr {
+  border-left: 3px solid var(--red);
+}
+.ag-table tbody tr.row-atr:hover { background: var(--red-bg); }
+.ag-table td {
+  padding: .7rem .85rem;
+  vertical-align: middle;
+  color: var(--ink);
+}
 
-/* ── badges ── */
-.badge-pend  { background:var(--ag-pendiente); color:#fff; font-size:.72rem; padding:.28em .55em; border-radius:4px; }
-.badge-rep   { background:var(--ag-reprog);    color:#fff; font-size:.72rem; padding:.28em .55em; border-radius:4px; }
-.badge-cerr  { background:var(--ag-cerrado);   color:#fff; font-size:.72rem; padding:.28em .55em; border-radius:4px; }
+/* ── celda contrato ── */
+.contrato-chip {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--teal);
+  background: var(--teal-bg);
+  border: 1px solid rgba(15,118,110,.15);
+  border-radius: 5px;
+  padding: .18rem .5rem;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-/* ── acción btns ── */
-.btn-act { width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:5px; font-size:.8rem; }
+/* ── responsable ── */
+.responsable-cell {
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
 
-/* ── barra acciones ── */
-.action-bar { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
-.btn-crear   { background:var(--ag-primary); border-color:var(--ag-primary); color:#fff; }
-.btn-crear:hover { background:var(--ag-primary-d); border-color:var(--ag-primary-d); color:#fff; }
+/* ── compromiso texto ── */
+.comp-texto {
+  max-width: 280px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+  color: var(--ink-2);
+  cursor: help;
+}
 
-/* ── obs truncada ── */
-.obs-cell { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-            font-size:.78rem; color:#555; cursor:pointer; }
+/* ── fechas ── */
+.fecha-cell {
+  font-size: .8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.fecha-atr { color: var(--red); font-weight: 600; }
+
+/* ── badges estado ── */
+.badge-estado {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-size: .72rem; font-weight: 600;
+  padding: .22rem .6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge-estado::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.badge-pend  { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-bd); }
+.badge-pend::before  { background: var(--amber); }
+.badge-rep   { background: var(--blue-bg);  color: var(--blue);  border: 1px solid var(--blue-bd); }
+.badge-rep::before   { background: var(--blue); }
+.badge-cerr  { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
+.badge-cerr::before  { background: var(--green); }
+
+/* ── atrasado badge ── */
+.atr-si  { color: var(--red);   font-weight: 600; font-size: .78rem; }
+.atr-no  { color: var(--ink-3); font-size: .78rem; }
+
+/* ── reprog count ── */
+.reprog-btn {
+  background: none; border: none; padding: 0;
+  color: var(--blue); font-weight: 600; font-size: .8rem;
+  cursor: pointer; text-decoration: underline dotted;
+  font-family: 'DM Sans', sans-serif;
+}
+.reprog-none { color: var(--ink-3); font-size: .78rem; }
+
+/* ── obs cell ── */
+.obs-snippet {
+  font-size: .75rem;
+  color: var(--ink-3);
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.obs-snippet:hover { color: var(--teal); }
+
+/* ── evidencia ── */
+.ev-link {
+  display: inline-flex; align-items: center; gap: .25rem;
+  font-size: .75rem; font-weight: 600;
+  color: var(--green);
+  text-decoration: none;
+  background: var(--green-bg);
+  border: 1px solid var(--green-bd);
+  border-radius: var(--radius-sm);
+  padding: .2rem .5rem;
+}
+.ev-link:hover { background: #DCFCE7; color: var(--green); }
+.ev-none { font-size: .75rem; color: var(--ink-3); }
+
+/* ── acciones (aparecen en hover de fila) ── */
+.row-actions {
+  display: flex; gap: .3rem; align-items: center;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.ag-table tbody tr:hover .row-actions { opacity: 1; }
+
+.act-btn {
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: .8rem;
+  transition: all .12s;
+  flex-shrink: 0;
+}
+.act-btn:hover { background: var(--teal-bg); border-color: var(--teal); color: var(--teal); }
+.act-btn.danger:hover { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+.act-btn.success:hover { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.act-btn.warn:hover { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+
+/* ── empty state ── */
+.empty-state {
+  padding: 4rem 1rem;
+  text-align: center;
+  color: var(--ink-3);
+}
+.empty-state .empty-icon {
+  width: 64px; height: 64px;
+  margin: 0 auto 1rem;
+  background: var(--surface-2);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  border: 2px dashed var(--border-2);
+}
+.empty-state p { font-size: .9rem; margin: .5rem 0 1.25rem; }
+
+/* ── modales ── */
+.modal-content {
+  border: none;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(15,23,42,.18);
+  font-family: 'DM Sans', sans-serif;
+}
+.modal-header-ag {
+  background: var(--teal);
+  padding: 1rem 1.25rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header-ag h5 {
+  color: #fff; margin: 0; font-size: 1rem; font-weight: 600;
+  display: flex; align-items: center; gap: .5rem;
+}
+.modal-header-ag .btn-close-ag {
+  background: none; border: none; color: rgba(255,255,255,.7);
+  font-size: 1.1rem; cursor: pointer; padding: 0; line-height: 1;
+  transition: color .1s;
+}
+.modal-header-ag .btn-close-ag:hover { color: #fff; }
+.modal-body-ag { padding: 1.25rem; }
+.modal-foot-ag {
+  padding: .85rem 1.25rem;
+  display: flex; justify-content: flex-end; gap: .5rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.ag-label {
+  font-size: .72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: var(--ink-3); margin-bottom: .35rem; display: block;
+}
+.ag-input {
+  width: 100%;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: .88rem; color: var(--ink);
+  padding: .45rem .7rem;
+  background: var(--surface);
+  transition: border-color .15s, box-shadow .15s;
+}
+.ag-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(15,118,110,.12);
+  outline: none;
+}
+.ag-textarea { min-height: 90px; resize: vertical; }
+
+.btn-teal {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .45rem 1rem;
+  background: var(--teal); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: .83rem; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.btn-teal:hover { background: var(--teal-2); }
+
+.btn-neutral {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .42rem .85rem;
+  background: var(--surface); color: var(--ink-2);
+  border: 1px solid var(--border-2); border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: .83rem; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.btn-neutral:hover { border-color: var(--ink-2); }
+
+.btn-green {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .45rem 1rem;
+  background: var(--green); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: .83rem; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.btn-green:hover { background: #15803D; }
+
+.btn-amber {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .45rem 1rem;
+  background: var(--amber); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: .83rem; font-weight: 600;
+  cursor: pointer; transition: background .15s;
+}
+.btn-amber:hover { background: #B45309; }
+
+/* ── contrato quick create (en modal) ── */
+.quick-create-row {
+  display: flex; gap: .4rem; align-items: center; margin-top: .5rem;
+}
+.quick-create-row input {
+  flex: 1; font-size: .84rem;
+  border: 1px solid var(--border-2); border-radius: var(--radius-sm);
+  padding: .38rem .65rem; font-family: 'DM Sans', sans-serif;
+  color: var(--ink);
+}
+.quick-create-row input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(15,118,110,.1);
+  outline: none;
+}
+
+/* ── responsive ── */
+@media (max-width: 900px) {
+  .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+  .filter-body { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .kpi-strip { grid-template-columns: 1fr 1fr; }
+  .filter-body { grid-template-columns: 1fr; }
+  .ag-page { padding: 1rem; }
+  .row-actions { opacity: 1; }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-3 py-3">
+<div class="ag-page">
 
-  <!-- TÍTULO -->
-  <div class="d-flex align-items-center justify-content-between mb-3">
+  <!-- ── ENCABEZADO ── -->
+  <div class="ag-header">
     <div>
-      <h5 class="mb-0 fw-bold" style="color:var(--ag-primary);">
-        <i class="bi bi-calendar-check me-2"></i>Agenda de Compromisos
-      </h5>
-      <small class="text-muted">Seguimiento de compromisos por contrato</small>
+      <h1 class="ag-title"><i class="bi bi-calendar-check me-2" style="color:var(--teal);"></i>Agenda de Compromisos</h1>
+      <p class="ag-subtitle">Seguimiento y gestión de compromisos por contrato</p>
     </div>
   </div>
 
-  <!-- KPIs -->
-  <div class="kpi-bar mb-3">
-    <div class="kpi-item" style="background:#475569;">
-      <i class="bi bi-list-check kpi-icon"></i>
-      <div><div class="kpi-num">{{ kpi.total }}</div><div class="kpi-lbl">Total</div></div>
-    </div>
-    <div class="kpi-item" style="background:#d97706;">
-      <i class="bi bi-hourglass-split kpi-icon"></i>
-      <div><div class="kpi-num">{{ kpi.pendientes }}</div><div class="kpi-lbl">Pendientes</div></div>
-    </div>
-    <div class="kpi-item" style="background:#2563eb;">
-      <i class="bi bi-arrow-repeat kpi-icon"></i>
-      <div><div class="kpi-num">{{ kpi.reprogramados }}</div><div class="kpi-lbl">Reprogramados</div></div>
-    </div>
-    <div class="kpi-item" style="background:#16a34a;">
-      <i class="bi bi-check-circle kpi-icon"></i>
-      <div><div class="kpi-num">{{ kpi.cerrados }}</div><div class="kpi-lbl">Cerrados</div></div>
-    </div>
-    <div class="kpi-item" style="background:#dc2626;">
-      <i class="bi bi-exclamation-triangle kpi-icon"></i>
-      <div><div class="kpi-num">{{ kpi.atrasados }}</div><div class="kpi-lbl">Atrasados</div></div>
-    </div>
-  </div>
-
-  <!-- FILTROS -->
-  <form method="get" id="formFiltros" class="filter-bar mb-3">
-    <div class="row g-2 align-items-end">
-
-      <!-- Contrato -->
-      <div class="col-12 col-md-3">
-        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">CONTRATO</label>
-        <select name="contrato_id" class="form-select form-select-sm">
-          <option value="">Todos los contratos</option>
-          {% for c in contratos %}
-          <option value="{{ c.id }}" {% if c.id == contrato_id_sel %}selected{% endif %}>{{ c.contrato }}</option>
-          {% endfor %}
-        </select>
+  <!-- ── KPI STRIP ── -->
+  <div class="kpi-strip">
+    <div class="kpi-card kpi-card--total">
+      <div class="kpi-icon-wrap"><i class="bi bi-list-check"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-num">{{ kpi.total }}</div>
+        <div class="kpi-label">Total</div>
       </div>
+    </div>
+    <div class="kpi-card kpi-card--pend">
+      <div class="kpi-icon-wrap"><i class="bi bi-hourglass-split"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-num">{{ kpi.pendientes }}</div>
+        <div class="kpi-label">Pendientes</div>
+      </div>
+    </div>
+    <div class="kpi-card kpi-card--rep">
+      <div class="kpi-icon-wrap"><i class="bi bi-arrow-clockwise"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-num">{{ kpi.reprogramados }}</div>
+        <div class="kpi-label">Reprogramados</div>
+      </div>
+    </div>
+    <div class="kpi-card kpi-card--cerr">
+      <div class="kpi-icon-wrap"><i class="bi bi-check-circle"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-num">{{ kpi.cerrados }}</div>
+        <div class="kpi-label">Cerrados</div>
+      </div>
+    </div>
+    <div class="kpi-card kpi-card--atr">
+      <div class="kpi-icon-wrap"><i class="bi bi-exclamation-triangle"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-num">{{ kpi.atrasados }}</div>
+        <div class="kpi-label">Atrasados</div>
+      </div>
+    </div>
+  </div>
 
-      <!-- Estado (checkboxes) -->
-      <div class="col-auto">
-        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">ESTADO</label>
-        <div class="d-flex gap-2 align-items-center pt-1">
-          <div class="form-check mb-0">
-            <input class="form-check-input" type="checkbox" name="est_pend" id="chkPend" value="1"
-                   {% if not estado_sel or estado_sel == 'Pendiente' %}checked{% endif %}>
-            <label class="form-check-label" for="chkPend" style="font-size:.8rem;">Pendiente</label>
-          </div>
-          <div class="form-check mb-0">
-            <input class="form-check-input" type="checkbox" name="est_rep" id="chkRep" value="1"
-                   {% if not estado_sel or estado_sel == 'Reprogramado' %}checked{% endif %}>
-            <label class="form-check-label" for="chkRep" style="font-size:.8rem;">Reprog.</label>
-          </div>
-          <div class="form-check mb-0">
-            <input class="form-check-input" type="checkbox" name="est_cerr" id="chkCerr" value="1"
-                   {% if not estado_sel or estado_sel == 'Cerrado' %}checked{% endif %}>
-            <label class="form-check-label" for="chkCerr" style="font-size:.8rem;">Cerrado</label>
+  <!-- ── FILTROS ── -->
+  <div class="filter-panel">
+    <div class="filter-header" onclick="toggleFiltros()" id="filterToggle">
+      <div class="filter-header-left">
+        <i class="bi bi-funnel"></i>
+        <span>Filtros</span>
+        {% set active = [] %}
+        {% if contrato_id_sel %}{% set _ = active.append(1) %}{% endif %}
+        {% if q_resp_sel %}{% set _ = active.append(1) %}{% endif %}
+        {% if atrasado_sel %}{% set _ = active.append(1) %}{% endif %}
+        {% if fecha_desde_sel or fecha_hasta_sel %}{% set _ = active.append(1) %}{% endif %}
+        {% if active|length > 0 %}
+        <span style="background:var(--teal);color:#fff;font-size:.65rem;font-weight:700;
+               padding:.1rem .45rem;border-radius:999px;">{{ active|length }}</span>
+        {% endif %}
+      </div>
+      <i class="bi bi-chevron-down" id="filterChevron" style="color:var(--ink-3);transition:transform .2s;"></i>
+    </div>
+
+    <div id="filterBody" style="display:none;">
+      <form method="get" class="filter-body">
+
+        <div class="filter-field">
+          <label>Contrato</label>
+          <select name="contrato_id" class="form-select">
+            <option value="">Todos los contratos</option>
+            {% for c in contratos %}
+            <option value="{{ c.id }}" {% if c.id == contrato_id_sel %}selected{% endif %}>{{ c.contrato }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label>Estado</label>
+          <div class="check-group">
+            <label class="check-pill pill-pend">
+              <input type="checkbox" name="est_pend" value="1"
+                     {% if not est_pend_sel is defined or est_pend_sel or not request.args %}checked{% endif %}
+                     onchange="this.closest('.check-pill').classList.toggle('active')">
+              Pendiente
+            </label>
+            <label class="check-pill pill-rep">
+              <input type="checkbox" name="est_rep" value="1"
+                     {% if not est_rep_sel is defined or est_rep_sel or not request.args %}checked{% endif %}>
+              Reprog.
+            </label>
+            <label class="check-pill pill-cerr">
+              <input type="checkbox" name="est_cerr" value="1"
+                     {% if not est_cerr_sel is defined or est_cerr_sel or not request.args %}checked{% endif %}>
+              Cerrado
+            </label>
           </div>
         </div>
-      </div>
 
-      <!-- Responsable -->
-      <div class="col-12 col-md-2">
-        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">RESPONSABLE</label>
-        <input type="text" name="q_resp" class="form-control form-control-sm"
-               placeholder="Buscar..." value="{{ q_resp_sel or '' }}">
-      </div>
+        <div class="filter-field">
+          <label>Responsable</label>
+          <input type="text" name="q_resp" class="form-control"
+                 placeholder="Buscar..." value="{{ q_resp_sel or '' }}">
+        </div>
 
-      <!-- Atrasado -->
-      <div class="col-auto">
-        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">ATRASADO</label>
-        <select name="atrasado" class="form-select form-select-sm">
-          <option value="">Todos</option>
-          <option value="1" {% if atrasado_sel=='1' %}selected{% endif %}>Solo atrasados</option>
-          <option value="0" {% if atrasado_sel=='0' %}selected{% endif %}>Al día</option>
-        </select>
-      </div>
+        <div class="filter-field">
+          <label>Atraso</label>
+          <select name="atrasado" class="form-select">
+            <option value="">Todos</option>
+            <option value="1" {% if atrasado_sel=='1' %}selected{% endif %}>Solo atrasados</option>
+            <option value="0" {% if atrasado_sel=='0' %}selected{% endif %}>Al día</option>
+          </select>
+        </div>
 
-      <!-- Fecha desde / hasta -->
-      <div class="col-auto">
-        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">ENTREGA DESDE</label>
-        <input type="date" name="fecha_desde" class="form-control form-control-sm"
-               value="{{ fecha_desde_sel or '' }}">
-      </div>
-      <div class="col-auto">
-        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">HASTA</label>
-        <input type="date" name="fecha_hasta" class="form-control form-control-sm"
-               value="{{ fecha_hasta_sel or '' }}">
-      </div>
+        <div class="filter-field">
+          <label>Entrega desde</label>
+          <input type="date" name="fecha_desde" class="form-control"
+                 value="{{ fecha_desde_sel or '' }}">
+        </div>
 
-      <div class="col-auto d-flex gap-1">
-        <button type="submit" class="btn btn-sm btn-primary">
-          <i class="bi bi-funnel me-1"></i>Aplicar
-        </button>
-        <a href="{{ url_for('compromisos.index') }}" class="btn btn-sm btn-outline-secondary">
-          Limpiar
-        </a>
-      </div>
+        <div class="filter-field">
+          <label>Hasta</label>
+          <input type="date" name="fecha_hasta" class="form-control"
+                 value="{{ fecha_hasta_sel or '' }}">
+        </div>
+
+        <div class="filter-field" style="display:flex;gap:.4rem;align-self:end;">
+          <button type="submit" class="btn-primary-ag">
+            <i class="bi bi-funnel"></i>Aplicar
+          </button>
+          <a href="{{ url_for('compromisos.index') }}" class="btn-ghost" style="text-decoration:none;">
+            Limpiar
+          </a>
+        </div>
+
+      </form>
     </div>
-  </form>
+  </div>
 
-  <!-- BARRA DE ACCIONES -->
-  <div class="action-bar mb-2">
+  <!-- ── ACTION BAR ── -->
+  <div class="action-bar">
     {% if es_neo %}
-    <button type="button" class="btn btn-sm btn-crear"
-            data-bs-toggle="modal" data-bs-target="#modalCrear">
-      <i class="bi bi-plus-lg me-1"></i>Crear compromiso
+    <button class="btn-primary-ag" data-bs-toggle="modal" data-bs-target="#modalCrear">
+      <i class="bi bi-plus-lg"></i>Crear compromiso
     </button>
     {% endif %}
     <a href="{{ url_for('compromisos.exportar_excel') }}?{{ request.query_string.decode() }}"
-       class="btn btn-sm btn-outline-secondary">
-      <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+       class="btn-ghost" style="text-decoration:none;">
+      <i class="bi bi-file-earmark-excel"></i>Exportar Excel
     </a>
     {% if es_neo %}
-    <button type="button" class="btn btn-sm btn-outline-danger" id="btnElimMasivo" disabled
-            onclick="eliminarSeleccionados()">
-      <i class="bi bi-trash me-1"></i>Eliminar seleccionados
+    <button class="btn-danger-ghost" id="btnElimMasivo" disabled onclick="eliminarSeleccionados()">
+      <i class="bi bi-trash"></i>Eliminar seleccionados
     </button>
-    <div class="form-check ms-2 mb-0 d-flex align-items-center">
-      <input class="form-check-input me-1" type="checkbox" id="chkTodo" onchange="toggleTodo(this)">
-      <label class="form-check-label" for="chkTodo" style="font-size:.83rem;">Seleccionar todo</label>
-    </div>
+    <label class="select-all-label">
+      <input type="checkbox" id="chkTodo" onchange="toggleTodo(this)"
+             style="width:15px;height:15px;accent-color:var(--teal);cursor:pointer;">
+      Seleccionar todo
+    </label>
     {% endif %}
-    <span class="text-muted ms-auto" style="font-size:.8rem;">{{ compromisos|length }} registro(s)</span>
+    <span class="ag-count">{{ compromisos|length }} registro(s)</span>
   </div>
 
-  <!-- TABLA -->
+  <!-- ── TABLA ── -->
   {% if compromisos %}
-  <div class="table-responsive">
-    <table class="table table-bordered ag-table">
+  <div class="table-wrap">
+    <div style="overflow-x:auto;">
+    <table class="ag-table">
       <thead>
         <tr>
-          {% if es_neo %}<th style="width:30px;"></th>{% endif %}
+          {% if es_neo %}<th style="width:36px;"></th>{% endif %}
           <th>Contrato</th>
           <th>Responsable</th>
           <th>Compromiso</th>
@@ -224,102 +805,99 @@
       </thead>
       <tbody>
         {% for c in compromisos %}
-        <tr class="{% if c.atrasado %}row-atras{% endif %}">
+        <tr class="{% if c.atrasado %}row-atr{% endif %}">
+
           {% if es_neo %}
-          <td class="text-center">
-            <input type="checkbox" class="form-check-input chk-comp" value="{{ c.id }}"
-                   onchange="actualizarBtnElim()">
+          <td>
+            <input type="checkbox" class="chk-comp" value="{{ c.id }}"
+                   onchange="actualizarBtnElim()"
+                   style="width:15px;height:15px;accent-color:var(--teal);cursor:pointer;">
           </td>
           {% endif %}
-          <td style="font-size:.78rem; max-width:140px;">{{ c.contrato.contrato }}</td>
-          <td>{{ c.responsable }}</td>
-          <td style="max-width:320px;">
-            {{ c.compromiso }}
+
+          <td><span class="contrato-chip" title="{{ c.contrato.contrato }}">{{ c.contrato.contrato }}</span></td>
+          <td><span class="responsable-cell">{{ c.responsable }}</span></td>
+          <td>
+            <span class="comp-texto" title="{{ c.compromiso }}">{{ c.compromiso }}</span>
           </td>
-          <td class="text-nowrap">{{ c.fecha_creacion.strftime('%Y-%m-%d') }}</td>
-          <td class="text-nowrap {% if c.atrasado %}text-danger fw-semibold{% endif %}">
-            {{ c.fecha_entrega.strftime('%Y-%m-%d') }}
+          <td><span class="fecha-cell">{{ c.fecha_creacion.strftime('%d/%m/%Y') }}</span></td>
+          <td>
+            <span class="fecha-cell {% if c.atrasado %}fecha-atr{% endif %}">
+              {{ c.fecha_entrega.strftime('%d/%m/%Y') }}
+              {% if c.atrasado %}<i class="bi bi-exclamation-circle ms-1"></i>{% endif %}
+            </span>
           </td>
           <td>
-            {% if c.estado == 'Pendiente' %}<span class="badge-pend">Pendiente</span>
-            {% elif c.estado == 'Reprogramado' %}<span class="badge-rep">Reprogramado</span>
-            {% else %}<span class="badge-cerr">Cerrado</span>{% endif %}
-          </td>
-          <td class="text-center">
-            {% if c.cantidad_reprogramaciones > 0 %}
-            <button class="btn btn-link btn-sm p-0"
-                    data-bs-toggle="modal" data-bs-target="#modalHist{{ c.id }}">
-              {{ c.cantidad_reprogramaciones }}
-            </button>
-            {% else %}0{% endif %}
-          </td>
-          <td class="text-nowrap">
-            {{ c.fecha_entrega_real.strftime('%Y-%m-%d') if c.fecha_entrega_real else '—' }}
-          </td>
-          <td class="text-center">
-            {% if c.atrasado %}
-            <span class="text-danger fw-semibold">Sí</span>
+            {% if c.estado == 'Pendiente' %}
+              <span class="badge-estado badge-pend">Pendiente</span>
+            {% elif c.estado == 'Reprogramado' %}
+              <span class="badge-estado badge-rep">Reprogramado</span>
             {% else %}
-            <span class="text-muted">No</span>
+              <span class="badge-estado badge-cerr">Cerrado</span>
+            {% endif %}
+          </td>
+          <td style="text-align:center;">
+            {% if c.cantidad_reprogramaciones > 0 %}
+            <button class="reprog-btn"
+                    data-bs-toggle="modal" data-bs-target="#modalHist{{ c.id }}">
+              {{ c.cantidad_reprogramaciones }}×
+            </button>
+            {% else %}<span class="reprog-none">—</span>{% endif %}
+          </td>
+          <td>
+            <span class="fecha-cell">{{ c.fecha_entrega_real.strftime('%d/%m/%Y') if c.fecha_entrega_real else '—' }}</span>
+          </td>
+          <td>
+            {% if c.atrasado %}
+              <span class="atr-si"><i class="bi bi-exclamation-circle me-1"></i>Sí</span>
+            {% else %}
+              <span class="atr-no">No</span>
             {% endif %}
           </td>
           <td>
             {% if c.observacion_general %}
-            <span class="obs-cell"
+            <span class="obs-snippet"
                   data-bs-toggle="modal" data-bs-target="#modalObs{{ c.id }}"
                   title="Ver observación">
-              {{ c.observacion_general[:60] }}{% if c.observacion_general|length > 60 %}…{% endif %}
+              {{ c.observacion_general[:50] }}{% if c.observacion_general|length > 50 %}…{% endif %}
             </span>
-            {% else %}—{% endif %}
-          </td>
-          <td class="text-center">
-            {% if c.evidencia_path %}
-            <a href="{{ url_for('compromisos.ver_evidencia', comp_id=c.id) }}"
-               class="btn btn-act btn-outline-success" target="_blank" title="Ver evidencia">
-              <i class="bi bi-file-earmark-check"></i>
-            </a>
-            {% else %}
-            <span class="text-muted" style="font-size:.75rem;">Sin evidencia</span>
-            {% endif %}
+            {% else %}<span class="atr-no">—</span>{% endif %}
           </td>
           <td>
-            <div class="d-flex gap-1 flex-wrap">
+            {% if c.evidencia_path %}
+            <a href="{{ url_for('compromisos.ver_evidencia', comp_id=c.id) }}"
+               class="ev-link" target="_blank" title="Ver evidencia">
+              <i class="bi bi-file-earmark-check"></i> Ver
+            </a>
+            {% else %}<span class="ev-none">Sin evidencia</span>{% endif %}
+          </td>
+          <td>
+            <div class="row-actions">
               {% if es_neo and c.estado != 'Cerrado' %}
-              {# NEO: reprogramar y cerrar #}
-              <button class="btn btn-act btn-outline-secondary"
-                      data-bs-toggle="modal" data-bs-target="#modalReprog{{ c.id }}"
-                      title="Reprogramar">
-                <i class="bi bi-clock-history"></i>
+              <button class="act-btn" data-bs-toggle="modal"
+                      data-bs-target="#modalReprog{{ c.id }}" title="Reprogramar">
+                <i class="bi bi-calendar-plus"></i>
               </button>
-              <button class="btn btn-act btn-outline-success"
-                      data-bs-toggle="modal" data-bs-target="#modalCerrar{{ c.id }}"
-                      title="Cerrar compromiso">
+              <button class="act-btn success" data-bs-toggle="modal"
+                      data-bs-target="#modalCerrar{{ c.id }}" title="Cerrar">
                 <i class="bi bi-check-lg"></i>
               </button>
               {% endif %}
-
-              {# Evidencia: NEO y coordinador (si no está cerrado) #}
               {% if c.estado != 'Cerrado' %}
-              <button class="btn btn-act btn-outline-warning"
-                      data-bs-toggle="modal" data-bs-target="#modalEvidencia{{ c.id }}"
-                      title="Subir evidencia">
+              <button class="act-btn warn" data-bs-toggle="modal"
+                      data-bs-target="#modalEvidencia{{ c.id }}" title="Subir evidencia">
                 <i class="bi bi-upload"></i>
               </button>
               {% endif %}
-
-              {# Observación: NEO y coordinador siempre #}
-              <button class="btn btn-act btn-outline-info"
-                      data-bs-toggle="modal" data-bs-target="#modalAddObs{{ c.id }}"
-                      title="Observación">
+              <button class="act-btn" data-bs-toggle="modal"
+                      data-bs-target="#modalAddObs{{ c.id }}" title="Observación">
                 <i class="bi bi-chat-left-text"></i>
               </button>
-
-              {# Eliminar: solo NEO #}
               {% if es_neo %}
               <form action="{{ url_for('compromisos.eliminar', comp_id=c.id) }}"
-                    method="post" class="d-inline"
+                    method="post" style="display:inline;"
                     onsubmit="return confirm('¿Eliminar este compromiso?')">
-                <button class="btn btn-act btn-outline-danger" title="Eliminar">
+                <button type="submit" class="act-btn danger" title="Eliminar">
                   <i class="bi bi-trash"></i>
                 </button>
               </form>
@@ -328,44 +906,53 @@
           </td>
         </tr>
 
-        <!-- MODAL Observación -->
+        <!-- ── modales de fila ── -->
+
         {% if c.observacion_general %}
         <div class="modal fade" id="modalObs{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header py-2">
-                <h6 class="modal-title fw-bold"><i class="bi bi-chat-text me-2"></i>Observación</h6>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              <div class="modal-header-ag">
+                <h5><i class="bi bi-chat-text"></i>Observación</h5>
+                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
               </div>
-              <div class="modal-body">
-                <pre class="mb-0" style="white-space:pre-wrap;font-family:inherit;font-size:.88rem;">{{ c.observacion_general }}</pre>
+              <div class="modal-body-ag">
+                <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:.75rem;">{{ c.responsable }} · {{ c.contrato.contrato }}</p>
+                <pre style="white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:.88rem;
+                            background:var(--surface-2);border-radius:var(--radius-sm);
+                            padding:.85rem;border:1px solid var(--border);margin:0;
+                            color:var(--ink-2);">{{ c.observacion_general }}</pre>
               </div>
             </div>
           </div>
         </div>
         {% endif %}
 
-        <!-- MODAL Historial -->
         {% if c.cantidad_reprogramaciones > 0 %}
         <div class="modal fade" id="modalHist{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header py-2">
-                <h6 class="modal-title fw-bold"><i class="bi bi-clock-history me-2"></i>Historial de Reprogramaciones</h6>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              <div class="modal-header-ag">
+                <h5><i class="bi bi-clock-history"></i>Historial · {{ c.cantidad_reprogramaciones }} reprogramación(es)</h5>
+                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
               </div>
-              <div class="modal-body p-0">
-                <table class="table table-sm mb-0">
-                  <thead class="table-light">
-                    <tr><th>#</th><th>Fecha anterior</th><th>Nueva fecha</th><th>Cambio</th></tr>
+              <div class="modal-body-ag" style="padding:0;">
+                <table style="width:100%;border-collapse:collapse;font-size:.83rem;">
+                  <thead>
+                    <tr style="background:var(--surface-2);border-bottom:1px solid var(--border);">
+                      <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">#</th>
+                      <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Fecha anterior</th>
+                      <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Nueva fecha</th>
+                      <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Registrado</th>
+                    </tr>
                   </thead>
                   <tbody>
                     {% for h in c.historial %}
-                    <tr>
-                      <td>{{ loop.index }}</td>
-                      <td>{{ h.fecha_anterior.strftime('%Y-%m-%d') }}</td>
-                      <td>{{ h.nueva_fecha.strftime('%Y-%m-%d') }}</td>
-                      <td>{{ h.fecha_cambio.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <tr style="border-bottom:1px solid var(--border);">
+                      <td style="padding:.55rem .85rem;color:var(--ink-3);">{{ loop.index }}</td>
+                      <td style="padding:.55rem .85rem;font-variant-numeric:tabular-nums;">{{ h.fecha_anterior.strftime('%d/%m/%Y') }}</td>
+                      <td style="padding:.55rem .85rem;font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue);">{{ h.nueva_fecha.strftime('%d/%m/%Y') }}</td>
+                      <td style="padding:.55rem .85rem;font-size:.78rem;color:var(--ink-3);">{{ h.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</td>
                     </tr>
                     {% endfor %}
                   </tbody>
@@ -376,31 +963,30 @@
         </div>
         {% endif %}
 
-        <!-- MODAL Subir Evidencia (NEO y coordinador) -->
         {% if c.estado != 'Cerrado' %}
+        <!-- Subir evidencia -->
         <div class="modal fade" id="modalEvidencia{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header py-2">
-                <h6 class="modal-title fw-bold"><i class="bi bi-upload me-2"></i>Subir Evidencia</h6>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              <div class="modal-header-ag">
+                <h5><i class="bi bi-upload"></i>Subir Evidencia</h5>
+                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
               </div>
-              <form action="{{ url_for('compromisos.subir_evidencia', comp_id=c.id) }}" method="post"
-                    enctype="multipart/form-data">
-                <div class="modal-body">
-                  <p class="text-muted mb-3" style="font-size:.83rem;">{{ c.compromiso[:80] }}{% if c.compromiso|length > 80 %}…{% endif %}</p>
+              <form action="{{ url_for('compromisos.subir_evidencia', comp_id=c.id) }}" method="post" enctype="multipart/form-data">
+                <div class="modal-body-ag">
+                  <p style="font-size:.82rem;color:var(--ink-2);margin-bottom:1rem;line-height:1.5;">{{ c.compromiso[:100] }}{% if c.compromiso|length > 100 %}…{% endif %}</p>
                   {% if c.evidencia_nombre %}
-                  <p class="text-info mb-2" style="font-size:.82rem;"><i class="bi bi-file-earmark me-1"></i>Actual: <strong>{{ c.evidencia_nombre }}</strong> (se reemplazará)</p>
+                  <div style="background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:var(--radius-sm);padding:.5rem .75rem;margin-bottom:.85rem;font-size:.78rem;color:var(--amber);">
+                    <i class="bi bi-info-circle me-1"></i>Evidencia actual: <strong>{{ c.evidencia_nombre }}</strong> — se reemplazará
+                  </div>
                   {% endif %}
-                  <label class="form-label fw-semibold">Archivo (JPG, PNG, WEBP, PDF)</label>
-                  <input type="file" name="evidencia" class="form-control"
-                         accept=".jpg,.jpeg,.png,.webp,.pdf" required>
+                  <label class="ag-label">Archivo (JPG, PNG, WEBP, PDF)</label>
+                  <input type="file" name="evidencia" class="ag-input" accept=".jpg,.jpeg,.png,.webp,.pdf" required>
+                  <p style="font-size:.72rem;color:var(--ink-3);margin-top:.4rem;">Máximo 10 MB</p>
                 </div>
-                <div class="modal-footer py-2">
-                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-sm btn-warning text-white">
-                    <i class="bi bi-upload me-1"></i>Subir
-                  </button>
+                <div class="modal-foot-ag">
+                  <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn-amber"><i class="bi bi-upload"></i>Subir</button>
                 </div>
               </form>
             </div>
@@ -408,60 +994,64 @@
         </div>
         {% endif %}
 
-        <!-- MODAL Reprogramar (solo NEO) -->
         {% if es_neo and c.estado != 'Cerrado' %}
+        <!-- Reprogramar -->
         <div class="modal fade" id="modalReprog{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header py-2">
-                <h6 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2"></i>Reprogramar Compromiso</h6>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              <div class="modal-header-ag">
+                <h5><i class="bi bi-calendar-plus"></i>Reprogramar</h5>
+                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
               </div>
               <form action="{{ url_for('compromisos.reprogramar', comp_id=c.id) }}" method="post">
-                <div class="modal-body">
-                  <p class="text-muted mb-1" style="font-size:.83rem;">{{ c.compromiso }}</p>
-                  <p class="mb-3" style="font-size:.83rem;">Fecha actual: <strong>{{ c.fecha_entrega.strftime('%Y-%m-%d') }}</strong></p>
-                  <label class="form-label fw-semibold">Nueva fecha de entrega</label>
-                  <input type="date" name="nueva_fecha" class="form-control" required>
+                <div class="modal-body-ag">
+                  <p style="font-size:.82rem;color:var(--ink-2);margin-bottom:.5rem;line-height:1.5;">{{ c.compromiso[:100] }}{% if c.compromiso|length > 100 %}…{% endif %}</p>
+                  <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:.5rem .75rem;margin-bottom:1rem;font-size:.82rem;color:var(--ink-2);border:1px solid var(--border);">
+                    Fecha actual: <strong style="color:var(--ink);">{{ c.fecha_entrega.strftime('%d/%m/%Y') }}</strong>
+                    {% if c.cantidad_reprogramaciones > 0 %}
+                    · <span style="color:var(--amber);">{{ c.cantidad_reprogramaciones }} reprogramación(es) prev.</span>
+                    {% endif %}
+                  </div>
+                  <label class="ag-label">Nueva fecha de entrega</label>
+                  <input type="date" name="nueva_fecha" class="ag-input" required>
                 </div>
-                <div class="modal-footer py-2">
-                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-sm btn-primary">Reprogramar</button>
+                <div class="modal-foot-ag">
+                  <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn-teal"><i class="bi bi-check-lg"></i>Reprogramar</button>
                 </div>
               </form>
             </div>
           </div>
         </div>
 
-        <!-- MODAL Cerrar (solo NEO) -->
+        <!-- Cerrar -->
         <div class="modal fade" id="modalCerrar{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header py-2">
-                <h6 class="modal-title fw-bold"><i class="bi bi-check-circle me-2 text-success"></i>Cerrar Compromiso</h6>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              <div class="modal-header-ag" style="background:var(--green);">
+                <h5><i class="bi bi-check-circle"></i>Cerrar Compromiso</h5>
+                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
               </div>
-              <form action="{{ url_for('compromisos.cerrar', comp_id=c.id) }}" method="post"
-                    enctype="multipart/form-data">
-                <div class="modal-body">
-                  <div class="mb-3">
-                    <label class="form-label fw-semibold">Fecha real de entrega <span class="text-danger">*</span></label>
-                    <input type="date" name="fecha_entrega_real" class="form-control" required>
+              <form action="{{ url_for('compromisos.cerrar', comp_id=c.id) }}" method="post" enctype="multipart/form-data">
+                <div class="modal-body-ag">
+                  <div style="margin-bottom:1rem;">
+                    <label class="ag-label">Fecha real de entrega *</label>
+                    <input type="date" name="fecha_entrega_real" class="ag-input" required>
                   </div>
-                  <div class="mb-3">
-                    <label class="form-label fw-semibold">Observación de cierre</label>
-                    <textarea name="obs_cierre" class="form-control" rows="3"
-                              placeholder="Descripción del cierre..."></textarea>
+                  <div style="margin-bottom:1rem;">
+                    <label class="ag-label">Observación de cierre</label>
+                    <textarea name="obs_cierre" class="ag-input ag-textarea"
+                              placeholder="Describe cómo se cumplió el compromiso..."></textarea>
                   </div>
                   <div>
-                    <label class="form-label fw-semibold">Evidencia (opcional)</label>
-                    <input type="file" name="evidencia" class="form-control"
-                           accept=".jpg,.jpeg,.png,.webp,.pdf">
+                    <label class="ag-label">Evidencia (opcional)</label>
+                    <input type="file" name="evidencia" class="ag-input" accept=".jpg,.jpeg,.png,.webp,.pdf">
+                    <p style="font-size:.72rem;color:var(--ink-3);margin-top:.35rem;">Requiere evidencia o una observación para cerrar.</p>
                   </div>
                 </div>
-                <div class="modal-footer py-2">
-                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-sm btn-success">Cerrar compromiso</button>
+                <div class="modal-foot-ag">
+                  <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn-green"><i class="bi bi-check-circle"></i>Cerrar compromiso</button>
                 </div>
               </form>
             </div>
@@ -469,31 +1059,34 @@
         </div>
         {% endif %}
 
-        <!-- MODAL Añadir Observación -->
+        <!-- Observación -->
         <div class="modal fade" id="modalAddObs{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header py-2">
-                <h6 class="modal-title fw-bold"><i class="bi bi-chat-left-text me-2"></i>Observación</h6>
-                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              <div class="modal-header-ag">
+                <h5><i class="bi bi-chat-left-text"></i>Observación</h5>
+                <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
               </div>
-              <div class="modal-body">
+              <div class="modal-body-ag">
                 {% if c.observacion_general %}
-                <div class="p-2 bg-light rounded mb-3" style="font-size:.8rem;white-space:pre-wrap;max-height:120px;overflow-y:auto;">{{ c.observacion_general }}</div>
+                <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);
+                            padding:.75rem;margin-bottom:1rem;font-size:.8rem;color:var(--ink-2);
+                            white-space:pre-wrap;max-height:110px;overflow-y:auto;line-height:1.5;">{{ c.observacion_general }}</div>
                 {% endif %}
-                <textarea class="form-control mb-2" id="obsTexto{{ c.id }}" rows="4"
-                          placeholder="Escribe la observación..."></textarea>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="obsReemp{{ c.id }}">
-                  <label class="form-check-label text-danger" for="obsReemp{{ c.id }}" style="font-size:.8rem;">
-                    Reemplazar observación existente
-                  </label>
-                </div>
+                <label class="ag-label">Nueva anotación</label>
+                <textarea class="ag-input ag-textarea" id="obsTexto{{ c.id }}"
+                          placeholder="Escribe tu observación..."></textarea>
+                <label style="display:flex;align-items:center;gap:.4rem;margin-top:.65rem;cursor:pointer;font-size:.8rem;color:var(--red);">
+                  <input type="checkbox" id="obsReemp{{ c.id }}"
+                         style="accent-color:var(--red);width:14px;height:14px;">
+                  Reemplazar observación existente
+                </label>
               </div>
-              <div class="modal-footer py-2">
-                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-sm btn-primary"
-                        onclick="guardarObs({{ c.id }})">Guardar</button>
+              <div class="modal-foot-ag">
+                <button class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn-teal" onclick="guardarObs({{ c.id }})">
+                  <i class="bi bi-floppy"></i>Guardar
+                </button>
               </div>
             </div>
           </div>
@@ -502,114 +1095,121 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
+
   {% else %}
-  <div class="text-center py-5 text-muted">
-    <i class="bi bi-calendar-x" style="font-size:3rem;color:var(--ag-primary);opacity:.4;"></i>
-    <p class="mt-3 mb-0 fs-6">No hay compromisos con los filtros seleccionados.</p>
-    <a href="{{ url_for('compromisos.nuevo') }}" class="btn btn-sm btn-crear mt-3">
-      <i class="bi bi-plus-lg me-1"></i>Crear compromiso
-    </a>
+  <!-- ── EMPTY STATE ── -->
+  <div class="table-wrap">
+    <div class="empty-state">
+      <div class="empty-icon"><i class="bi bi-calendar-x"></i></div>
+      <p>No hay compromisos con los filtros seleccionados.</p>
+      {% if es_neo %}
+      <button class="btn-primary-ag" data-bs-toggle="modal" data-bs-target="#modalCrear">
+        <i class="bi bi-plus-lg"></i>Crear primer compromiso
+      </button>
+      {% endif %}
+    </div>
   </div>
   {% endif %}
-</div>
 
-<!-- FORM oculto para eliminación masiva -->
+</div><!-- /ag-page -->
+
+<!-- ── FORM eliminación masiva ── -->
 <form id="formElimMasivo" action="{{ url_for('compromisos.eliminar_masivo') }}" method="post">
   <input type="hidden" name="ids" id="inputIdsMasivo">
 </form>
 
-<!-- ══════════════════════════════════════════════════════════════════════════
+<!-- ══════════════════════════════════════════════════════════
      MODAL: CREAR COMPROMISO
-     ══════════════════════════════════════════════════════════════════════════ -->
+     ══════════════════════════════════════════════════════════ -->
+{% if es_neo %}
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-
-      <div class="modal-header" style="background:var(--ag-primary);">
-        <h5 class="modal-title text-white fw-bold">
-          <i class="bi bi-plus-circle me-2"></i>Crear compromiso
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      <div class="modal-header-ag">
+        <h5><i class="bi bi-plus-circle"></i>Nuevo compromiso</h5>
+        <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
       </div>
-
       <form action="{{ url_for('compromisos.nuevo') }}" method="post">
-        <div class="modal-body">
+        <div class="modal-body-ag">
 
-          <div class="row g-3 mb-3">
-            <!-- Contrato -->
-            <div class="col-12 col-md-5">
-              <label class="form-label fw-semibold" style="font-size:.83rem;">Contrato</label>
-              <select name="contrato_id" id="selectContrato" class="form-select" required
-                      onchange="onContratoChange(this)">
+          <div style="display:grid;grid-template-columns:1fr auto auto;gap:.75rem;margin-bottom:1rem;">
+            <div>
+              <label class="ag-label">Contrato</label>
+              <select name="contrato_id" id="selectContrato" class="ag-input"
+                      style="padding:.42rem .65rem;" required onchange="onContratoChange(this)">
                 <option value="">— Selecciona un contrato —</option>
                 {% for c in contratos %}
                 <option value="{{ c.id }}">{{ c.contrato }}</option>
                 {% endfor %}
-                <option value="__nuevo__" style="color:var(--ag-primary);font-weight:600;">
+                <option value="__nuevo__" style="color:var(--teal);font-weight:600;">
                   + Crear nuevo contrato...
                 </option>
               </select>
-              <!-- fila de creación rápida (oculta por defecto) -->
-              <div id="rowNuevoContrato" class="d-none mt-2 d-flex gap-1 align-items-center">
-                <input type="text" id="inputNuevoContrato" class="form-control form-control-sm"
-                       placeholder="Nombre del nuevo contrato..." style="flex:1;">
-                <button type="button" class="btn btn-sm text-white fw-semibold px-3"
-                        style="background:var(--ag-primary);border-color:var(--ag-primary);"
-                        onclick="crearContratoRapido()">Crear</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary"
-                        onclick="cancelarNuevoContrato()">
-                  <i class="bi bi-x"></i>
-                </button>
+              <div id="rowNuevoContrato" class="quick-create-row" style="display:none;">
+                <input type="text" id="inputNuevoContrato" placeholder="Nombre del nuevo contrato...">
+                <button type="button" class="btn-teal" onclick="crearContratoRapido()">Crear</button>
+                <button type="button" class="btn-neutral" onclick="cancelarNuevoContrato()"><i class="bi bi-x"></i></button>
               </div>
             </div>
-            <!-- Responsable -->
-            <div class="col-12 col-md-4">
-              <label class="form-label fw-semibold" style="font-size:.83rem;">Responsable</label>
-              <input type="text" name="responsable" class="form-control"
-                     placeholder="Nombre completo" required>
+            <div>
+              <label class="ag-label">Responsable</label>
+              <input type="text" name="responsable" class="ag-input" placeholder="Nombre completo" required>
             </div>
-            <!-- Fecha entrega -->
-            <div class="col-12 col-md-3">
-              <label class="form-label fw-semibold" style="font-size:.83rem;">Fecha entrega (acordada)</label>
-              <input type="date" name="fecha_entrega" class="form-control" required>
+            <div>
+              <label class="ag-label">Fecha entrega acordada</label>
+              <input type="date" name="fecha_entrega" class="ag-input" required>
             </div>
           </div>
 
-          <div class="row g-3">
-            <!-- Compromiso -->
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold" style="font-size:.83rem;">Compromiso</label>
-              <textarea name="compromiso" class="form-control" rows="5"
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+            <div>
+              <label class="ag-label">Compromiso *</label>
+              <textarea name="compromiso" class="ag-input ag-textarea" rows="5"
                         placeholder="Describe el compromiso con detalle..." required></textarea>
             </div>
-            <!-- Observación -->
-            <div class="col-12 col-md-6">
-              <label class="form-label fw-semibold" style="font-size:.83rem;">Observación general (opcional)</label>
-              <textarea name="observacion_general" class="form-control" rows="5"
+            <div>
+              <label class="ag-label">Observación inicial (opcional)</label>
+              <textarea name="observacion_general" class="ag-input ag-textarea" rows="5"
                         placeholder="Notas, contexto o seguimiento..."></textarea>
             </div>
           </div>
 
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn text-white fw-semibold"
-                  style="background:var(--ag-primary); border-color:var(--ag-primary);">
-            <i class="bi bi-floppy me-1"></i>Guardar
-          </button>
+        <div class="modal-foot-ag">
+          <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-teal"><i class="bi bi-floppy"></i>Guardar</button>
         </div>
       </form>
-
     </div>
   </div>
 </div>
+{% endif %}
 
 <script>
-// Tooltips
-document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+// ── Filtros toggle ──
+const filterBody    = document.getElementById('filterBody');
+const filterChevron = document.getElementById('filterChevron');
+const filterToggle  = document.getElementById('filterToggle');
+let filtersOpen = false;
 
-// Checkboxes masivos
+// Auto-abrir si hay filtros activos
+{% if contrato_id_sel or q_resp_sel or atrasado_sel or fecha_desde_sel or fecha_hasta_sel %}
+filtersOpen = true;
+filterBody.style.display = 'block';
+filterChevron.style.transform = 'rotate(180deg)';
+filterToggle.classList.add('open');
+{% endif %}
+
+function toggleFiltros() {
+  filtersOpen = !filtersOpen;
+  filterBody.style.display = filtersOpen ? 'block' : 'none';
+  filterChevron.style.transform = filtersOpen ? 'rotate(180deg)' : '';
+  filterToggle.classList.toggle('open', filtersOpen);
+}
+
+// ── Selección masiva ──
 function toggleTodo(chk) {
   document.querySelectorAll('.chk-comp').forEach(c => c.checked = chk.checked);
   actualizarBtnElim();
@@ -617,59 +1217,22 @@ function toggleTodo(chk) {
 function actualizarBtnElim() {
   const n = document.querySelectorAll('.chk-comp:checked').length;
   document.getElementById('btnElimMasivo').disabled = n === 0;
+  const chkTodo = document.getElementById('chkTodo');
+  if (chkTodo) {
+    const total = document.querySelectorAll('.chk-comp').length;
+    chkTodo.indeterminate = n > 0 && n < total;
+    chkTodo.checked = n === total && total > 0;
+  }
 }
 function eliminarSeleccionados() {
   const ids = [...document.querySelectorAll('.chk-comp:checked')].map(c => c.value);
   if (!ids.length) return;
-  if (!confirm(`¿Eliminar ${ids.length} compromiso(s) seleccionado(s)? Esta acción no se puede deshacer.`)) return;
+  if (!confirm(`¿Eliminar ${ids.length} compromiso(s)? Esta acción no se puede deshacer.`)) return;
   document.getElementById('inputIdsMasivo').value = ids.join(',');
   document.getElementById('formElimMasivo').submit();
 }
 
-// ── Contrato rápido ──────────────────────────────────────────────────────────
-function onContratoChange(sel) {
-  if (sel.value === '__nuevo__') {
-    document.getElementById('rowNuevoContrato').classList.remove('d-none');
-    sel.value = '';          // deselecciona para que required funcione
-    document.getElementById('inputNuevoContrato').focus();
-  }
-}
-
-function cancelarNuevoContrato() {
-  document.getElementById('rowNuevoContrato').classList.add('d-none');
-  document.getElementById('inputNuevoContrato').value = '';
-  document.getElementById('selectContrato').value = '';
-}
-
-function crearContratoRapido() {
-  const nombre = document.getElementById('inputNuevoContrato').value.trim();
-  if (!nombre) { alert('Escribe el nombre del contrato.'); return; }
-
-  const fd = new FormData();
-  fd.append('nombre', nombre);
-
-  fetch('{{ url_for("compromisos.crear_contrato_rapido") }}', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(data => {
-      if (!data.ok) { alert(data.error || 'Error al crear contrato.'); return; }
-
-      // Agrega la nueva opción antes de "+ Crear nuevo..."
-      const sel = document.getElementById('selectContrato');
-      const nuevoOpt = document.createElement('option');
-      nuevoOpt.value = data.id;
-      nuevoOpt.text  = data.nombre;
-      // insertar antes de la última opción (__nuevo__)
-      sel.insertBefore(nuevoOpt, sel.lastElementChild);
-      sel.value = data.id;
-
-      // Oculta la fila de creación
-      document.getElementById('rowNuevoContrato').classList.add('d-none');
-      document.getElementById('inputNuevoContrato').value = '';
-    })
-    .catch(() => alert('Error de red.'));
-}
-
-// Observación AJAX
+// ── Observación AJAX ──
 function guardarObs(id) {
   const texto = document.getElementById('obsTexto' + id).value.trim();
   if (!texto) { alert('Escribe una observación antes de guardar.'); return; }
@@ -687,5 +1250,45 @@ function guardarObs(id) {
     })
     .catch(() => alert('Error de red.'));
 }
+
+// ── Contrato rápido ──
+function onContratoChange(sel) {
+  if (sel.value === '__nuevo__') {
+    document.getElementById('rowNuevoContrato').style.display = 'flex';
+    sel.value = '';
+    document.getElementById('inputNuevoContrato').focus();
+  }
+}
+function cancelarNuevoContrato() {
+  document.getElementById('rowNuevoContrato').style.display = 'none';
+  document.getElementById('inputNuevoContrato').value = '';
+  document.getElementById('selectContrato').value = '';
+}
+function crearContratoRapido() {
+  const nombre = document.getElementById('inputNuevoContrato').value.trim();
+  if (!nombre) { alert('Escribe el nombre del contrato.'); return; }
+  const fd = new FormData();
+  fd.append('nombre', nombre);
+  fetch('{{ url_for("compromisos.crear_contrato_rapido") }}', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) { alert(data.error || 'Error al crear contrato.'); return; }
+      const sel = document.getElementById('selectContrato');
+      const opt = document.createElement('option');
+      opt.value = data.id;
+      opt.text  = data.nombre;
+      sel.insertBefore(opt, sel.lastElementChild);
+      sel.value = data.id;
+      document.getElementById('rowNuevoContrato').style.display = 'none';
+      document.getElementById('inputNuevoContrato').value = '';
+    })
+    .catch(() => alert('Error de red.'));
+}
+
+// ── Tooltips ──
+document.querySelectorAll('[title]').forEach(el => {
+  if (!el.dataset.bsToggle) el.setAttribute('data-bs-toggle', 'tooltip');
+});
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el, { trigger: 'hover' }));
 </script>
 {% endblock %}
