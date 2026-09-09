@@ -139,7 +139,7 @@
         <!-- Límite legal 48h -->
         <div class="dh-card">
             <div class="dh-card-hdr">
-                <span class="dh-card-ttl"><i class="bi bi-exclamation-triangle me-1" style="color:#f87171"></i>Límite legal 48h/mes — HE puras (03,04,05,06)</span>
+                <span class="dh-card-ttl"><i class="bi bi-person-lines-fill me-1" style="color:#f87171"></i>Control HE por persona — HE puras (03,04,05,06)</span>
             </div>
             <div style="overflow-x:auto;max-height:320px;overflow-y:auto">
                 <table class="dh-table" id="tblLimite">
@@ -390,15 +390,18 @@ function renderChartDia(dias) {
 function renderLimite(lista) {
     const tbody = document.getElementById('tbodyLimite');
     if (!lista.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#4ade80"><i class="bi bi-check-circle me-1"></i>Todos dentro del límite legal</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#4ade80"><i class="bi bi-check-circle me-1"></i>Sin registros de horas extras</td></tr>';
         return;
     }
+    const badgeCfg = {
+        excede: { cls: 'alerta-row', bg: '#450a0a', color: '#f87171', icon: '⚠', label: 'Excede 48h' },
+        riesgo: { cls: 'warn-row',   bg: '#451a03', color: '#fcd34d', icon: '⚡', label: 'En Riesgo' },
+        rango:  { cls: '',           bg: '#052e16', color: '#4ade80', icon: '✔', label: 'En Rango' },
+    };
     tbody.innerHTML = lista.map(r => {
-        const cls = r.excede ? 'alerta-row' : 'warn-row';
-        const badge = r.excede
-            ? '<span class="badge-estado" style="background:#450a0a;color:#f87171">⚠ EXCEDE 48h</span>'
-            : '<span class="badge-estado" style="background:#451a03;color:#fcd34d">⚡ En riesgo</span>';
-        return `<tr class="${cls}">
+        const cfg = badgeCfg[r.estado] || badgeCfg.rango;
+        const badge = `<span class="badge-estado" style="background:${cfg.bg};color:${cfg.color}">${cfg.icon} ${cfg.label}</span>`;
+        return `<tr class="${cfg.cls}">
             <td><strong>${r.nombre}</strong><br><span style="font-size:.68rem;opacity:.7">${r.cedula}</span></td>
             <td style="font-size:.72rem">${r.contrato}</td>
             <td style="font-size:.72rem">${r.mes}</td>

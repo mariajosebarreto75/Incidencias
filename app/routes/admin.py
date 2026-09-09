@@ -1750,16 +1750,13 @@ def api_he_dashboard_data():
         if not r.fecha_labor: continue
         if not (r.cedula or "").strip(): continue
         if co_obj and not (co_obj.fecha_inicio <= r.fecha_labor <= co_obj.fecha_fin):
-            continue  # excluir registros fuera del rango exacto del corte
+            continue
         if corte_id:
             llave = (r.cedula, "")
         else:
             llave = (r.cedula, r.fecha_labor.strftime("%Y-%m"))
-        # Solo contar horas autorizadas de registros conformes o descontados
-        estado = (r.estado or "").strip().upper()
-        if estado not in ("CONFORME", "DESCONTADA"):
-            continue
-        hrs = r.horas_autorizadas or 0
+        # Contar horas reportadas de cualquier registro (no solo conformes)
+        hrs = r.horas_reportadas or 0
         if not hrs:
             continue
         he_por_persona_mes[llave]["nombre"] = r.nombre or r.cedula
@@ -1769,15 +1766,23 @@ def api_he_dashboard_data():
         he_por_persona_mes[llave]["horas"] += hrs
     limite_legal = []
     for (ced, mes_key), info in he_por_persona_mes.items():
-        if info["horas"] >= 36:  # mostrar desde 36h (alerta 75%)
-            limite_legal.append({
-                "cedula":   ced,
-                "nombre":   info["nombre"],
-                "contrato": " / ".join(sorted(info["contratos"])) if info["contratos"] else "",
-                "mes":      mes_key or info["mes"],
-                "horas":    info["horas"],
-                "excede":   info["horas"] >= 48,
-            })
+        if not info["horas"]:
+            continue
+        h = info["horas"]
+        if h >= 48:
+            estado_limite = "excede"
+        elif h >= 30:
+            estado_limite = "riesgo"
+        else:
+            estado_limite = "rango"
+        limite_legal.append({
+            "cedula":   ced,
+            "nombre":   info["nombre"],
+            "contrato": " / ".join(sorted(info["contratos"])) if info["contratos"] else "",
+            "mes":      mes_key or info["mes"],
+            "horas":    h,
+            "estado":   estado_limite,
+        })
     limite_legal.sort(key=lambda x: -x["horas"])
 
     # ── Supervisores autorizantes ─────────────────────────────────────────────
