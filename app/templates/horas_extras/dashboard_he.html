@@ -303,7 +303,19 @@ function _renderChartDiaActual() {
             responsive: true, maintainAspectRatio: false,
             plugins: {
                 legend: { display: datasets.length > 1, labels: { color: '#e2e8f0', font: { size: 11 } } },
-                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmtHrs(c.parsed.y) + 'h — clic para filtrar' } }
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        title: items => 'Fecha: ' + items[0].label,
+                        label: c => ' ' + c.dataset.label + ': ' + fmtHrs(c.parsed.y) + 'h',
+                        footer: items => {
+                            if (items.length < 2) return '';
+                            const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                            return 'Total combinado: ' + fmtHrs(total) + 'h';
+                        }
+                    }
+                }
             },
             scales: {
                 x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font:{size:10}, maxRotation: 45 } },
