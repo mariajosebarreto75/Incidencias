@@ -1107,11 +1107,12 @@ const COLORES_CONC = ["#0d3b66","#1565c0","#0369a1","#0e7490","#065f46","#6b21a8
 
 async function cargarResumen() {
     const cid   = document.getElementById("gridContrato").value;
-    // Usar fCorte si está seleccionado; si no, usar el corte activo de la grilla de registro
+    // Si el usuario seleccionó fechas manualmente (fCorte está vacío), priorizar fechas
     const fCorteVal = document.getElementById("fCorte")?.value ?? "";
-    const corte = fCorteVal || (_corteActualRegId ? String(_corteActualRegId) : "");
-    const desde = corte ? "" : (document.getElementById("fDesde")?.value ?? "");
-    const hasta = corte ? "" : (document.getElementById("fHasta")?.value ?? "");
+    const desde = document.getElementById("fDesde")?.value ?? "";
+    const hasta  = document.getElementById("fHasta")?.value  ?? "";
+    // Solo usar corte automático si no hay fechas manuales activas
+    const corte = fCorteVal || ((!desde && !hasta && _corteActualRegId) ? String(_corteActualRegId) : "");
     const vacio    = document.getElementById("resumenVacio");
     const contenido= document.getElementById("resumenContenido");
     if (!cid) {
@@ -1120,8 +1121,8 @@ async function cargarResumen() {
     vacio.style.display = "none"; contenido.style.display = "";
 
     let resUrl = `/api/he/resumen?contrato_id=${cid}`;
-    if (corte)            resUrl += `&corte_id=${corte}`;
-    else if (desde && hasta) resUrl += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    if (corte)  { resUrl += `&corte_id=${corte}`; }
+    else        { if (desde) resUrl += `&fecha_desde=${desde}`; if (hasta) resUrl += `&fecha_hasta=${hasta}`; }
     try {
         const r = await fetch(resUrl);
         const d = await r.json();
@@ -1244,8 +1245,8 @@ async function cargarKpis() {
     const desde = document.getElementById("fDesde")?.value ?? "";
     const hasta = document.getElementById("fHasta")?.value ?? "";
     let url = `/api/he/kpis?contrato_id=${cid}`;
-    if (corte)            url += `&corte_id=${corte}`;
-    else if (desde && hasta) url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    if (corte)  { url += `&corte_id=${corte}`; }
+    else        { if (desde) url += `&fecha_desde=${desde}`; if (hasta) url += `&fecha_hasta=${hasta}`; }
     try {
         const r = await fetch(url);
         const d = await r.json();
