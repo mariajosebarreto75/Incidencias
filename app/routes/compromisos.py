@@ -232,6 +232,33 @@ def reprogramar(comp_id):
     return redirect(url_for("compromisos.index"))
 
 
+# ── EDITAR ────────────────────────────────────────────────────────────────────
+
+@compromisos_bp.route("/<int:comp_id>/editar", methods=["POST"])
+@login_required
+def editar(comp_id):
+    if not _es_neo():
+        abort(403)
+    comp = Compromiso.query.get_or_404(comp_id)
+    if not _puede_ver_contrato(comp.contrato_id):
+        abort(403)
+
+    responsable = request.form.get("responsable", "").strip()
+    compromiso  = request.form.get("compromiso", "").strip()
+    obs         = request.form.get("observacion_general", "").strip()
+
+    if not responsable or not compromiso:
+        flash("Responsable y compromiso son obligatorios.", "danger")
+        return redirect(url_for("compromisos.index"))
+
+    comp.responsable         = responsable
+    comp.compromiso          = compromiso
+    comp.observacion_general = obs or None
+    db.session.commit()
+    flash("Compromiso actualizado.", "success")
+    return redirect(url_for("compromisos.index"))
+
+
 # ── CERRAR ────────────────────────────────────────────────────────────────────
 
 @compromisos_bp.route("/<int:comp_id>/cerrar", methods=["POST"])

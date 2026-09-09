@@ -870,6 +870,12 @@ body {
           </td>
           <td>
             <div class="row-actions">
+              {% if es_neo %}
+              <button class="act-btn" data-bs-toggle="modal"
+                      data-bs-target="#modalEditar{{ c.id }}" title="Editar compromiso">
+                <i class="bi bi-pencil"></i>
+              </button>
+              {% endif %}
               {% if es_neo and c.estado != 'Cerrado' %}
               <button class="act-btn" data-bs-toggle="modal"
                       data-bs-target="#modalReprog{{ c.id }}" title="Reprogramar">
@@ -924,6 +930,42 @@ body {
 
   <!-- ══ MODALES (fuera del tbody para evitar renderizado como filas) ══ -->
   {% for c in compromisos %}
+
+  {% if es_neo %}
+  <div class="modal fade" id="modalEditar{{ c.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header-ag">
+          <h5><i class="bi bi-pencil"></i>Editar Compromiso</h5>
+          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form action="{{ url_for('compromisos.editar', comp_id=c.id) }}" method="post">
+          <div class="modal-body-ag">
+            <div style="margin-bottom:1rem;">
+              <label class="ag-label">Responsable *</label>
+              <input type="text" name="responsable" class="ag-input"
+                     value="{{ c.responsable }}" required>
+            </div>
+            <div style="margin-bottom:1rem;">
+              <label class="ag-label">Compromiso *</label>
+              <textarea name="compromiso" class="ag-input ag-textarea"
+                        rows="4" required>{{ c.compromiso }}</textarea>
+            </div>
+            <div>
+              <label class="ag-label">Observación general</label>
+              <textarea name="observacion_general" class="ag-input ag-textarea"
+                        rows="3" placeholder="(opcional)">{{ c.observacion_general or '' }}</textarea>
+            </div>
+          </div>
+          <div class="modal-foot-ag">
+            <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn-teal"><i class="bi bi-floppy"></i>Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   {% if c.observacion_general %}
   <div class="modal fade" id="modalObs{{ c.id }}" tabindex="-1">
