@@ -66,6 +66,18 @@
         </div>
     </div>
 
+    <!-- CHIP filtro drill-down activo -->
+    <div id="drillChip" hidden style="margin-bottom:.6rem;display:flex;align-items:center;gap:.6rem;
+         background:#1d4ed822;border:1px solid #1d4ed8;border-radius:8px;padding:7px 14px;">
+        <i class="bi bi-funnel-fill" style="color:#60a5fa"></i>
+        <span id="drillLabel" style="color:#93c5fd;font-size:.82rem;font-weight:600"></span>
+        <button onclick="limpiarDrill()"
+                style="margin-left:auto;background:#334155;border:none;border-radius:5px;
+                       color:#e2e8f0;font-size:.75rem;padding:3px 10px;cursor:pointer;">
+            <i class="bi bi-x me-1"></i>Quitar filtro
+        </button>
+    </div>
+
     <!-- FILTROS -->
     <div class="dh-card dh-filters" style="margin-bottom:1rem">
         <div>
@@ -206,6 +218,24 @@ let chartTipo = null, chartDia = null;
 let _diasTrabajado = [], _diasReporte = [];
 let _serieActiva = { trabajado: true, reporte: false };
 
+// ── Drill-down state ──────────────────────────────────────────────────────
+let _drill = {};   // {cedula, supervisor, tipo, fecha_drill, label}
+
+function aplicarDrill(params, label) {
+    _drill = { ...params, label };
+    const chip = document.getElementById('drillChip');
+    chip.hidden = false;
+    chip.style.display = 'flex';
+    document.getElementById('drillLabel').textContent = '🔍 ' + label;
+    cargar();
+}
+
+function limpiarDrill() {
+    _drill = {};
+    document.getElementById('drillChip').hidden = true;
+    cargar();
+}
+
 function toggleSerie(which) {
     // Al menos una serie debe estar activa
     const otherKey = which === 'trabajado' ? 'reporte' : 'trabajado';
@@ -262,6 +292,7 @@ function _renderChartDiaActual() {
         });
     }
 
+    ctx.canvas.style.cursor = 'pointer';
     chartDia = new Chart(ctx, {
         type: 'line',
         data: { labels: todasFechas.map(fmtFecha), datasets },
@@ -269,11 +300,16 @@ function _renderChartDiaActual() {
             responsive: true, maintainAspectRatio: false,
             plugins: {
                 legend: { display: datasets.length > 1, labels: { color: '#e2e8f0', font: { size: 11 } } },
-                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmtHrs(c.parsed.y) + 'h' } }
+                tooltip: { callbacks: { label: c => c.dataset.label + ': ' + fmtHrs(c.parsed.y) + 'h — clic para filtrar' } }
             },
             scales: {
                 x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font:{size:10}, maxRotation: 45 } },
                 y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10}, callback: v => fmtHrs(v) + 'h' } }
+            },
+            onClick(_, elements) {
+                if (!elements.length) return;
+                const fecha = todasFechas[elements[0].index];
+                if (fecha) aplicarDrill({ fecha_drill: fecha }, 'Fecha: ' + fmtFecha(fecha));
             }
         },
         plugins: [{
@@ -317,6 +353,11 @@ function buildParams() {
     if (k) p.set('corte_id', k);
     if (d) p.set('fecha_desde', d);
     if (h) p.set('fecha_hasta', h);
+    // drill-down
+    if (_drill.cedula)      p.set('cedula',      _drill.cedula);
+    if (_drill.supervisor)  p.set('supervisor',  _drill.supervisor);
+    if (_drill.tipo)        p.set('tipo',        _drill.tipo);
+    if (_drill.fecha_drill) p.set('fecha_drill', _drill.fecha_drill);
     return p;
 }
 
@@ -390,19 +431,28 @@ function renderChartTipo(tipos) {
         type: 'bar',
         plugins: [barValuePlugin],
         data: { labels, datasets: [{ label: 'Hrs reportadas', data: vals,
-            backgroundColor: tipos.map((_,i)=>colors[i%colors.length]), borderRadius: 4 }] },
+            backgroundColor: tipos.map((t,i) => _drill.tipo === t.codigo ? '#facc15' : colors[i%colors.length]),
+            borderRadius: 4 }] },
         options: {
             indexAxis: 'y',
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: { legend: { display: false },
+                tooltip: { callbacks: { label: c => c.parsed.x.toLocaleString('es-CO') + 'h — clic para filtrar' } }
+            },
             scales: {
                 x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10},
                     callback: v => v.toLocaleString('es-CO') } },
                 y: { grid: { display: false }, ticks: { color: '#e2e8f0', font:{size:11} } }
             },
-            layout: { padding: { right: 90 } }
+            layout: { padding: { right: 90 } },
+            onClick(_, elements) {
+                if (!elements.length) return;
+                const t = tipos[elements[0].index];
+                aplicarDrill({ tipo: t.codigo }, 'Tipo HE: ' + (t.tipo || t.codigo));
+            }
         }
     });
+    document.getElementById('chartTipo').style.cursor = 'pointer';
 }
 
 // Convierte "2026-07-19" → "19-Jul"
@@ -426,7 +476,9 @@ function renderLimite(lista) {
     tbody.innerHTML = lista.map(r => {
         const cfg = badgeCfg[r.estado] || badgeCfg.rango;
         const badge = `<span class="badge-estado" style="background:${cfg.bg};color:${cfg.color}">${cfg.icon} ${cfg.label}</span>`;
-        return `<tr class="${cfg.cls}">
+        const activo = _drill.cedula === r.cedula ? 'background:#1d4ed833;outline:1px solid #60a5fa;' : '';
+        return `<tr class="${cfg.cls}" style="cursor:pointer;${activo}"
+                    onclick="aplicarDrill({cedula:'${r.cedula}'}, 'Persona: ${r.nombre.replace(/'/g,"\\'")}')">
             <td><strong>${r.nombre}</strong><br><span style="font-size:.68rem;opacity:.7">${r.cedula}</span></td>
             <td style="font-size:.72rem">${r.contrato}</td>
             <td style="font-size:.72rem">${r.mes}</td>
@@ -439,13 +491,17 @@ function renderLimite(lista) {
 function renderSupervisores(lista) {
     const tbody = document.getElementById('tbodySup');
     if (!lista.length) { tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:#475569">Sin datos</td></tr>'; return; }
-    tbody.innerHTML = lista.map(s=>`
-        <tr>
+    tbody.innerHTML = lista.map(s => {
+        const activo = _drill.supervisor === s.nombre ? 'background:#1d4ed833;outline:1px solid #60a5fa;' : '';
+        const nombre = s.nombre.replace(/'/g, "\\'");
+        return `<tr style="cursor:pointer;${activo}"
+                    onclick="aplicarDrill({supervisor:'${nombre}'}, 'Supervisor: ${nombre}')">
             <td style="color:#e2e8f0">${s.nombre}</td>
             <td style="text-align:right">${fmt(s.registros)}</td>
             <td style="text-align:right;color:#a78bfa">${fmt(s.hrs_reportadas)}h</td>
             <td style="text-align:right;color:#4ade80;font-weight:600">${fmt(s.hrs_autorizadas)}h</td>
-        </tr>`).join('');
+        </tr>`;
+    }).join('');
 }
 
 const fmtH = n => Math.round(n || 0).toLocaleString('es-CO');

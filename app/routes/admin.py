@@ -1642,11 +1642,16 @@ def api_he_dashboard_data():
     CODIGOS_HE = {"03", "04", "05", "06"}
 
     q = HoraExtra.query
-    contrato_id = request.args.get("contrato_id", type=int)
-    corte_id    = request.args.get("corte_id", type=int)
-    fecha_desde = request.args.get("fecha_desde", "")
-    fecha_hasta = request.args.get("fecha_hasta", "")
-    mes         = request.args.get("mes", "")
+    contrato_id  = request.args.get("contrato_id", type=int)
+    corte_id     = request.args.get("corte_id", type=int)
+    fecha_desde  = request.args.get("fecha_desde", "")
+    fecha_hasta  = request.args.get("fecha_hasta", "")
+    mes          = request.args.get("mes", "")
+    # Filtros de drill-down (clic en indicador)
+    f_cedula     = request.args.get("cedula", "").strip()
+    f_supervisor = request.args.get("supervisor", "").strip()
+    f_tipo       = request.args.get("tipo", "").strip()
+    f_fecha      = request.args.get("fecha_drill", "").strip()
 
     if contrato_id:
         q = q.filter(HoraExtra.contrato_id == contrato_id)
@@ -1669,6 +1674,17 @@ def api_he_dashboard_data():
                 q = q.filter(db.extract("year", HoraExtra.fecha_labor)==int(yr),
                               db.extract("month", HoraExtra.fecha_labor)==int(mo))
             except Exception: pass
+    # Drill-down filters
+    if f_cedula:
+        q = q.filter(HoraExtra.cedula == f_cedula)
+    if f_supervisor:
+        q = q.filter(HoraExtra.autorizacion_sup == f_supervisor)
+    if f_tipo:
+        norm = f_tipo.strip().zfill(2)
+        q = q.filter(db.func.lpad(db.func.trim(HoraExtra.id_concepto), 2, '0') == norm)
+    if f_fecha:
+        try: q = q.filter(HoraExtra.fecha_labor == date.fromisoformat(f_fecha))
+        except Exception: pass
 
     registros = q.order_by(HoraExtra.fecha_labor).all()
 
