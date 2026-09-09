@@ -1744,26 +1744,30 @@ def api_he_dashboard_data():
     # Para el límite legal usamos solo fecha_labor dentro del período del corte
     # (evita doble conteo del filtro OR corte_id/fecha_labor del query principal)
     co_obj = HeCorte.query.get(corte_id) if corte_id else None
-    he_por_persona_mes = defaultdict(lambda: {"nombre":"","contratos":set(),"horas":0,"mes":""})
+    # Etiqueta de período: nombre del corte o rango de fechas si hay corte, mes si no
+    if co_obj:
+        _periodo_label = (co_obj.nombre or
+                          f"{co_obj.fecha_inicio.strftime('%d/%m/%y')} – {co_obj.fecha_fin.strftime('%d/%m/%y')}")
+    else:
+        _periodo_label = None  # se asigna por registro
+
+    he_por_persona_mes = defaultdict(lambda: {"nombre":"","contratos":set(),"horas":0,"periodo":""})
     for r in registros:
         if (r.id_concepto or "").strip().zfill(2) not in CODIGOS_HE: continue
         if not r.fecha_labor: continue
         if not (r.cedula or "").strip(): continue
         if co_obj and not (co_obj.fecha_inicio <= r.fecha_labor <= co_obj.fecha_fin):
             continue
-        if corte_id:
-            llave = (r.cedula, "")
-        else:
-            llave = (r.cedula, r.fecha_labor.strftime("%Y-%m"))
-        # Contar horas reportadas de cualquier registro (no solo conformes)
+        llave = (r.cedula, "") if corte_id else (r.cedula, r.fecha_labor.strftime("%Y-%m"))
         hrs = r.horas_reportadas or 0
         if not hrs:
             continue
-        he_por_persona_mes[llave]["nombre"] = r.nombre or r.cedula
-        he_por_persona_mes[llave]["mes"]    = r.fecha_labor.strftime("%Y-%m")
+        he_por_persona_mes[llave]["nombre"]  = r.nombre or r.cedula
+        he_por_persona_mes[llave]["periodo"] = _periodo_label or r.fecha_labor.strftime("%Y-%m")
         if r.contrato:
             he_por_persona_mes[llave]["contratos"].add(r.contrato.contrato)
         he_por_persona_mes[llave]["horas"] += hrs
+
     limite_legal = []
     for (ced, mes_key), info in he_por_persona_mes.items():
         if not info["horas"]:
@@ -1779,7 +1783,7 @@ def api_he_dashboard_data():
             "cedula":   ced,
             "nombre":   info["nombre"],
             "contrato": " / ".join(sorted(info["contratos"])) if info["contratos"] else "",
-            "mes":      mes_key or info["mes"],
+            "mes":      info["periodo"] if corte_id else (mes_key or info["periodo"]),
             "horas":    h,
             "estado":   estado_limite,
         })
