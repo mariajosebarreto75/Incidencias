@@ -878,10 +878,18 @@ body {
                       data-bs-target="#modalReprog{{ c.id }}" title="Reprogramar">
                 <i class="bi bi-calendar-plus"></i>
               </button>
+              {% if c.evidencia_path %}
               <button class="act-btn success" data-bs-toggle="modal"
-                      data-bs-target="#modalCerrar{{ c.id }}" title="Cerrar">
+                      data-bs-target="#modalCerrar{{ c.id }}" title="Cerrar compromiso">
                 <i class="bi bi-check-lg"></i>
               </button>
+              {% else %}
+              <button class="act-btn" disabled
+                      title="Sube una evidencia antes de cerrar"
+                      style="opacity:.35;cursor:not-allowed;">
+                <i class="bi bi-check-lg"></i>
+              </button>
+              {% endif %}
               {% endif %}
               {% if c.estado != 'Cerrado' %}
               <button class="act-btn warn" data-bs-toggle="modal"
@@ -1034,19 +1042,20 @@ body {
               </div>
               <form action="{{ url_for('compromisos.cerrar', comp_id=c.id) }}" method="post" enctype="multipart/form-data">
                 <div class="modal-body-ag">
+                  <div style="background:var(--green-bg);border:1px solid var(--green-bd);border-radius:var(--radius-sm);
+                              padding:.5rem .75rem;margin-bottom:1rem;font-size:.78rem;color:var(--green);
+                              display:flex;align-items:center;gap:.4rem;">
+                    <i class="bi bi-file-earmark-check-fill"></i>
+                    Evidencia cargada: <strong>{{ c.evidencia_nombre }}</strong>
+                  </div>
                   <div style="margin-bottom:1rem;">
                     <label class="ag-label">Fecha real de entrega *</label>
                     <input type="date" name="fecha_entrega_real" class="ag-input" required>
                   </div>
-                  <div style="margin-bottom:1rem;">
-                    <label class="ag-label">Observación de cierre</label>
+                  <div>
+                    <label class="ag-label">Observación de cierre (opcional)</label>
                     <textarea name="obs_cierre" class="ag-input ag-textarea"
                               placeholder="Describe cómo se cumplió el compromiso..."></textarea>
-                  </div>
-                  <div>
-                    <label class="ag-label">Evidencia (opcional)</label>
-                    <input type="file" name="evidencia" class="ag-input" accept=".jpg,.jpeg,.png,.webp,.pdf">
-                    <p style="font-size:.72rem;color:var(--ink-3);margin-top:.35rem;">Requiere evidencia o una observación para cerrar.</p>
                   </div>
                 </div>
                 <div class="modal-foot-ag">

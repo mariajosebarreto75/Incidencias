@@ -255,7 +255,7 @@ def cerrar(comp_id):
         flash("Fecha de cierre inválida.", "danger")
         return redirect(url_for("compromisos.index"))
 
-    # Evidencia opcional
+    # Evidencia obligatoria para cerrar
     archivo = request.files.get("evidencia")
     tiene_evidencia = bool(comp.evidencia_path)
     if archivo and archivo.filename:
@@ -267,8 +267,8 @@ def cerrar(comp_id):
             comp.evidencia_nombre = secure_filename(archivo.filename)
             tiene_evidencia = True
 
-    if not tiene_evidencia and not obs_cierre and not comp.observacion_general:
-        flash("Para cerrar debes subir una evidencia o dejar una observación.", "warning")
+    if not tiene_evidencia:
+        flash("Para cerrar el compromiso primero debes subir una evidencia.", "warning")
         return redirect(url_for("compromisos.index"))
 
     if obs_cierre:
