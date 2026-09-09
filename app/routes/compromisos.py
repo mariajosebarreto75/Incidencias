@@ -53,9 +53,25 @@ def _puede_ver_contrato(contrato_id):
 @login_required
 def index():
     contratos = _contratos_usuario()
-    contrato_id = request.args.get("contrato_id", type=int)
-    estado_filtro = request.args.get("estado", "")
+    contrato_id   = request.args.get("contrato_id", type=int)
     atrasado_filtro = request.args.get("atrasado", "")
+    q_resp        = request.args.get("q_resp", "").strip()
+    fecha_desde   = request.args.get("fecha_desde", "")
+    fecha_hasta   = request.args.get("fecha_hasta", "")
+
+    # checkboxes de estado (ausente = todos marcados)
+    est_pend = request.args.get("est_pend")
+    est_rep  = request.args.get("est_rep")
+    est_cerr = request.args.get("est_cerr")
+    # si ninguno fue enviado (GET limpio) → todos activos
+    estados_sel = []
+    if est_pend or est_rep or est_cerr:
+        if est_pend: estados_sel.append("Pendiente")
+        if est_rep:  estados_sel.append("Reprogramado")
+        if est_cerr: estados_sel.append("Cerrado")
+    # si se enviaron pero ninguno marcado → igual todos (evita lista vacía)
+    if not estados_sel:
+        estados_sel = ["Pendiente", "Reprogramado", "Cerrado"]
 
     q = Compromiso.query.join(Contrato).filter(
         Contrato.id.in_([c.id for c in contratos])
@@ -63,8 +79,21 @@ def index():
 
     if contrato_id:
         q = q.filter(Compromiso.contrato_id == contrato_id)
-    if estado_filtro:
-        q = q.filter(Compromiso.estado == estado_filtro)
+
+    q = q.filter(Compromiso.estado.in_(estados_sel))
+
+    if q_resp:
+        q = q.filter(Compromiso.responsable.ilike(f"%{q_resp}%"))
+    if fecha_desde:
+        try:
+            q = q.filter(Compromiso.fecha_entrega >= date.fromisoformat(fecha_desde))
+        except ValueError:
+            pass
+    if fecha_hasta:
+        try:
+            q = q.filter(Compromiso.fecha_entrega <= date.fromisoformat(fecha_hasta))
+        except ValueError:
+            pass
 
     compromisos = q.order_by(Compromiso.fecha_entrega.asc(), Compromiso.id.desc()).all()
 
@@ -73,20 +102,24 @@ def index():
     elif atrasado_filtro == "0":
         compromisos = [c for c in compromisos if not c.atrasado]
 
-    # KPIs
-    total = len(compromisos)
-    pendientes = sum(1 for c in compromisos if c.estado == "Pendiente")
+    total        = len(compromisos)
+    pendientes   = sum(1 for c in compromisos if c.estado == "Pendiente")
     reprogramados = sum(1 for c in compromisos if c.estado == "Reprogramado")
-    cerrados = sum(1 for c in compromisos if c.estado == "Cerrado")
-    atrasados = sum(1 for c in compromisos if c.atrasado)
+    cerrados     = sum(1 for c in compromisos if c.estado == "Cerrado")
+    atrasados    = sum(1 for c in compromisos if c.atrasado)
 
     return render_template(
         "compromisos/index.html",
         compromisos=compromisos,
         contratos=contratos,
         contrato_id_sel=contrato_id,
-        estado_sel=estado_filtro,
         atrasado_sel=atrasado_filtro,
+        q_resp_sel=q_resp,
+        fecha_desde_sel=fecha_desde,
+        fecha_hasta_sel=fecha_hasta,
+        est_pend_sel=est_pend,
+        est_rep_sel=est_rep,
+        est_cerr_sel=est_cerr,
         kpi=dict(total=total, pendientes=pendientes,
                  reprogramados=reprogramados, cerrados=cerrados, atrasados=atrasados),
     )
@@ -344,3 +377,99 @@ def guardar_obs(comp_id):
         comp.observacion_general = texto
     db.session.commit()
     return jsonify(ok=True, obs=comp.observacion_general)
+
+
+# ── ELIMINAR MASIVO ────────────────────────────────────────────────────────────
+
+@compromisos_bp.route("/eliminar-masivo", methods=["POST"])
+@login_required
+def eliminar_masivo():
+    ids_raw = request.form.get("ids", "")
+    try:
+        ids = [int(x) for x in ids_raw.split(",") if x.strip().isdigit()]
+    except ValueError:
+        flash("IDs inválidos.", "danger")
+        return redirect(url_for("compromisos.index"))
+
+    eliminados = 0
+    for comp_id in ids:
+        comp = Compromiso.query.get(comp_id)
+        if comp and _puede_ver_contrato(comp.contrato_id):
+            if comp.evidencia_path:
+                old = os.path.join(_upload_dir(), comp.evidencia_path)
+                if os.path.exists(old):
+                    os.remove(old)
+            db.session.delete(comp)
+            eliminados += 1
+
+    db.session.commit()
+    flash(f"{eliminados} compromiso(s) eliminado(s).", "success")
+    return redirect(url_for("compromisos.index"))
+
+
+# ── EXPORTAR EXCEL ─────────────────────────────────────────────────────────────
+
+@compromisos_bp.route("/exportar-excel")
+@login_required
+def exportar_excel():
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from flask import Response
+        import io
+    except ImportError:
+        flash("Instala openpyxl para exportar Excel.", "danger")
+        return redirect(url_for("compromisos.index"))
+
+    contratos = _contratos_usuario()
+    contrato_id = request.args.get("contrato_id", type=int)
+
+    q = Compromiso.query.join(Contrato).filter(
+        Contrato.id.in_([c.id for c in contratos])
+    )
+    if contrato_id:
+        q = q.filter(Compromiso.contrato_id == contrato_id)
+    compromisos = q.order_by(Compromiso.fecha_entrega.asc()).all()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Compromisos"
+
+    cabeceras = ["ID", "Contrato", "Responsable", "Compromiso", "Creación",
+                 "Entrega", "Estado", "Reprog.", "Cierre real", "Atrasado", "Observación"]
+    hdr_fill = PatternFill("solid", fgColor="0D6E6E")
+    hdr_font = Font(bold=True, color="FFFFFF")
+
+    ws.append(cabeceras)
+    for i, cell in enumerate(ws[1], 1):
+        cell.fill = hdr_fill
+        cell.font = hdr_font
+        cell.alignment = Alignment(horizontal="center")
+
+    for c in compromisos:
+        ws.append([
+            c.id,
+            c.contrato.contrato,
+            c.responsable,
+            c.compromiso,
+            c.fecha_creacion.strftime("%Y-%m-%d"),
+            c.fecha_entrega.strftime("%Y-%m-%d"),
+            c.estado,
+            c.cantidad_reprogramaciones,
+            c.fecha_entrega_real.strftime("%Y-%m-%d") if c.fecha_entrega_real else "",
+            "Sí" if c.atrasado else "No",
+            c.observacion_general or "",
+        ])
+
+    for col in ws.columns:
+        max_len = max((len(str(cell.value or "")) for cell in col), default=10)
+        ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 60)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return Response(
+        buf.read(),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=compromisos.xlsx"},
+    )

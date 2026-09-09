@@ -3,224 +3,307 @@
 
 {% block head %}
 <style>
-/* ── variables ── */
+/* ── paleta ── */
 :root {
-  --c-pendiente: #f59e0b;
-  --c-reprog:    #3b82f6;
-  --c-cerrado:   #22c55e;
-  --c-atrasado:  #ef4444;
+  --ag-primary:   #0d6e6e;
+  --ag-primary-d: #094f4f;
+  --ag-header-bg: #0d6e6e;
+  --ag-pendiente: #f59e0b;
+  --ag-reprog:    #3b82f6;
+  --ag-cerrado:   #22c55e;
+  --ag-atrasado:  #ef4444;
+  --ag-row-atras: rgba(239,68,68,.06);
+  --ag-border-atras: #ef4444;
 }
 
-/* ── kpi cards ── */
-.kpi-card { border-radius: 12px; padding: 1rem 1.25rem; color: #fff; display: flex; align-items: center; gap: .75rem; }
-.kpi-card .kpi-icon { font-size: 1.8rem; opacity: .85; }
-.kpi-card .kpi-num  { font-size: 1.6rem; font-weight: 700; line-height: 1; }
-.kpi-card .kpi-label{ font-size: .75rem; opacity: .85; text-transform: uppercase; letter-spacing: .05em; }
+/* ── kpi bar ── */
+.kpi-bar { display:flex; gap:0; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.1); }
+.kpi-item {
+  flex:1; display:flex; align-items:center; gap:.75rem;
+  padding:.85rem 1.1rem; border-right:1px solid rgba(255,255,255,.15);
+  cursor:default;
+}
+.kpi-item:last-child { border-right:none; }
+.kpi-icon { font-size:1.6rem; opacity:.9; }
+.kpi-num  { font-size:1.5rem; font-weight:700; line-height:1; color:#fff; }
+.kpi-lbl  { font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:rgba(255,255,255,.8); }
 
-/* ── estado badges ── */
-.badge-pendiente  { background: var(--c-pendiente); color:#fff; }
-.badge-reprog     { background: var(--c-reprog);    color:#fff; }
-.badge-cerrado    { background: var(--c-cerrado);   color:#fff; }
-.badge-atrasado   { background: var(--c-atrasado);  color:#fff; }
+/* ── filtros ── */
+.filter-bar { background:#f8f9fa; border:1px solid #e2e8f0; border-radius:8px; padding:.75rem 1rem; }
 
 /* ── tabla ── */
-.compromisos-table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
-.compromisos-table td { vertical-align: middle; font-size: .88rem; }
-.compromisos-table tr.is-atrasado td { background: rgba(239,68,68,.06); }
+.ag-table thead th {
+  background: var(--ag-header-bg); color:#fff;
+  font-size:.73rem; text-transform:uppercase; letter-spacing:.05em;
+  white-space:nowrap; vertical-align:middle; padding:.55rem .6rem;
+  border-color: var(--ag-primary-d);
+}
+.ag-table tbody td { font-size:.83rem; vertical-align:middle; padding:.45rem .6rem; }
+.ag-table tbody tr.row-atras { background: var(--ag-row-atras); }
+.ag-table tbody tr.row-atras td:first-child { border-left:3px solid var(--ag-border-atras); }
+.ag-table tbody tr:hover { background: rgba(13,110,110,.06); }
 
-/* ── truncate texto largo ── */
-.cell-texto { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+/* ── badges ── */
+.badge-pend  { background:var(--ag-pendiente); color:#fff; font-size:.72rem; padding:.28em .55em; border-radius:4px; }
+.badge-rep   { background:var(--ag-reprog);    color:#fff; font-size:.72rem; padding:.28em .55em; border-radius:4px; }
+.badge-cerr  { background:var(--ag-cerrado);   color:#fff; font-size:.72rem; padding:.28em .55em; border-radius:4px; }
 
-/* ── acciones ── */
-.btn-accion { width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; }
+/* ── acción btns ── */
+.btn-act { width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:5px; font-size:.8rem; }
+
+/* ── barra acciones ── */
+.action-bar { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+.btn-crear   { background:var(--ag-primary); border-color:var(--ag-primary); color:#fff; }
+.btn-crear:hover { background:var(--ag-primary-d); border-color:var(--ag-primary-d); color:#fff; }
+
+/* ── obs truncada ── */
+.obs-cell { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+            font-size:.78rem; color:#555; cursor:pointer; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4 py-3">
+<div class="container-fluid px-3 py-3">
 
-  <!-- ENCABEZADO -->
-  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+  <!-- TÍTULO -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
-      <h4 class="mb-0 fw-bold"><i class="bi bi-calendar-check me-2 text-primary"></i>Agenda de Compromisos</h4>
-      <p class="text-muted mb-0" style="font-size:.83rem;">Seguimiento de compromisos por contrato</p>
+      <h5 class="mb-0 fw-bold" style="color:var(--ag-primary);">
+        <i class="bi bi-calendar-check me-2"></i>Agenda de Compromisos
+      </h5>
+      <small class="text-muted">Seguimiento de compromisos por contrato</small>
     </div>
-    <a href="{{ url_for('compromisos.nuevo') }}" class="btn btn-primary btn-sm">
-      <i class="bi bi-plus-lg me-1"></i>Nuevo Compromiso
-    </a>
   </div>
 
   <!-- KPIs -->
-  <div class="row g-3 mb-3">
-    <div class="col-6 col-md-4 col-lg-2">
-      <div class="kpi-card" style="background:#6366f1;">
-        <i class="bi bi-list-check kpi-icon"></i>
-        <div><div class="kpi-num">{{ kpi.total }}</div><div class="kpi-label">Total</div></div>
-      </div>
+  <div class="kpi-bar mb-3">
+    <div class="kpi-item" style="background:#475569;">
+      <i class="bi bi-list-check kpi-icon"></i>
+      <div><div class="kpi-num">{{ kpi.total }}</div><div class="kpi-lbl">Total</div></div>
     </div>
-    <div class="col-6 col-md-4 col-lg-2">
-      <div class="kpi-card" style="background:#f59e0b;">
-        <i class="bi bi-hourglass-split kpi-icon"></i>
-        <div><div class="kpi-num">{{ kpi.pendientes }}</div><div class="kpi-label">Pendientes</div></div>
-      </div>
+    <div class="kpi-item" style="background:#d97706;">
+      <i class="bi bi-hourglass-split kpi-icon"></i>
+      <div><div class="kpi-num">{{ kpi.pendientes }}</div><div class="kpi-lbl">Pendientes</div></div>
     </div>
-    <div class="col-6 col-md-4 col-lg-2">
-      <div class="kpi-card" style="background:#3b82f6;">
-        <i class="bi bi-arrow-repeat kpi-icon"></i>
-        <div><div class="kpi-num">{{ kpi.reprogramados }}</div><div class="kpi-label">Reprogramados</div></div>
-      </div>
+    <div class="kpi-item" style="background:#2563eb;">
+      <i class="bi bi-arrow-repeat kpi-icon"></i>
+      <div><div class="kpi-num">{{ kpi.reprogramados }}</div><div class="kpi-lbl">Reprogramados</div></div>
     </div>
-    <div class="col-6 col-md-4 col-lg-2">
-      <div class="kpi-card" style="background:#22c55e;">
-        <i class="bi bi-check-circle kpi-icon"></i>
-        <div><div class="kpi-num">{{ kpi.cerrados }}</div><div class="kpi-label">Cerrados</div></div>
-      </div>
+    <div class="kpi-item" style="background:#16a34a;">
+      <i class="bi bi-check-circle kpi-icon"></i>
+      <div><div class="kpi-num">{{ kpi.cerrados }}</div><div class="kpi-lbl">Cerrados</div></div>
     </div>
-    <div class="col-6 col-md-4 col-lg-2">
-      <div class="kpi-card" style="background:#ef4444;">
-        <i class="bi bi-exclamation-triangle kpi-icon"></i>
-        <div><div class="kpi-num">{{ kpi.atrasados }}</div><div class="kpi-label">Atrasados</div></div>
-      </div>
+    <div class="kpi-item" style="background:#dc2626;">
+      <i class="bi bi-exclamation-triangle kpi-icon"></i>
+      <div><div class="kpi-num">{{ kpi.atrasados }}</div><div class="kpi-lbl">Atrasados</div></div>
     </div>
   </div>
 
   <!-- FILTROS -->
-  <form method="get" class="card card-body mb-3 p-2">
+  <form method="get" id="formFiltros" class="filter-bar mb-3">
     <div class="row g-2 align-items-end">
-      <div class="col-12 col-md-4 col-lg-3">
-        <label class="form-label mb-1" style="font-size:.8rem;">Contrato</label>
+
+      <!-- Contrato -->
+      <div class="col-12 col-md-3">
+        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">CONTRATO</label>
         <select name="contrato_id" class="form-select form-select-sm">
-          <option value="">— Todos —</option>
+          <option value="">Todos los contratos</option>
           {% for c in contratos %}
           <option value="{{ c.id }}" {% if c.id == contrato_id_sel %}selected{% endif %}>{{ c.contrato }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-6 col-md-2">
-        <label class="form-label mb-1" style="font-size:.8rem;">Estado</label>
-        <select name="estado" class="form-select form-select-sm">
-          <option value="">Todos</option>
-          <option value="Pendiente"     {% if estado_sel=='Pendiente'     %}selected{% endif %}>Pendiente</option>
-          <option value="Reprogramado"  {% if estado_sel=='Reprogramado'  %}selected{% endif %}>Reprogramado</option>
-          <option value="Cerrado"       {% if estado_sel=='Cerrado'       %}selected{% endif %}>Cerrado</option>
-        </select>
+
+      <!-- Estado (checkboxes) -->
+      <div class="col-auto">
+        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">ESTADO</label>
+        <div class="d-flex gap-2 align-items-center pt-1">
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" name="est_pend" id="chkPend" value="1"
+                   {% if not estado_sel or estado_sel == 'Pendiente' %}checked{% endif %}>
+            <label class="form-check-label" for="chkPend" style="font-size:.8rem;">Pendiente</label>
+          </div>
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" name="est_rep" id="chkRep" value="1"
+                   {% if not estado_sel or estado_sel == 'Reprogramado' %}checked{% endif %}>
+            <label class="form-check-label" for="chkRep" style="font-size:.8rem;">Reprog.</label>
+          </div>
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" name="est_cerr" id="chkCerr" value="1"
+                   {% if not estado_sel or estado_sel == 'Cerrado' %}checked{% endif %}>
+            <label class="form-check-label" for="chkCerr" style="font-size:.8rem;">Cerrado</label>
+          </div>
+        </div>
       </div>
-      <div class="col-6 col-md-2">
-        <label class="form-label mb-1" style="font-size:.8rem;">Atraso</label>
+
+      <!-- Responsable -->
+      <div class="col-12 col-md-2">
+        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">RESPONSABLE</label>
+        <input type="text" name="q_resp" class="form-control form-control-sm"
+               placeholder="Buscar..." value="{{ q_resp_sel or '' }}">
+      </div>
+
+      <!-- Atrasado -->
+      <div class="col-auto">
+        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">ATRASADO</label>
         <select name="atrasado" class="form-select form-select-sm">
           <option value="">Todos</option>
           <option value="1" {% if atrasado_sel=='1' %}selected{% endif %}>Solo atrasados</option>
           <option value="0" {% if atrasado_sel=='0' %}selected{% endif %}>Al día</option>
         </select>
       </div>
-      <div class="col-12 col-md-auto">
-        <button type="submit" class="btn btn-primary btn-sm w-100">
-          <i class="bi bi-funnel me-1"></i>Filtrar
-        </button>
+
+      <!-- Fecha desde / hasta -->
+      <div class="col-auto">
+        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">ENTREGA DESDE</label>
+        <input type="date" name="fecha_desde" class="form-control form-control-sm"
+               value="{{ fecha_desde_sel or '' }}">
       </div>
-      <div class="col-12 col-md-auto">
-        <a href="{{ url_for('compromisos.index') }}" class="btn btn-outline-secondary btn-sm w-100">
-          <i class="bi bi-x-circle me-1"></i>Limpiar
+      <div class="col-auto">
+        <label class="form-label mb-1 fw-semibold" style="font-size:.75rem;">HASTA</label>
+        <input type="date" name="fecha_hasta" class="form-control form-control-sm"
+               value="{{ fecha_hasta_sel or '' }}">
+      </div>
+
+      <div class="col-auto d-flex gap-1">
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="bi bi-funnel me-1"></i>Aplicar
+        </button>
+        <a href="{{ url_for('compromisos.index') }}" class="btn btn-sm btn-outline-secondary">
+          Limpiar
         </a>
       </div>
     </div>
   </form>
 
+  <!-- BARRA DE ACCIONES -->
+  <div class="action-bar mb-2">
+    <a href="{{ url_for('compromisos.nuevo') }}" class="btn btn-sm btn-crear">
+      <i class="bi bi-plus-lg me-1"></i>Crear compromiso
+    </a>
+    <a href="{{ url_for('compromisos.exportar_excel') }}?{{ request.query_string.decode() }}"
+       class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+    </a>
+    <button type="button" class="btn btn-sm btn-outline-danger" id="btnElimMasivo" disabled
+            onclick="eliminarSeleccionados()">
+      <i class="bi bi-trash me-1"></i>Eliminar seleccionados
+    </button>
+    <div class="form-check ms-2 mb-0 d-flex align-items-center">
+      <input class="form-check-input me-1" type="checkbox" id="chkTodo" onchange="toggleTodo(this)">
+      <label class="form-check-label" for="chkTodo" style="font-size:.83rem;">Seleccionar todo</label>
+    </div>
+    <span class="text-muted ms-auto" style="font-size:.8rem;">{{ compromisos|length }} registro(s)</span>
+  </div>
+
   <!-- TABLA -->
   {% if compromisos %}
   <div class="table-responsive">
-    <table class="table table-hover compromisos-table align-middle">
-      <thead class="table-light">
+    <table class="table table-bordered ag-table">
+      <thead>
         <tr>
-          <th>#</th>
+          <th style="width:30px;"></th>
           <th>Contrato</th>
           <th>Responsable</th>
           <th>Compromiso</th>
-          <th>F. Entrega</th>
+          <th>Creación</th>
+          <th>Entrega</th>
           <th>Estado</th>
           <th>Reprog.</th>
+          <th>Cierre</th>
+          <th>Atrasado</th>
+          <th>Obs.</th>
           <th>Evidencia</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for c in compromisos %}
-        <tr class="{% if c.atrasado %}is-atrasado{% endif %}">
-          <td>{{ c.id }}</td>
-          <td><span class="badge bg-secondary bg-opacity-75 text-wrap text-start" style="max-width:130px;font-size:.75rem;">{{ c.contrato.contrato }}</span></td>
+        <tr class="{% if c.atrasado %}row-atras{% endif %}">
+          <td class="text-center">
+            <input type="checkbox" class="form-check-input chk-comp" value="{{ c.id }}"
+                   onchange="actualizarBtnElim()">
+          </td>
+          <td style="font-size:.78rem; max-width:140px;">{{ c.contrato.contrato }}</td>
           <td>{{ c.responsable }}</td>
-          <td>
-            <span class="cell-texto" data-bs-toggle="tooltip" title="{{ c.compromiso }}">{{ c.compromiso }}</span>
-            {% if c.observacion_general %}
-            <button class="btn btn-link btn-sm p-0 ms-1 text-info"
-                    data-bs-toggle="modal" data-bs-target="#modalObs{{ c.id }}"
-                    title="Ver observación"><i class="bi bi-chat-text"></i></button>
-            {% endif %}
+          <td style="max-width:320px;">
+            {{ c.compromiso }}
           </td>
-          <td class="{% if c.atrasado %}text-danger fw-semibold{% endif %}">
-            {{ c.fecha_entrega.strftime('%d/%m/%Y') }}
-            {% if c.atrasado %}<i class="bi bi-exclamation-circle ms-1"></i>{% endif %}
+          <td class="text-nowrap">{{ c.fecha_creacion.strftime('%Y-%m-%d') }}</td>
+          <td class="text-nowrap {% if c.atrasado %}text-danger fw-semibold{% endif %}">
+            {{ c.fecha_entrega.strftime('%Y-%m-%d') }}
           </td>
           <td>
-            {% if c.estado == 'Pendiente' %}
-            <span class="badge badge-pendiente">Pendiente</span>
-            {% elif c.estado == 'Reprogramado' %}
-            <span class="badge badge-reprog">Reprogramado</span>
-            {% else %}
-            <span class="badge badge-cerrado">Cerrado</span>
-            {% endif %}
+            {% if c.estado == 'Pendiente' %}<span class="badge-pend">Pendiente</span>
+            {% elif c.estado == 'Reprogramado' %}<span class="badge-rep">Reprogramado</span>
+            {% else %}<span class="badge-cerr">Cerrado</span>{% endif %}
           </td>
           <td class="text-center">
             {% if c.cantidad_reprogramaciones > 0 %}
-            <button class="btn btn-link btn-sm p-0 text-primary"
-                    data-bs-toggle="modal" data-bs-target="#modalHist{{ c.id }}"
-                    title="Ver historial">
-              {{ c.cantidad_reprogramaciones }} <i class="bi bi-clock-history"></i>
+            <button class="btn btn-link btn-sm p-0"
+                    data-bs-toggle="modal" data-bs-target="#modalHist{{ c.id }}">
+              {{ c.cantidad_reprogramaciones }}
             </button>
-            {% else %}—{% endif %}
+            {% else %}0{% endif %}
+          </td>
+          <td class="text-nowrap">
+            {{ c.fecha_entrega_real.strftime('%Y-%m-%d') if c.fecha_entrega_real else '—' }}
+          </td>
+          <td class="text-center">
+            {% if c.atrasado %}
+            <span class="text-danger fw-semibold">Sí</span>
+            {% else %}
+            <span class="text-muted">No</span>
+            {% endif %}
           </td>
           <td>
+            {% if c.observacion_general %}
+            <span class="obs-cell"
+                  data-bs-toggle="modal" data-bs-target="#modalObs{{ c.id }}"
+                  title="Ver observación">
+              {{ c.observacion_general[:60] }}{% if c.observacion_general|length > 60 %}…{% endif %}
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-center">
             {% if c.evidencia_path %}
             <a href="{{ url_for('compromisos.ver_evidencia', comp_id=c.id) }}"
-               class="btn btn-accion btn-outline-success" target="_blank" title="Ver evidencia">
+               class="btn btn-act btn-outline-success" target="_blank" title="Ver evidencia">
               <i class="bi bi-file-earmark-check"></i>
             </a>
-            {% if c.estado != 'Cerrado' %}
-            <form action="{{ url_for('compromisos.eliminar_evidencia', comp_id=c.id) }}"
-                  method="post" class="d-inline"
-                  onsubmit="return confirm('¿Eliminar evidencia?')">
-              <button class="btn btn-accion btn-outline-danger" title="Eliminar evidencia">
-                <i class="bi bi-trash"></i>
-              </button>
-            </form>
+            {% else %}
+            <span class="text-muted" style="font-size:.75rem;">Sin evidencia</span>
             {% endif %}
-            {% else %}—{% endif %}
           </td>
           <td>
-            <div class="d-flex gap-1 flex-wrap">
+            <div class="d-flex gap-1">
               {% if c.estado != 'Cerrado' %}
-              <!-- Reprogramar -->
-              <button class="btn btn-accion btn-outline-primary"
+              <button class="btn btn-act btn-outline-secondary"
                       data-bs-toggle="modal" data-bs-target="#modalReprog{{ c.id }}"
-                      title="Reprogramar"><i class="bi bi-calendar-plus"></i></button>
-              <!-- Cerrar -->
-              <button class="btn btn-accion btn-outline-success"
+                      title="Reprogramar">
+                <i class="bi bi-clock-history"></i>
+              </button>
+              <button class="btn btn-act btn-outline-success"
                       data-bs-toggle="modal" data-bs-target="#modalCerrar{{ c.id }}"
-                      title="Cerrar compromiso"><i class="bi bi-check-circle"></i></button>
-              <!-- Subir evidencia -->
-              <button class="btn btn-accion btn-outline-warning"
-                      data-bs-toggle="modal" data-bs-target="#modalEvidencia{{ c.id }}"
-                      title="Subir evidencia"><i class="bi bi-upload"></i></button>
-              {% endif %}
-              <!-- Observación -->
-              <button class="btn btn-accion btn-outline-info"
+                      title="Cerrar">
+                <i class="bi bi-check-lg"></i>
+              </button>
+              <button class="btn btn-act btn-outline-info"
                       data-bs-toggle="modal" data-bs-target="#modalAddObs{{ c.id }}"
-                      title="Añadir observación"><i class="bi bi-chat-left-text"></i></button>
-              <!-- Eliminar -->
+                      title="Observación">
+                <i class="bi bi-chat-left-text"></i>
+              </button>
+              {% else %}
+              <button class="btn btn-act btn-outline-info"
+                      data-bs-toggle="modal" data-bs-target="#modalAddObs{{ c.id }}"
+                      title="Observación">
+                <i class="bi bi-chat-left-text"></i>
+              </button>
+              {% endif %}
               <form action="{{ url_for('compromisos.eliminar', comp_id=c.id) }}"
                     method="post" class="d-inline"
-                    onsubmit="return confirm('¿Eliminar este compromiso permanentemente?')">
-                <button class="btn btn-accion btn-outline-danger" title="Eliminar">
+                    onsubmit="return confirm('¿Eliminar este compromiso?')">
+                <button class="btn btn-act btn-outline-danger" title="Eliminar">
                   <i class="bi bi-trash"></i>
                 </button>
               </form>
@@ -228,34 +311,44 @@
           </td>
         </tr>
 
-        <!-- MODAL: Ver Observación -->
+        <!-- MODAL Observación -->
+        {% if c.observacion_general %}
         <div class="modal fade" id="modalObs{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-chat-text me-2"></i>Observación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-              <div class="modal-body"><pre class="mb-0" style="white-space:pre-wrap;font-family:inherit;">{{ c.observacion_general or '' }}</pre></div>
+              <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-chat-text me-2"></i>Observación</h6>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <pre class="mb-0" style="white-space:pre-wrap;font-family:inherit;font-size:.88rem;">{{ c.observacion_general }}</pre>
+              </div>
             </div>
           </div>
         </div>
+        {% endif %}
 
-        <!-- MODAL: Historial reprogramaciones -->
+        <!-- MODAL Historial -->
         {% if c.cantidad_reprogramaciones > 0 %}
         <div class="modal fade" id="modalHist{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-clock-history me-2"></i>Historial de Reprogramaciones</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-clock-history me-2"></i>Historial de Reprogramaciones</h6>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              </div>
               <div class="modal-body p-0">
                 <table class="table table-sm mb-0">
-                  <thead class="table-light"><tr><th>#</th><th>Fecha anterior</th><th>Nueva fecha</th><th>Cambio</th></tr></thead>
+                  <thead class="table-light">
+                    <tr><th>#</th><th>Fecha anterior</th><th>Nueva fecha</th><th>Cambio</th></tr>
+                  </thead>
                   <tbody>
                     {% for h in c.historial %}
                     <tr>
                       <td>{{ loop.index }}</td>
-                      <td>{{ h.fecha_anterior.strftime('%d/%m/%Y') }}</td>
-                      <td>{{ h.nueva_fecha.strftime('%d/%m/%Y') }}</td>
-                      <td>{{ h.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</td>
+                      <td>{{ h.fecha_anterior.strftime('%Y-%m-%d') }}</td>
+                      <td>{{ h.nueva_fecha.strftime('%Y-%m-%d') }}</td>
+                      <td>{{ h.fecha_cambio.strftime('%Y-%m-%d %H:%M') }}</td>
                     </tr>
                     {% endfor %}
                   </tbody>
@@ -266,35 +359,39 @@
         </div>
         {% endif %}
 
-        <!-- MODAL: Reprogramar -->
+        <!-- MODAL Reprogramar -->
         {% if c.estado != 'Cerrado' %}
         <div class="modal fade" id="modalReprog{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i>Reprogramar</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-calendar-plus me-2"></i>Reprogramar Compromiso</h6>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              </div>
               <form action="{{ url_for('compromisos.reprogramar', comp_id=c.id) }}" method="post">
                 <div class="modal-body">
-                  <p class="text-muted mb-2" style="font-size:.85rem;">Fecha actual: <strong>{{ c.fecha_entrega.strftime('%d/%m/%Y') }}</strong></p>
+                  <p class="text-muted mb-1" style="font-size:.83rem;">{{ c.compromiso }}</p>
+                  <p class="mb-3" style="font-size:.83rem;">Fecha actual: <strong>{{ c.fecha_entrega.strftime('%Y-%m-%d') }}</strong></p>
                   <label class="form-label fw-semibold">Nueva fecha de entrega</label>
-                  <input type="date" name="nueva_fecha" class="form-control" required
-                         min="{{ 'today' }}">
+                  <input type="date" name="nueva_fecha" class="form-control" required>
                 </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Reprogramar</button>
+                <div class="modal-footer py-2">
+                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn btn-sm btn-primary">Reprogramar</button>
                 </div>
               </form>
             </div>
           </div>
         </div>
 
-        <!-- MODAL: Cerrar -->
+        <!-- MODAL Cerrar -->
         <div class="modal fade" id="modalCerrar{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Cerrar Compromiso</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-check-circle me-2 text-success"></i>Cerrar Compromiso</h6>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              </div>
               <form action="{{ url_for('compromisos.cerrar', comp_id=c.id) }}" method="post"
                     enctype="multipart/form-data">
                 <div class="modal-body">
@@ -305,43 +402,17 @@
                   <div class="mb-3">
                     <label class="form-label fw-semibold">Observación de cierre</label>
                     <textarea name="obs_cierre" class="form-control" rows="3"
-                              placeholder="Observación (opcional si sube evidencia)"></textarea>
+                              placeholder="Descripción del cierre..."></textarea>
                   </div>
-                  <div class="mb-0">
-                    <label class="form-label fw-semibold">Evidencia (imagen/PDF)</label>
+                  <div>
+                    <label class="form-label fw-semibold">Evidencia (opcional)</label>
                     <input type="file" name="evidencia" class="form-control"
                            accept=".jpg,.jpeg,.png,.webp,.pdf">
-                    <div class="form-text">Debe subir evidencia o ingresar una observación.</div>
                   </div>
                 </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i>Cerrar</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <!-- MODAL: Subir Evidencia -->
-        <div class="modal fade" id="modalEvidencia{{ c.id }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-upload me-2"></i>Subir Evidencia</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-              <form action="{{ url_for('compromisos.subir_evidencia', comp_id=c.id) }}" method="post"
-                    enctype="multipart/form-data">
-                <div class="modal-body">
-                  {% if c.evidencia_nombre %}
-                  <p class="text-muted mb-2" style="font-size:.85rem;">Actual: <strong>{{ c.evidencia_nombre }}</strong> (se reemplazará)</p>
-                  {% endif %}
-                  <input type="file" name="evidencia" class="form-control"
-                         accept=".jpg,.jpeg,.png,.webp,.pdf" required>
-                  <div class="form-text">Formatos: JPG, PNG, WEBP, PDF. Máx 10 MB.</div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="submit" class="btn btn-warning"><i class="bi bi-upload me-1"></i>Subir</button>
+                <div class="modal-footer py-2">
+                  <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn btn-sm btn-success">Cerrar compromiso</button>
                 </div>
               </form>
             </div>
@@ -349,31 +420,31 @@
         </div>
         {% endif %}
 
-        <!-- MODAL: Añadir Observación -->
+        <!-- MODAL Añadir Observación -->
         <div class="modal fade" id="modalAddObs{{ c.id }}" tabindex="-1">
           <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-              <div class="modal-header"><h5 class="modal-title"><i class="bi bi-chat-left-text me-2"></i>Observación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+              <div class="modal-header py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-chat-left-text me-2"></i>Observación</h6>
+                <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+              </div>
               <div class="modal-body">
                 {% if c.observacion_general %}
-                <p class="p-2 bg-light rounded mb-3" style="font-size:.83rem;white-space:pre-wrap;">{{ c.observacion_general }}</p>
+                <div class="p-2 bg-light rounded mb-3" style="font-size:.8rem;white-space:pre-wrap;max-height:120px;overflow-y:auto;">{{ c.observacion_general }}</div>
                 {% endif %}
-                <textarea class="form-control mb-2" id="obsTexto{{ c.id }}" rows="3"
-                          placeholder="Nueva anotación..."></textarea>
+                <textarea class="form-control mb-2" id="obsTexto{{ c.id }}" rows="4"
+                          placeholder="Escribe la observación..."></textarea>
                 <div class="form-check">
-                  <input type="checkbox" class="form-check-input" id="obsReemp{{ c.id }}">
-                  <label class="form-check-label text-danger" for="obsReemp{{ c.id }}" style="font-size:.83rem;">
+                  <input class="form-check-input" type="checkbox" id="obsReemp{{ c.id }}">
+                  <label class="form-check-label text-danger" for="obsReemp{{ c.id }}" style="font-size:.8rem;">
                     Reemplazar observación existente
                   </label>
                 </div>
               </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-info text-white"
-                        onclick="guardarObs({{ c.id }})">
-                  <i class="bi bi-floppy me-1"></i>Guardar
-                </button>
+              <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-sm btn-primary"
+                        onclick="guardarObs({{ c.id }})">Guardar</button>
               </div>
             </div>
           </div>
@@ -385,39 +456,56 @@
   </div>
   {% else %}
   <div class="text-center py-5 text-muted">
-    <i class="bi bi-calendar-x" style="font-size:3rem;"></i>
-    <p class="mt-2 mb-0">No hay compromisos con los filtros seleccionados.</p>
-    <a href="{{ url_for('compromisos.nuevo') }}" class="btn btn-primary mt-3">
-      <i class="bi bi-plus-lg me-1"></i>Crear el primero
+    <i class="bi bi-calendar-x" style="font-size:3rem;color:var(--ag-primary);opacity:.4;"></i>
+    <p class="mt-3 mb-0 fs-6">No hay compromisos con los filtros seleccionados.</p>
+    <a href="{{ url_for('compromisos.nuevo') }}" class="btn btn-sm btn-crear mt-3">
+      <i class="bi bi-plus-lg me-1"></i>Crear compromiso
     </a>
   </div>
   {% endif %}
 </div>
 
-<script>
-// Tooltips Bootstrap
-document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-  new bootstrap.Tooltip(el, { trigger: 'hover' });
-});
+<!-- FORM oculto para eliminación masiva -->
+<form id="formElimMasivo" action="{{ url_for('compromisos.eliminar_masivo') }}" method="post">
+  <input type="hidden" name="ids" id="inputIdsMasivo">
+</form>
 
+<script>
+// Tooltips
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+
+// Checkboxes masivos
+function toggleTodo(chk) {
+  document.querySelectorAll('.chk-comp').forEach(c => c.checked = chk.checked);
+  actualizarBtnElim();
+}
+function actualizarBtnElim() {
+  const n = document.querySelectorAll('.chk-comp:checked').length;
+  document.getElementById('btnElimMasivo').disabled = n === 0;
+}
+function eliminarSeleccionados() {
+  const ids = [...document.querySelectorAll('.chk-comp:checked')].map(c => c.value);
+  if (!ids.length) return;
+  if (!confirm(`¿Eliminar ${ids.length} compromiso(s) seleccionado(s)? Esta acción no se puede deshacer.`)) return;
+  document.getElementById('inputIdsMasivo').value = ids.join(',');
+  document.getElementById('formElimMasivo').submit();
+}
+
+// Observación AJAX
 function guardarObs(id) {
   const texto = document.getElementById('obsTexto' + id).value.trim();
   if (!texto) { alert('Escribe una observación antes de guardar.'); return; }
-  const reemplazar = document.getElementById('obsReemp' + id).checked;
+  const modo = document.getElementById('obsReemp' + id).checked ? 'replace' : 'append';
   const fd = new FormData();
   fd.append('texto', texto);
-  fd.append('modo', reemplazar ? 'replace' : 'append');
-
+  fd.append('modo', modo);
   fetch('/compromisos/' + id + '/observacion', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
-        // Cierra el modal y recarga para reflejar cambios
         bootstrap.Modal.getInstance(document.getElementById('modalAddObs' + id)).hide();
         location.reload();
-      } else {
-        alert(data.error || 'Error al guardar.');
-      }
+      } else { alert(data.error || 'Error al guardar.'); }
     })
     .catch(() => alert('Error de red.'));
 }
