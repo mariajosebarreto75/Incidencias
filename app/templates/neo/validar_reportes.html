@@ -586,32 +586,46 @@ async function toggleReunion(btn) {
     btn.disabled = false;
 }
 
+
+</script>
+
+<script>
 /* ── Multi-select helpers ── */
+var _vrDrops = ['msContrato','msRecurso'];
+
 function vrToggleMs(prefix) {
-    const btn  = document.getElementById(prefix + 'Btn');
-    const drop = document.getElementById(prefix + 'Drop');
-    const isOpen = drop.style.display !== 'none';
-    // Cerrar todos los dropdowns
-    document.querySelectorAll('.vr-ms-drop').forEach(d => { d.style.display = 'none'; });
-    document.querySelectorAll('.vr-ms-btn').forEach(b => { b.classList.remove('open'); });
+    var drop = document.getElementById(prefix + 'Drop');
+    var btn  = document.getElementById(prefix + 'Btn');
+    if (!drop || !btn) return;
+    var isOpen = drop.style.display !== 'none';
+    _vrDrops.forEach(function(p) {
+        var d = document.getElementById(p + 'Drop');
+        var b = document.getElementById(p + 'Btn');
+        if (d) d.style.display = 'none';
+        if (b) b.classList.remove('open');
+    });
     if (!isOpen) {
         drop.style.display = 'block';
         btn.classList.add('open');
-        drop.querySelector('.vr-ms-search').focus();
+        var search = drop.querySelector('input[type=text]');
+        if (search) search.focus();
     }
 }
 
 function vrMsSearch(input, listId) {
-    const q = input.value.toLowerCase();
-    document.querySelectorAll('#' + listId + ' .vr-ms-opt').forEach(opt => {
-        opt.style.display = (q && !opt.textContent.toLowerCase().includes(q)) ? 'none' : '';
+    var q = input.value.toLowerCase();
+    var list = document.getElementById(listId);
+    if (!list) return;
+    list.querySelectorAll('label').forEach(function(lbl) {
+        lbl.style.display = (q && lbl.textContent.toLowerCase().indexOf(q) === -1) ? 'none' : '';
     });
 }
 
 function _vrUpdateLabel(prefix) {
-    const wrap   = document.getElementById(prefix + 'Wrap');
-    const label  = document.getElementById(prefix + 'Label');
-    const checks = wrap.querySelectorAll('input[type=checkbox]:checked');
+    var wrap  = document.getElementById(prefix + 'Wrap');
+    var label = document.getElementById(prefix + 'Label');
+    if (!wrap || !label) return;
+    var checks = wrap.querySelectorAll('input[type=checkbox]:checked');
     if (checks.length === 0) {
         label.textContent = '— Todos —';
     } else if (checks.length === 1) {
@@ -622,18 +636,22 @@ function _vrUpdateLabel(prefix) {
 }
 
 document.addEventListener('click', function(e) {
-    if (!e.target.closest('.vr-ms-wrap')) {
-        document.querySelectorAll('.vr-ms-drop').forEach(d => { d.style.display = 'none'; });
-        document.querySelectorAll('.vr-ms-btn').forEach(b => { b.classList.remove('open'); });
+    if (!e.target.closest || !e.target.closest('[id$=Wrap]')) {
+        _vrDrops.forEach(function(p) {
+            var d = document.getElementById(p + 'Drop');
+            var b = document.getElementById(p + 'Btn');
+            if (d) d.style.display = 'none';
+            if (b) b.classList.remove('open');
+        });
     }
 });
 
-// Actualizar labels y escuchar cambios en checkboxes
-document.querySelectorAll('.vr-ms-wrap').forEach(wrap => {
-    const prefix = wrap.id.replace('Wrap', '');
+_vrDrops.forEach(function(prefix) {
     _vrUpdateLabel(prefix);
-    wrap.querySelectorAll('input[type=checkbox]').forEach(chk => {
-        chk.addEventListener('change', () => _vrUpdateLabel(prefix));
+    var wrap = document.getElementById(prefix + 'Wrap');
+    if (!wrap) return;
+    wrap.querySelectorAll('input[type=checkbox]').forEach(function(chk) {
+        chk.addEventListener('change', function() { _vrUpdateLabel(prefix); });
     });
 });
 </script>
