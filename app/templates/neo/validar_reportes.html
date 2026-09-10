@@ -108,21 +108,43 @@
                 </div>
                 <div class="vr-fg vr-fg-wide">
                     <label class="vr-flbl"><i class="bi bi-file-earmark-text"></i> Contrato</label>
-                    <select name="contrato" class="vr-finput">
-                        <option value="">— Todos —</option>
-                        {% for c in lista_contratos %}
-                        <option value="{{ c }}" {% if filtros.contrato == c %}selected{% endif %}>{{ c }}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="vr-ms-wrap" id="msContratoWrap">
+                        <button type="button" class="vr-ms-btn" id="msContratoBtn" onclick="vrToggleMs('msContrato')">
+                            <span id="msContratoLabel">— Todos —</span>
+                            <i class="bi bi-chevron-down vr-ms-caret"></i>
+                        </button>
+                        <div class="vr-ms-drop" id="msContratoDrop">
+                            <input type="text" class="vr-ms-search" placeholder="Buscar..." oninput="vrMsSearch(this,'msContratoList')">
+                            <div class="vr-ms-list" id="msContratoList">
+                                {% for c in lista_contratos %}
+                                <label class="vr-ms-opt">
+                                    <input type="checkbox" name="contrato" value="{{ c }}" {% if c in filtros.contratos %}checked{% endif %}>
+                                    <span>{{ c }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="vr-fg">
                     <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso</label>
-                    <select name="recurso" class="vr-finput">
-                        <option value="">— Todos —</option>
-                        {% for r in lista_recursos %}
-                        <option value="{{ r }}" {% if filtros.recurso == r %}selected{% endif %}>{{ r }}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="vr-ms-wrap" id="msRecursoWrap">
+                        <button type="button" class="vr-ms-btn" id="msRecursoBtn" onclick="vrToggleMs('msRecurso')">
+                            <span id="msRecursoLabel">— Todos —</span>
+                            <i class="bi bi-chevron-down vr-ms-caret"></i>
+                        </button>
+                        <div class="vr-ms-drop" id="msRecursoDrop">
+                            <input type="text" class="vr-ms-search" placeholder="Buscar..." oninput="vrMsSearch(this,'msRecursoList')">
+                            <div class="vr-ms-list" id="msRecursoList">
+                                {% for r in lista_recursos %}
+                                <label class="vr-ms-opt">
+                                    <input type="checkbox" name="recurso" value="{{ r }}" {% if r in filtros.recursos %}checked{% endif %}>
+                                    <span>{{ r }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="vr-filtros-acciones">
@@ -559,6 +581,63 @@ async function toggleReunion(btn) {
     } catch(e) { alert("Error al guardar: " + e.message); }
     btn.disabled = false;
 }
+
+/* ── Multi-select helpers ── */
+function vrToggleMs(prefix) {
+    const btn  = document.getElementById(prefix + 'Btn');
+    const drop = document.getElementById(prefix + 'Drop');
+    const open = drop.classList.contains('open');
+    // Cerrar todos los otros
+    document.querySelectorAll('.vr-ms-drop.open').forEach(d => {
+        d.classList.remove('open');
+        d.previousElementSibling && d.previousElementSibling.classList.remove('open');
+    });
+    if (!open) {
+        drop.classList.add('open');
+        btn.classList.add('open');
+        drop.querySelector('.vr-ms-search').focus();
+    }
+    _vrUpdateLabel(prefix);
+}
+
+function vrMsSearch(input, listId) {
+    const q = input.value.toLowerCase();
+    document.querySelectorAll('#' + listId + ' .vr-ms-opt').forEach(opt => {
+        opt.classList.toggle('hidden', q && !opt.textContent.toLowerCase().includes(q));
+    });
+}
+
+function _vrUpdateLabel(prefix) {
+    const wrap   = document.getElementById(prefix + 'Wrap');
+    const label  = document.getElementById(prefix + 'Label');
+    const checks = wrap.querySelectorAll('input[type=checkbox]:checked');
+    if (checks.length === 0) {
+        label.textContent = '— Todos —';
+    } else if (checks.length === 1) {
+        label.textContent = checks[0].value;
+    } else {
+        label.textContent = checks.length + ' seleccionados';
+    }
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.vr-ms-wrap')) {
+        document.querySelectorAll('.vr-ms-drop.open').forEach(d => {
+            d.classList.remove('open');
+            const btn = d.previousElementSibling;
+            if (btn) btn.classList.remove('open');
+        });
+    }
+});
+
+// Actualizar labels y escuchar cambios en checkboxes
+document.querySelectorAll('.vr-ms-wrap').forEach(wrap => {
+    const prefix = wrap.id.replace('Wrap', '');
+    _vrUpdateLabel(prefix);
+    wrap.querySelectorAll('input[type=checkbox]').forEach(chk => {
+        chk.addEventListener('change', () => _vrUpdateLabel(prefix));
+    });
+});
 </script>
 
 {% endblock %}

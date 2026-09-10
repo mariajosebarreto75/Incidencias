@@ -279,8 +279,8 @@ def validar_reportes():
     fecha_fin     = request.args.get("fecha_fin", "").strip()
     fecha_rep_ini = request.args.get("fecha_rep_ini", "").strip()
     fecha_rep_fin = request.args.get("fecha_rep_fin", "").strip()
-    recurso_f     = request.args.get("recurso", "").strip()
-    contrato_f    = request.args.get("contrato", "").strip()
+    recursos_f    = [v.strip() for v in request.args.getlist("recurso") if v.strip()]
+    contratos_f   = [v.strip() for v in request.args.getlist("contrato") if v.strip()]
 
     if fecha_ini:
         try:
@@ -307,10 +307,10 @@ def validar_reportes():
                          datetime.strptime(fecha_rep_fin, "%Y-%m-%d").date())
         except ValueError:
             pass
-    if recurso_f:
-        q = q.filter(ReporteOperacional.recurso.ilike(f"%{recurso_f}%"))
-    if contrato_f:
-        q = q.filter(ReporteOperacional.contrato == contrato_f)
+    if recursos_f:
+        q = q.filter(ReporteOperacional.recurso.in_(recursos_f))
+    if contratos_f:
+        q = q.filter(ReporteOperacional.contrato.in_(contratos_f))
 
     reportes = q.order_by(ReporteOperacional.fecha_creado.desc()).all()
 
@@ -336,8 +336,8 @@ def validar_reportes():
         "fecha_fin":     fecha_fin,
         "fecha_rep_ini": fecha_rep_ini,
         "fecha_rep_fin": fecha_rep_fin,
-        "recurso":       recurso_f,
-        "contrato":      contrato_f,
+        "recursos":      recursos_f,
+        "contratos":     contratos_f,
     }
 
     kpis = {
