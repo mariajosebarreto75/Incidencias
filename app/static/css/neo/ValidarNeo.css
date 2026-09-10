@@ -224,11 +224,11 @@
 .vr-td-reunion { text-align: center; white-space: nowrap; }
 .vr-td-fecha .vr-fecha-principal { font-weight: 600; color: #1a2e35; font-size: .83rem; }
 .vr-td-fecha .vr-fecha-sub       { font-size: .7rem; color: #a0aab4; margin-top: 1px; }
-.vr-td-contrato { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.vr-td-contrato { min-width: 160px; }
 .vr-contrato-chip {
     display: inline-block; background: #f0f4f8; border-radius: 6px;
     padding: 3px 8px; font-size: .76rem; font-weight: 600; color: #2d4a6a;
-    white-space: nowrap; max-width: 210px; overflow: hidden; text-overflow: ellipsis;
+    white-space: normal; word-break: break-word;
     vertical-align: middle;
 }
 .vr-td-recurso { font-weight: 600; color: #0a1f2e; }
