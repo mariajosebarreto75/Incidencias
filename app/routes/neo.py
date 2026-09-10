@@ -141,6 +141,30 @@ def _parsear_hora(valor):
     return None
 
 
+def _calcular_impacto(tipo_incidencia, diff_min=0):
+    """Retorna 'Alto', 'Medio', 'Bajo' o None según el tipo de incidencia."""
+    import unicodedata
+    def _norm(s):
+        return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode().lower().strip()
+    tipo_n = _norm(tipo_incidencia or "")
+    impactos_altos = {
+        _norm(t) for t in [
+            "fuera de ruta", "tiempo muerto", "inicio tardio de labores",
+            "salida tardia", "finalizacion temprana",
+            "error en la informacion", "mal enrutamiento"
+        ]
+    }
+    if tipo_n in impactos_altos:
+        return "Alto"
+    if "excede tiempo" in tipo_n:
+        if diff_min < 15:
+            return "Bajo"
+        elif diff_min < 25:
+            return "Medio"
+        return "Alto"
+    return None
+
+
 def _parsear_float(valor):
     if not valor:
         return None
@@ -536,21 +560,9 @@ def editar_reporte(id):
                 setattr(reporte, campo, d[campo] or None)
 
         # Recalcular impacto
-        tipo_lower = (reporte.tipo_incidencia or "").lower()
-        impactos_altos = {
-            "fuera de ruta", "tiempo muerto", "inicio tardío de labores",
-            "salida tardia", "finalización temprana",
-            "error en la información", "mal enrutamiento"
-        }
-        if tipo_lower in impactos_altos:
-            reporte.impacto = "Alto"
-        elif "excede tiempo" in tipo_lower:
-            if diff_min < 15:
-                reporte.impacto = "Bajo"
-            elif diff_min < 25:
-                reporte.impacto = "Medio"
-            else:
-                reporte.impacto = "Alto"
+        impacto_calc = _calcular_impacto(reporte.tipo_incidencia, diff_min)
+        if impacto_calc:
+            reporte.impacto = impacto_calc
 
         # Recalcular afectación económica solo si el cliente no envió un valor
         if "afectacion" in d and d["afectacion"] not in (None, ""):
@@ -909,7 +921,9 @@ def guardar_reporte():
             parametro_neo       = datos.get("parametro_neo_nombre")   or "",
             observacion         = datos.get("observacion")            or "",
             duracion            = datos.get("duracion")               or None,
-            impacto             = datos.get("impacto")                or None,
+            impacto             = datos.get("impacto") or _calcular_impacto(
+                                      datos.get("tipo_incidencia_nombre") or datos.get("tipo_incidencia", "")
+                                  ) or None,
             horas_afectadas     = (
                 round((datetime.combine(fecha, hora_fin) - datetime.combine(fecha, hora_inicio)).total_seconds() / 3600, 6)
                 if hora_inicio and hora_fin and hora_fin > hora_inicio else
