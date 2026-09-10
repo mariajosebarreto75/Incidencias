@@ -116,6 +116,11 @@
                     <input type="text" id="duracion_display" class="edit-input edit-readonly-input"
                            value="{{ reporte.duracion or '—' }}" readonly>
                 </div>
+                <div class="col-md-3">
+                    <label class="edit-label">Impacto (auto)</label>
+                    <input type="text" id="impacto_display" class="edit-input edit-readonly-input"
+                           value="{{ reporte.impacto or '—' }}" readonly>
+                </div>
 
                 <!-- TIPO INCIDENCIA Y PARÁMETRO -->
                 <div class="col-md-6">
@@ -258,10 +263,30 @@
             });
     })();
 
-    /* ---- Duración automática ---- */
-    const hiEl = document.getElementById("hora_inicio");
-    const hfEl = document.getElementById("hora_fin");
-    const durEl = document.getElementById("duracion_display");
+    /* ---- Duración e Impacto automáticos ---- */
+    const hiEl    = document.getElementById("hora_inicio");
+    const hfEl    = document.getElementById("hora_fin");
+    const durEl   = document.getElementById("duracion_display");
+    const impEl   = document.getElementById("impacto_display");
+    const tipoEl  = document.getElementById("tipo_incidencia");
+
+    function _normStr(s) {
+        return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+    }
+
+    function calcImpacto(diffMin) {
+        const tipo = _normStr(tipoEl ? tipoEl.value : "");
+        const altos = ["fuera de ruta","tiempo muerto","inicio tardio de labores",
+                       "salida tardia","finalizacion temprana",
+                       "error en la informacion","mal enrutamiento"];
+        if (altos.includes(tipo)) return "Alto";
+        if (tipo.includes("excede tiempo")) {
+            if (diffMin < 15) return "Bajo";
+            if (diffMin < 25) return "Medio";
+            return "Alto";
+        }
+        return null;
+    }
 
     function calcDuracion() {
         if (!hiEl.value || !hfEl.value) return;
@@ -272,10 +297,22 @@
         const diff = fin - ini;
         const h = Math.floor(diff / 60), m = diff % 60;
         durEl.value = h + "h " + String(m).padStart(2, "0") + "m";
+        const imp = calcImpacto(diff);
+        if (imp && impEl) impEl.value = imp;
+    }
+
+    function recalcImpacto() {
+        if (!hiEl.value || !hfEl.value) {
+            const imp = calcImpacto(0);
+            if (imp && impEl) impEl.value = imp;
+            return;
+        }
+        calcDuracion();
     }
 
     hiEl.addEventListener("input", calcDuracion);
     hfEl.addEventListener("input", calcDuracion);
+    if (tipoEl) tipoEl.addEventListener("change", recalcImpacto);
 
     function parsearHoraPegada(texto) {
         const m = texto.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?/);
