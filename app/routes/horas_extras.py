@@ -169,7 +169,15 @@ def he_dashboard():
     if not (rol == "admin" or current_user.tiene_permiso("dashboard_he")):
         abort(403)
     contratos = _contratos_del_usuario() if rol == "admin" else _contratos_del_usuario()
-    cortes    = HeCorte.query.order_by(HeCorte.fecha_inicio.desc()).all()
+    # Deduplicar por rango de fechas: un solo corte por período (preferir contrato_id no nulo)
+    _todos_cortes = HeCorte.query.order_by(HeCorte.fecha_inicio.desc(), HeCorte.contrato_id.desc()).all()
+    _vistos = set()
+    cortes = []
+    for _c in _todos_cortes:
+        _key = (_c.fecha_inicio, _c.fecha_fin)
+        if _key not in _vistos:
+            _vistos.add(_key)
+            cortes.append(_c)
     if rol in ("coordinador", "director", "supervisor"):
         base_template = "coordinador/navbarcoor.html"
     elif rol == "neo":
