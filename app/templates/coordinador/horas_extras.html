@@ -449,6 +449,11 @@ body { background:var(--c-bg); }
             <div class="he-hist-head">
                 <h6><i class="bi bi-table me-2"></i>Mis horas enviadas</h6>
                 <div style="display:flex;gap:8px;align-items:center;">
+                    <button id="btnSelTodo" onclick="seleccionarTodoFiltrado()"
+                            class="btn btn-sm btn-outline-secondary fw-semibold"
+                            style="border-radius:7px;font-size:.76rem;">
+                        <i class="bi bi-check2-all me-1"></i><span id="lblSelTodo">Seleccionar todo</span>
+                    </button>
                     <button id="btnEliminarSel" onclick="eliminarSeleccionados()"
                             class="btn btn-sm btn-danger fw-semibold"
                             style="border-radius:7px;font-size:.76rem;display:none;">
@@ -667,11 +672,32 @@ const V_CHK=0,
 
 const _seleccionados = new Set(); // IDs seleccionados para borrar
 
+function seleccionarTodoFiltrado() {
+    const ids = _currentValIds.filter(id => id != null);
+    const todosSeleccionados = ids.length > 0 && ids.every(id => _seleccionados.has(id));
+    if (todosSeleccionados) {
+        // Deseleccionar todo lo filtrado
+        ids.forEach(id => _seleccionados.delete(id));
+    } else {
+        // Seleccionar todo lo filtrado
+        ids.forEach(id => _seleccionados.add(id));
+    }
+    _actualizarBtnEliminar();
+    if (hotVal) hotVal.render();
+}
+
 function _actualizarBtnEliminar() {
     const n = _seleccionados.size;
     const btn = document.getElementById("btnEliminarSel");
     const cnt = document.getElementById("cntSel");
+    const lbl = document.getElementById("lblSelTodo");
     if (!btn) return;
+    // Actualizar label del botón seleccionar todo
+    if (lbl) {
+        const ids = _currentValIds.filter(id => id != null);
+        const todosSeleccionados = ids.length > 0 && ids.every(id => _seleccionados.has(id));
+        lbl.textContent = todosSeleccionados ? "Deseleccionar todo" : "Seleccionar todo";
+    }
     cnt.textContent = n;
     btn.style.display = n > 0 ? "" : "none";
 }
