@@ -108,17 +108,19 @@
                 </div>
                 <div class="vr-fg vr-fg-wide">
                     <label class="vr-flbl"><i class="bi bi-file-earmark-text"></i> Contrato</label>
-                    <div class="vr-ms-wrap" id="msContratoWrap">
-                        <button type="button" class="vr-ms-btn" id="msContratoBtn" onclick="vrToggleMs('msContrato')">
-                            <span id="msContratoLabel">— Todos —</span>
-                            <i class="bi bi-chevron-down vr-ms-caret"></i>
+                    <div style="position:relative;" id="msContratoWrap">
+                        <button type="button" id="msContratoBtn" onclick="vrToggleMs('msContrato')"
+                            style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:5px 9px;font-size:.8rem;color:#1a2e35;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;height:32px;text-align:left;">
+                            <span id="msContratoLabel" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">— Todos —</span>
+                            <i class="bi bi-chevron-down" style="font-size:.65rem;color:#8a9bb0;flex-shrink:0;"></i>
                         </button>
-                        <div class="vr-ms-drop" id="msContratoDrop" style="display:none">
-                            <input type="text" class="vr-ms-search" placeholder="Buscar..." oninput="vrMsSearch(this,'msContratoList')">
-                            <div class="vr-ms-list" id="msContratoList">
+                        <div id="msContratoDrop" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:2000;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.15);width:280px;padding:8px 0 6px;">
+                            <input type="text" placeholder="Buscar..." oninput="vrMsSearch(this,'msContratoList')"
+                                style="display:block;width:calc(100% - 16px);margin:0 8px 6px;border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:.76rem;outline:none;">
+                            <div id="msContratoList" style="max-height:220px;overflow-y:auto;">
                                 {% for c in lista_contratos %}
-                                <label class="vr-ms-opt">
-                                    <input type="checkbox" name="contrato" value="{{ c }}" {% if c in filtros.contratos %}checked{% endif %}>
+                                <label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:.78rem;color:#1a2e35;">
+                                    <input type="checkbox" name="contrato" value="{{ c }}" {% if c in filtros.contratos %}checked{% endif %} style="accent-color:#00B7C7;width:14px;height:14px;flex-shrink:0;">
                                     <span>{{ c }}</span>
                                 </label>
                                 {% endfor %}
@@ -128,17 +130,19 @@
                 </div>
                 <div class="vr-fg">
                     <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso</label>
-                    <div class="vr-ms-wrap" id="msRecursoWrap">
-                        <button type="button" class="vr-ms-btn" id="msRecursoBtn" onclick="vrToggleMs('msRecurso')">
-                            <span id="msRecursoLabel">— Todos —</span>
-                            <i class="bi bi-chevron-down vr-ms-caret"></i>
+                    <div style="position:relative;" id="msRecursoWrap">
+                        <button type="button" id="msRecursoBtn" onclick="vrToggleMs('msRecurso')"
+                            style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:5px 9px;font-size:.8rem;color:#1a2e35;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;height:32px;text-align:left;min-width:140px;">
+                            <span id="msRecursoLabel" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">— Todos —</span>
+                            <i class="bi bi-chevron-down" style="font-size:.65rem;color:#8a9bb0;flex-shrink:0;"></i>
                         </button>
-                        <div class="vr-ms-drop" id="msRecursoDrop" style="display:none">
-                            <input type="text" class="vr-ms-search" placeholder="Buscar..." oninput="vrMsSearch(this,'msRecursoList')">
-                            <div class="vr-ms-list" id="msRecursoList">
+                        <div id="msRecursoDrop" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:2000;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,.15);width:220px;padding:8px 0 6px;">
+                            <input type="text" placeholder="Buscar..." oninput="vrMsSearch(this,'msRecursoList')"
+                                style="display:block;width:calc(100% - 16px);margin:0 8px 6px;border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:.76rem;outline:none;">
+                            <div id="msRecursoList" style="max-height:220px;overflow-y:auto;">
                                 {% for r in lista_recursos %}
-                                <label class="vr-ms-opt">
-                                    <input type="checkbox" name="recurso" value="{{ r }}" {% if r in filtros.recursos %}checked{% endif %}>
+                                <label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:.78rem;color:#1a2e35;">
+                                    <input type="checkbox" name="recurso" value="{{ r }}" {% if r in filtros.recursos %}checked{% endif %} style="accent-color:#00B7C7;width:14px;height:14px;flex-shrink:0;">
                                     <span>{{ r }}</span>
                                 </label>
                                 {% endfor %}
