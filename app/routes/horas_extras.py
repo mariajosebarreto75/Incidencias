@@ -1287,12 +1287,15 @@ def api_he_valor_extra_nomina():
         tecs = contratos[cid]["tecnicos"]
         if tk not in tecs:
             tecs[tk] = {"cedula": tk, "nombre": r.nombre or "",
-                        "valor_rep": 0, "valor_auth": 0,
-                        "hrs_rep": 0, "hrs_auth": 0, "conceptos": {}}
+                        "valor_rep": 0, "valor_auth": 0, "valor_pend": 0,
+                        "hrs_rep": 0, "hrs_auth": 0, "hrs_pend": 0, "conceptos": {}}
         tecs[tk]["valor_rep"]  += vr
         tecs[tk]["valor_auth"] += va
         tecs[tk]["hrs_rep"]    += hrs_rep
         tecs[tk]["hrs_auth"]   += hrs_auth
+        if es_pendiente:
+            tecs[tk]["valor_pend"] += vr
+            tecs[tk]["hrs_pend"]   += hrs_rep
 
         ck = r.id_concepto or ""
         concs = tecs[tk]["conceptos"]
