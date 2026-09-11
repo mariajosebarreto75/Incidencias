@@ -535,9 +535,11 @@ function renderValorNomina(data) {
     // KPIs totales
     const totalRep  = (data || []).reduce((s, c) => s + (c.valor_rep  || 0), 0);
     const totalAuth = (data || []).reduce((s, c) => s + (c.valor_auth || 0), 0);
+    const totalPend = (data || []).reduce((s, c) => s + (c.valor_pend || 0), 0);
+    const totalDiff = Math.max(0, (totalRep - totalPend) - totalAuth);
     document.getElementById('kv_rep').textContent  = fmtCOP(totalRep);
     document.getElementById('kv_auth').textContent = fmtCOP(totalAuth);
-    document.getElementById('kv_diff').textContent = fmtCOP(totalRep - totalAuth);
+    document.getElementById('kv_diff').textContent = fmtCOP(totalDiff);
 
     if (!data || !data.length) {
         cont.innerHTML = '<div style="text-align:center;padding:24px;color:#475569;">Sin datos o sin salarios cargados en personas</div>';
