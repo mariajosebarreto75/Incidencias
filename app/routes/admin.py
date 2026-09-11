@@ -1696,6 +1696,7 @@ def api_he_dashboard_data():
     hrs_no_conforme  = sum(r.horas_reportadas or 0 for r in registros if r.estado == "NO CONFORME")
     hrs_conformes    = sum(r.horas_autorizadas or 0 for r in registros if r.estado == "CONFORME")
     pendientes       = sum(1 for r in registros if r.estado == "PENDIENTE")
+    hrs_pendientes   = sum(r.horas_reportadas or 0 for r in registros if not r.estado or r.estado.upper() == "PENDIENTE")
 
     # ── Por tipo de HE ───────────────────────────────────────────────────────
     por_tipo = {}
@@ -1822,7 +1823,7 @@ def api_he_dashboard_data():
             "total": total, "hrs_reportadas": hrs_reportadas,
             "hrs_autorizadas": hrs_autorizadas, "hrs_descontadas": hrs_descontadas,
             "hrs_no_conforme": hrs_no_conforme, "hrs_conformes": hrs_conformes,
-            "pendientes": pendientes,
+            "pendientes": pendientes, "hrs_pendientes": hrs_pendientes,
         },
         "por_tipo":      tipos_lista,
         "top_tipo":      top_tipo,
