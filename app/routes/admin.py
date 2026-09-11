@@ -1,4 +1,5 @@
 import io
+import os
 from datetime import datetime, date, time
 from functools import wraps
 
@@ -32,6 +33,8 @@ from app.models.hora_extra import HoraExtra, CONCEPTOS_HE
 from app.models.he_corte import HeCorte
 from app.models.semaforo import SemaforoCalificacion
 from app.models.compromiso import Compromiso
+
+EVIDENCIAS_COMPROMISOS_DIR = "evidencias_compromisos"
 
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
@@ -2122,7 +2125,6 @@ def api_semaforo_dashboard():
 @admin_bp.route("/evidencias-compromisos")
 @admin_required
 def evidencias_compromisos():
-    import os
     q = Compromiso.query.filter(Compromiso.evidencia_path.isnot(None))
 
     # Filtros opcionales
@@ -2146,8 +2148,7 @@ def evidencias_compromisos():
         ]
 
     # Verificar cuáles archivos existen físicamente
-    from app.routes.compromisos import UPLOAD_FOLDER_NAME
-    upload_dir = os.path.join(current_app.root_path, "uploads", UPLOAD_FOLDER_NAME)
+    upload_dir = os.path.join(current_app.root_path, "uploads", EVIDENCIAS_COMPROMISOS_DIR)
     for comp in compromisos:
         comp._archivo_existe = (
             bool(comp.evidencia_path)
@@ -2172,13 +2173,11 @@ def evidencias_compromisos():
 @admin_bp.route("/evidencias-compromisos/descargar/<int:comp_id>")
 @admin_required
 def descargar_evidencia_compromiso(comp_id):
-    import os
     from flask import send_from_directory
     comp = Compromiso.query.get_or_404(comp_id)
     if not comp.evidencia_path:
         abort(404)
-    from app.routes.compromisos import UPLOAD_FOLDER_NAME
-    upload_dir = os.path.join(current_app.root_path, "uploads", UPLOAD_FOLDER_NAME)
+    upload_dir = os.path.join(current_app.root_path, "uploads", EVIDENCIAS_COMPROMISOS_DIR)
     return send_from_directory(
         upload_dir,
         comp.evidencia_path,
