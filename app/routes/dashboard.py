@@ -271,8 +271,8 @@ def indicadores():
     reportes_por_tipo = _serie(_fusionar_tipos(raw_tipo), "tipo")
 
     reportes_por_accion = _serie(
-        _contar(ReporteOperacional.accion_a_tomar, excluir="accion"), "accion",
-        label_vacio="Sin Respuesta"
+        [(v, c) for v, c in _contar(ReporteOperacional.accion_a_tomar, excluir="accion") if v],
+        "accion"
     )
 
     # Afectación económica por tipo de incidencia (fusionar duplicados por normalización)
