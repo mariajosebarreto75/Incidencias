@@ -241,19 +241,54 @@ def indicadores():
         _contar(ReporteOperacional.contrato, excluir="contrato"), "contrato", abrev_por_contrato
     )
     reportes_por_recurso = _serie(_contar(ReporteOperacional.recurso, excluir="recurso"), "recurso")
-    reportes_por_tipo = _serie(_contar(ReporteOperacional.tipo_incidencia, excluir="tipo"), "tipo")
+    # Normalización para fusionar duplicados de tipo con distinta capitalización/tildes
+    import unicodedata as _ud
+    def _norm_tipo(s):
+        if not s:
+            return ""
+        n = _ud.normalize("NFD", s).encode("ascii", "ignore").decode()
+        return n.lower().strip()
+
+    def _fusionar_tipos(pares):
+        """Fusiona (tipo, count) con la misma forma normalizada, conservando la etiqueta más frecuente."""
+        acum = {}  # norm_key -> [etiqueta_principal, count_max, count_total]
+        for val, cnt in pares:
+            key = _norm_tipo(val or "")
+            if key not in acum:
+                acum[key] = [val or "", cnt, cnt]
+            else:
+                acum[key][2] += cnt
+                if cnt > acum[key][1]:  # tomar la etiqueta más frecuente
+                    acum[key][0] = val or ""
+                    acum[key][1] = cnt
+        return [(etq, tot) for etq, _, tot in acum.values()]
+
+    raw_tipo = _contar(ReporteOperacional.tipo_incidencia, excluir="tipo")
+    reportes_por_tipo = _serie(_fusionar_tipos(raw_tipo), "tipo")
+
     reportes_por_accion = _serie(
         _contar(ReporteOperacional.accion_a_tomar, excluir="accion"), "accion",
         label_vacio="Sin Respuesta"
     )
 
-    # Afectación económica por tipo de incidencia
+    # Afectación económica por tipo de incidencia (fusionar duplicados por normalización)
     afect_por_tipo_raw = _aplicar(
         db.session.query(ReporteOperacional.tipo_incidencia,
                          func.sum(ReporteOperacional.afectacion_economica)),
         excluir="tipo"
     ).group_by(ReporteOperacional.tipo_incidencia).all()
-    afect_por_tipo = {(t or ""): round(a or 0) for t, a in afect_por_tipo_raw}
+    # Acumular por clave normalizada
+    _afect_norm = {}
+    for t, a in afect_por_tipo_raw:
+        key = _norm_tipo(t or "")
+        _afect_norm[key] = _afect_norm.get(key, 0) + round(a or 0)
+    # Construir dict indexado por etiqueta canónica (la elegida por _fusionar_tipos)
+    # y también por clave normalizada (fallback para el template)
+    afect_por_tipo = {}
+    for etq, total_cnt in _fusionar_tipos(raw_tipo):
+        key = _norm_tipo(etq)
+        afect_por_tipo[etq] = _afect_norm.get(key, 0)
+        afect_por_tipo[key] = _afect_norm.get(key, 0)  # fallback normalizado
 
     # Listas de valores para los filtros desplegables
     lista_tipos = sorted(set(
