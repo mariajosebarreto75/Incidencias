@@ -1272,13 +1272,14 @@ async function cargarKpis() {
         _set("tb-pend",   d.pendientes   ?? "—");
         // Tarjetas grandes del resumen dashboard
         if (cid) {
-            const hrsRep  = +d.hrs_reportadas  || 0;
-            const hrsAuth = +d.hrs_autorizadas || 0;
+            const hrsRep      = +d.hrs_reportadas    || 0;
+            const hrsAuth     = +d.hrs_autorizadas   || 0;
+            const hrsRevisadas = d.hrs_rep_revisadas != null ? +d.hrs_rep_revisadas : hrsRep;
             _set("rs-total",      (d.total      || 0).toLocaleString("es-CO"));
             _set("rs-pendientes", (d.pendientes || 0).toLocaleString("es-CO"));
             _set("rs-hrs-rep",    hrsRep.toFixed(0));
             _set("rs-hrs-auth",   hrsAuth.toFixed(0));
-            _set("rs-hrs-desc",   Math.max(0, hrsRep - hrsAuth).toFixed(0));
+            _set("rs-hrs-desc",   Math.max(0, hrsRevisadas - hrsAuth).toFixed(0));
             // Mostrar contenido si estaba oculto
             const vacio    = document.getElementById("resumenVacio");
             const contenido= document.getElementById("resumenContenido");
@@ -2370,13 +2371,17 @@ function _applyAllFiltersCoor() {
 
 // Actualiza las tarjetas KPI del panel de registro a partir de los registros filtrados
 function _actualizarKpisCoorReg(registros) {
-    let total = registros.length, pend = 0, hrsPend = 0, hrsRep = 0, hrsAuth = 0, hrsNoAuth = 0;
+    let total = registros.length, pend = 0, hrsPend = 0, hrsRep = 0, hrsAuth = 0, hrsNoAuth = 0, hrsRepRevisadas = 0;
     for (const r of registros) {
         const est  = (r.estado || "").trim().toUpperCase();
         hrsRep  += r.horas_reportadas || 0;
-        if (est === "CONFORME" || est === "DESCONTADA") hrsAuth += r.horas_autorizadas || 0;
-        else if (est === "NO CONFORME") hrsNoAuth += r.horas_reportadas || 0;
-        else { pend++; hrsPend += r.horas_reportadas || 0; }
+        if (est === "CONFORME" || est === "DESCONTADA") {
+            hrsAuth        += r.horas_autorizadas || 0;
+            hrsRepRevisadas += r.horas_reportadas || 0;
+        } else if (est === "NO CONFORME") {
+            hrsNoAuth      += r.horas_reportadas || 0;
+            hrsRepRevisadas += r.horas_reportadas || 0;
+        } else { pend++; hrsPend += r.horas_reportadas || 0; }
     }
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     set("coor-ck-total",  total.toLocaleString("es-CO"));
@@ -2389,7 +2394,7 @@ function _actualizarKpisCoorReg(registros) {
     set("rs-pendientes", pend.toLocaleString("es-CO"));
     set("rs-hrs-rep",    hrsRep.toFixed(0));
     set("rs-hrs-auth",   hrsAuth.toFixed(0));
-    set("rs-hrs-desc",   Math.max(0, hrsRep - hrsAuth).toFixed(0));
+    set("rs-hrs-desc",   Math.max(0, hrsRepRevisadas - hrsAuth).toFixed(0));
 }
 
 function _actualizarKpisCoor(rows) {
@@ -2406,6 +2411,7 @@ function _actualizarKpisCoor(rows) {
         else                           { pend++;   hrsPend      += rep;  }
     }
     const hrsAuth = hrsConf + hrsDesc;
+    const hrsRepRevisadas = hrsRep - hrsPend; // exclude PENDIENTE/empty from descontadas base
     // Chips y métricas del panel validación
     const _sk = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     _sk("k-total",     total);
@@ -2420,7 +2426,7 @@ function _actualizarKpisCoor(rows) {
     _sk("rs-pendientes", pend.toLocaleString("es-CO"));
     _sk("rs-hrs-rep",    hrsRep.toFixed(0));
     _sk("rs-hrs-auth",   hrsAuth.toFixed(0));
-    _sk("rs-hrs-desc",   Math.max(0, hrsRep - hrsAuth).toFixed(0));
+    _sk("rs-hrs-desc",   Math.max(0, hrsRepRevisadas - hrsAuth).toFixed(0));
     // Mostrar el contenido del resumen si estaba oculto
     const vacio    = document.getElementById("resumenVacio");
     const contenido= document.getElementById("resumenContenido");
