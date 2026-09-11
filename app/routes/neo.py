@@ -141,6 +141,15 @@ def _parsear_hora(valor):
     return None
 
 
+def _tipo_sin_duracion(tipo_incidencia):
+    """Tipos que no tienen hora inicio/fin y no deben calcular duración ni afectación."""
+    import unicodedata
+    def _n(s):
+        return unicodedata.normalize("NFD", s or "").encode("ascii", "ignore").decode().lower().strip()
+    SIN_DURACION = {"error en la informacion"}
+    return _n(tipo_incidencia) in SIN_DURACION
+
+
 def _calcular_impacto(tipo_incidencia, diff_min=0):
     """Retorna 'Alto', 'Medio', 'Bajo' o None según el tipo de incidencia."""
     import unicodedata
@@ -542,7 +551,7 @@ def editar_reporte(id):
             reporte.hora_fin = hf
 
         diff_min = 0
-        if reporte.hora_inicio and reporte.hora_fin:
+        if reporte.hora_inicio and reporte.hora_fin and not _tipo_sin_duracion(reporte.tipo_incidencia):
             dt_ini = datetime.combine(_date.today(), reporte.hora_inicio)
             dt_fin = datetime.combine(_date.today(), reporte.hora_fin)
             if dt_fin <= dt_ini:
@@ -551,6 +560,10 @@ def editar_reporte(id):
             h, m = divmod(diff_min, 60)
             reporte.duracion = f"{h}h {m:02d}m"
             reporte.horas_afectadas = round(diff_min / 60, 6)
+        elif _tipo_sin_duracion(reporte.tipo_incidencia):
+            reporte.duracion = None
+            reporte.horas_afectadas = None
+            reporte.afectacion_economica = None
 
         # Campos texto
         for campo in ("placa", "tipo_actividad", "tipo_cuadrilla",
@@ -925,11 +938,15 @@ def guardar_reporte():
                                       datos.get("tipo_incidencia_nombre") or datos.get("tipo_incidencia", "")
                                   ) or None,
             horas_afectadas     = (
-                round((datetime.combine(fecha, hora_fin) - datetime.combine(fecha, hora_inicio)).total_seconds() / 3600, 6)
+                None if _tipo_sin_duracion(datos.get("tipo_incidencia_nombre") or datos.get("tipo_incidencia", ""))
+                else round((datetime.combine(fecha, hora_fin) - datetime.combine(fecha, hora_inicio)).total_seconds() / 3600, 6)
                 if hora_inicio and hora_fin and hora_fin > hora_inicio else
                 _parsear_float(datos.get("horas_afectadas"))
             ),
-            afectacion_economica = _parsear_float(datos.get("afectacion")),
+            afectacion_economica = (
+                None if _tipo_sin_duracion(datos.get("tipo_incidencia_nombre") or datos.get("tipo_incidencia", ""))
+                else _parsear_float(datos.get("afectacion"))
+            ),
             evidencia_1         = datos["evidencia_1"],
             evidencia_2         = datos.get("evidencia_2") or None,
             reportado_por       = current_user.username,
@@ -1054,7 +1071,11 @@ def api_actualizar_cuadrilla():
             reporte.meta = meta_val
 
         # Recalcular horas_afectadas desde hora_inicio y hora_fin
-        if reporte.hora_inicio and reporte.hora_fin:
+        if _tipo_sin_duracion(reporte.tipo_incidencia):
+            reporte.duracion = None
+            reporte.horas_afectadas = None
+            reporte.afectacion_economica = None
+        elif reporte.hora_inicio and reporte.hora_fin:
             dt_ini = datetime.combine(_date.today(), reporte.hora_inicio)
             dt_fin = datetime.combine(_date.today(), reporte.hora_fin)
             if dt_fin <= dt_ini:
