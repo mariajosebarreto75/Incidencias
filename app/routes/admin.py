@@ -14,6 +14,7 @@ from flask import (
 )
 from flask_login import login_required, current_user
 
+from sqlalchemy import func
 from app.extensions import db
 from app.models.contrato import Contrato
 from app.models.reporte_operacional import ReporteOperacional
@@ -75,7 +76,10 @@ def admin_required(f):
 @admin_bp.route("/")
 @admin_required
 def dashboard():
-    stats = {
+    hoy = date.today()
+
+    # ── Catálogos ──
+    stats_catalogos = {
         "contratos":    Contrato.query.count(),
         "usuarios":     User.query.filter_by(activo=True).count(),
         "personas":     Persona.query.count(),
@@ -83,14 +87,54 @@ def dashboard():
         "desvios":      TipoDesvio.query.count(),
         "parametros":   ParametroNeo.query.count(),
         "actividades":  Actividad.query.count(),
-        "recursos_neo": RecursoContrato.query.filter(
-            db.or_(
-                RecursoContrato.recurso.like("Centro Técnico%"),
-                RecursoContrato.recurso.like("SEDE %")
-            )
-        ).count(),
+        "recursos_neo": RecursoContrato.query.count(),
     }
-    return render_template("admin/dashboard.html", stats=stats)
+
+    # ── Reportes NEO ──
+    stats_neo = {
+        "total":        ReporteOperacional.query.count(),
+        "abiertos":     ReporteOperacional.query.filter_by(estado="Abierto").count(),
+        "cerrados":     ReporteOperacional.query.filter_by(estado="Cerrado").count(),
+        "conformes":    ReporteOperacional.query.filter_by(conformidad_neo="Conforme").count(),
+        "no_conformes": ReporteOperacional.query.filter_by(conformidad_neo="No conforme").count(),
+        "hoy":          ReporteOperacional.query.filter_by(fecha_reporte=hoy).count(),
+    }
+
+    # ── Horas Extras ──
+    he_total     = HoraExtra.query.count()
+    he_pendiente = HoraExtra.query.filter_by(estado="PENDIENTE").count()
+    he_conforme  = HoraExtra.query.filter_by(estado="CONFORME").count()
+    he_noconf    = HoraExtra.query.filter_by(estado="NO CONFORME").count()
+    he_desc      = HoraExtra.query.filter_by(estado="DESCONTADA").count()
+    he_hrs_rep   = db.session.query(func.sum(HoraExtra.horas_reportadas)).scalar() or 0
+    he_hrs_auth  = db.session.query(func.sum(HoraExtra.horas_autorizadas)).filter(
+        HoraExtra.estado.in_(["CONFORME", "DESCONTADA"])
+    ).scalar() or 0
+    stats_he = {
+        "total": he_total, "pendiente": he_pendiente,
+        "conforme": he_conforme, "no_conforme": he_noconf, "descontada": he_desc,
+        "hrs_reportadas": round(he_hrs_rep, 1), "hrs_autorizadas": round(he_hrs_auth, 1),
+    }
+
+    # ── Compromisos ──
+    comp_total    = Compromiso.query.count()
+    comp_cerrados = Compromiso.query.filter_by(estado="Cerrado").count()
+    comp_vencidos = Compromiso.query.filter(
+        Compromiso.estado != "Cerrado", Compromiso.fecha_entrega < hoy
+    ).count()
+    comp_evidencias = Compromiso.query.filter(Compromiso.evidencia_path.isnot(None)).count()
+    stats_compromisos = {
+        "total": comp_total, "cerrados": comp_cerrados,
+        "vencidos": comp_vencidos, "evidencias": comp_evidencias,
+    }
+
+    return render_template("admin/dashboard.html",
+        stats=stats_catalogos,
+        stats_neo=stats_neo,
+        stats_he=stats_he,
+        stats_compromisos=stats_compromisos,
+        hoy=hoy,
+    )
 
 
 # ============================================================
