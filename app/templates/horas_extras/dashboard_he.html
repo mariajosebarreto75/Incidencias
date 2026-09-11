@@ -407,7 +407,7 @@ function renderKpis(k) {
     const _auth = k.hrs_autorizadas || 0;
     const _pend = k.hrs_pendientes  || 0;
     document.getElementById('k_total').textContent  = fmt(k.total);
-    document.getElementById('k_pend').textContent   = fmt(k.pendientes);
+    document.getElementById('k_pend').textContent   = fmtHrs(_pend) + 'h';
     document.getElementById('k_rep').textContent    = fmtHrs(_rep) + 'h';
     document.getElementById('k_auth').textContent   = fmtHrs(_auth) + 'h';
     document.getElementById('k_noconf').textContent = fmtHrs(k.hrs_no_conforme) + 'h';
