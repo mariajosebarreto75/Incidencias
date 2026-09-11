@@ -503,6 +503,43 @@ def indicadores():
             "url_quitar": base + ("?" + urlencode(p) if p else ""),
         })
 
+    # ---- Reportes por analista (reportado_por) ----
+    analista_raw = _aplicar(
+        db.session.query(
+            ReporteOperacional.reportado_por,
+            func.count(ReporteOperacional.id),
+            func.sum(ReporteOperacional.afectacion_economica),
+        )
+    ).group_by(ReporteOperacional.reportado_por).all()
+
+    _conf_por_analista = dict(
+        _aplicar(
+            db.session.query(ReporteOperacional.reportado_por, func.count(ReporteOperacional.id))
+            .filter(ReporteOperacional.conformidad_neo == "Conforme")
+        ).group_by(ReporteOperacional.reportado_por).all()
+    )
+    _total_calif_por_analista = dict(
+        _aplicar(
+            db.session.query(ReporteOperacional.reportado_por, func.count(ReporteOperacional.id))
+            .filter(ReporteOperacional.conformidad_neo.in_(["Conforme", "No conforme"]))
+        ).group_by(ReporteOperacional.reportado_por).all()
+    )
+
+    reportes_por_analista = []
+    for nombre, total_a, afect_a in sorted(analista_raw, key=lambda x: -(x[1] or 0)):
+        if not nombre:
+            continue
+        calif = _total_calif_por_analista.get(nombre, 0)
+        conf  = _conf_por_analista.get(nombre, 0)
+        pct_conf = round(conf / calif * 100, 1) if calif else None
+        reportes_por_analista.append({
+            "nombre":     nombre,
+            "total":      total_a,
+            "afectacion": round(afect_a or 0),
+            "pct_conformidad": pct_conf,
+            "calif":      calif,
+        })
+
     # Nombre completo + rol para el encabezado / link de "volver"
     rol = current_user.rol.lower()
     home_por_rol = {
@@ -551,4 +588,5 @@ def indicadores():
         lista_conformidades=lista_conformidades,
         activos=activos,
         home_endpoint=home_por_rol.get(rol),
+        reportes_por_analista=reportes_por_analista,
     )
