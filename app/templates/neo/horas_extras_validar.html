@@ -709,12 +709,15 @@ async function cargarKpisCortesNeo() {
         const url = corte ? `/api/he/kpis?corte_id=${corte}` : "/api/he/kpis";
         const r = await fetch(url);
         const d = await r.json();
+        const _ckRep  = +d.hrs_reportadas  || 0;
+        const _ckAuth = +d.hrs_autorizadas || 0;
+        const _ckPend = +d.hrs_pendientes  || 0;
         document.getElementById("ck-total").textContent      = (d.total||0).toLocaleString("es-CO");
         document.getElementById("ck-pendientes").textContent = (d.pendientes||0).toLocaleString("es-CO");
-        document.getElementById("ck-hrs-rep").textContent    = (+d.hrs_reportadas  ||0).toFixed(0);
-        document.getElementById("ck-hrs-auth").textContent   = (+d.hrs_autorizadas ||0).toFixed(0);
+        document.getElementById("ck-hrs-rep").textContent    = _ckRep.toFixed(0);
+        document.getElementById("ck-hrs-auth").textContent   = _ckAuth.toFixed(0);
         document.getElementById("ck-hrs-noauth").textContent = (+d.hrs_no_conformes||0).toFixed(0);
-        document.getElementById("ck-hrs-desc").textContent   = (+d.hrs_desc_auth   ||0).toFixed(0);
+        document.getElementById("ck-hrs-desc").textContent   = Math.max(0, (_ckRep - _ckPend) - _ckAuth).toFixed(0);
     } catch(e) {}
 }
 
