@@ -169,7 +169,11 @@ def indicadores():
                 if valor:
                     filtros.append(_COLUMNA_POR_DIMENSION[dim].in_(valor))
             elif valor:
-                filtros.append(_COLUMNA_POR_DIMENSION[dim] == valor)
+                col = _COLUMNA_POR_DIMENSION[dim]
+                if dim == "tipo":
+                    filtros.append(func.lower(col) == valor.lower())
+                else:
+                    filtros.append(col == valor)
         if anio_filtro:
             try: filtros.append(extract("year",  ReporteOperacional.fecha_reporte) == int(anio_filtro))
             except ValueError: pass
@@ -291,10 +295,17 @@ def indicadores():
         afect_por_tipo[key] = _afect_norm.get(key, 0)  # fallback normalizado
 
     # Listas de valores para los filtros desplegables
-    lista_tipos = sorted(set(
+    # Deduplicar por clave normalizada (mayúsculas/acentos), conservar etiqueta canónica
+    _raw_tipos_all = [
         r[0] for r in db.session.query(ReporteOperacional.tipo_incidencia).distinct().all()
         if r[0]
-    ))
+    ]
+    _tipos_canon = {}
+    for t in _raw_tipos_all:
+        k = _norm_tipo(t)
+        if k not in _tipos_canon:
+            _tipos_canon[k] = t
+    lista_tipos = sorted(_tipos_canon.values(), key=lambda s: s.lower())
     lista_acciones = sorted(set(
         r[0] for r in db.session.query(ReporteOperacional.accion_a_tomar).distinct().all()
         if r[0]
@@ -444,6 +455,35 @@ def indicadores():
                 "texto": texto,
                 "url_quitar": _url_quitar(dim),
             })
+
+    if anio_filtro:
+        p = [("mes", mes_filtro)] if mes_filtro else []
+        for k, v in activos.items():
+            if isinstance(v, list):
+                for item in v:
+                    p.append((k, item))
+            elif v:
+                p.append((k, v))
+        base = url_for("dashboard.indicadores")
+        filtros_activos.append({
+            "dimension": "Año",
+            "texto": anio_filtro,
+            "url_quitar": base + ("?" + urlencode(p) if p else ""),
+        })
+    if mes_filtro:
+        p = [("anio", anio_filtro)] if anio_filtro else []
+        for k, v in activos.items():
+            if isinstance(v, list):
+                for item in v:
+                    p.append((k, item))
+            elif v:
+                p.append((k, v))
+        base = url_for("dashboard.indicadores")
+        filtros_activos.append({
+            "dimension": "Mes",
+            "texto": meses_nombres.get(mes_filtro, mes_filtro),
+            "url_quitar": base + ("?" + urlencode(p) if p else ""),
+        })
 
     # Nombre completo + rol para el encabezado / link de "volver"
     rol = current_user.rol.lower()
