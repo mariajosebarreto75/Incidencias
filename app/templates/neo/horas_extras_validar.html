@@ -490,7 +490,6 @@ body { background:var(--c-bg); }
             <div class="he-kpi-card" style="border-top:3px solid #f59e0b;background:#fffbeb;"><div class="he-kpi-val" id="ck-pendientes" style="color:#b45309;">—</div><div class="he-kpi-lbl">Pendientes por revisar</div></div>
             <div class="he-kpi-card info">   <div class="he-kpi-val" id="ck-hrs-rep">—</div><div class="he-kpi-lbl">Hrs Reportadas</div></div>
             <div class="he-kpi-card success"><div class="he-kpi-val" id="ck-hrs-auth">—</div><div class="he-kpi-lbl">Hrs Aprobadas</div></div>
-            <div class="he-kpi-card danger"> <div class="he-kpi-val" id="ck-hrs-noauth">—</div><div class="he-kpi-lbl">Hrs No Autorizadas</div></div>
             <div class="he-kpi-card warning"><div class="he-kpi-val" id="ck-hrs-desc">—</div><div class="he-kpi-lbl">Hrs Descontadas</div></div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
@@ -716,7 +715,6 @@ async function cargarKpisCortesNeo() {
         document.getElementById("ck-pendientes").textContent = (d.pendientes||0).toLocaleString("es-CO");
         document.getElementById("ck-hrs-rep").textContent    = _ckRep.toFixed(0);
         document.getElementById("ck-hrs-auth").textContent   = _ckAuth.toFixed(0);
-        document.getElementById("ck-hrs-noauth").textContent = (+d.hrs_no_conformes||0).toFixed(0);
         document.getElementById("ck-hrs-desc").textContent   = Math.max(0, (_ckRep - _ckPend) - _ckAuth).toFixed(0);
     } catch(e) {}
 }
