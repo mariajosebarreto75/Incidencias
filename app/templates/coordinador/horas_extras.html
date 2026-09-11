@@ -1274,12 +1274,12 @@ async function cargarKpis() {
         if (cid) {
             const hrsRep      = +d.hrs_reportadas    || 0;
             const hrsAuth     = +d.hrs_autorizadas   || 0;
-            const hrsRevisadas = d.hrs_rep_revisadas != null ? +d.hrs_rep_revisadas : hrsRep;
+            const hrsPend     = +d.hrs_pendientes    || 0;
             _set("rs-total",      (d.total      || 0).toLocaleString("es-CO"));
             _set("rs-pendientes", (d.pendientes || 0).toLocaleString("es-CO"));
             _set("rs-hrs-rep",    hrsRep.toFixed(0));
             _set("rs-hrs-auth",   hrsAuth.toFixed(0));
-            _set("rs-hrs-desc",   Math.max(0, hrsRevisadas - hrsAuth).toFixed(0));
+            _set("rs-hrs-desc",   Math.max(0, (hrsRep - hrsPend) - hrsAuth).toFixed(0));
             // Mostrar contenido si estaba oculto
             const vacio    = document.getElementById("resumenVacio");
             const contenido= document.getElementById("resumenContenido");
