@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -8,237 +8,394 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin.css') }}">
     {% block head %}{% endblock %}
+<style>
+/* ── SIDEBAR REDESIGN ───────────────────────────────────── */
+:root {
+  --sb-w: 256px;
+  --sb-bg: #0b0f1a;
+  --sb-accent: #00b8c9;
+  --sb-accent-dim: rgba(0,184,201,.14);
+  --sb-border: rgba(255,255,255,.07);
+  --sb-text: rgba(255,255,255,.58);
+  --sb-text-hover: #e2e8f0;
+}
+
+.adm-sidebar {
+  width: var(--sb-w);
+  background: var(--sb-bg);
+  border-right: 1px solid var(--sb-border);
+  box-shadow: 4px 0 24px rgba(0,0,0,.5);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 1000; overflow-y: auto; overflow-x: hidden;
+}
+.adm-sidebar::-webkit-scrollbar { width: 4px; }
+.adm-sidebar::-webkit-scrollbar-track { background: transparent; }
+.adm-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+
+/* BRAND */
+.adm-brand {
+  padding: 18px 16px 16px;
+  border-bottom: 1px solid var(--sb-border);
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+.adm-brand img { width: 34px; border-radius: 8px; }
+.adm-brand-title { color: #fff; font-size: .88rem; font-weight: 700; line-height: 1.2; }
+.adm-brand-sub   { color: rgba(255,255,255,.38); font-size: .65rem; letter-spacing: .3px; }
+
+/* NAV */
+.adm-nav { flex: 1; padding: 8px 0 12px; }
+
+/* GRUPO COLAPSABLE */
+.sb-group { margin-bottom: 2px; }
+.sb-group-hdr {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px 6px;
+  cursor: pointer; user-select: none;
+  color: rgba(255,255,255,.3);
+  font-size: .63rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.1px;
+  transition: color .15s;
+}
+.sb-group-hdr:hover { color: rgba(255,255,255,.55); }
+.sb-group-hdr-icon { font-size: .75rem; }
+.sb-group-hdr-arrow {
+  margin-left: auto; font-size: .6rem;
+  transition: transform .2s;
+}
+.sb-group-hdr.open .sb-group-hdr-arrow { transform: rotate(180deg); }
+.sb-group-body { overflow: hidden; }
+.sb-group-body.collapsed { display: none; }
+
+/* LINKS */
+.adm-nav-link {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 14px 7px 16px;
+  color: var(--sb-text); text-decoration: none;
+  font-size: .81rem; line-height: 1.3;
+  transition: background .12s, color .12s, border-color .12s;
+  border-left: 3px solid transparent;
+  white-space: nowrap;
+}
+.adm-nav-link i { font-size: .9rem; width: 17px; text-align: center; flex-shrink: 0; opacity: .7; transition: opacity .12s; }
+.adm-nav-link:hover { background: var(--sb-accent-dim); color: var(--sb-text-hover); }
+.adm-nav-link:hover i { opacity: 1; }
+.adm-nav-link.active {
+  background: var(--sb-accent-dim);
+  color: var(--sb-accent);
+  border-left-color: var(--sb-accent);
+  font-weight: 600;
+}
+.adm-nav-link.active i { opacity: 1; color: var(--sb-accent); }
+
+/* DIRECT LINKS (sin grupo) */
+.sb-direct {
+  padding: 4px 8px 2px;
+}
+
+/* SEPARADOR */
+.sb-sep {
+  height: 1px; background: var(--sb-border);
+  margin: 6px 14px;
+}
+
+/* FOOTER */
+.adm-footer {
+  flex-shrink: 0;
+  padding: 12px 12px 16px;
+  border-top: 1px solid var(--sb-border);
+  background: rgba(0,0,0,.2);
+}
+.adm-user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--sb-border);
+  border-radius: 10px; padding: 9px 11px; margin-bottom: 8px;
+}
+.adm-user-chip i { color: var(--sb-accent); font-size: 1.15rem; flex-shrink: 0; }
+.adm-user-name { color: #e2e8f0; font-size: .78rem; font-weight: 600; line-height: 1.2; }
+.adm-user-role { color: rgba(255,255,255,.3); font-size: .65rem; }
+.adm-btn-logout {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 7px 10px;
+  background: rgba(239,68,68,.08);
+  color: #fca5a5; border: 1px solid rgba(239,68,68,.18); border-radius: 8px;
+  font-size: .78rem; cursor: pointer; text-decoration: none;
+  transition: background .13s;
+}
+.adm-btn-logout:hover { background: rgba(239,68,68,.18); color: #fca5a5; }
+
+/* MAIN */
+.adm-main { margin-left: var(--sb-w); min-height: 100vh; padding: 28px 30px; }
+</style>
 </head>
 <body>
 
-<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• SIDEBAR â•â•â• -->
+<!-- ── SIDEBAR ── -->
 <aside class="adm-sidebar">
 
-    <div class="adm-brand">
-        <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="HESEGO">
-        <div>
-            <div class="adm-brand-title">Panel Admin</div>
-            <div class="adm-brand-sub">Parametrización del sistema</div>
-        </div>
+  <div class="adm-brand">
+    <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="HESEGO">
+    <div>
+      <div class="adm-brand-title">Panel Admin</div>
+      <div class="adm-brand-sub">Gestión del sistema</div>
+    </div>
+  </div>
+
+  <nav class="adm-nav">
+
+    <!-- ── DASHBOARDS ── -->
+    <div class="sb-direct">
+      <a href="{{ url_for('admin_bp.dashboard') }}"
+         class="adm-nav-link {% if request.endpoint == 'admin_bp.dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+      <a href="{{ url_for('dashboard.indicadores') }}"
+         class="adm-nav-link {% if request.endpoint == 'dashboard.indicadores' %}active{% endif %}">
+        <i class="bi bi-bar-chart-line"></i> Dashboard gerencial
+      </a>
+      <a href="{{ url_for('admin_bp.reportes') }}"
+         class="adm-nav-link {% if request.endpoint == 'admin_bp.reportes' %}active{% endif %}">
+        <i class="bi bi-clipboard2-data"></i> Reportes NEO
+      </a>
+      <a href="{{ url_for('admin_bp.evidencias_compromisos') }}"
+         class="adm-nav-link {% if request.endpoint == 'admin_bp.evidencias_compromisos' %}active{% endif %}">
+        <i class="bi bi-file-earmark-arrow-down"></i> Evidencias compromisos
+      </a>
+      <a href="{{ url_for('admin_bp.semaforo') }}"
+         class="adm-nav-link {% if request.endpoint == 'admin_bp.semaforo' %}active{% endif %}">
+        <i class="bi bi-traffic-light"></i> Semáforo actividades
+      </a>
     </div>
 
-    <nav class="adm-nav">
+    <div class="sb-sep"></div>
 
-        <div class="adm-nav-section">General</div>
-
-        <a href="{{ url_for('admin_bp.evidencias_compromisos') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.evidencias_compromisos' %}active{% endif %}">
-            <i class="bi bi-file-earmark-arrow-down"></i> Evidencias Compromisos
-        </a>
-
-        <a href="{{ url_for('admin_bp.semaforo') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.semaforo' %}active{% endif %}">
-            <i class="bi bi-traffic-light"></i> Semáforo Actividades
-        </a>
-
-        <a href="{{ url_for('admin_bp.dashboard') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.dashboard' %}active{% endif %}">
-            <i class="bi bi-speedometer2"></i> Dashboard
-        </a>
-
-        <a href="{{ url_for('dashboard.indicadores') }}"
-           class="adm-nav-link {% if request.endpoint == 'dashboard.indicadores' %}active{% endif %}">
-            <i class="bi bi-bar-chart-line"></i> Dashboard Gerencial
-        </a>
-
-        <a href="{{ url_for('admin_bp.reportes') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.reportes' %}active{% endif %}">
-            <i class="bi bi-clipboard2-data"></i> Reportes
-        </a>
-
-        <div class="adm-nav-section">Parametrización</div>
-
-        <a href="{{ url_for('admin_bp.contratos') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.contratos' %}active{% endif %}">
-            <i class="bi bi-file-earmark-text"></i> Contratos
-        </a>
-
+    <!-- ── USUARIOS ── -->
+    {% set ep = request.endpoint %}
+    {% set usuarios_active = ep in ['admin_bp.neo_usuarios','admin_bp.coordinador_usuarios','admin_bp.supervisor_usuarios','admin_bp.director_usuarios','admin_bp.parqueadero_usuarios'] %}
+    <div class="sb-group">
+      <div class="sb-group-hdr {% if usuarios_active %}open{% endif %}" onclick="toggleGroup(this)">
+        <i class="bi bi-people-fill sb-group-hdr-icon"></i>
+        Usuarios y accesos
+        <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
+      </div>
+      <div class="sb-group-body {% if not usuarios_active %}collapsed{% endif %}">
         <a href="{{ url_for('admin_bp.neo_usuarios') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.neo_usuarios' %}active{% endif %}">
-            <i class="bi bi-person-badge"></i> Usuarios NEO / Admin
+           class="adm-nav-link {% if ep == 'admin_bp.neo_usuarios' %}active{% endif %}">
+          <i class="bi bi-person-badge"></i> NEO / Admin
         </a>
-
-        <a href="{{ url_for('admin_bp.parqueadero_usuarios') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.parqueadero_usuarios' %}active{% endif %}">
-            <i class="bi bi-p-square"></i> Usuarios Parqueadero
-        </a>
-
         <a href="{{ url_for('admin_bp.coordinador_usuarios') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.coordinador_usuarios' %}active{% endif %}">
-            <i class="bi bi-person-workspace"></i> Usuarios Coordinador
+           class="adm-nav-link {% if ep == 'admin_bp.coordinador_usuarios' %}active{% endif %}">
+          <i class="bi bi-person-workspace"></i> Coordinador
         </a>
-
         <a href="{{ url_for('admin_bp.supervisor_usuarios') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.supervisor_usuarios' %}active{% endif %}">
-            <i class="bi bi-person-check"></i> Usuarios Supervisor
+           class="adm-nav-link {% if ep == 'admin_bp.supervisor_usuarios' %}active{% endif %}">
+          <i class="bi bi-person-check"></i> Supervisor
         </a>
-
         <a href="{{ url_for('admin_bp.director_usuarios') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.director_usuarios' %}active{% endif %}">
-            <i class="bi bi-briefcase"></i> Usuarios Director
+           class="adm-nav-link {% if ep == 'admin_bp.director_usuarios' %}active{% endif %}">
+          <i class="bi bi-briefcase"></i> Director
         </a>
+        <a href="{{ url_for('admin_bp.parqueadero_usuarios') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.parqueadero_usuarios' %}active{% endif %}">
+          <i class="bi bi-p-square"></i> Parqueadero
+        </a>
+      </div>
+    </div>
 
+    <!-- ── CONTRATOS Y RECURSOS ── -->
+    {% set contratos_active = ep in ['admin_bp.contratos','admin_bp.personas','admin_bp.recursos_neo','admin_bp.placas','admin_bp.metas'] %}
+    <div class="sb-group">
+      <div class="sb-group-hdr {% if contratos_active %}open{% endif %}" onclick="toggleGroup(this)">
+        <i class="bi bi-building sb-group-hdr-icon"></i>
+        Contratos y recursos
+        <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
+      </div>
+      <div class="sb-group-body {% if not contratos_active %}collapsed{% endif %}">
+        <a href="{{ url_for('admin_bp.contratos') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.contratos' %}active{% endif %}">
+          <i class="bi bi-file-earmark-text"></i> Contratos
+        </a>
         <a href="{{ url_for('admin_bp.personas') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.personas' %}active{% endif %}">
-            <i class="bi bi-person-vcard"></i> Personas / Cédulas
+           class="adm-nav-link {% if ep == 'admin_bp.personas' %}active{% endif %}">
+          <i class="bi bi-person-vcard"></i> Personas / Cédulas
         </a>
-
-        <a href="{{ url_for('admin_bp.metas') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.metas' %}active{% endif %}">
-            <i class="bi bi-graph-up-arrow"></i> Meta Operativa
-        </a>
-
-        <div class="adm-nav-section">Catálogos Coordinador</div>
-
-        <a href="{{ url_for('admin_bp.supervisores') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.supervisores' %}active{% endif %}">
-            <i class="bi bi-person-check"></i> Supervisores
-        </a>
-
-        <a href="{{ url_for('admin_bp.actividades') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.actividades' %}active{% endif %}">
-            <i class="bi bi-list-task"></i> Tipos de Actividad
-        </a>
-
-        <a href="{{ url_for('admin_bp.placas') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.placas' %}active{% endif %}">
-            <i class="bi bi-truck"></i> Placas por Contrato
-        </a>
-
-        <a href="{{ url_for('admin_bp.acciones') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.acciones' %}active{% endif %}">
-            <i class="bi bi-arrow-right-circle"></i> Acciones a Tomar
-        </a>
-
-        <a href="{{ url_for('admin_bp.parametros_coordinador') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.parametros_coordinador' %}active{% endif %}">
-            <i class="bi bi-sliders2"></i> Parámetros
-        </a>
-
-        <div class="adm-nav-section">Catálogos NEO</div>
-
-        <a href="{{ url_for('admin_bp.desvios') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.desvios' %}active{% endif %}">
-            <i class="bi bi-exclamation-triangle"></i> Tipos de Desvío
-        </a>
-
-        <a href="{{ url_for('admin_bp.parametros') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.parametros' %}active{% endif %}">
-            <i class="bi bi-sliders"></i> Parámetros NEO
-        </a>
-
         <a href="{{ url_for('admin_bp.recursos_neo') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.recursos_neo' %}active{% endif %}">
-            <i class="bi bi-building"></i> Recursos NEO
+           class="adm-nav-link {% if ep == 'admin_bp.recursos_neo' %}active{% endif %}">
+          <i class="bi bi-building"></i> Recursos NEO
         </a>
+        <a href="{{ url_for('admin_bp.placas') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.placas' %}active{% endif %}">
+          <i class="bi bi-truck"></i> Placas por contrato
+        </a>
+        <a href="{{ url_for('admin_bp.metas') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.metas' %}active{% endif %}">
+          <i class="bi bi-graph-up-arrow"></i> Meta operativa
+        </a>
+      </div>
+    </div>
 
-        <div class="adm-nav-section">Horas Extras</div>
+    <!-- ── CATÁLOGOS NEO ── -->
+    {% set neo_active = ep in ['admin_bp.desvios','admin_bp.parametros'] %}
+    <div class="sb-group">
+      <div class="sb-group-hdr {% if neo_active %}open{% endif %}" onclick="toggleGroup(this)">
+        <i class="bi bi-exclamation-triangle sb-group-hdr-icon"></i>
+        Catálogos NEO
+        <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
+      </div>
+      <div class="sb-group-body {% if not neo_active %}collapsed{% endif %}">
+        <a href="{{ url_for('admin_bp.desvios') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.desvios' %}active{% endif %}">
+          <i class="bi bi-exclamation-triangle"></i> Tipos de desvío
+        </a>
+        <a href="{{ url_for('admin_bp.parametros') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.parametros' %}active{% endif %}">
+          <i class="bi bi-sliders"></i> Parámetros NEO
+        </a>
+      </div>
+    </div>
 
+    <!-- ── CATÁLOGOS COORDINADOR ── -->
+    {% set coor_active = ep in ['admin_bp.supervisores','admin_bp.actividades','admin_bp.acciones','admin_bp.parametros_coordinador'] %}
+    <div class="sb-group">
+      <div class="sb-group-hdr {% if coor_active %}open{% endif %}" onclick="toggleGroup(this)">
+        <i class="bi bi-sliders2 sb-group-hdr-icon"></i>
+        Catálogos coordinador
+        <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
+      </div>
+      <div class="sb-group-body {% if not coor_active %}collapsed{% endif %}">
+        <a href="{{ url_for('admin_bp.supervisores') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.supervisores' %}active{% endif %}">
+          <i class="bi bi-person-check"></i> Supervisores
+        </a>
+        <a href="{{ url_for('admin_bp.actividades') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.actividades' %}active{% endif %}">
+          <i class="bi bi-list-task"></i> Tipos de actividad
+        </a>
+        <a href="{{ url_for('admin_bp.acciones') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.acciones' %}active{% endif %}">
+          <i class="bi bi-arrow-right-circle"></i> Acciones a tomar
+        </a>
+        <a href="{{ url_for('admin_bp.parametros_coordinador') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.parametros_coordinador' %}active{% endif %}">
+          <i class="bi bi-sliders2"></i> Parámetros
+        </a>
+      </div>
+    </div>
+
+    <!-- ── HORAS EXTRAS ── -->
+    {% set he_active = ep in ['he_bp.he_dashboard','admin_bp.he_dashboard_acceso','admin_bp.he_kpis','admin_bp.he_cortes','admin_bp.he_configuracion'] %}
+    <div class="sb-group">
+      <div class="sb-group-hdr {% if he_active %}open{% endif %}" onclick="toggleGroup(this)">
+        <i class="bi bi-clock-history sb-group-hdr-icon"></i>
+        Horas extras
+        <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
+      </div>
+      <div class="sb-group-body {% if not he_active %}collapsed{% endif %}">
         <a href="{{ url_for('he_bp.he_dashboard') }}"
-           class="adm-nav-link {% if request.endpoint == 'he_bp.he_dashboard' %}active{% endif %}">
-            <i class="bi bi-speedometer2"></i> Dashboard HE
-        </a>
-        <a href="{{ url_for('admin_bp.he_dashboard_acceso') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.he_dashboard_acceso' %}active{% endif %}">
-            <i class="bi bi-person-check"></i> Acceso Dashboard HE
+           class="adm-nav-link {% if ep == 'he_bp.he_dashboard' %}active{% endif %}">
+          <i class="bi bi-speedometer2"></i> Dashboard HE
         </a>
         <a href="{{ url_for('admin_bp.he_kpis') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.he_kpis' %}active{% endif %}">
-            <i class="bi bi-bar-chart-fill"></i> KPIs / Resumen
+           class="adm-nav-link {% if ep == 'admin_bp.he_kpis' %}active{% endif %}">
+          <i class="bi bi-bar-chart-fill"></i> KPIs / Resumen
         </a>
         <a href="{{ url_for('admin_bp.he_cortes') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.he_cortes' %}active{% endif %}">
-            <i class="bi bi-scissors"></i> Cortes
+           class="adm-nav-link {% if ep == 'admin_bp.he_cortes' %}active{% endif %}">
+          <i class="bi bi-scissors"></i> Cortes
         </a>
-<a href="{{ url_for('admin_bp.he_configuracion') }}"
-           class="adm-nav-link {% if request.endpoint == 'admin_bp.he_configuracion' %}active{% endif %}">
-            <i class="bi bi-gear"></i> Configuración HE
+        <a href="{{ url_for('admin_bp.he_dashboard_acceso') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.he_dashboard_acceso' %}active{% endif %}">
+          <i class="bi bi-person-check"></i> Acceso dashboard
         </a>
-
-    </nav>
-
-    <div class="adm-footer">
-        <div class="adm-user-chip">
-            <i class="bi bi-person-circle"></i>
-            <div>
-                <div class="adm-user-name">{{ current_user.nombre_completo }}</div>
-                <div class="adm-user-role">Administrador</div>
-            </div>
-        </div>
-        <a href="{{ url_for('auth.logout') }}" class="adm-btn-logout">
-            <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+        <a href="{{ url_for('admin_bp.he_configuracion') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.he_configuracion' %}active{% endif %}">
+          <i class="bi bi-gear"></i> Configuración
         </a>
+      </div>
     </div>
+
+  </nav>
+
+  <div class="adm-footer">
+    <div class="adm-user-chip">
+      <i class="bi bi-person-circle"></i>
+      <div>
+        <div class="adm-user-name">{{ current_user.nombre_completo }}</div>
+        <div class="adm-user-role">Administrador</div>
+      </div>
+    </div>
+    <a href="{{ url_for('auth.logout') }}" class="adm-btn-logout">
+      <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+    </a>
+  </div>
 
 </aside>
 
-<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• MAIN â•â•â• -->
+<!-- ── MAIN ── -->
 <main class="adm-main">
-    {% block content %}{% endblock %}
+  {% block content %}{% endblock %}
 </main>
 
 <script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
-
 <script>
-/* Limpiar inputs de búsqueda al cargar (evita autocompletado del navegador) */
+/* ── GRUPOS COLAPSABLES ── */
+function toggleGroup(hdr) {
+  hdr.classList.toggle('open');
+  var body = hdr.nextElementSibling;
+  body.classList.toggle('collapsed');
+  // Guardar estado en localStorage
+  var key = 'sb_' + hdr.textContent.trim().replace(/\s+/g,'_');
+  localStorage.setItem(key, body.classList.contains('collapsed') ? '0' : '1');
+}
+
+/* Limpiar inputs de búsqueda al cargar */
 document.addEventListener("DOMContentLoaded", function() {
-    function limpiarBuscadores() {
-        document.querySelectorAll(".adm-search input[type=text]").forEach(function(inp) {
-            inp.value = "";
-            inp.setAttribute("autocomplete", "new-password");
-        });
-        if (document.getElementById("tbody")) filtrarTabla("", "tbody");
-    }
-    limpiarBuscadores();
-    /* Segundo intento tras 400ms por si el navegador autorrellena después del DOM */
-    setTimeout(limpiarBuscadores, 400);
+  function limpiarBuscadores() {
+    document.querySelectorAll(".adm-search input[type=text]").forEach(function(inp) {
+      inp.value = "";
+      inp.setAttribute("autocomplete", "new-password");
+    });
+    if (document.getElementById("tbody")) filtrarTabla("", "tbody");
+  }
+  limpiarBuscadores();
+  setTimeout(limpiarBuscadores, 400);
 });
 
-/* Búsqueda genérica en tablas admin */
+/* Búsqueda genérica */
 function filtrarTabla(q, tbodyId) {
-    q = (q || "").toLowerCase();
-    document.querySelectorAll("#" + tbodyId + " tr").forEach(function(tr) {
-        tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
-    });
+  q = (q || "").toLowerCase();
+  document.querySelectorAll("#" + tbodyId + " tr").forEach(function(tr) {
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? "" : "none";
+  });
 }
 
 /* Alerta reutilizable */
 function mostrarAlerta(id, msg, tipo) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = msg;
-    el.className = "adm-alert " + tipo + " show";
-    setTimeout(function() { el.classList.remove("show"); }, 4000);
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = "adm-alert " + tipo + " show";
+  setTimeout(function() { el.classList.remove("show"); }, 4000);
 }
 
-/* Abrir modal reutilizable (evita instancias duplicadas de Bootstrap) */
 function abrirModal(id) {
-    bootstrap.Modal.getOrCreateInstance(document.getElementById(id)).show();
+  bootstrap.Modal.getOrCreateInstance(document.getElementById(id)).show();
 }
 
 async function apiFetch(url, method, body) {
-    try {
-        const opts = {
-            method: method,
-            headers: { "Content-Type": "application/json" }
-        };
-        if (body) opts.body = JSON.stringify(body);
-        const r = await fetch(url, opts);
-        const data = await r.json();
-        return data;
-    } catch (e) {
-        return { success: false, mensaje: "Error de comunicación con el servidor: " + e.message };
-    }
+  try {
+    var opts = { method: method, headers: { "Content-Type": "application/json" } };
+    if (body) opts.body = JSON.stringify(body);
+    var r = await fetch(url, opts);
+    return await r.json();
+  } catch(e) {
+    return { success: false, mensaje: "Error de comunicación: " + e.message };
+  }
 }
 </script>
-
 {% block scripts %}{% endblock %}
 <script src="{{ url_for('static', filename='js/filter-persist.js') }}"></script>
 </body>
 </html>
-
