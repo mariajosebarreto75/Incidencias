@@ -26,6 +26,11 @@
 
         <div class="adm-nav-section">General</div>
 
+        <a href="{{ url_for('admin_bp.evidencias_compromisos') }}"
+           class="adm-nav-link {% if request.endpoint == 'admin_bp.evidencias_compromisos' %}active{% endif %}">
+            <i class="bi bi-file-earmark-arrow-down"></i> Evidencias Compromisos
+        </a>
+
         <a href="{{ url_for('admin_bp.semaforo') }}"
            class="adm-nav-link {% if request.endpoint == 'admin_bp.semaforo' %}active{% endif %}">
             <i class="bi bi-traffic-light"></i> Semáforo Actividades

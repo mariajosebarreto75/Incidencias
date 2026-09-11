@@ -1,0 +1,145 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Evidencias Compromisos{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+  <div>
+    <h1 class="adm-page-title"><i class="bi bi-file-earmark-arrow-down me-2"></i>Evidencias de compromisos</h1>
+    <p class="adm-page-sub">Archivos adjuntos subidos en la agenda de compromisos</p>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<form method="get" action="{{ url_for('admin_bp.evidencias_compromisos') }}" class="adm-filter-bar mb-3">
+  <div class="adm-filter-group">
+    <label class="adm-filter-label">Contrato</label>
+    <select name="contrato_id" class="adm-select">
+      <option value="">Todos los contratos</option>
+      {% for c in contratos %}
+      <option value="{{ c.id }}" {% if contrato_id_filtro == c.id %}selected{% endif %}>
+        {{ c.nombre or c.contrato }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="adm-filter-group">
+    <label class="adm-filter-label">Estado</label>
+    <select name="estado" class="adm-select">
+      <option value="">Todos</option>
+      {% for e in estados %}
+      <option value="{{ e }}" {% if estado_filtro == e %}selected{% endif %}>{{ e }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="adm-filter-group" style="flex:1;min-width:200px">
+    <label class="adm-filter-label">Buscar</label>
+    <input type="text" name="q" value="{{ busqueda }}" placeholder="Compromiso, responsable o archivo…" class="adm-input">
+  </div>
+
+  <div class="adm-filter-actions">
+    <button type="submit" class="adm-btn adm-btn-primary"><i class="bi bi-funnel-fill me-1"></i>Filtrar</button>
+    <a href="{{ url_for('admin_bp.evidencias_compromisos') }}" class="adm-btn adm-btn-secondary">
+      <i class="bi bi-x-circle me-1"></i>Limpiar
+    </a>
+  </div>
+</form>
+
+<!-- CONTEO -->
+<div style="font-size:.82rem;color:#64748b;margin-bottom:10px">
+  <strong>{{ compromisos|length }}</strong> compromiso(s) con evidencia
+  {% if contrato_id_filtro or estado_filtro or busqueda %} — filtrado{% endif %}
+</div>
+
+<!-- TABLA -->
+{% if compromisos %}
+<div class="adm-card" style="overflow-x:auto">
+  <table class="adm-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Contrato</th>
+        <th>Responsable</th>
+        <th>Compromiso</th>
+        <th>F. Entrega</th>
+        <th>Estado</th>
+        <th>Archivo</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for comp in compromisos %}
+      <tr>
+        <td style="color:#64748b;font-size:.78rem">{{ comp.id }}</td>
+        <td style="font-weight:600;white-space:nowrap">{{ comp.contrato.nombre or comp.contrato.contrato }}</td>
+        <td>{{ comp.responsable }}</td>
+        <td style="max-width:280px">
+          <span title="{{ comp.compromiso }}">
+            {{ comp.compromiso[:80] }}{% if comp.compromiso|length > 80 %}…{% endif %}
+          </span>
+        </td>
+        <td style="white-space:nowrap;{% if comp.atrasado %}color:#ef4444;font-weight:700{% endif %}">
+          {{ comp.fecha_entrega.strftime('%d/%m/%Y') }}
+          {% if comp.atrasado %}<i class="bi bi-exclamation-circle ms-1" title="Vencido"></i>{% endif %}
+        </td>
+        <td>
+          {% if comp.estado == 'Cerrado' %}
+            <span class="adm-badge adm-badge-success">Cerrado</span>
+          {% elif comp.atrasado %}
+            <span class="adm-badge adm-badge-danger">Vencido</span>
+          {% elif comp.estado == 'En proceso' %}
+            <span class="adm-badge adm-badge-warning">En proceso</span>
+          {% else %}
+            <span class="adm-badge adm-badge-info">Pendiente</span>
+          {% endif %}
+        </td>
+        <td style="max-width:200px">
+          {% if comp.evidencia_nombre %}
+          <span title="{{ comp.evidencia_nombre }}" style="font-size:.78rem;color:#e2e8f0;display:flex;align-items:center;gap:5px">
+            {% set ext = comp.evidencia_nombre.rsplit('.', 1)[-1].lower() if '.' in comp.evidencia_nombre else '' %}
+            {% if ext == 'pdf' %}
+              <i class="bi bi-file-earmark-pdf" style="color:#f87171;font-size:1rem"></i>
+            {% elif ext in ['png','jpg','jpeg','webp'] %}
+              <i class="bi bi-file-earmark-image" style="color:#38bdf8;font-size:1rem"></i>
+            {% else %}
+              <i class="bi bi-file-earmark" style="color:#94a3b8;font-size:1rem"></i>
+            {% endif %}
+            {{ comp.evidencia_nombre[:35] }}{% if comp.evidencia_nombre|length > 35 %}…{% endif %}
+          </span>
+          {% if not comp._archivo_existe %}
+          <div style="font-size:.7rem;color:#f87171;margin-top:2px"><i class="bi bi-exclamation-triangle"></i> Archivo no encontrado en servidor</div>
+          {% endif %}
+          {% else %}
+          <span style="color:#64748b;font-size:.78rem">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if comp.evidencia_path and comp._archivo_existe %}
+          <a href="{{ url_for('admin_bp.descargar_evidencia_compromiso', comp_id=comp.id) }}"
+             class="adm-btn adm-btn-sm adm-btn-primary" title="Descargar evidencia">
+            <i class="bi bi-download"></i> Descargar
+          </a>
+          {% elif comp.evidencia_path %}
+          <span style="font-size:.75rem;color:#f87171">No disponible</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="adm-card" style="padding:40px;text-align:center;color:#64748b">
+  <i class="bi bi-folder2-open" style="font-size:2.5rem;opacity:.4;display:block;margin-bottom:10px"></i>
+  No se encontraron compromisos con evidencia para los filtros seleccionados.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Hacer que today() funcione en Jinja2 — se pasa desde el backend
+// (ya calculado en los datos; esta línea es solo para autocompletado IDE)
+</script>
+{% endblock %}

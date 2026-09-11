@@ -31,6 +31,7 @@ from app.models.he_config import HeConfig
 from app.models.hora_extra import HoraExtra, CONCEPTOS_HE
 from app.models.he_corte import HeCorte
 from app.models.semaforo import SemaforoCalificacion
+from app.models.compromiso import Compromiso
 
 
 admin_bp = Blueprint("admin_bp", __name__, url_prefix="/admin")
@@ -2112,3 +2113,75 @@ def api_semaforo_dashboard():
             data[r.contrato_id]["dias"][str(r.fecha)] = r.to_dict()
 
     return jsonify({"ok": True, "contratos": list(data.values())})
+
+
+# ============================================================
+# EVIDENCIAS COMPROMISOS
+# ============================================================
+
+@admin_bp.route("/evidencias-compromisos")
+@admin_required
+def evidencias_compromisos():
+    import os
+    q = Compromiso.query.filter(Compromiso.evidencia_path.isnot(None))
+
+    # Filtros opcionales
+    contrato_id = request.args.get("contrato_id", type=int)
+    estado      = request.args.get("estado", "").strip()
+    busqueda    = request.args.get("q", "").strip().lower()
+
+    if contrato_id:
+        q = q.filter(Compromiso.contrato_id == contrato_id)
+    if estado:
+        q = q.filter(Compromiso.estado == estado)
+
+    compromisos = q.order_by(Compromiso.fecha_creacion.desc()).all()
+
+    if busqueda:
+        compromisos = [
+            c for c in compromisos
+            if busqueda in (c.compromiso or "").lower()
+            or busqueda in (c.responsable or "").lower()
+            or busqueda in (c.evidencia_nombre or "").lower()
+        ]
+
+    # Verificar cuáles archivos existen físicamente
+    from app.routes.compromisos import UPLOAD_FOLDER_NAME
+    upload_dir = os.path.join(current_app.root_path, "uploads", UPLOAD_FOLDER_NAME)
+    for comp in compromisos:
+        comp._archivo_existe = (
+            bool(comp.evidencia_path)
+            and os.path.exists(os.path.join(upload_dir, comp.evidencia_path))
+        )
+
+    contratos = Contrato.query.order_by(Contrato.contrato).all()
+    estados   = ["Pendiente", "En proceso", "Cerrado", "Vencido"]
+
+    return render_template(
+        "admin/evidencias_compromisos.html",
+        compromisos=compromisos,
+        contratos=contratos,
+        estados=estados,
+        contrato_id_filtro=contrato_id,
+        estado_filtro=estado,
+        busqueda=busqueda,
+        today=date.today(),
+    )
+
+
+@admin_bp.route("/evidencias-compromisos/descargar/<int:comp_id>")
+@admin_required
+def descargar_evidencia_compromiso(comp_id):
+    import os
+    from flask import send_from_directory
+    comp = Compromiso.query.get_or_404(comp_id)
+    if not comp.evidencia_path:
+        abort(404)
+    from app.routes.compromisos import UPLOAD_FOLDER_NAME
+    upload_dir = os.path.join(current_app.root_path, "uploads", UPLOAD_FOLDER_NAME)
+    return send_from_directory(
+        upload_dir,
+        comp.evidencia_path,
+        as_attachment=True,
+        download_name=comp.evidencia_nombre or comp.evidencia_path,
+    )
