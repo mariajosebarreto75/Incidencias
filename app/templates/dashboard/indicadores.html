@@ -686,66 +686,33 @@ body { background: var(--c-bg); color: #1e293b; font-family: system-ui,-apple-sy
 
   <!-- REPORTES POR CONTRATO Y PENDIENTES -->
   <div class="section-title"><i class="bi bi-bar-chart"></i> Reportes por contrato</div>
-  <div class="grid-2">
-
-    <div class="card">
-      <div class="card-header"><i class="bi bi-building"></i> Cantidad de reportes</div>
-      <div class="card-body">
-        {% if reportes_por_contrato.datos %}
-        <div class="bars">
-          {% for fila in reportes_por_contrato.datos %}
-          <div>
-            <div class="bar-label-line">
-              {% if fila.activo %}<span class="bar-active-dot"></span>{% endif %}
-              {% if fila.url %}
-              <a href="{{ fila.url }}" class="bar-label {% if fila.activo %}active{% endif %}" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</a>
-              {% else %}
-              <span class="bar-label">{{ fila.etiqueta }}</span>
-              {% endif %}
-            </div>
-            <div class="bar-track-row">
-              <div class="bar-track">
-                <div class="bar-fill bar-fill-primary" data-pct="{{ ((fila.cantidad / reportes_por_contrato.maximo * 100) if reportes_por_contrato.maximo else 0)|round(1) }}"></div>
-              </div>
-              <span class="bar-count">{{ fila.cantidad }}</span>
-            </div>
+  <div class="card">
+    <div class="card-header"><i class="bi bi-building"></i> Cantidad de reportes</div>
+    <div class="card-body">
+      {% if reportes_por_contrato.datos %}
+      <div class="bars">
+        {% for fila in reportes_por_contrato.datos %}
+        <div>
+          <div class="bar-label-line">
+            {% if fila.activo %}<span class="bar-active-dot"></span>{% endif %}
+            {% if fila.url %}
+            <a href="{{ fila.url }}" class="bar-label {% if fila.activo %}active{% endif %}" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</a>
+            {% else %}
+            <span class="bar-label">{{ fila.etiqueta }}</span>
+            {% endif %}
           </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <p style="color:var(--c-muted);font-size:.82rem">Sin datos.</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header"><i class="bi bi-hourglass-split"></i> Pendientes sin respuesta</div>
-      <div class="card-body">
-        {% if pendientes_por_contrato.datos %}
-        <div class="bars">
-          {% for fila in pendientes_por_contrato.datos %}
-          <div>
-            <div class="bar-label-line">
-              {% if fila.activo %}<span class="bar-active-dot"></span>{% endif %}
-              {% if fila.url %}
-              <a href="{{ fila.url }}" class="bar-label {% if fila.activo %}active{% endif %}" title="{{ fila.etiqueta }}">{{ fila.etiqueta }}</a>
-              {% else %}
-              <span class="bar-label">{{ fila.etiqueta }}</span>
-              {% endif %}
+          <div class="bar-track-row">
+            <div class="bar-track">
+              <div class="bar-fill bar-fill-primary" data-pct="{{ ((fila.cantidad / reportes_por_contrato.maximo * 100) if reportes_por_contrato.maximo else 0)|round(1) }}"></div>
             </div>
-            <div class="bar-track-row">
-              <div class="bar-track">
-                <div class="bar-fill bar-fill-amber" data-pct="{{ ((fila.cantidad / pendientes_por_contrato.maximo * 100) if pendientes_por_contrato.maximo else 0)|round(1) }}"></div>
-              </div>
-              <span class="bar-count">{{ fila.cantidad }}</span>
-            </div>
+            <span class="bar-count">{{ fila.cantidad }}</span>
           </div>
-          {% endfor %}
         </div>
-        {% else %}
-        <p style="color:var(--c-muted);font-size:.82rem">Sin pendientes.</p>
-        {% endif %}
+        {% endfor %}
       </div>
+      {% else %}
+      <p style="color:var(--c-muted);font-size:.82rem">Sin datos.</p>
+      {% endif %}
     </div>
   </div>
 
