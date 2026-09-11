@@ -462,11 +462,14 @@ const contratosData = [
     try {
         const r = await fetch("/api/he/kpis");
         const d = await r.json();
+        const _rep  = +d.hrs_reportadas  || 0;
+        const _auth = +d.hrs_autorizadas || 0;
+        const _pend = +d.hrs_pendientes  || 0;
         document.getElementById("hs-total").textContent   = (d.total||0).toLocaleString("es-CO");
-        document.getElementById("hs-hrs").textContent     = (+d.hrs_reportadas   ||0).toFixed(0);
-        document.getElementById("hs-auth").textContent    = (+d.hrs_autorizadas  ||0).toFixed(0);
+        document.getElementById("hs-hrs").textContent     = _rep.toFixed(0);
+        document.getElementById("hs-auth").textContent    = _auth.toFixed(0);
         document.getElementById("hs-noconf").textContent  = (+d.hrs_no_conformes ||0).toFixed(0);
-        document.getElementById("hs-desc").textContent    = (+d.hrs_descontadas  ||0).toFixed(0);
+        document.getElementById("hs-desc").textContent    = Math.max(0, (_rep - _pend) - _auth).toFixed(0);
     } catch(e) {}
 })();
 {% endif %}
