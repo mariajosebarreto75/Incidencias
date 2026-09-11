@@ -1070,6 +1070,25 @@ def api_he_cortes_crear():
 
         contrato_id = d.get("contrato_id") or None
 
+        # Bloquear si ya existe un corte con el mismo rango (global o para el mismo contrato)
+        duplicado = HeCorte.query.filter(
+            HeCorte.fecha_inicio == fecha_inicio,
+            HeCorte.fecha_fin    == fecha_fin,
+            HeCorte.contrato_id  == contrato_id,
+        ).first()
+        if duplicado:
+            return jsonify({"ok": False, "msg": f"Ya existe un corte para ese rango de fechas: '{duplicado.nombre}' (id={duplicado.id})"}), 409
+
+        # Si se pide un corte por contrato pero ya existe uno global para ese rango, rechazar
+        if contrato_id:
+            global_existente = HeCorte.query.filter(
+                HeCorte.fecha_inicio == fecha_inicio,
+                HeCorte.fecha_fin    == fecha_fin,
+                HeCorte.contrato_id  == None,
+            ).first()
+            if global_existente:
+                return jsonify({"ok": False, "msg": f"Ya existe un corte global (Todos) para ese rango: '{global_existente.nombre}'. Los registros de ese contrato ya están incluidos."}), 409
+
         corte = HeCorte(
             nombre        = nombre,
             fecha_inicio  = fecha_inicio,
