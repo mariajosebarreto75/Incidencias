@@ -902,24 +902,32 @@ def api_he_kpis():
             # Horas autorizadas por estado (horas_autorizadas field, not reportadas)
             sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "CONFORME",   HoraExtra.horas_autorizadas), else_=0)), 0).label("hrs_conf_auth"),
             sa_func.coalesce(sa_func.sum(sa_case((HoraExtra.estado == "DESCONTADA", HoraExtra.horas_autorizadas), else_=0)), 0).label("hrs_desc_auth"),
+            # Hrs reportadas solo de registros revisados (excluye PENDIENTE y vacío)
+            sa_func.coalesce(sa_func.sum(sa_case(
+                (HoraExtra.estado.in_(["CONFORME", "NO CONFORME", "DESCONTADA"]), HoraExtra.horas_reportadas),
+                else_=0
+            )), 0).label("hrs_rep_revisadas"),
         ).one()
         # Total aprobadas = autorizado conforme + autorizado descontado
-        hrs_conf_auth = float(row.hrs_conf_auth)
-        hrs_desc_auth = float(row.hrs_desc_auth)
+        hrs_conf_auth    = float(row.hrs_conf_auth)
+        hrs_desc_auth    = float(row.hrs_desc_auth)
+        hrs_rep_revisadas = float(row.hrs_rep_revisadas)
+        hrs_autorizadas  = hrs_conf_auth + hrs_desc_auth
         return jsonify({
-            "total":            row.total,
-            "pendientes":       row.pendientes,
-            "conformes":        row.conformes,
-            "no_conformes":     row.no_conformes,
-            "descontadas":      row.descontadas,
-            "hrs_reportadas":   float(row.hrs_rep),
-            "hrs_conformes":    float(row.hrs_conf),
-            "hrs_no_conformes": float(row.hrs_noconf),
-            "hrs_descontadas":  float(row.hrs_desc),
-            "hrs_pendientes":   float(row.hrs_pend),
-            "hrs_autorizadas":  hrs_conf_auth + hrs_desc_auth,
-            "hrs_conf_auth":    hrs_conf_auth,
-            "hrs_desc_auth":    hrs_desc_auth,
+            "total":              row.total,
+            "pendientes":         row.pendientes,
+            "conformes":          row.conformes,
+            "no_conformes":       row.no_conformes,
+            "descontadas":        row.descontadas,
+            "hrs_reportadas":     float(row.hrs_rep),
+            "hrs_conformes":      float(row.hrs_conf),
+            "hrs_no_conformes":   float(row.hrs_noconf),
+            "hrs_descontadas":    float(row.hrs_desc),
+            "hrs_pendientes":     float(row.hrs_pend),
+            "hrs_autorizadas":    hrs_autorizadas,
+            "hrs_conf_auth":      hrs_conf_auth,
+            "hrs_desc_auth":      hrs_desc_auth,
+            "hrs_rep_revisadas":  hrs_rep_revisadas,
         })
     except Exception as e:
         import traceback
