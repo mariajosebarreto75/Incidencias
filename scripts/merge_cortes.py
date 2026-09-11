@@ -8,7 +8,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from run import create_app
 from app.extensions import db
-from app.models import HeCorte, HoraExtra
+from app.models.he_corte import HeCorte
+from app.models.hora_extra import HoraExtra
 from datetime import date
 
 app = create_app()
