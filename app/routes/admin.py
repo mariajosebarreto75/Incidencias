@@ -9,7 +9,8 @@ from openpyxl.utils import get_column_letter
 
 from flask import (
     Blueprint, render_template, request,
-    jsonify, redirect, url_for, send_file, flash
+    jsonify, redirect, url_for, send_file, flash,
+    current_app, abort, send_from_directory
 )
 from flask_login import login_required, current_user
 
@@ -2173,7 +2174,6 @@ def evidencias_compromisos():
 @admin_bp.route("/evidencias-compromisos/descargar/<int:comp_id>")
 @admin_required
 def descargar_evidencia_compromiso(comp_id):
-    from flask import send_from_directory
     comp = Compromiso.query.get_or_404(comp_id)
     if not comp.evidencia_path:
         abort(404)
