@@ -787,30 +787,58 @@ body { background: var(--c-bg); color: #1e293b; font-family: system-ui,-apple-sy
     </div>
   </div>
 
-  <!-- TENDENCIA DIARIA -->
-  <div class="section-title"><i class="bi bi-graph-up"></i> Tendencia diaria</div>
-  <div class="card mb-3">
-    <div class="card-header">
-      <i class="bi bi-calendar3"></i> Reportes por día
-      <span style="font-size:.72rem;font-weight:400;color:var(--c-muted);margin-left:6px">— últimos {{ reportes_por_dia.datos|length }} días con actividad</span>
-    </div>
-    <div class="card-body">
-      {% if reportes_por_dia.datos %}
-      <div class="col-chart">
-        {% for etiqueta, cantidad in reportes_por_dia.datos %}
-        <div class="col-item" title="{{ etiqueta }}: {{ cantidad }} reporte(s)">
-          <span class="col-val">{{ cantidad }}</span>
-          <div class="col-track">
-            <div class="col-fill" data-hpct="{{ ((cantidad / reportes_por_dia.maximo * 100) if reportes_por_dia.maximo else 0)|round(1) }}"></div>
-          </div>
-          <span class="col-lbl">{{ etiqueta }}</span>
-        </div>
-        {% endfor %}
+  <!-- TENDENCIA DIARIA Y MENSUAL -->
+  <div class="section-title"><i class="bi bi-graph-up"></i> Tendencia</div>
+  <div class="grid-2">
+
+    <div class="card mb-3">
+      <div class="card-header">
+        <i class="bi bi-calendar3"></i> Reportes por día
+        <span style="font-size:.72rem;font-weight:400;color:var(--c-muted);margin-left:6px">— últimos {{ reportes_por_dia.datos|length }} días con actividad</span>
       </div>
-      {% else %}
-      <p style="color:var(--c-muted);font-size:.82rem">Sin datos para este filtro.</p>
-      {% endif %}
+      <div class="card-body">
+        {% if reportes_por_dia.datos %}
+        <div class="col-chart">
+          {% for etiqueta, cantidad in reportes_por_dia.datos %}
+          <div class="col-item" title="{{ etiqueta }}: {{ cantidad }} reporte(s)">
+            <span class="col-val">{{ cantidad }}</span>
+            <div class="col-track">
+              <div class="col-fill" data-hpct="{{ ((cantidad / reportes_por_dia.maximo * 100) if reportes_por_dia.maximo else 0)|round(1) }}"></div>
+            </div>
+            <span class="col-lbl">{{ etiqueta }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--c-muted);font-size:.82rem">Sin datos para este filtro.</p>
+        {% endif %}
+      </div>
     </div>
+
+    <div class="card mb-3">
+      <div class="card-header">
+        <i class="bi bi-calendar2-month"></i> Reportes por mes
+        <span style="font-size:.72rem;font-weight:400;color:var(--c-muted);margin-left:6px">— {{ reportes_por_mes.datos|length }} meses con actividad</span>
+      </div>
+      <div class="card-body">
+        {% if reportes_por_mes.datos %}
+        <div class="col-chart">
+          {% for etiqueta, cantidad in reportes_por_mes.datos %}
+          <div class="col-item" title="{{ etiqueta }}: {{ cantidad }} reporte(s)">
+            <span class="col-val">{{ cantidad }}</span>
+            <div class="col-track">
+              <div class="col-fill" data-hpct="{{ ((cantidad / reportes_por_mes.maximo * 100) if reportes_por_mes.maximo else 0)|round(1) }}"></div>
+            </div>
+            <span class="col-lbl">{{ etiqueta }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--c-muted);font-size:.82rem">Sin datos para este filtro.</p>
+        {% endif %}
+      </div>
+    </div>
+
   </div>
 
 

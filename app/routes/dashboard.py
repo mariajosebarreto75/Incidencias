@@ -402,6 +402,24 @@ def indicadores():
         "maximo": maximo_dia,
     }
 
+    # ---- Reportes por mes (todos los meses con datos; aplica todos los filtros) ----
+    _meses_es = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
+    por_mes_raw = _aplicar(
+        db.session.query(
+            extract("year",  ReporteOperacional.fecha_reporte).label("anio"),
+            extract("month", ReporteOperacional.fecha_reporte).label("mes"),
+            func.count(ReporteOperacional.id)
+        )
+    ).group_by("anio", "mes").order_by("anio", "mes").all()
+    maximo_mes = max((c for _, _, c in por_mes_raw), default=0)
+    reportes_por_mes = {
+        "datos": [
+            (f"{_meses_es[int(m)-1]} {str(int(a))[2:]}", c)
+            for a, m, c in por_mes_raw
+        ],
+        "maximo": maximo_mes,
+    }
+
     # ---- Semáforo reportes vs pendientes por contrato ----
     pendientes_raw = dict(
         _aplicar(
@@ -523,6 +541,7 @@ def indicadores():
         pct_respuesta_por_contrato=pct_respuesta_por_contrato,
         conformidad_pie=conformidad_pie,
         reportes_por_dia=reportes_por_dia,
+        reportes_por_mes=reportes_por_mes,
         semaforo_contratos=semaforo_contratos,
         horas_por_contrato=horas_por_contrato,
         max_horas=max_horas,
