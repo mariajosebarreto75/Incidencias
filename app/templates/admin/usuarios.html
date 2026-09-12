@@ -178,6 +178,7 @@
                 data-nombre="{{ u.nombre_completo | e }}"
                 data-rol="{{ u.rol }}"
                 data-activo="{{ u.activo | lower }}"
+                data-whatsapp="{{ u.telefono_whatsapp or '' }}"
                 onclick="abrirEditar(this)">
                 <i class="bi bi-pencil me-1"></i>Editar
             </button>
@@ -371,6 +372,15 @@
               <select id="editRol" class="form-select">
                   {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
               </select></div>
+          <div class="col-12">
+            <label class="form-label">
+              <i class="bi bi-whatsapp" style="color:#25d366"></i>
+              WhatsApp (para alertas de escalamiento)
+            </label>
+            <input id="editWhatsapp" class="form-control" placeholder="+573001234567"
+                   title="Formato internacional: +57 seguido del número sin espacios">
+            <div class="form-text">Deja vacío si no aplica. Requerido para supervisores, coordinadores y directores que reciben alertas.</div>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -451,19 +461,21 @@ async function eliminarUsuario(btn) {
 }
 
 function abrirEditar(btn) {
-    document.getElementById("editId").value       = btn.dataset.id;
-    document.getElementById("editNombre").value   = btn.dataset.nombre;
-    document.getElementById("editRol").value      = btn.dataset.rol;
-    document.getElementById("editPassword").value = "";
+    document.getElementById("editId").value        = btn.dataset.id;
+    document.getElementById("editNombre").value    = btn.dataset.nombre;
+    document.getElementById("editRol").value       = btn.dataset.rol;
+    document.getElementById("editPassword").value  = "";
+    document.getElementById("editWhatsapp").value  = btn.dataset.whatsapp || "";
     abrirModal("modalEdit");
 }
 
 async function guardarEdit() {
     const id = document.getElementById("editId").value;
     const data = {
-        nombre_completo: document.getElementById("editNombre").value.trim(),
-        rol:             document.getElementById("editRol").value,
-        password:        document.getElementById("editPassword").value || undefined
+        nombre_completo:    document.getElementById("editNombre").value.trim(),
+        rol:                document.getElementById("editRol").value,
+        password:           document.getElementById("editPassword").value || undefined,
+        telefono_whatsapp:  document.getElementById("editWhatsapp").value.trim() || "",
     };
     const r = await apiFetch("/admin/api/usuarios/" + id, "PUT", data);
     if (r.success) location.reload();

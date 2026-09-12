@@ -1,0 +1,57 @@
+{% extends "neo/navbNeo.html" %}
+{% block title %}¿Sigue la incidencia?{% endblock %}
+
+{% block content %}
+<div style="max-width:520px;margin:60px auto;padding:0 16px">
+  <div style="background:#1e293b;border:1px solid rgba(248,113,113,.4);border-radius:14px;padding:28px 28px 24px;box-shadow:0 4px 24px rgba(0,0,0,.4)">
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="width:44px;height:44px;border-radius:50%;background:rgba(248,113,113,.15);display:flex;align-items:center;justify-content:center;font-size:1.4rem">⚠️</div>
+      <div>
+        <div style="font-size:1rem;font-weight:700;color:#f87171">Verificación de incidencia</div>
+        <div style="font-size:.78rem;color:#94a3b8">El supervisor no respondió en 10 minutos</div>
+      </div>
+    </div>
+
+    <div style="background:#0f172a;border-radius:8px;padding:14px 16px;margin-bottom:20px;font-size:.85rem;line-height:1.6;color:#cbd5e1">
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <span style="color:#94a3b8;min-width:80px">Tipo:</span>
+        <strong style="color:#f87171">{{ reporte.tipo_incidencia }}</strong>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <span style="color:#94a3b8;min-width:80px">Recurso:</span>
+        <span>{{ reporte.recurso }}</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <span style="color:#94a3b8;min-width:80px">Vehículo:</span>
+        <span>{{ reporte.placa or '—' }}</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <span style="color:#94a3b8;min-width:80px">Duración:</span>
+        <span>{{ reporte.duracion ~ ' min' if reporte.duracion else '—' }}</span>
+      </div>
+    </div>
+
+    <p style="font-size:.9rem;color:#e2e8f0;font-weight:600;margin-bottom:16px">
+      ¿La incidencia <strong style="color:#fbbf24">sigue presentándose</strong> en este momento?
+    </p>
+
+    <form method="POST">
+      <div style="display:flex;gap:12px">
+        <button type="submit" name="sigue" value="si"
+          style="flex:1;padding:12px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer">
+          🔴 Sí, sigue activa
+        </button>
+        <button type="submit" name="sigue" value="no"
+          style="flex:1;padding:12px;background:#065f46;color:#6ee7b7;border:none;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer">
+          ✅ No, ya terminó
+        </button>
+      </div>
+    </form>
+
+    <p style="font-size:.72rem;color:#64748b;margin-top:16px;text-align:center">
+      Reporte #{{ reporte.id }} — Contrato {{ reporte.contrato }}
+    </p>
+  </div>
+</div>
+{% endblock %}

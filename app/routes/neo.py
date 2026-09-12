@@ -961,6 +961,14 @@ def guardar_reporte():
             crear_notificacion(coor, "nuevo_reporte", reporte)
         db.session.commit()
 
+        # Iniciar escalamiento si la incidencia es de tipo crítico
+        try:
+            from app.services.escalamiento_service import iniciar_escalamiento
+            iniciar_escalamiento(reporte)
+        except Exception as _esc_err:
+            import logging
+            logging.getLogger(__name__).error("Error iniciando escalamiento: %s", _esc_err)
+
         recurso_val  = datos["recurso"]
         contrato_val = datos["contrato"]
         rv = recurso_val.upper()

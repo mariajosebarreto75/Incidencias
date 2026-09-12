@@ -1,0 +1,134 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Escalamientos{% endblock %}
+
+{% block content %}
+<style>
+.esc-badge {
+  display: inline-block; font-size: .65rem; font-weight: 700;
+  padding: 3px 8px; border-radius: 8px;
+}
+.esc-sup    { background: rgba(251,191,36,.15); color:#fbbf24; }
+.esc-coor   { background: rgba(248,113,113,.15); color:#f87171; }
+.esc-dir    { background: rgba(167,139,250,.15); color:#a78bfa; }
+.esc-ger    { background: rgba(239,68,68,.2);    color:#ef4444; border:1px solid #ef4444; }
+.esc-neo    { background: rgba(56,189,248,.12);  color:#38bdf8; }
+.esc-ok     { background: rgba(16,185,129,.12);  color:#10b981; }
+.esc-nogest { background: rgba(148,163,184,.1);  color:#94a3b8; }
+</style>
+
+<div class="adm-page-header">
+  <div>
+    <h1 class="adm-page-title"><i class="bi bi-arrow-up-right-circle me-2" style="color:#f87171"></i>Escalamientos de incidencias</h1>
+    <p class="adm-page-sub">Fuera de ruta · Salida tardía · Tiempo muerto · Terminación temprana</p>
+  </div>
+</div>
+
+<!-- Filtro por estado -->
+<div class="adm-card mb-3" style="padding:14px 16px">
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:.78rem;color:var(--adm-text-muted)">Filtrar:</span>
+    {% for est in [
+        ('', 'Todos'),
+        ('supervisor_notificado', 'Sup. notificado'),
+        ('esperando_neo_1', 'Esperando NEO'),
+        ('coordinador_notificado', 'Coord. notificado'),
+        ('director_notificado', 'Dir. notificado'),
+        ('gerencia_notificada', 'Gerencia notificada'),
+        ('cerrado_gestionado', 'Cerrado gestionado'),
+        ('cerrado_sin_gestion', 'Cerrado sin gestión'),
+    ] %}
+    <a href="{{ url_for('esc_bp.lista', estado=est[0]) }}"
+       style="font-size:.75rem;padding:4px 10px;border-radius:8px;text-decoration:none;
+              {% if estado_filtro == est[0] %}background:var(--adm-accent);color:#0f172a;font-weight:700
+              {% else %}background:rgba(255,255,255,.06);color:var(--adm-text-muted){% endif %}">
+      {{ est[1] }}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+{% if escalamientos %}
+<div class="adm-card adm-table-wrap">
+  <table class="adm-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Incidencia</th>
+        <th>Recurso / Contrato</th>
+        <th>Estado</th>
+        <th>Notificado</th>
+        <th>Gestión</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for esc in escalamientos %}
+      {% set r = esc.reporte %}
+      <tr>
+        <td style="font-size:.73rem;color:var(--adm-text-muted)">{{ esc.id }}</td>
+        <td>
+          <div style="font-weight:600;color:#f87171;font-size:.83rem">{{ r.tipo_incidencia }}</div>
+          <div style="font-size:.7rem;color:var(--adm-text-muted)">Reporte #{{ r.id }} — {{ r.fecha_reporte.strftime('%d/%m/%Y') }}</div>
+        </td>
+        <td>
+          <div style="font-size:.82rem;color:#e2e8f0">{{ r.recurso }}</div>
+          <div style="font-size:.7rem;color:var(--adm-text-muted)">{{ r.contrato }}</div>
+        </td>
+        <td>
+          {% if esc.estado == 'supervisor_notificado' %}
+            <span class="esc-badge esc-sup">Sup. notificado</span>
+          {% elif esc.estado == 'esperando_neo_1' %}
+            <span class="esc-badge esc-neo">Esperando NEO</span>
+          {% elif esc.estado == 'coordinador_notificado' %}
+            <span class="esc-badge esc-coor">Coord. notificado</span>
+          {% elif esc.estado == 'esperando_neo_2' %}
+            <span class="esc-badge esc-neo">Esperando NEO (2)</span>
+          {% elif esc.estado == 'director_notificado' %}
+            <span class="esc-badge esc-dir">Dir. notificado</span>
+          {% elif esc.estado == 'gerencia_notificada' %}
+            <span class="esc-badge esc-ger">Gerencia</span>
+          {% elif esc.estado == 'cerrado_gestionado' %}
+            <span class="esc-badge esc-ok">Gestionado</span>
+          {% else %}
+            <span class="esc-badge esc-nogest">Sin gestión</span>
+          {% endif %}
+        </td>
+        <td style="font-size:.73rem;color:var(--adm-text-muted)">
+          {{ esc.notificado_at.strftime('%d/%m %H:%M') }}
+        </td>
+        <td style="font-size:.73rem">
+          {% if esc.gestionado_por %}
+            <span style="color:#10b981">{{ esc.gestionado_por }}</span><br>
+            <span style="color:var(--adm-text-muted)">{{ esc.gestionado_at.strftime('%d/%m %H:%M') }}</span>
+          {% else %}
+            <span style="color:var(--adm-text-muted)">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if esc.estado not in ('cerrado_gestionado', 'cerrado_sin_gestion') %}
+          <form method="POST" action="{{ url_for('esc_bp.gestionar', esc_id=esc.id) }}" style="display:inline">
+            <input type="hidden" name="notas" value="Cerrado manualmente desde panel admin">
+            <button type="submit" class="btn-edit" style="font-size:.72rem"
+              onclick="return confirm('¿Marcar como gestionado?')">
+              <i class="bi bi-check-circle"></i> Cerrar
+            </button>
+          </form>
+          {% endif %}
+          <a href="{{ url_for('neo.detalle_neo', id=r.id) }}" class="btn-edit" style="font-size:.72rem;margin-left:4px">
+            <i class="bi bi-eye"></i>
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="adm-card">
+  <div class="adm-empty">
+    <i class="bi bi-check-all"></i>
+    No hay escalamientos para los filtros seleccionados.
+  </div>
+</div>
+{% endif %}
+{% endblock %}

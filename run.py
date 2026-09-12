@@ -26,6 +26,7 @@ from app.models.he_corte import HeCorte
 from app.models.he_config import HeConfig
 from app.models.semaforo import SemaforoCalificacion
 from app.models.compromiso import Compromiso, HistorialReprogramacion
+from app.models.escalamiento import EscalamientoIncidencia
 
 from app.routes.auth import auth
 from app.routes.dashboard import dashboard
@@ -37,6 +38,7 @@ from app.routes.horas_extras import he_bp
 from app.routes.parqueadero import park_bp
 from app.models.parqueadero import ParqueaderoRegistro
 from app.routes.compromisos import compromisos_bp
+from app.routes.escalamiento import esc_bp
 
 
 # Lock de Postgres para que, con gunicorn -w N, solo un worker arranque el
@@ -49,6 +51,7 @@ _scheduler_lock_conn = None
 _MIGRACIONES = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS acceso_dashboard BOOLEAN NOT NULL DEFAULT FALSE",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS permisos TEXT NOT NULL DEFAULT '[]'",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS telefono_whatsapp VARCHAR(20)",
     "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS supervisor VARCHAR(200)",
     "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS valor_hora NUMERIC(14,2)",
     "ALTER TABLE horas_extras ALTER COLUMN estado TYPE VARCHAR(30)",
@@ -183,6 +186,13 @@ def create_app():
                 from app.services.sincronizar_plan import sincronizar_plan
                 sincronizar_plan()  # sin args → hoy
 
+        # Verifica timeouts de escalamientos cada 2 minutos
+        @scheduler.task("interval", id="verificar_escalamientos", minutes=2, misfire_grace_time=30)
+        def job_escalamientos():
+            with app.app_context():
+                from app.services.escalamiento_service import verificar_timeouts
+                verificar_timeouts()
+
         # Purga mensual: el día 1 de cada mes elimina alertas del mes anterior
         @scheduler.task("cron", id="purga_alertas_mes_anterior", day=1, hour=2, minute=0)
         def job_purga_alertas():
@@ -221,6 +231,7 @@ def create_app():
     app.register_blueprint(he_bp)
     app.register_blueprint(park_bp)
     app.register_blueprint(compromisos_bp)
+    app.register_blueprint(esc_bp)
 
     # Login manager
     login_manager.login_view = "auth.login"

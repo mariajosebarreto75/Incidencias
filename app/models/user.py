@@ -56,6 +56,9 @@ class User(
         nullable=False
     )
 
+    # Número WhatsApp para notificaciones de escalamiento (ej: "+573001234567")
+    telefono_whatsapp = db.Column(db.String(20), nullable=True)
+
     # Lista de permisos de módulos extra, ej: ["horas_extras", "seguimiento"]
     permisos = db.Column(db.Text, default="[]", nullable=False, server_default="[]")
 

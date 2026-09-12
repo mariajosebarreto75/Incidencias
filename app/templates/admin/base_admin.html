@@ -168,6 +168,10 @@
          class="adm-nav-link {% if request.endpoint == 'admin_bp.semaforo' %}active{% endif %}">
         <i class="bi bi-traffic-light"></i> Semáforo actividades
       </a>
+      <a href="{{ url_for('esc_bp.lista') }}"
+         class="adm-nav-link {% if request.endpoint == 'esc_bp.lista' %}active{% endif %}">
+        <i class="bi bi-arrow-up-right-circle" style="color:#f87171"></i> Escalamientos
+      </a>
     </div>
 
     <div class="sb-sep"></div>
