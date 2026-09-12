@@ -182,6 +182,21 @@
         </button>
         <span class="nu-save-msg" id="msg-{{ u.id }}">✓ Guardado</span>
 
+        <!-- WhatsApp -->
+        <div style="margin-top:.85rem;padding:.6rem .75rem;background:#060f1e;border-radius:8px;border:1px solid #1e293b;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+            <i class="bi bi-whatsapp" style="color:#25d366;font-size:1rem;flex-shrink:0"></i>
+            <span style="font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:#475569;white-space:nowrap">WhatsApp</span>
+            <input id="wa-{{ u.id }}" class="nu-input"
+                style="flex:1;min-width:160px;max-width:220px;padding:.3rem .6rem;font-size:.8rem"
+                placeholder="+573001234567"
+                value="{{ u.telefono_whatsapp or '' }}">
+            <button onclick="guardarWhatsapp({{ u.id }})"
+                style="padding:.3rem .8rem;border-radius:6px;border:1px solid #25d36655;background:#052e16;color:#4ade80;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap">
+                <i class="bi bi-floppy me-1"></i>Guardar
+            </button>
+            <span id="wa-msg-{{ u.id }}" style="font-size:.72rem;color:#4ade80;display:none">✓ Guardado</span>
+        </div>
+
         <!-- MÓDULOS / PERMISOS -->
         <div style="margin-top:1rem;padding-top:.85rem;border-top:1px solid #1e293b;">
             <div class="nu-contratos-label" style="color:#7c3aed;">
@@ -315,6 +330,16 @@
 {% block scripts %}
 <script>
 const ROL_NUEVO = "{{ rol_nuevo }}";
+
+async function guardarWhatsapp(uid) {
+    const val = document.getElementById('wa-' + uid).value.trim();
+    const r = await apiFetch('/admin/api/usuarios/' + uid, 'PUT', { telefono_whatsapp: val });
+    const msg = document.getElementById('wa-msg-' + uid);
+    if (r.success) {
+        msg.style.display = 'inline';
+        setTimeout(() => msg.style.display = 'none', 2500);
+    }
+}
 
 function togglePwdVer(uid) {
     const mask = document.getElementById('pwd-mask-' + uid);
