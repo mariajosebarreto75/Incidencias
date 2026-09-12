@@ -2,8 +2,30 @@ from datetime import datetime
 from app.extensions import db
 
 
-# Tipos de incidencia que activan el escalamiento
-TIPOS_ESCALABLES = {"Fuera de ruta", "Salida tardía", "Tiempo muerto", "Terminación temprana"}
+import unicodedata
+
+# Palabras clave normalizadas que activan el escalamiento
+# Se compara contra el tipo_incidencia normalizado (sin tildes, minúsculas)
+_PALABRAS_ESCALABLES = {
+    "fuera de ruta",
+    "salida tardia",
+    "tiempo muerto",
+    "finalizacion temprana",
+    "terminacion temprana",
+}
+
+def _normalizar(texto: str) -> str:
+    s = unicodedata.normalize("NFD", texto.lower())
+    return "".join(c for c in s if unicodedata.category(c) != "Mn")
+
+def es_tipo_escalable(tipo_incidencia: str) -> bool:
+    if not tipo_incidencia:
+        return False
+    norm = _normalizar(tipo_incidencia)
+    return any(p in norm for p in _PALABRAS_ESCALABLES)
+
+# Mantener el set por compatibilidad (ya no se usa directo)
+TIPOS_ESCALABLES = _PALABRAS_ESCALABLES
 
 # Estados del ciclo de vida
 # supervisor_notificado → esperando_neo_1 → coordinador_notificado

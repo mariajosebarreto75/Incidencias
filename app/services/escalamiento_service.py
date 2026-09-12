@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from flask import current_app
 
 from app.extensions import db
-from app.models.escalamiento import EscalamientoIncidencia, TIPOS_ESCALABLES
+from app.models.escalamiento import EscalamientoIncidencia, es_tipo_escalable
 from app.models.notificacion import Notificacion
 from app.models.user import User
 from app.models.user_contrato import UserContrato
@@ -115,7 +115,7 @@ def iniciar_escalamiento(reporte) -> EscalamientoIncidencia | None:
     Llama esto cuando NEO crea un reporte con tipo escalable.
     Notifica a supervisores del contrato y crea el registro de escalamiento.
     """
-    if reporte.tipo_incidencia not in TIPOS_ESCALABLES:
+    if not es_tipo_escalable(reporte.tipo_incidencia):
         return None
 
     # ¿Ya existe un escalamiento activo para este reporte?
