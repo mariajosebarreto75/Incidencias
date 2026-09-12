@@ -51,7 +51,7 @@ class EscalamientoIncidencia(db.Model):
     reporte_id = db.Column(
         db.Integer, db.ForeignKey("reportes_operacionales.id"), nullable=False, index=True
     )
-    reporte = db.relationship("ReporteOperacional", backref="escalamientos", lazy="select")
+    reporte = db.relationship("ReporteOperacional", backref=db.backref("escalamientos", cascade="all, delete-orphan"), lazy="select")
 
     estado = db.Column(db.String(40), nullable=False, default="supervisor_notificado")
 
