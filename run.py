@@ -64,6 +64,8 @@ _MIGRACIONES = [
     "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS revisado_reunion BOOLEAN NOT NULL DEFAULT FALSE",
     "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS revisado_reunion_por VARCHAR(150)",
     "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS fecha_revision_reunion TIMESTAMP",
+    "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS numero_recursos INTEGER",
+    "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS meta_promedio NUMERIC(10,2)",
 ]
 
 _SUPERVISORES_SEED = [

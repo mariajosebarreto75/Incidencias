@@ -332,6 +332,41 @@
 
             </div>
 
+            <!-- CAMPOS SEDE: visibles solo cuando tipo=Salida tardía + recurso=SEDE -->
+            <div class="row g-3 mt-1" id="filaSede" style="display:none!important">
+
+                <div class="col-md-4 rpt-field">
+                    <label>
+                        <i class="bi bi-people-fill"></i>
+                        Número de Recursos
+                        <span class="badge-req ms-1">Requerido</span>
+                    </label>
+                    <input type="number" id="numero_recursos" class="form-control" min="1"
+                           placeholder="Cantidad de recursos">
+                </div>
+
+                <div class="col-md-4 rpt-field">
+                    <label>
+                        <i class="bi bi-bullseye"></i>
+                        Meta Promedio (min)
+                        <span class="badge-req ms-1">Requerido</span>
+                    </label>
+                    <input type="number" id="meta_promedio" class="form-control" min="0" step="0.01"
+                           placeholder="Minutos de meta por recurso">
+                </div>
+
+                <div class="col-md-4 rpt-field">
+                    <label>
+                        <i class="bi bi-calculator"></i>
+                        Meta Calculada
+                        <span class="badge-auto ms-1">Auto</span>
+                    </label>
+                    <input type="text" id="meta_calculada_sede" class="form-control" readonly
+                           placeholder="Número de recursos × Meta promedio">
+                </div>
+
+            </div>
+
             <div class="row g-3 mt-1">
 
                 <div class="col-12 rpt-field">

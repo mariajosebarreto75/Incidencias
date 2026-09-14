@@ -52,6 +52,10 @@ class ReporteOperacional(db.Model):
         db.Float
     )
 
+    # Campos para Salida tardía en SEDES
+    numero_recursos = db.Column(db.Integer, nullable=True)
+    meta_promedio   = db.Column(db.Float, nullable=True)
+
     tipo_actividad = db.Column(
         db.String(150)
     )

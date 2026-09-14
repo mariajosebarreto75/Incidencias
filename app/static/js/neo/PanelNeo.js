@@ -595,6 +595,63 @@ document.querySelectorAll(".upload-area").forEach(function (area) {
 });
 
 // =====================================
+// LÓGICA CAMPOS SEDE (Salida tardía)
+// =====================================
+
+const _RECURSOS_SEDE = new Set([
+    "SEDE CUCUTA", "SEDE BUCARAMANGA", "SEDE BARRANCABERMEJA",
+    "SEDE OYMM CHAPARRAL", "SEDE OYMM ESPINAL",
+    "SEDE MTTO CHAPARRAL", "SEDE MTTO ESPINAL",
+    "SEDE BUGA", "SEDE TULUA", "SEDE ZARZAL", "SEDE JAMUNDI"
+]);
+
+function _esSedeSalidaTardia() {
+    const tipoNombre = _textoOpcion("tipo_incidencia").toUpperCase().normalize("NFD")
+        .replace(/[̀-ͯ]/g, "");
+    const recurso = (_textoOpcion("recurso") || document.getElementById("recurso")?.value || "")
+        .toUpperCase().trim();
+    return tipoNombre.includes("SALIDA TARD") && _RECURSOS_SEDE.has(recurso);
+}
+
+function _actualizarFilaSede() {
+    const fila = document.getElementById("filaSede");
+    if (!fila) return;
+    if (_esSedeSalidaTardia()) {
+        fila.style.removeProperty("display");
+    } else {
+        fila.style.setProperty("display", "none", "important");
+        document.getElementById("numero_recursos").value = "";
+        document.getElementById("meta_promedio").value   = "";
+        document.getElementById("meta_calculada_sede").value = "";
+    }
+}
+
+function _calcularMetaSede() {
+    const n   = parseFloat(document.getElementById("numero_recursos")?.value) || 0;
+    const m   = parseFloat(document.getElementById("meta_promedio")?.value)   || 0;
+    const dur = parseFloat(document.getElementById("duracion")?.value)        || 0;
+    const resultado = (dur > 0 && n > 0 && m > 0) ? (m * n) / dur : 0;
+    document.getElementById("meta_calculada_sede").value =
+        resultado > 0
+            ? new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(resultado)
+            : "";
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const selTipo    = document.getElementById("tipo_incidencia");
+    const selRecurso = document.getElementById("recurso");
+    if (selTipo)    selTipo.addEventListener("change",    _actualizarFilaSede);
+    if (selRecurso) selRecurso.addEventListener("change", _actualizarFilaSede);
+
+    const inpNR  = document.getElementById("numero_recursos");
+    const inpMP  = document.getElementById("meta_promedio");
+    const inpDur = document.getElementById("duracion");
+    if (inpNR)  inpNR.addEventListener("input",  _calcularMetaSede);
+    if (inpMP)  inpMP.addEventListener("input",  _calcularMetaSede);
+    if (inpDur) inpDur.addEventListener("change", _calcularMetaSede);
+});
+
+// =====================================
 // GUARDAR REPORTE
 // =====================================
 
@@ -629,6 +686,13 @@ document.getElementById("btnGuardarReporte")
     if (!obsVal)      faltantes.push("Observación");
     if (!ev1Ruta)     faltantes.push("Evidencia 1 (debe subirse antes de guardar)");
 
+    if (_esSedeSalidaTardia()) {
+        if (!document.getElementById("numero_recursos")?.value)
+            faltantes.push("Número de Recursos");
+        if (!document.getElementById("meta_promedio")?.value)
+            faltantes.push("Meta Promedio");
+    }
+
     if (faltantes.length > 0) {
         mostrarAlerta(
             "<strong>Campos requeridos incompletos:</strong> " +
@@ -662,7 +726,9 @@ document.getElementById("btnGuardarReporte")
         horas_afectadas:        document.getElementById("horas_afectadas").value,
         afectacion:             document.getElementById("afectacion")?.value || "",
         evidencia_1:            ev1Ruta,
-        evidencia_2:            document.getElementById("ruta_evidencia_2").value || ""
+        evidencia_2:            document.getElementById("ruta_evidencia_2").value || "",
+        numero_recursos:        document.getElementById("numero_recursos")?.value || null,
+        meta_promedio:          document.getElementById("meta_promedio")?.value   || null
     };
 
     const btn = document.getElementById("btnGuardarReporte");

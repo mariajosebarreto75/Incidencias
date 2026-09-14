@@ -950,7 +950,9 @@ def guardar_reporte():
             evidencia_1         = datos["evidencia_1"],
             evidencia_2         = datos.get("evidencia_2") or None,
             reportado_por       = current_user.username,
-            estado              = "Abierto"
+            estado              = "Abierto",
+            numero_recursos     = int(datos["numero_recursos"]) if datos.get("numero_recursos") else None,
+            meta_promedio       = _parsear_float(datos.get("meta_promedio")),
         )
 
         db.session.add(reporte)
