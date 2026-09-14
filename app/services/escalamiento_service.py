@@ -24,31 +24,43 @@ TIMEOUT_MINUTOS = 10  # minutos antes de escalar
 # ─────────────────────────────────────────────
 
 def _enviar_whatsapp(numero: str, mensaje: str) -> bool:
-    """Envía mensaje WhatsApp por Twilio. Retorna True si fue exitoso."""
-    sid   = current_app.config.get("TWILIO_ACCOUNT_SID")
-    token = current_app.config.get("TWILIO_AUTH_TOKEN")
-    from_ = current_app.config.get("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
+    """Envía mensaje WhatsApp por Meta Cloud API. Retorna True si fue exitoso."""
+    import requests as _req
 
-    if not sid or not token:
-        log.warning("Twilio no configurado — mensaje no enviado a %s", numero)
+    token    = current_app.config.get("META_WHATSAPP_TOKEN")
+    phone_id = current_app.config.get("META_PHONE_NUMBER_ID")
+
+    if not token or not phone_id:
+        log.warning("Meta WhatsApp no configurado — mensaje no enviado a %s", numero)
         return False
 
     if not numero or not numero.startswith("+"):
         log.warning("Número WhatsApp inválido: %s", numero)
         return False
 
+    # Meta espera el número sin el signo +
+    to = numero.lstrip("+")
+
     try:
-        from twilio.rest import Client
-        client = Client(sid, token)
-        client.messages.create(
-            from_=from_,
-            to=f"whatsapp:{numero}",
-            body=mensaje,
-        )
-        log.info("WhatsApp enviado a %s", numero)
-        return True
+        url = f"https://graph.facebook.com/v21.0/{phone_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": to,
+            "type": "text",
+            "text": {"body": mensaje},
+        }
+        resp = _req.post(url, headers=headers, json=payload, timeout=10)
+        if resp.ok:
+            log.info("WhatsApp Meta enviado a %s", numero)
+            return True
+        log.error("Meta WhatsApp error %s: %s", resp.status_code, resp.text)
+        return False
     except Exception as exc:
-        log.error("Error Twilio: %s", exc)
+        log.error("Error Meta WhatsApp: %s", exc)
         return False
 
 

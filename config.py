@@ -33,11 +33,9 @@ class Config:
     # Máximo 20 MB por request (cubre imágenes grandes de evidencias)
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024
 
-    # Twilio WhatsApp (escalamiento de incidencias)
-    TWILIO_ACCOUNT_SID  = os.getenv("TWILIO_ACCOUNT_SID", "")
-    TWILIO_AUTH_TOKEN   = os.getenv("TWILIO_AUTH_TOKEN", "")
-    # Sandbox: whatsapp:+14155238886 — producción: tu número aprobado por Meta
-    TWILIO_WHATSAPP_FROM = os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
+    # Meta WhatsApp Cloud API (escalamiento de incidencias)
+    META_WHATSAPP_TOKEN    = os.getenv("META_WHATSAPP_TOKEN", "")
+    META_PHONE_NUMBER_ID   = os.getenv("META_PHONE_NUMBER_ID", "")
 
     # URL pública de la app (para links en WhatsApp)
     APP_URL = os.getenv("APP_URL", "http://localhost:5000")
