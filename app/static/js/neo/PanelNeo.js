@@ -609,10 +609,12 @@ const _RECURSOS_SEDE = new Set([
 ]);
 
 function _esSedeSalidaTardia() {
-    const tipoNombre = _textoOpcion("tipo_incidencia").toUpperCase().normalize("NFD")
-        .replace(/[̀-ͯ]/g, "");
-    const recurso = (_textoOpcion("recurso") || document.getElementById("recurso")?.value || "")
-        .toUpperCase().trim();
+    const selTipo = document.getElementById("tipo_incidencia");
+    const selRec  = document.getElementById("recurso");
+    if (!selTipo || !selRec) return false;
+    const tipoNombre = (selTipo.options[selTipo.selectedIndex]?.text || "")
+        .toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    const recurso = (selRec.options[selRec.selectedIndex]?.text || "").toUpperCase().trim();
     return tipoNombre.includes("SALIDA TARD") && _RECURSOS_SEDE.has(recurso);
 }
 
