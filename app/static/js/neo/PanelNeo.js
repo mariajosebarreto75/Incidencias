@@ -639,7 +639,7 @@ function _calcularMetaSede() {
     const metaEl = document.getElementById("meta");
     if (!metaEl) return;
     if (_esSedeSalidaTardia() && dur > 0 && n > 0 && m > 0) {
-        metaEl.value = (n * m * dur).toFixed(2);
+        metaEl.value = ((n * m * dur) / 1440).toFixed(2);
     }
 }
 
