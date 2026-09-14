@@ -633,13 +633,16 @@ function _actualizarFilaSede() {
 }
 
 function _calcularMetaSede() {
+    if (!_esSedeSalidaTardia()) return;
+    const metaEl = document.getElementById("meta");
+    if (!metaEl) return;
     const n   = parseFloat(document.getElementById("numero_recursos")?.value) || 0;
     const m   = parseFloat(document.getElementById("meta_promedio")?.value)   || 0;
     const dur = duracionAMinutos(document.getElementById("duracion")?.value || "");
-    const metaEl = document.getElementById("meta");
-    if (!metaEl) return;
-    if (_esSedeSalidaTardia() && dur > 0 && n > 0 && m > 0) {
+    if (n > 0 && m > 0 && dur > 0) {
         metaEl.value = ((n * m * dur) / 1440).toFixed(2);
+    } else if (n > 0 && m > 0) {
+        metaEl.value = (n * m).toFixed(2);
     }
 }
 
