@@ -245,6 +245,8 @@ document.getElementById("orden_trabajo")
         setField("tipo_actividad", esNA ? "" : tipoAct);
         setField("tipo_cuadrilla", opt.dataset.tipoCuadrilla || "");
         setField("meta",           opt.dataset.meta           || "");
+        // Si es SEDE + Salida tardía, la meta se calcula con los campos de SEDE
+        if (typeof _calcularMetaSede === "function") _calcularMetaSede();
 
         const badge = document.getElementById("placaBadge");
         if (esNA) {
@@ -330,6 +332,7 @@ function calcularDuracion() {
     if (ha) ha.value = (totalMinutos / 60).toFixed(4);
 
     determinarImpacto();
+    if (typeof _calcularMetaSede === "function") _calcularMetaSede();
 
 }
 
@@ -630,7 +633,7 @@ function _actualizarFilaSede() {
 function _calcularMetaSede() {
     const n   = parseFloat(document.getElementById("numero_recursos")?.value) || 0;
     const m   = parseFloat(document.getElementById("meta_promedio")?.value)   || 0;
-    const dur = parseFloat(document.getElementById("duracion")?.value)        || 0;
+    const dur = duracionAMinutos(document.getElementById("duracion")?.value || "");
     const metaEl = document.getElementById("meta");
     if (!metaEl) return;
     if (_esSedeSalidaTardia() && dur > 0 && n > 0 && m > 0) {
