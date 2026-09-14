@@ -620,9 +620,10 @@ function _actualizarFilaSede() {
         fila.style.removeProperty("display");
     } else {
         fila.style.setProperty("display", "none", "important");
-        document.getElementById("numero_recursos").value = "";
-        document.getElementById("meta_promedio").value   = "";
-        document.getElementById("meta_calculada_sede").value = "";
+        const nr = document.getElementById("numero_recursos");
+        const mp = document.getElementById("meta_promedio");
+        if (nr) nr.value = "";
+        if (mp) mp.value = "";
     }
 }
 
@@ -630,11 +631,11 @@ function _calcularMetaSede() {
     const n   = parseFloat(document.getElementById("numero_recursos")?.value) || 0;
     const m   = parseFloat(document.getElementById("meta_promedio")?.value)   || 0;
     const dur = parseFloat(document.getElementById("duracion")?.value)        || 0;
-    const resultado = (dur > 0 && n > 0 && m > 0) ? (m * n) / dur : 0;
-    document.getElementById("meta_calculada_sede").value =
-        resultado > 0
-            ? new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(resultado)
-            : "";
+    const metaEl = document.getElementById("meta");
+    if (!metaEl) return;
+    if (_esSedeSalidaTardia() && dur > 0 && n > 0 && m > 0) {
+        metaEl.value = ((m * n) / dur).toFixed(2);
+    }
 }
 
 document.addEventListener("DOMContentLoaded", function () {
