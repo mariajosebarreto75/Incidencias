@@ -2134,11 +2134,13 @@ def api_semaforo_dashboard():
 
     rol = current_user.rol.lower()
     # Filtrar contratos por usuario si no es admin
+    _EXCLUIR = ["nodo de eficiencia operacional"]
     if rol == "admin":
         contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     else:
         ids_uc = [uc.contrato_id for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
         contratos = Contrato.query.filter(Contrato.id.in_(ids_uc), Contrato.activo == True).order_by(Contrato.contrato).all()
+    contratos = [c for c in contratos if c.contrato.strip().lower() not in _EXCLUIR]
 
     contrato_ids = [c.id for c in contratos]
     contrato_map = {c.id: c for c in contratos}
