@@ -431,6 +431,71 @@ def api_he_guardar():
     })
 
 
+# ── API: actualizar registros existentes (coordinador modifica) ───────────────
+@he_bp.route("/api/he/actualizar", methods=["POST"])
+@login_required
+def api_he_actualizar():
+    data  = request.get_json(silent=True) or {}
+    filas = data.get("filas", [])
+    if not filas:
+        return jsonify({"ok": False, "msg": "Sin filas"}), 400
+
+    ids_permitidos = _ids_contratos_usuario() if current_user.rol.lower() in ("coordinador", "director", "supervisor") else None
+    actualizados = 0
+
+    for f in filas:
+        rid = f.get("id")
+        if not rid:
+            continue
+        reg = HoraExtra.query.get(rid)
+        if not reg:
+            continue
+        if ids_permitidos is not None and reg.contrato_id not in ids_permitidos:
+            return jsonify({"ok": False, "msg": "Contrato no asignado a su usuario"}), 403
+
+        # Aplicar cambios solo a los campos editables por el coordinador
+        if f.get("fecha_labor"):
+            try:
+                reg.fecha_labor = date.fromisoformat(str(f["fecha_labor"]))
+            except Exception:
+                pass
+        for campo, attr in [
+            ("cedula",           "cedula"),
+            ("nombre",           "nombre"),
+            ("recurso",          "recurso"),
+            ("placa",            "placa"),
+            ("hora_inicio",      "hora_inicio"),
+            ("hora_fin",         "hora_fin"),
+            ("id_concepto",      "id_concepto"),
+            ("autorizacion_sup", "autorizacion_sup"),
+            ("justificacion",    "justificacion"),
+            ("observacion",      "observacion"),
+        ]:
+            if campo in f:
+                setattr(reg, attr, str(f[campo] or "").strip())
+        for campo, attr in [
+            ("horas_reportadas",  "horas_reportadas"),
+            ("horas_compensadas", "horas_compensadas"),
+        ]:
+            if campo in f:
+                try:
+                    setattr(reg, attr, int(float(f[campo] or 0)))
+                except Exception:
+                    pass
+        concepto = getattr(reg, "id_concepto", "")
+        if concepto:
+            reg.tipo_he = CONCEPTOS_HE.get(str(concepto).strip().zfill(2), reg.tipo_he or "")
+        actualizados += 1
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"ok": False, "msg": str(e)}), 500
+
+    return jsonify({"ok": True, "actualizados": actualizados})
+
+
 # ── API: obtener un registro por id ──────────────────────────────────────────
 @he_bp.route("/api/he/<int:id>", methods=["GET"])
 @login_required

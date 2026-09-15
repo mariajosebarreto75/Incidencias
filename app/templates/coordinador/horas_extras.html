@@ -744,6 +744,7 @@ const FILAS = 40;
 const FILAS_EXTRA = 20; // filas vacías al final para ingresar nuevos registros
 let hot = null, hotVal = null;
 let _rowIds = [];        // _rowIds[fila] = id de BD o null si es nueva
+let _modifiedRowSet = new Set(); // filas existentes que fueron modificadas por el usuario
 let _corteActualRegId = null; // ID del corte cargado en la grilla de registro
 let _currentValIds = [];
 let _fullValData = [], _fullValIds = [], _fullValRecords = [], _htValFilters = {};
@@ -761,29 +762,30 @@ let validacionCargada = false;
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
     iniciarGrid();
+
+    // 1. Restaurar contrato ANTES de cualquier fetch para que actualizarCortesCoor use el correcto
+    const _fpKey = 'fp_' + location.pathname;
+    const _savedFp = (() => { try { return JSON.parse(sessionStorage.getItem(_fpKey) || '{}'); } catch(e) { return {}; } })();
+    if (_savedFp.gridContrato) document.getElementById("gridContrato").value = _savedFp.gridContrato;
+
+    // 2. Cargar todo en secuencia: primero asegurar corte, luego poblar grid y auxiliares
     _asegurarCorteActivo().then(corteActivo => {
-        // Restaurar filtros guardados; si no hay, auto-seleccionar corte del período actual
-        const saved = (() => { try { return JSON.parse(sessionStorage.getItem('fp_' + location.pathname) || '{}'); } catch(e) { return {}; } })();
-        const haySaved = saved.fCorte || saved.fDesde || saved.fHasta;
+        const haySaved = _savedFp.fCorte || _savedFp.fDesde || _savedFp.fHasta;
         if (haySaved) {
             const sel = document.getElementById("fCorte");
-            if (sel && saved.fCorte) { sel.value = saved.fCorte; sincronizarFechasCoor(); }
-            if (saved.fDesde) document.getElementById("fDesde").value = saved.fDesde;
-            if (saved.fHasta) document.getElementById("fHasta").value = saved.fHasta;
+            if (sel && _savedFp.fCorte) { sel.value = _savedFp.fCorte; sincronizarFechasCoor(); }
+            if (_savedFp.fDesde) document.getElementById("fDesde").value = _savedFp.fDesde;
+            if (_savedFp.fHasta) document.getElementById("fHasta").value = _savedFp.fHasta;
         } else if (corteActivo) {
             const sel = document.getElementById("fCorte");
             if (sel) { sel.value = String(corteActivo.id); sincronizarFechasCoor(); }
             cargarRegistrosCorteActual(corteActivo.id);
         }
+        cargarResumen();
         cargarHistorial();
         cargarKpis();
     });
-    // Restaurar contrato si fue guardado
-    const _savedCid = (() => { try { return JSON.parse(sessionStorage.getItem('fp_' + location.pathname) || '{}').gridContrato; } catch(e) { return null; } })();
-    if (_savedCid) document.getElementById("gridContrato").value = _savedCid;
-    const cid = document.getElementById("gridContrato").value;
-    if (cid) onContratoChange();
-    else cargarResumen();
+
     // Abrir tab por parámetro URL (?tab=cortes)
     const _tabParam = new URLSearchParams(window.location.search).get("tab");
     if (_tabParam) {
@@ -842,6 +844,7 @@ function iniciarGrid() {
         afterChange: function(changes, source) {
             if (!changes || source === "loadData" || source === "auto") return;
             changes.forEach(([row, col, , newVal]) => {
+                if (_rowIds[row]) _modifiedRowSet.add(row); // marcar fila existente como modificada
                 if (col === C_CED) onCedulaCambia(row, newVal);
                 if (col === C_COD) onConceptoCambia(row, newVal);
             });
@@ -949,6 +952,7 @@ async function cargarRegistrosCorteActual(corteId) {
     // Cargar en hot: filas guardadas + filas vacías al final
     const filasVacias = Array.from({length: FILAS_EXTRA}, () => Array(N_COLS).fill(""));
     _rowIds = [..._fullRegIds, ...Array(FILAS_EXTRA).fill(null)];
+    _modifiedRowSet.clear();
     hot.loadData([...filasSalvadas, ...filasVacias]);
     hot.render();
 
@@ -1026,10 +1030,14 @@ async function guardarGrid() {
     ];
 
     const rows  = hot.getData();
-    const filas = [];
+    const filas = [];       // filas nuevas (INSERT)
+    const actualizaciones = []; // filas existentes modificadas (UPDATE)
     const erroresGrid = [];
     for (let i = 0; i < rows.length; i++) {
-        if (_rowIds[i]) continue; // fila ya guardada en BD, no re-enviar
+        const esExistente = !!_rowIds[i];
+        const esModificada = _modifiedRowSet.has(i);
+        // Filas existentes sin modificar → ignorar
+        if (esExistente && !esModificada) continue;
         const row = rows[i];
         // Fila completamente vacía → ignorar
         if (!row.some(v => v !== "" && v !== null && v !== undefined)) continue;
@@ -1053,7 +1061,7 @@ async function guardarGrid() {
             continue;
         }
         if (!fecha) continue;
-        filas.push({
+        const filaData = {
             contrato_id:       contratoId,
             fecha_labor:       fecha,
             cedula:            ced,
@@ -1068,7 +1076,12 @@ async function guardarGrid() {
             autorizacion_sup:  (row[C_SUP]     || "").trim(),
             justificacion:     (row[C_JUST]    || "").trim(),
             observacion:       (row[C_OBS]     || "").trim(),
-        });
+        };
+        if (esExistente) {
+            actualizaciones.push({ ...filaData, id: _rowIds[i] });
+        } else {
+            filas.push(filaData);
+        }
     }
 
     if (erroresGrid.length) {
@@ -1084,25 +1097,46 @@ async function guardarGrid() {
         document.getElementById("modalDuplicados").style.display = "flex";
         return;
     }
-    if (!filas.length) { mostrarToast("No hay filas nuevas para guardar","warning"); return; }
+    if (!filas.length && !actualizaciones.length) { mostrarToast("No hay filas para guardar","warning"); return; }
 
     const btn = document.getElementById("btnGuardar");
     btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Guardando…';
-    const r = await fetch("/api/he/guardar", {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ filas })
-    });
-    const d = await r.json();
+
+    let totalGuardados = 0, errMsg = null, duplicados = false, detalleDup = null;
+
+    // Guardar filas nuevas
+    if (filas.length) {
+        const r = await fetch("/api/he/guardar", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ filas })
+        });
+        const d = await r.json();
+        if (d.ok) { totalGuardados += d.guardados || 0; }
+        else if (d.duplicados) { duplicados = true; detalleDup = { msg: d.msg, detalle: d.detalle }; }
+        else { errMsg = d.msg || "Error al guardar"; }
+    }
+
+    // Actualizar filas modificadas
+    if (actualizaciones.length && !errMsg) {
+        const r2 = await fetch("/api/he/actualizar", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({ filas: actualizaciones })
+        });
+        const d2 = await r2.json();
+        if (d2.ok) { totalGuardados += d2.actualizados || 0; }
+        else { errMsg = d2.msg || "Error al actualizar"; }
+    }
+
     btn.disabled = false; btn.innerHTML = '<i class="bi bi-save me-1"></i>Guardar horas';
-    if (d.ok) {
-        mostrarToast(`✓ ${d.guardados} registro(s) guardados`,"success");
+    if (errMsg) {
+        mostrarToast(errMsg, "danger");
+    } else if (duplicados) {
+        mostrarDuplicados(detalleDup.msg, detalleDup.detalle);
+    } else {
+        mostrarToast(`✓ ${totalGuardados} registro(s) guardados/actualizados`,"success");
         salariosPorFila = {};
         await cargarRegistrosCorteActual(_corteActualRegId);
         cargarHistorial(); cargarKpis();
-    } else if (d.duplicados) {
-        mostrarDuplicados(d.msg, d.detalle);
-    } else {
-        mostrarToast(d.msg || "Error al guardar","danger");
     }
 }
 
@@ -1203,7 +1237,7 @@ function _corteActivo() {
 
 // Garantiza que exista un corte para el período actual; lo crea si no existe
 async function _asegurarCorteActivo() {
-    if (!Array.isArray(_cortesCacheCoor)) await actualizarCortesCoor();
+    await actualizarCortesCoor(); // siempre refrescar antes de verificar
     let corte = _corteActivo();
     if (!corte) {
         const p = _periodoActual();
