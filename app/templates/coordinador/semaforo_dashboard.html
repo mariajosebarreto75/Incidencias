@@ -525,8 +525,8 @@ function renderizar() {
     let h1=`<tr class="tr-cat">
         <th class="th-info" rowspan="2" style="min-width:210px;border-bottom:2px solid #e2e8f0;">Contrato</th>
         <th style="text-align:left;background:#fff;min-width:140px;border-right:2px solid #e2e8f0;border-bottom:2px solid #e2e8f0;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:11px 10px 8px;" rowspan="2">Coordinador</th>
-        <th class="th-cat-archivos" colspan="${N}">📁 Archivos (Eq / Ing / Per)</th>
-        <th class="th-cat-distrib sep-l"  colspan="${N}">🕐 Distribución</th>
+        <th class="th-cat-distrib" colspan="${N}">🕐 Distribución Operativa</th>
+        <th class="th-cat-archivos sep-l" colspan="${N}">📁 Archivos (Eq / Ing / Per)</th>
         <th class="th-cat-preop   sep-l"  colspan="${N}">📋 Preoperacional</th>
         <th class="th-cat-he      sep-l"  colspan="${N}">⏱ Horas Extras</th>
         <th class="th-cat-resumen sep-l"  colspan="2">Resultado</th>
@@ -573,10 +573,10 @@ function renderizar() {
             const ing=colorArch(rec?.arch_ingresos);
             const per=colorArch(rec?.arch_personas);
             const worst=[eq,ing,per].includes('cr')?'cr':[eq,ing,per].includes('ca')?'ca':[eq,ing,per].every(x=>x==='cv')?'cv':'nd';
-            tdArch+=mkCell(worst,fds,false);
+            tdArch+=mkCell(worst,fds,i===0);
 
             const d=colorDistrib(rec);
-            tdDistrib+=mkCell(d,fds,i===0);
+            tdDistrib+=mkCell(d,fds,false);
 
             const p=colorPreop(rec?.preop_valor);
             tdPreop+=mkCell(p,fds,i===0);
@@ -596,7 +596,7 @@ function renderizar() {
         html+=`<tr data-search="${(row.contrato+' '+row.coordinador+' '+row.director).toLowerCase()}">
             <td class="td-contrato">${row.contrato}</td>
             <td class="td-coor">${row.coordinador||'<span style="color:#cbd5e1;font-style:italic;font-size:.7rem;">Sin asignar</span>'}</td>
-            ${tdArch}${tdDistrib}${tdPreop}${tdHE}
+            ${tdDistrib}${tdArch}${tdPreop}${tdHE}
             <td class="sep-l"><span class="sd-pct ${pctCls}">${pctTxt}</span></td>
             <td><span class="sd-pct ${pctCls}">${estadoTxt}</span></td>
         </tr>`;
