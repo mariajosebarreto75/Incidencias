@@ -205,7 +205,6 @@ body { background: #f1f5f9 !important; }
 }
 .sd-table thead tr.tr-fechas th.th-coor-sub {
     text-align: left;
-    position: sticky; left: 210px; z-index: 4;
     background: #f8fafc;
     min-width: 140px;
     border-right: 2px solid #e2e8f0;
@@ -243,8 +242,6 @@ body { background: #f1f5f9 !important; }
     min-width: 140px;
     max-width: 140px;
     white-space: normal;
-    position: sticky; left: 210px; z-index: 2;
-    background: inherit;
     border-right: 2px solid #e2e8f0;
 }
 
@@ -300,12 +297,9 @@ body { background: #f1f5f9 !important; }
 .sep-l { border-left: 2px solid #e2e8f0 !important; }
 
 /* Sticky row de thead bg fix */
-.sd-table tbody tr:nth-child(even) td.td-contrato,
-.sd-table tbody tr:nth-child(even) td.td-coor { background: #fafbfc; }
-.sd-table tbody tr:nth-child(odd) td.td-contrato,
-.sd-table tbody tr:nth-child(odd) td.td-coor   { background: #fff; }
-.sd-table tbody tr:hover td.td-contrato,
-.sd-table tbody tr:hover td.td-coor { background: #f8fafc; }
+.sd-table tbody tr:nth-child(even) td.td-contrato { background: #fafbfc; }
+.sd-table tbody tr:nth-child(odd) td.td-contrato  { background: #fff; }
+.sd-table tbody tr:hover td.td-contrato { background: #f8fafc; }
 
 @media (max-width: 700px) {
     .sd-wrap { padding: 14px 12px; }
@@ -528,7 +522,7 @@ function renderizar() {
     const N=_fechas.length;
     let h1=`<tr class="tr-cat">
         <th class="th-info" rowspan="2" style="min-width:210px;border-bottom:2px solid #e2e8f0;">Contrato</th>
-        <th style="text-align:left;position:sticky;left:210px;z-index:4;background:#fff;min-width:140px;border-right:2px solid #e2e8f0;border-bottom:2px solid #e2e8f0;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:11px 10px 8px;" rowspan="2">Coordinador</th>
+        <th style="text-align:left;background:#fff;min-width:140px;border-right:2px solid #e2e8f0;border-bottom:2px solid #e2e8f0;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:11px 10px 8px;" rowspan="2">Coordinador</th>
         <th class="th-cat-archivos" colspan="${N}">📁 Archivos (Eq / Ing / Per)</th>
         <th class="th-cat-distrib sep-l"  colspan="${N}">🕐 Distribución</th>
         <th class="th-cat-preop   sep-l"  colspan="${N}">📋 Preoperacional</th>
