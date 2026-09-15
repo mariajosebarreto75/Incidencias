@@ -1118,7 +1118,7 @@ async function guardarGrid() {
 
     // Actualizar filas modificadas
     if (actualizaciones.length && !errMsg) {
-        const r2 = await fetch("/api/he/actualizar", {
+        const r2 = await fetch("/api/he/actualizar-lote", {
             method:"POST", headers:{"Content-Type":"application/json"},
             body: JSON.stringify({ filas: actualizaciones })
         });

@@ -431,10 +431,10 @@ def api_he_guardar():
     })
 
 
-# ── API: actualizar registros existentes (coordinador modifica) ───────────────
-@he_bp.route("/api/he/actualizar", methods=["POST"])
+# ── API: actualizar lote de registros existentes (coordinador modifica) ──────
+@he_bp.route("/api/he/actualizar-lote", methods=["POST"])
 @login_required
-def api_he_actualizar():
+def api_he_actualizar_lote():
     data  = request.get_json(silent=True) or {}
     filas = data.get("filas", [])
     if not filas:
