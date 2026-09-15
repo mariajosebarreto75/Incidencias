@@ -473,6 +473,12 @@
     {% block scripts %}{% endblock %}
     <script src="{{ url_for('static', filename='js/filter-persist.js') }}"></script>
 
+<script>
+window.addEventListener("pageshow", function(e) {
+    if (e.persisted) { window.location.reload(); }
+});
+</script>
+
 </body>
 
 </html>

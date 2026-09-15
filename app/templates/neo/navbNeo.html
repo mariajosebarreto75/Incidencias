@@ -1319,6 +1319,15 @@
     </script>
     {% endif %}
 
+<script>
+/* Cuando el navegador restaura la página desde el bfcache (botón Atrás),
+   la recargamos limpiamente para evitar que los intervals acumulados
+   generen el efecto de "temblor" o actualizaciones múltiples. */
+window.addEventListener("pageshow", function(e) {
+    if (e.persisted) { window.location.reload(); }
+});
+</script>
+
 </body>
 
 </html>
