@@ -441,75 +441,17 @@
     aplicarFiltros();
 })();
 
-/* ── Persistencia filtros formulario coordinador ─────────────────────────── */
+/* Limpiar claves obsoletas de persistencia anterior */
+sessionStorage.removeItem('coor_panel_filtros');
+sessionStorage.removeItem('coor_panel_contrato');
+
+/* Botón limpiar: también limpia filter-persist */
 (function () {
-    const KEY    = 'coor_panel_filtros';
-    const CAMPOS = ['fecha_ini','fecha_fin','recurso'];
-    const form   = document.querySelector('.vr-filtros-form');
     const btnLim = document.querySelector('.vr-btn-limpiar');
-
-    const urlParams   = new URLSearchParams(window.location.search);
-    const tieneParams = CAMPOS.some(k => urlParams.get(k));
-
-    /* ── Persistencia contrato seleccionado ── */
-    const CONTRATO_KEY = 'coor_panel_contrato';
-    const contratoUrl  = urlParams.get('contrato');
-    if (contratoUrl) {
-        sessionStorage.setItem(CONTRATO_KEY, contratoUrl);
-    } else if (!tieneParams) {
-        // Solo restaurar si no hay ningún filtro activo (no es un limpiar)
-        const contratoGuardado = sessionStorage.getItem(CONTRATO_KEY);
-        if (contratoGuardado) {
-            // Redirigir con el contrato guardado preservando otros filtros del form
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.set('contrato', contratoGuardado);
-            window.location.replace(newUrl.toString());
-        }
-    }
-    // Al hacer click en "Todos" limpiar el contrato guardado
-    document.querySelectorAll('.btn-contrato').forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (!this.href.includes('contrato=')) sessionStorage.removeItem(CONTRATO_KEY);
-        });
-    });
-
-    if (tieneParams) {
-        const datos = {};
-        CAMPOS.forEach(k => { datos[k] = urlParams.get(k) || ''; });
-        sessionStorage.setItem(KEY, JSON.stringify(datos));
-    } else {
-        const guardado = sessionStorage.getItem(KEY);
-        if (guardado) {
-            try {
-                const datos = JSON.parse(guardado);
-                const tieneDatos = CAMPOS.some(k => datos[k]);
-                if (tieneDatos && form) {
-                    CAMPOS.forEach(k => {
-                        const el = form.querySelector(`[name="${k}"]`);
-                        if (el && datos[k]) el.value = datos[k];
-                    });
-                    form.submit(); return;
-                }
-            } catch(e) { sessionStorage.removeItem(KEY); }
-        }
-    }
-
-    if (form) {
-        form.addEventListener('submit', () => {
-            const datos = {};
-            CAMPOS.forEach(k => {
-                const el = form.querySelector(`[name="${k}"]`);
-                datos[k] = el ? el.value : '';
-            });
-            sessionStorage.setItem(KEY, JSON.stringify(datos));
-        });
-    }
-
     if (btnLim) {
         btnLim.addEventListener('click', () => {
-            sessionStorage.removeItem(KEY);
             sessionStorage.removeItem('coor_panel_chip');
-            sessionStorage.removeItem('coor_panel_contrato');
+            if (window.FilterPersist) FilterPersist.clear();
         });
     }
 })();
