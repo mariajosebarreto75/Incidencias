@@ -475,7 +475,12 @@
 
 <script>
 window.addEventListener("pageshow", function(e) {
-    if (e.persisted) { window.location.reload(); }
+    if (e.persisted && !sessionStorage.getItem("_bfc_reload")) {
+        sessionStorage.setItem("_bfc_reload", "1");
+        window.location.reload();
+    } else {
+        sessionStorage.removeItem("_bfc_reload");
+    }
 });
 </script>
 

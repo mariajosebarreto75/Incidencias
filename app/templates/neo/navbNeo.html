@@ -1320,11 +1320,14 @@
     {% endif %}
 
 <script>
-/* Cuando el navegador restaura la página desde el bfcache (botón Atrás),
-   la recargamos limpiamente para evitar que los intervals acumulados
-   generen el efecto de "temblor" o actualizaciones múltiples. */
+/* Recarga limpia al volver con Atrás (bfcache), con guarda anti-loop. */
 window.addEventListener("pageshow", function(e) {
-    if (e.persisted) { window.location.reload(); }
+    if (e.persisted && !sessionStorage.getItem("_bfc_reload")) {
+        sessionStorage.setItem("_bfc_reload", "1");
+        window.location.reload();
+    } else {
+        sessionStorage.removeItem("_bfc_reload");
+    }
 });
 </script>
 
