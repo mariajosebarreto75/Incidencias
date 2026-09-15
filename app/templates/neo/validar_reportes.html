@@ -530,9 +530,10 @@
         const datos = {};
         CAMPOS.forEach(k => { datos[k] = urlParams.get(k) || ''; });
         sessionStorage.setItem(KEY, JSON.stringify(datos));
+        sessionStorage.removeItem('_vr_submitting');
     } else {
         const guardado = sessionStorage.getItem(KEY);
-        if (guardado) {
+        if (guardado && !sessionStorage.getItem('_vr_submitting')) {
             try {
                 const datos = JSON.parse(guardado);
                 const tieneDatos = CAMPOS.some(k => datos[k]);
@@ -541,10 +542,15 @@
                         const el = form ? form.querySelector(`[name="${k}"]`) : null;
                         if (el && datos[k]) el.value = datos[k];
                     });
-                    if (form) { form.submit(); return; }
+                    if (form) {
+                        sessionStorage.setItem('_vr_submitting', '1');
+                        form.submit();
+                        return;
+                    }
                 }
             } catch(e) { sessionStorage.removeItem(KEY); }
         }
+        sessionStorage.removeItem('_vr_submitting');
     }
 
     if (form) {
