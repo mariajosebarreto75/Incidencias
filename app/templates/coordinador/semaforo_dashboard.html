@@ -483,14 +483,19 @@ async function cargar() {
     document.getElementById('sdTbody').innerHTML=`<tr><td colspan="99" class="sd-loading"><div class="sd-spinner"></div>Cargando…</td></tr>`;
     document.getElementById('sdThead').innerHTML='';
     try {
-        const r=await fetch(`/admin/api/semaforo/dashboard?desde=${desde}&hasta=${hasta}`);
-        const json=await r.json();
-        if(!json.ok)throw new Error(json.msg);
-        _datos=json.contratos;
-        _fechas=rangoFechas(desde,hasta);
+        const ctrl = new AbortController();
+        const tId  = setTimeout(()=>ctrl.abort(), 30000);
+        const r    = await fetch(`/admin/api/semaforo/dashboard?desde=${desde}&hasta=${hasta}`, {signal: ctrl.signal});
+        clearTimeout(tId);
+        if(!r.ok) throw new Error(`HTTP ${r.status}`);
+        const json = await r.json();
+        if(!json.ok) throw new Error(json.msg);
+        _datos  = json.contratos;
+        _fechas = rangoFechas(desde, hasta);
         renderizar();
     } catch(e) {
-        document.getElementById('sdTbody').innerHTML=`<tr><td colspan="99" class="sd-loading" style="color:#ef4444;">Error: ${e.message}</td></tr>`;
+        const msg = e.name==='AbortError' ? 'La consulta tardó demasiado. Intenta con un rango menor.' : e.message;
+        document.getElementById('sdTbody').innerHTML=`<tr><td colspan="99" class="sd-loading" style="color:#ef4444;"><b>Error al cargar:</b> ${msg}</td></tr>`;
     }
 }
 
