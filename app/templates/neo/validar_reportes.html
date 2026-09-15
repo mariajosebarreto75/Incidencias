@@ -155,7 +155,8 @@
                     <button type="submit" class="vr-btn-filtrar">
                         <i class="bi bi-search"></i> Filtrar
                     </button>
-                    <a href="{{ url_for('neo.validar_reportes') }}" class="vr-btn-limpiar" id="btnLimpiarFiltros">
+                    <a href="{{ url_for('neo.validar_reportes') }}" class="vr-btn-limpiar" id="btnLimpiarFiltros"
+                       onclick="if(window.FilterPersist)FilterPersist.clear();">
                         <i class="bi bi-x-circle"></i> Limpiar todo
                     </a>
                 </div>
@@ -515,62 +516,10 @@
 
 })();
 
-/* ── Persistencia de filtros de formulario + chip en sessionStorage ─────── */
-(function () {
-    const KEY        = 'neo_vr_filtros';
-    const CHIP_KEY   = 'neo_vr_chip';
-    const CAMPOS     = ['fecha_ini','fecha_fin','fecha_rep_ini','fecha_rep_fin','contrato','recurso'];
-    const form       = document.getElementById('formFiltros');
-    const btnLimpiar = document.getElementById('btnLimpiarFiltros') || document.querySelector('.vr-btn-limpiar');
-
-    const urlParams   = new URLSearchParams(window.location.search);
-    const tieneParams = CAMPOS.some(k => urlParams.get(k));
-
-    if (tieneParams) {
-        const datos = {};
-        CAMPOS.forEach(k => { datos[k] = urlParams.get(k) || ''; });
-        sessionStorage.setItem(KEY, JSON.stringify(datos));
-        sessionStorage.removeItem('_vr_submitting');
-    } else {
-        const guardado = sessionStorage.getItem(KEY);
-        if (guardado && !sessionStorage.getItem('_vr_submitting')) {
-            try {
-                const datos = JSON.parse(guardado);
-                const tieneDatos = CAMPOS.some(k => datos[k]);
-                if (tieneDatos) {
-                    CAMPOS.forEach(k => {
-                        const el = form ? form.querySelector(`[name="${k}"]`) : null;
-                        if (el && datos[k]) el.value = datos[k];
-                    });
-                    if (form) {
-                        sessionStorage.setItem('_vr_submitting', '1');
-                        form.submit();
-                        return;
-                    }
-                }
-            } catch(e) { sessionStorage.removeItem(KEY); }
-        }
-        sessionStorage.removeItem('_vr_submitting');
-    }
-
-    if (form) {
-        form.addEventListener('submit', () => {
-            const datos = {};
-            CAMPOS.forEach(k => {
-                const el = form.querySelector(`[name="${k}"]`);
-                datos[k] = el ? el.value : '';
-            });
-            sessionStorage.setItem(KEY, JSON.stringify(datos));
-        });
-    }
-
-    if (btnLimpiar) {
-        btnLimpiar.addEventListener('click', () => {
-            sessionStorage.removeItem(KEY);
-            sessionStorage.removeItem(CHIP_KEY);
-        });
-    }
-})();
+/* Limpiar claves obsoletas de persistencia anterior */
+sessionStorage.removeItem('neo_vr_filtros');
+sessionStorage.removeItem('neo_vr_chip');
+sessionStorage.removeItem('_vr_submitting');
 
 async function toggleReunion(btn) {
     const id = btn.dataset.id;
