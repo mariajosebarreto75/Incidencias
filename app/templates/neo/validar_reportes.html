@@ -520,6 +520,55 @@
 sessionStorage.removeItem('neo_vr_filtros');
 sessionStorage.removeItem('_vr_submitting');
 
+/* ── Persistencia de checkboxes (contrato / recurso) sin form.submit() ──── */
+(function () {
+    const CHKKEY = 'neo_vr_checks';
+
+    // Guardar estado actual de checkboxes
+    function _guardarChecks() {
+        const data = { contrato: [], recurso: [] };
+        document.querySelectorAll('#msContratoList input[type=checkbox]:checked').forEach(c => data.contrato.push(c.value));
+        document.querySelectorAll('#msRecursoList  input[type=checkbox]:checked').forEach(c => data.recurso.push(c.value));
+        try { sessionStorage.setItem(CHKKEY, JSON.stringify(data)); } catch(e) {}
+    }
+
+    // Restaurar checkboxes desde sessionStorage (solo si la URL no ya trae params)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tieneUrl  = urlParams.getAll('contrato').length || urlParams.getAll('recurso').length;
+    if (!tieneUrl) {
+        try {
+            const saved = JSON.parse(sessionStorage.getItem(CHKKEY) || '{}');
+            if (saved.contrato && saved.contrato.length) {
+                saved.contrato.forEach(val => {
+                    const chk = document.querySelector(`#msContratoList input[value="${CSS.escape(val)}"]`);
+                    if (chk) chk.checked = true;
+                });
+            }
+            if (saved.recurso && saved.recurso.length) {
+                saved.recurso.forEach(val => {
+                    const chk = document.querySelector(`#msRecursoList input[value="${CSS.escape(val)}"]`);
+                    if (chk) chk.checked = true;
+                });
+            }
+            // Actualizar etiquetas del botón
+            if (typeof _vrUpdateLabel === 'function') {
+                _vrUpdateLabel('msContrato');
+                _vrUpdateLabel('msRecurso');
+            }
+        } catch(e) {}
+    }
+
+    // Escuchar cambios en los checkboxes
+    document.querySelectorAll('#msContratoList input[type=checkbox], #msRecursoList input[type=checkbox]')
+        .forEach(chk => chk.addEventListener('change', _guardarChecks));
+
+    // Al limpiar, borrar también los checks guardados
+    const btnLim = document.getElementById('btnLimpiarFiltros');
+    if (btnLim) {
+        btnLim.addEventListener('click', () => sessionStorage.removeItem(CHKKEY), { once: false });
+    }
+})();
+
 async function toggleReunion(btn) {
     const id = btn.dataset.id;
     btn.disabled = true;
