@@ -768,16 +768,17 @@ let validacionCargada = false;
     const _savedFp = (() => { try { return JSON.parse(sessionStorage.getItem(_fpKey) || '{}'); } catch(e) { return {}; } })();
     if (_savedFp.gridContrato) document.getElementById("gridContrato").value = _savedFp.gridContrato;
 
-    // 2. Cargar todo en secuencia: primero asegurar corte, luego poblar grid y auxiliares
+    // 2. Cargar grid por rango de fechas del período (no depende de corte_id)
+    const _p = _periodoActual();
+    cargarRegistrosPorPeriodo(_p.ini, _p.fin);
+
+    // 3. Asegurar corte activo (para el historial y dropdown) y cargar auxiliares
     _asegurarCorteActivo().then(corteActivo => {
         if (corteActivo) {
             const sel = document.getElementById("fCorte");
             if (sel) { sel.value = String(corteActivo.id); sincronizarFechasCoor(); }
-            // Restaurar filtros del historial si los hay (no afectan el grid)
             if (_savedFp.fDesde) document.getElementById("fDesde").value = _savedFp.fDesde;
             if (_savedFp.fHasta) document.getElementById("fHasta").value = _savedFp.fHasta;
-            // Siempre cargar el grid con el corte del período actual
-            cargarRegistrosCorteActual(corteActivo.id);
         }
         cargarResumen();
         cargarHistorial();
@@ -967,6 +968,55 @@ async function cargarRegistrosCorteActual(corteId) {
     cargarResumen();
 }
 
+// Carga el grid directamente por rango de fechas (sin depender de corte_id)
+async function cargarRegistrosPorPeriodo(desde, hasta) {
+    const contratoId = document.getElementById("gridContrato").value;
+    let url = `/api/he/registros?fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    if (contratoId) url += `&contrato_id=${contratoId}`;
+    let registros = [];
+    try {
+        const r = await fetch(url);
+        registros = await r.json();
+        if (!Array.isArray(registros)) registros = [];
+    } catch(e) { registros = []; }
+
+    const filasSalvadas = registros.map(reg => [
+        fechaBackendAGrid(reg.fecha_labor),
+        reg.cedula        || "",
+        reg.nombre        || "",
+        reg.recurso       || "",
+        reg.placa         || "",
+        reg.horas_reportadas || 0,
+        reg.hora_inicio   || "",
+        reg.hora_fin      || "",
+        reg.id_concepto   || "",
+        reg.tipo_he       || "",
+        reg.horas_compensadas || 0,
+        reg.autorizacion_sup || "",
+        reg.justificacion || "",
+        reg.observacion   || "",
+    ]);
+
+    _fullRegData    = filasSalvadas;
+    _fullRegIds     = registros.map(r => r.id);
+    _fullRegRecords = registros;
+    _htRegFilters   = {};
+    _regSortState   = null;
+    _corteActualRegId = null;
+
+    const filasVacias = Array.from({length: FILAS_EXTRA}, () => Array(N_COLS).fill(""));
+    _rowIds = [..._fullRegIds, ...Array(FILAS_EXTRA).fill(null)];
+    _modifiedRowSet.clear();
+    hot.loadData([...filasSalvadas, ...filasVacias]);
+    hot.render();
+    _actualizarKpisCoorReg(registros);
+
+    const lbl = document.getElementById("lblRegistrosCorte");
+    if (lbl) lbl.textContent = registros.length > 0
+        ? `${registros.length} registro(s) en el período ${desde} – ${hasta}`
+        : "Sin registros en este período — ingrese las primeras horas";
+}
+
 // Convierte DD-MM-YY → YYYY-MM-DD para el backend
 function fechaParaBackend(val) {
     if (!val) return null;
@@ -1133,7 +1183,8 @@ async function guardarGrid() {
     } else {
         mostrarToast(`✓ ${totalGuardados} registro(s) guardados/actualizados`,"success");
         salariosPorFila = {};
-        await cargarRegistrosCorteActual(_corteActualRegId);
+        const _pp = _periodoActual();
+        await cargarRegistrosPorPeriodo(_pp.ini, _pp.fin);
         cargarHistorial(); cargarKpis();
     }
 }
