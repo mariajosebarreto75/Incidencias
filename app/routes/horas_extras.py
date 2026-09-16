@@ -1106,7 +1106,8 @@ def api_he_cortes_list():
         joinedload(HeCorte.cerrado_por),
     )
     if contrato_id:
-        q = q.filter(HeCorte.contrato_id == contrato_id)
+        # Incluir cortes del contrato específico Y cortes globales (contrato_id=null)
+        q = q.filter((HeCorte.contrato_id == contrato_id) | (HeCorte.contrato_id == None))
     elif current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         ids = _ids_contratos_usuario()
         q = q.filter((HeCorte.contrato_id.in_(ids)) | (HeCorte.contrato_id == None))

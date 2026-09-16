@@ -1303,6 +1303,11 @@ async function _asegurarCorteActivo() {
         });
         const d = await r.json();
         if (d.ok) { await actualizarCortesCoor(); corte = _corteActivo(); }
+        else {
+            // Puede ser 409 por corte global existente — refrescar y buscar de nuevo
+            await actualizarCortesCoor();
+            corte = _corteActivo();
+        }
     }
     return corte;
 }
@@ -1934,8 +1939,8 @@ async function cargarKpisCortesCoor() {
 async function cargarCortes() {
     cortesCargados = true;
     cargarKpisCortesCoor();
-    const cid = document.getElementById("gridContrato").value;
-    const url = cid ? `/api/he/cortes?contrato_id=${cid}` : "/api/he/cortes";
+    // Sin filtro de contrato en URL: la API aplica filtro por rol e incluye cortes globales
+    const url = "/api/he/cortes";
     let cortes = [];
     try {
         const r = await fetch(url);
