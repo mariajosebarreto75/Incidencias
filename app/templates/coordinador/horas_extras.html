@@ -770,15 +770,13 @@ let validacionCargada = false;
 
     // 2. Cargar todo en secuencia: primero asegurar corte, luego poblar grid y auxiliares
     _asegurarCorteActivo().then(corteActivo => {
-        const haySaved = _savedFp.fCorte || _savedFp.fDesde || _savedFp.fHasta;
-        if (haySaved) {
-            const sel = document.getElementById("fCorte");
-            if (sel && _savedFp.fCorte) { sel.value = _savedFp.fCorte; sincronizarFechasCoor(); }
-            if (_savedFp.fDesde) document.getElementById("fDesde").value = _savedFp.fDesde;
-            if (_savedFp.fHasta) document.getElementById("fHasta").value = _savedFp.fHasta;
-        } else if (corteActivo) {
+        if (corteActivo) {
             const sel = document.getElementById("fCorte");
             if (sel) { sel.value = String(corteActivo.id); sincronizarFechasCoor(); }
+            // Restaurar filtros del historial si los hay (no afectan el grid)
+            if (_savedFp.fDesde) document.getElementById("fDesde").value = _savedFp.fDesde;
+            if (_savedFp.fHasta) document.getElementById("fHasta").value = _savedFp.fHasta;
+            // Siempre cargar el grid con el corte del período actual
             cargarRegistrosCorteActual(corteActivo.id);
         }
         cargarResumen();
