@@ -489,8 +489,7 @@ async function subirEvidencia(numero) {
     const archivo = inputEl.files[0];
     if (!archivo) return;
 
-    // Validación cliente: tamaño y tipo antes de subir
-    const MAX_BYTES = 20 * 1024 * 1024; // 20 MB
+    // Validación cliente: tipo antes de subir
     const TIPOS_OK  = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!TIPOS_OK.includes(archivo.type)) {
         estadoEl.className = "upload-estado mt-1 err";
@@ -498,21 +497,61 @@ async function subirEvidencia(numero) {
         inputEl.value = "";
         return;
     }
-    if (archivo.size > MAX_BYTES) {
-        const mb = (archivo.size / 1024 / 1024).toFixed(1);
-        estadoEl.className = "upload-estado mt-1 err";
-        estadoEl.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>La imagen pesa ${mb} MB — el máximo es 20 MB.`;
-        inputEl.value = "";
-        return;
-    }
 
     // Mostrar spinner
     spinEl.classList.remove("d-none");
     estadoEl.className = "upload-estado mt-1";
+    estadoEl.textContent = "Procesando imagen…";
+
+    // Comprimir la imagen en canvas antes de subir (máx 2000px, calidad 0.85)
+    let archivoFinal = archivo;
+    const MAX_DIM = 2000;
+    const MAX_BYTES_COMPRESS = 2 * 1024 * 1024; // comprimir si > 2 MB
+    if (archivo.type !== "image/gif" && archivo.size > MAX_BYTES_COMPRESS) {
+        try {
+            archivoFinal = await new Promise((resolve, reject) => {
+                const img = new Image();
+                const url = URL.createObjectURL(archivo);
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    let { width, height } = img;
+                    if (width > MAX_DIM || height > MAX_DIM) {
+                        const ratio = Math.min(MAX_DIM / width, MAX_DIM / height);
+                        width = Math.round(width * ratio);
+                        height = Math.round(height * ratio);
+                    }
+                    const canvas = document.createElement("canvas");
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+                    canvas.toBlob(blob => {
+                        if (!blob) { resolve(archivo); return; }
+                        resolve(new File([blob], archivo.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+                    }, "image/jpeg", 0.85);
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); resolve(archivo); };
+                img.src = url;
+            });
+        } catch(e) {
+            archivoFinal = archivo; // si falla, subir original
+        }
+    }
+
+    // Verificar tamaño final tras compresión
+    const MAX_BYTES = 20 * 1024 * 1024;
+    if (archivoFinal.size > MAX_BYTES) {
+        spinEl.classList.add("d-none");
+        estadoEl.className = "upload-estado mt-1 err";
+        const mb = (archivoFinal.size / 1024 / 1024).toFixed(1);
+        estadoEl.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>La imagen pesa ${mb} MB incluso comprimida — redúzcala manualmente.`;
+        inputEl.value = "";
+        return;
+    }
+
     estadoEl.textContent = "";
 
     const formData = new FormData();
-    formData.append("archivo", archivo);
+    formData.append("archivo", archivoFinal);
 
     try {
 
