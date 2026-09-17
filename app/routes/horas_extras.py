@@ -116,7 +116,7 @@ def api_he_registros():
         q = q.filter(HoraExtra.contrato_id == contrato_id)
 
     if corte_id:
-        corte_obj = HeCorte.query.get(corte_id)
+        corte_obj = db.session.get(HeCorte, corte_id)
         if corte_obj:
             from sqlalchemy import or_ as sa_or
             q = q.filter(sa_or(
@@ -415,7 +415,8 @@ def api_he_guardar():
 
     try:
         if registros_ok:
-            db.session.bulk_insert_mappings(HoraExtra, registros_ok)
+            # SQLAlchemy 2.0: usar execute con insert en lugar de bulk_insert_mappings
+            db.session.execute(db.insert(HoraExtra), registros_ok)
             db.session.commit()
     except Exception as e:
         db.session.rollback()
@@ -447,7 +448,7 @@ def api_he_actualizar_lote():
         rid = f.get("id")
         if not rid:
             continue
-        reg = HoraExtra.query.get(rid)
+        reg = db.session.get(HoraExtra, rid)
         if not reg:
             continue
         if ids_permitidos is not None and reg.contrato_id not in ids_permitidos:
@@ -914,7 +915,7 @@ def api_he_kpis():
         q = q.filter(HoraExtra.contrato_id == contrato_id)
 
     if corte_id:
-        corte_obj = HeCorte.query.get(corte_id)
+        corte_obj = db.session.get(HeCorte, corte_id)
         if corte_obj:
             from sqlalchemy import or_ as sa_or
             q = q.filter(sa_or(
@@ -1020,7 +1021,7 @@ def api_he_ranking_contratos():
     )
 
     if corte_id:
-        corte_obj = HeCorte.query.get(corte_id)
+        corte_obj = db.session.get(HeCorte, corte_id)
         if corte_obj:
             q = q.filter(sa_or(
                 HoraExtra.corte_id == corte_id,
