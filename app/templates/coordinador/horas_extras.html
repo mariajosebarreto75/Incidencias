@@ -800,14 +800,28 @@ let validacionCargada = false;
     const _p = _periodoActual();
     cargarRegistrosPorPeriodo(_p.ini, _p.fin);
 
-    // 3. Cargar cortes y auxiliares SIN crear corte automáticamente
+    // 3. Cargar cortes y seleccionar el más reciente SIN crear corte nuevo
     actualizarCortesCoor().then(() => {
-        const corteActivo = _corteActivo();
-        if (corteActivo) {
-            const sel = document.getElementById("fCorte");
-            if (sel) { sel.value = String(corteActivo.id); sincronizarFechasCoor(); }
+        const sel = document.getElementById("fCorte");
+        // Prioridad: corte del período actual → corte guardado en sesión → primer corte disponible
+        const corteActivo = _corteActivo() || (_cortesCacheCoor.length ? _cortesCacheCoor[0] : null);
+        if (corteActivo && sel) {
+            if (_savedFp.fCorte) {
+                const savedCorte = _cortesCacheCoor.find(c => String(c.id) === _savedFp.fCorte);
+                sel.value = savedCorte ? _savedFp.fCorte : String(corteActivo.id);
+            } else {
+                sel.value = String(corteActivo.id);
+            }
+            sincronizarFechasCoor();
             if (_savedFp.fDesde) document.getElementById("fDesde").value = _savedFp.fDesde;
             if (_savedFp.fHasta) document.getElementById("fHasta").value = _savedFp.fHasta;
+        } else {
+            // Sin cortes: usar rango del período actual para que las KPIs tengan fechas
+            const _p = _periodoActual();
+            const fD = document.getElementById("fDesde");
+            const fH = document.getElementById("fHasta");
+            if (fD && !fD.value) fD.value = _p.ini;
+            if (fH && !fH.value) fH.value = _p.fin;
         }
         cargarResumen();
         cargarHistorial();
