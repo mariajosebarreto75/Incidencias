@@ -316,6 +316,16 @@ def api_he_guardar():
         except Exception:
             fl = date.today()
 
+        # Rechazar si la fecha cae en un corte CERRADO
+        for corte_c in todos_cortes:
+            if (corte_c.estado == "CERRADO"
+                    and corte_c.fecha_inicio <= fl <= corte_c.fecha_fin
+                    and (corte_c.contrato_id == cid or corte_c.contrato_id is None)):
+                return jsonify({
+                    "ok": False,
+                    "msg": f"El corte '{corte_c.nombre}' está CERRADO. No se pueden agregar horas para fechas del {corte_c.fecha_inicio} al {corte_c.fecha_fin}."
+                }), 422
+
         concepto = str(f.get("id_concepto") or "").strip().zfill(2) if str(f.get("id_concepto") or "").strip() else ""
         tipo_he  = str(f.get("tipo_he") or CONCEPTOS_HE.get(concepto, "")).strip()
         auth_neo = str(f.get("autorizacion_neo") or "").strip().upper()
@@ -453,6 +463,18 @@ def api_he_actualizar_lote():
             continue
         if ids_permitidos is not None and reg.contrato_id not in ids_permitidos:
             return jsonify({"ok": False, "msg": "Contrato no asignado a su usuario"}), 403
+
+        # Rechazar edición si el registro pertenece a un corte cerrado
+        if reg.corte_id:
+            corte_reg = db.session.get(HeCorte, reg.corte_id)
+            if corte_reg and corte_reg.estado == "CERRADO":
+                return jsonify({"ok": False, "msg": f"El corte '{corte_reg.nombre}' está CERRADO. No se pueden modificar sus registros."}), 422
+        else:
+            # Sin corte asignado: buscar si la fecha cae en un corte cerrado
+            todos_cortes_v = HeCorte.query.filter_by(estado="CERRADO").all()
+            for corte_c in todos_cortes_v:
+                if corte_c.fecha_inicio <= reg.fecha_labor <= corte_c.fecha_fin and (corte_c.contrato_id == reg.contrato_id or corte_c.contrato_id is None):
+                    return jsonify({"ok": False, "msg": f"El corte '{corte_c.nombre}' está CERRADO. No se pueden modificar sus registros."}), 422
 
         # Aplicar cambios solo a los campos editables por el coordinador
         if f.get("fecha_labor"):

@@ -2022,7 +2022,6 @@ async function cargarCortes() {
             <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
                 <button onclick="verCorte(${c.id},'${c.nombre}','${estLabel}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-eye me-1"></i>Ver registros</button>
-                ${c.estado !== "CERRADO" ? `<button onclick="cerrarCorteCoor(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;font-size:.72rem;"><i class="bi bi-lock me-1"></i>Cerrar corte</button>` : ""}
                 <button onclick="exportarCorteCoor(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-success" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-file-earmark-excel me-1"></i>Exportar</button>
                 <button onclick="eliminarCorteCoor(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-danger" style="border-radius:6px;font-size:.72rem;"><i class="bi bi-trash me-1"></i>Eliminar</button>
