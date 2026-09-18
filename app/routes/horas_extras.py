@@ -1111,25 +1111,21 @@ def api_he_cortes_list():
         q = q.filter((HeCorte.contrato_id == contrato_id) | (HeCorte.contrato_id == None))
     elif current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         ids = _ids_contratos_usuario()
-        # Solo cortes de sus contratos; cortes globales son del admin y no se muestran
-        q = q.filter(HeCorte.contrato_id.in_(ids))
+        # Sus cortes específicos + cortes globales (que pueden contener sus registros)
+        q = q.filter((HeCorte.contrato_id.in_(ids)) | (HeCorte.contrato_id == None))
     cortes = q.order_by(HeCorte.fecha_inicio.desc()).all()
 
-    # Deduplicar por (fecha_inicio, fecha_fin): si hay corte de contrato específico
-    # y corte global para el mismo período, conservar sólo el del contrato.
-    vistos = {}
-    dedup = []
-    for c in cortes:
-        key = (c.fecha_inicio, c.fecha_fin)
-        if key not in vistos:
-            vistos[key] = c
-            dedup.append(c)
-        else:
-            # Si el ya guardado es global y este es de contrato, reemplazar
-            if vistos[key].contrato_id is None and c.contrato_id is not None:
-                dedup.remove(vistos[key])
-                vistos[key] = c
-                dedup.append(c)
+    # Ocultar cortes globales (contrato_id=null) cuando ya existe al menos un corte
+    # de contrato específico para el mismo período.
+    periodos_con_especifico = {
+        (c.fecha_inicio, c.fecha_fin)
+        for c in cortes if c.contrato_id is not None
+    }
+    dedup = [
+        c for c in cortes
+        if c.contrato_id is not None
+        or (c.fecha_inicio, c.fecha_fin) not in periodos_con_especifico
+    ]
 
     return jsonify([c.to_dict() for c in dedup])
 
