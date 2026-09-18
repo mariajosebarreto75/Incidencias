@@ -5,6 +5,8 @@ from functools import wraps
 from flask import Blueprint, render_template, request, jsonify, abort, current_app
 from flask_login import login_required, current_user
 
+import json
+
 from app.extensions import db
 from app.models.hora_extra import HoraExtra, CONCEPTOS_HE, FACTOR_HE
 from app.models.he_concepto import HeConcepto
@@ -14,8 +16,41 @@ from app.models.user_contrato import UserContrato
 from app.models.supervisor import Supervisor
 from app.models.he_corte import HeCorte
 from app.models.he_config import HeConfig
+from app.models.he_audit_log import HeAuditLog
 
 he_bp = Blueprint("he_bp", __name__)
+
+
+def _audit(operacion, registro, estado_antes=None, estado_desp=None, datos_antes=None, datos_desp=None):
+    """Registra una operación en el log de auditoría."""
+    try:
+        ip = request.remote_addr if request else None
+        db.session.add(
+            HeAuditLog(
+                operacion    = operacion,
+                registro_id  = registro.id if registro else None,
+                contrato_id  = registro.contrato_id if registro else None,
+                contrato_nom = registro.contrato.contrato if (registro and registro.contrato) else None,
+                fecha_labor  = registro.fecha_labor if registro else None,
+                cedula       = registro.cedula if registro else None,
+                nombre       = registro.nombre if registro else None,
+                horas_rep    = registro.horas_reportadas if registro else None,
+                id_concepto  = registro.id_concepto if registro else None,
+                tipo_he      = registro.tipo_he if registro else None,
+                estado_antes = estado_antes,
+                estado_desp  = estado_desp,
+                datos_antes  = json.dumps(datos_antes, default=str) if datos_antes else None,
+                datos_desp   = json.dumps(datos_desp, default=str) if datos_desp else None,
+                usuario_id   = current_user.id if current_user else None,
+                usuario_nom  = current_user.nombre_completo if current_user else None,
+                usuario_rol  = current_user.rol if current_user else None,
+                ip           = ip,
+                fecha        = datetime.utcnow(),
+            )
+        )
+    except Exception:
+        pass  # auditoría nunca debe interrumpir la operación principal
+
 
 MODULOS = {
     "horas_extras": "Horas Extras",
@@ -427,8 +462,14 @@ def api_he_guardar():
 
     try:
         if registros_ok:
-            # SQLAlchemy 2.0: usar execute con insert en lugar de bulk_insert_mappings
             db.session.execute(db.insert(HoraExtra), registros_ok)
+            db.session.flush()
+            # Log de auditoría para cada INSERT
+            nuevos = HoraExtra.query.filter(
+                HoraExtra.reportado_por_id == current_user.id
+            ).order_by(HoraExtra.id.desc()).limit(len(registros_ok)).all()
+            for r in nuevos:
+                _audit("INSERT", r, estado_desp=r.estado, datos_desp=r.to_dict())
             db.session.commit()
     except Exception as e:
         db.session.rollback()
@@ -478,6 +519,10 @@ def api_he_actualizar_lote():
                 if corte_c.fecha_inicio <= reg.fecha_labor <= corte_c.fecha_fin and (corte_c.contrato_id == reg.contrato_id or corte_c.contrato_id is None):
                     return jsonify({"ok": False, "msg": f"El corte '{corte_c.nombre}' está CERRADO. No se pueden modificar sus registros."}), 422
 
+        # Snapshot antes del cambio para auditoría
+        _estado_antes = reg.estado
+        _datos_antes  = reg.to_dict()
+
         # Aplicar cambios solo a los campos editables por el coordinador
         if f.get("fecha_labor"):
             try:
@@ -510,6 +555,8 @@ def api_he_actualizar_lote():
         concepto = getattr(reg, "id_concepto", "")
         if concepto:
             reg.tipo_he = CONCEPTOS_HE.get(str(concepto).strip().zfill(2), reg.tipo_he or "")
+        _audit("UPDATE", reg, estado_antes=_estado_antes, estado_desp=reg.estado,
+               datos_antes=_datos_antes, datos_desp=reg.to_dict())
         actualizados += 1
 
     try:
@@ -615,7 +662,11 @@ def api_he_bulk_delete():
         ids = [r.id for r in registros]
         if not ids:
             return jsonify({"ok": False, "msg": "No hay registros seleccionados"}), 400
-    deleted = HoraExtra.query.filter(HoraExtra.id.in_(ids)).delete(synchronize_session=False)
+    registros_a_eliminar = HoraExtra.query.filter(HoraExtra.id.in_(ids)).all()
+    for r in registros_a_eliminar:
+        _audit("DELETE", r, estado_antes=r.estado, datos_antes=r.to_dict())
+    deleted = len(registros_a_eliminar)
+    HoraExtra.query.filter(HoraExtra.id.in_(ids)).delete(synchronize_session=False)
     db.session.commit()
     return jsonify({"ok": True, "eliminados": deleted})
 
