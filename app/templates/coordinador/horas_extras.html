@@ -862,7 +862,7 @@ function iniciarGrid() {
             { type:"text",         readOnly:true },
             { type:"numeric" },
             { type:"autocomplete", source: function(q, cb){ cb(supervisoresActuales); }, strict:false, allowInvalid:true },
-            { type:"text" },
+            { type:"dropdown", source: ["Lluvia","Desplazamiento","Programacion","Atención Emergencia","Actividad Compleja","Capacitación","Vehículos","Materiales","Maniobras","Disponibilidad","Porteria"], strict:true, allowInvalid:false },
             { type:"text" },
         ],
         colWidths: [115,105,185,135, 90,105,90,90, 110,200,110, 175,175,175],
@@ -1118,6 +1118,8 @@ async function guardarGrid() {
         { idx: C_HINICIO, nombre: "Hora Inicio" },
         { idx: C_HFIN,    nombre: "Hora Fin" },
         { idx: C_COD,     nombre: "Id Concepto" },
+        { idx: C_SUP,     nombre: "Autorización Supervisor" },
+        { idx: C_JUST,    nombre: "Motivo Hora Extra (Justificación)" },
     ];
 
     const rows  = hot.getData();

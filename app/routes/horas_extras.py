@@ -296,15 +296,17 @@ def api_he_guardar():
         # Validar campos obligatorios
         fila_num = len(registros) + omitidos + 1
         faltantes_be = []
-        if not str(f.get("cedula") or "").strip():       faltantes_be.append("Cédula")
-        if not str(f.get("recurso") or "").strip():      faltantes_be.append("Recurso")
-        if not str(f.get("placa") or "").strip():        faltantes_be.append("Placa")
-        if not str(f.get("hora_inicio") or "").strip():  faltantes_be.append("Hora Inicio")
-        if not str(f.get("hora_fin") or "").strip():     faltantes_be.append("Hora Fin")
-        if not str(f.get("id_concepto") or "").strip():  faltantes_be.append("Id Concepto")
+        if not str(f.get("cedula") or "").strip():            faltantes_be.append("Cédula")
+        if not str(f.get("recurso") or "").strip():           faltantes_be.append("Recurso")
+        if not str(f.get("placa") or "").strip():             faltantes_be.append("Placa")
+        if not str(f.get("hora_inicio") or "").strip():       faltantes_be.append("Hora Inicio")
+        if not str(f.get("hora_fin") or "").strip():          faltantes_be.append("Hora Fin")
+        if not str(f.get("id_concepto") or "").strip():       faltantes_be.append("Id Concepto")
+        if not str(f.get("autorizacion_sup") or "").strip():  faltantes_be.append("Autorización Supervisor")
+        if not str(f.get("justificacion") or "").strip():     faltantes_be.append("Motivo Hora Extra")
         hrs_rep_val = int(float(f.get("horas_reportadas") or 0))
-        if hrs_rep_val <= 0:                             faltantes_be.append("#Hrs Reportadas")
-        if not f.get("fecha_labor"):                     faltantes_be.append("Fecha Labor")
+        if hrs_rep_val <= 0:                                  faltantes_be.append("#Hrs Reportadas")
+        if not f.get("fecha_labor"):                          faltantes_be.append("Fecha Labor")
         if faltantes_be:
             return jsonify({
                 "ok": False,
