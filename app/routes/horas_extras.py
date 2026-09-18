@@ -612,13 +612,9 @@ def api_he_bulk_delete():
         no_permiso = [r for r in registros if r.contrato_id not in ids_contratos]
         if no_permiso:
             return jsonify({"ok": False, "msg": "No tiene permiso para eliminar algunos de esos registros"}), 403
-        no_pendiente = [r for r in registros if r.estado != "PENDIENTE"]
-        if no_pendiente:
-            estados = list({r.estado for r in no_pendiente})
-            return jsonify({"ok": False, "msg": f"Solo se pueden eliminar registros en estado PENDIENTE. Los seleccionados incluyen registros en: {', '.join(estados)}"}), 400
         ids = [r.id for r in registros]
         if not ids:
-            return jsonify({"ok": False, "msg": "No hay registros eliminables seleccionados"}), 400
+            return jsonify({"ok": False, "msg": "No hay registros seleccionados"}), 400
     deleted = HoraExtra.query.filter(HoraExtra.id.in_(ids)).delete(synchronize_session=False)
     db.session.commit()
     return jsonify({"ok": True, "eliminados": deleted})
