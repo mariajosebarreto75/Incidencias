@@ -1220,6 +1220,19 @@ def api_he_cortes_eliminar(corte_id):
     import traceback
     try:
         corte = HeCorte.query.get_or_404(corte_id)
+        # Coordinadores solo pueden eliminar cortes de sus contratos o cortes globales vacíos
+        if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+            ids = _ids_contratos_usuario()
+            if corte.contrato_id is not None and corte.contrato_id not in ids:
+                return jsonify({"ok": False, "msg": "Sin permiso para eliminar este corte"}), 403
+            if corte.contrato_id is None:
+                # Corte global: solo eliminable si no tiene registros de otros contratos
+                registros_otros = HoraExtra.query.filter(
+                    HoraExtra.corte_id == corte_id,
+                    ~HoraExtra.contrato_id.in_(ids)
+                ).count()
+                if registros_otros > 0:
+                    return jsonify({"ok": False, "msg": f"Este corte global tiene {registros_otros} registro(s) de otros contratos y no puede eliminarse"}), 403
         eliminar_registros = request.args.get("eliminar_registros", "false").lower() == "true"
         if eliminar_registros:
             n = HoraExtra.query.filter_by(corte_id=corte_id).delete(synchronize_session=False)

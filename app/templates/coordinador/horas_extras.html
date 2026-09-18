@@ -2011,7 +2011,7 @@ async function cargarCortes() {
                 ${c.estado !== "CERRADO" ? `<button onclick="cerrarCorteCoor(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;font-size:.72rem;"><i class="bi bi-lock me-1"></i>Cerrar corte</button>` : ""}
                 <button onclick="exportarCorteCoor(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-success" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-file-earmark-excel me-1"></i>Exportar</button>
-                ${!c.contrato_id ? "" : `<button onclick="eliminarCorteCoor(${c.id},'${c.nombre}',false)" class="btn btn-sm btn-outline-danger" style="border-radius:6px;font-size:.72rem;"><i class="bi bi-trash me-1"></i>Eliminar</button>`}
+                <button onclick="eliminarCorteCoor(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-danger" style="border-radius:6px;font-size:.72rem;"><i class="bi bi-trash me-1"></i>Eliminar</button>
             </div>
         </div>`;
     }).join("");
@@ -2655,11 +2655,8 @@ async function cerrarCorteCoor(id, nombre) {
     } catch(e) { mostrarToast("Error de red", "error"); }
 }
 
-async function eliminarCorteCoor(id, nombre, conRegistros) {
-    const msg = conRegistros
-        ? `¿Eliminar el corte "${nombre}" y TODOS sus registros? Esta acción no se puede deshacer.`
-        : `¿Eliminar el corte "${nombre}"? Solo se eliminará el corte (los registros quedan).`;
-    if (!confirm(msg)) return;
+async function eliminarCorteCoor(id, nombre) {
+    if (!confirm(`¿Eliminar el corte "${nombre}"? Solo se elimina el registro del corte; los registros de horas quedan.`)) return;
     try {
         const r = await fetch(`/api/he/cortes/${id}`, { method: "DELETE" });
         const d = await r.json();
