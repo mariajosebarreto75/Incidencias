@@ -1948,6 +1948,8 @@ async function cargarCortes() {
         const r = await fetch(url);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         cortes = await r.json();
+        // Excluir cortes globales (sin contrato asignado) — solo mostrar los del coordinador
+        cortes = cortes.filter(c => c.contrato_id);
     } catch(e) {
         cortesCargados = false;
         document.getElementById("cortesList").innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#ef4444;padding:48px 0;">
