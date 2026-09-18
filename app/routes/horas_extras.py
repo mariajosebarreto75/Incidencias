@@ -1113,7 +1113,24 @@ def api_he_cortes_list():
         ids = _ids_contratos_usuario()
         q = q.filter((HeCorte.contrato_id.in_(ids)) | (HeCorte.contrato_id == None))
     cortes = q.order_by(HeCorte.fecha_inicio.desc()).all()
-    return jsonify([c.to_dict() for c in cortes])
+
+    # Deduplicar por (fecha_inicio, fecha_fin): si hay corte de contrato específico
+    # y corte global para el mismo período, conservar sólo el del contrato.
+    vistos = {}
+    dedup = []
+    for c in cortes:
+        key = (c.fecha_inicio, c.fecha_fin)
+        if key not in vistos:
+            vistos[key] = c
+            dedup.append(c)
+        else:
+            # Si el ya guardado es global y este es de contrato, reemplazar
+            if vistos[key].contrato_id is None and c.contrato_id is not None:
+                dedup.remove(vistos[key])
+                vistos[key] = c
+                dedup.append(c)
+
+    return jsonify([c.to_dict() for c in dedup])
 
 
 @he_bp.route("/api/he/cortes", methods=["POST"])
