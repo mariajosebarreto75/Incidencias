@@ -357,6 +357,9 @@ body { background:var(--c-bg); }
                 <button onclick="exportarGridRegistro()" class="btn btn-sm fw-semibold" style="border-radius:7px;font-size:.75rem;padding:4px 12px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.35);"><i class="bi bi-file-earmark-excel me-1"></i>Exportar</button>
             </div>
             <div class="he-toolbar">
+                <button onclick="abrirSelectorPeriodo()" class="btn btn-sm btn-outline-info fw-semibold" style="border-radius:6px;font-size:.75rem;border-color:#0ea5e9;color:#0ea5e9;">
+                    <i class="bi bi-calendar-range me-1"></i>Cargar período
+                </button>
                 <button onclick="agregarFilas(10)" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.75rem;">
                     <i class="bi bi-plus-lg me-1"></i>+10 filas
                 </button>
@@ -617,6 +620,31 @@ body { background:var(--c-bg); }
   </div>
 </div>
 
+<!-- ── Modal Selector de Período ── -->
+<div class="he-modal-overlay" id="modalSelectorPeriodo">
+  <div class="he-modal" style="max-width:460px;width:96%;">
+    <div class="he-modal-header" style="background:#0d3b66;">
+      <i class="bi bi-calendar-range"></i>
+      <h6>Cargar período al grid</h6>
+      <button onclick="cerrarModal('modalSelectorPeriodo')">&times;</button>
+    </div>
+    <div class="he-modal-body" style="padding:20px;">
+      <p style="font-size:.83rem;color:#6c757d;margin-bottom:14px;">
+        Seleccione el período cuyas horas desea cargar en el grid para revisar, modificar o completar.
+      </p>
+      <div id="listaPeriodosModal" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
+        <div style="text-align:center;color:#94a3b8;padding:20px;">Cargando períodos…</div>
+      </div>
+    </div>
+    <div class="he-modal-footer" style="padding:12px 20px;">
+      <button class="btn btn-sm btn-secondary" onclick="cerrarModal('modalSelectorPeriodo')">Cancelar</button>
+      <button class="btn btn-sm btn-outline-primary" onclick="cargarPeriodoEnBlanco()">
+        <i class="bi bi-file-earmark-plus me-1"></i>Período actual en blanco
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Modal Duplicados ── -->
 <div class="he-modal-overlay" id="modalDuplicados" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;">
   <div class="he-modal" style="max-width:700px;width:96%;">
@@ -772,8 +800,9 @@ let validacionCargada = false;
     const _p = _periodoActual();
     cargarRegistrosPorPeriodo(_p.ini, _p.fin);
 
-    // 3. Asegurar corte activo (para el historial y dropdown) y cargar auxiliares
-    _asegurarCorteActivo().then(corteActivo => {
+    // 3. Cargar cortes y auxiliares SIN crear corte automáticamente
+    actualizarCortesCoor().then(() => {
+        const corteActivo = _corteActivo();
         if (corteActivo) {
             const sel = document.getElementById("fCorte");
             if (sel) { sel.value = String(corteActivo.id); sincronizarFechasCoor(); }
@@ -1645,7 +1674,7 @@ function cerrarModal(id) {
     document.getElementById(id).classList.remove("open");
 }
 document.addEventListener("click", e => {
-    ["modalEditar","modalImportar","modalNuevoCorte","modalCorteClave"].forEach(id => {
+    ["modalEditar","modalImportar","modalNuevoCorte","modalCorteClave","modalSelectorPeriodo"].forEach(id => {
         const el = document.getElementById(id);
         if (el && e.target === el) el.classList.remove("open");
     });
@@ -1979,8 +2008,10 @@ async function cargarCortes() {
             <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
                 <button onclick="verCorte(${c.id},'${c.nombre}','${estLabel}')" class="btn btn-sm btn-outline-primary" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-eye me-1"></i>Ver registros</button>
+                ${c.estado !== "CERRADO" ? `<button onclick="cerrarCorteCoor(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;font-size:.72rem;"><i class="bi bi-lock me-1"></i>Cerrar corte</button>` : ""}
                 <button onclick="exportarCorteCoor(${c.id},'${c.nombre}')" class="btn btn-sm btn-outline-success" style="border-radius:6px;font-size:.72rem;">
                     <i class="bi bi-file-earmark-excel me-1"></i>Exportar</button>
+                ${!c.contrato_id ? "" : `<button onclick="eliminarCorteCoor(${c.id},'${c.nombre}',false)" class="btn btn-sm btn-outline-danger" style="border-radius:6px;font-size:.72rem;"><i class="bi bi-trash me-1"></i>Eliminar</button>`}
             </div>
         </div>`;
     }).join("");
@@ -2566,6 +2597,76 @@ function mostrarToast(msg, tipo="success", duracion=4000) {
     setTimeout(() => t.remove(), duracion);
 }
 
+// ── Selector de período ───────────────────────────────────────────────────────
+
+async function abrirSelectorPeriodo() {
+    document.getElementById("modalSelectorPeriodo").classList.add("open");
+    const lista = document.getElementById("listaPeriodosModal");
+    lista.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;">Cargando períodos…</div>';
+    try {
+        const r = await fetch("/api/he/cortes");
+        let cortes = await r.json();
+        if (!Array.isArray(cortes) || !cortes.length) {
+            lista.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:20px;">No hay períodos registrados.</div>';
+            return;
+        }
+        const _p = _periodoActual();
+        lista.innerHTML = cortes.map(c => {
+            const esActual = c.fecha_inicio === _p.ini && c.fecha_fin === _p.fin;
+            return `<button onclick="cargarPeriodoDesdeCorte('${c.fecha_inicio}','${c.fecha_fin}','${c.nombre}')"
+                style="display:flex;justify-content:space-between;align-items:center;
+                       padding:10px 14px;border-radius:8px;border:1px solid ${esActual ? '#22c55e' : '#dee2e6'};
+                       background:${esActual ? '#f0fdf4' : '#fff'};cursor:pointer;text-align:left;width:100%;font-size:.82rem;">
+                <span style="font-weight:700;color:#0d3b66;">${c.nombre}</span>
+                <span style="font-size:.72rem;color:#6c757d;">${c.contrato || 'Todos'} &nbsp;
+                    <span style="padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:600;
+                          background:${c.estado==='ABIERTO'?'#dcfce7':'#f1f5f9'};
+                          color:${c.estado==='ABIERTO'?'#16a34a':'#64748b'}">${c.estado}</span>
+                </span>
+            </button>`;
+        }).join("");
+    } catch(e) {
+        lista.innerHTML = '<div style="text-align:center;color:#ef4444;padding:20px;">Error cargando períodos.</div>';
+    }
+}
+
+function cargarPeriodoDesdeCorte(desde, hasta, nombre) {
+    cerrarModal("modalSelectorPeriodo");
+    mostrarToast(`Cargando período: ${nombre}`, "info");
+    cargarRegistrosPorPeriodo(desde, hasta);
+}
+
+function cargarPeriodoEnBlanco() {
+    cerrarModal("modalSelectorPeriodo");
+    const _p = _periodoActual();
+    mostrarToast(`Período actual en blanco: ${_p.ini} – ${_p.fin}`, "info");
+    cargarRegistrosPorPeriodo(_p.ini, _p.fin);
+}
+
+// ── Cerrar / eliminar corte desde tarjeta ────────────────────────────────────
+
+async function cerrarCorteCoor(id, nombre) {
+    if (!confirm(`¿Cerrar el corte "${nombre}"? No se podrán agregar más registros.`)) return;
+    try {
+        const r = await fetch(`/api/he/cortes/${id}/cerrar`, { method: "POST" });
+        const d = await r.json();
+        if (d.ok) { mostrarToast("Corte cerrado", "success"); cargarCortes(); }
+        else mostrarToast(d.msg || "Error al cerrar", "error");
+    } catch(e) { mostrarToast("Error de red", "error"); }
+}
+
+async function eliminarCorteCoor(id, nombre, conRegistros) {
+    const msg = conRegistros
+        ? `¿Eliminar el corte "${nombre}" y TODOS sus registros? Esta acción no se puede deshacer.`
+        : `¿Eliminar el corte "${nombre}"? Solo se eliminará el corte (los registros quedan).`;
+    if (!confirm(msg)) return;
+    try {
+        const r = await fetch(`/api/he/cortes/${id}`, { method: "DELETE" });
+        const d = await r.json();
+        if (d.ok) { mostrarToast("Corte eliminado", "success"); cargarCortes(); }
+        else mostrarToast(d.msg || "Error al eliminar", "error");
+    } catch(e) { mostrarToast("Error de red", "error"); }
+}
 
 </script>
 {% endblock %}
