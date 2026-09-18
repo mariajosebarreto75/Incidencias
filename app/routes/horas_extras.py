@@ -1111,7 +1111,8 @@ def api_he_cortes_list():
         q = q.filter((HeCorte.contrato_id == contrato_id) | (HeCorte.contrato_id == None))
     elif current_user.rol.lower() in ("coordinador", "director", "supervisor"):
         ids = _ids_contratos_usuario()
-        q = q.filter((HeCorte.contrato_id.in_(ids)) | (HeCorte.contrato_id == None))
+        # Solo cortes de sus contratos; cortes globales son del admin y no se muestran
+        q = q.filter(HeCorte.contrato_id.in_(ids))
     cortes = q.order_by(HeCorte.fecha_inicio.desc()).all()
 
     # Deduplicar por (fecha_inicio, fecha_fin): si hay corte de contrato específico

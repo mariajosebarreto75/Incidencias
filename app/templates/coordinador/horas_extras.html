@@ -1289,15 +1289,17 @@ async function _asegurarCorteActivo() {
     await actualizarCortesCoor(); // siempre refrescar antes de verificar
     let corte = _corteActivo();
     if (!corte) {
-        const p = _periodoActual();
         const cid = document.getElementById("gridContrato").value || null;
+        // Sin contrato seleccionado no crear corte para evitar cortes globales huérfanos
+        if (!cid) return null;
+        const p = _periodoActual();
         const r = await fetch("/api/he/cortes", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
                 fecha_inicio: p.ini,
                 fecha_fin: p.fin,
-                contrato_id: cid ? parseInt(cid) : null,
+                contrato_id: parseInt(cid),
                 observacion: ""
             })
         });
