@@ -340,7 +340,9 @@ def api_he_guardar():
         if not str(f.get("autorizacion_sup") or "").strip():  faltantes_be.append("Autorización Supervisor")
         if not str(f.get("justificacion") or "").strip():     faltantes_be.append("Motivo Hora Extra")
         hrs_rep_val = int(float(f.get("horas_reportadas") or 0))
-        if hrs_rep_val <= 0:                                  faltantes_be.append("#Hrs Reportadas")
+        hrs_comp_val = int(float(f.get("horas_compensadas") or 0))
+        # Permitir 0 reportadas solo si hay horas compensadas (registro que se compensó)
+        if hrs_rep_val <= 0 and hrs_comp_val <= 0:            faltantes_be.append("#Hrs Reportadas")
         if not f.get("fecha_labor"):                          faltantes_be.append("Fecha Labor")
         if faltantes_be:
             return jsonify({
@@ -435,13 +437,29 @@ def api_he_guardar():
         for e in existentes
     }
 
+    # Mapa de existentes por clave sin horas (para detectar compensaciones)
+    existentes_obj = {
+        (e.contrato_id, e.cedula, _norm_concepto(e.id_concepto), str(e.fecha_labor)): e
+        for e in existentes
+    }
+
     # 2) Separar válidos de duplicados (intra-lote + BD)
     lote_keys = {}
     registros_ok = []
+    actualizaciones_comp = []   # registros a actualizar como compensados
     duplicados = []
     for i, r in enumerate(registros):
-        k = (r["contrato_id"], r["cedula"], _norm_concepto(r["id_concepto"]),
-             str(r["fecha_labor"]), r["horas_reportadas"])
+        k_sin_hrs = (r["contrato_id"], r["cedula"], _norm_concepto(r["id_concepto"]), str(r["fecha_labor"]))
+        k = k_sin_hrs + (r["horas_reportadas"],)
+
+        # Caso especial: horas_reportadas=0 con compensadas → actualizar registro existente
+        if r["horas_reportadas"] == 0 and r.get("horas_compensadas", 0) > 0:
+            reg_existente = existentes_obj.get(k_sin_hrs)
+            if reg_existente:
+                actualizaciones_comp.append((reg_existente, r))
+                continue
+            # Si no existe aún, insertar igual (será nuevo compensado)
+
         if k in lote_keys:
             duplicados.append({
                 "fila": i + 1, "contrato": contratos_nombre.get(r["contrato_id"], ""),
@@ -461,16 +479,26 @@ def api_he_guardar():
             registros_ok.append(r)
 
     try:
+        # Actualizar registros compensados (0 reportadas → actualizar compensadas)
+        for reg_obj, datos in actualizaciones_comp:
+            _datos_antes = reg_obj.to_dict()
+            reg_obj.horas_compensadas = int(float(datos.get("horas_compensadas") or 0))
+            reg_obj.horas_reportadas  = 0
+            if datos.get("observacion"):
+                reg_obj.observacion = str(datos["observacion"]).strip()
+            _audit("UPDATE", reg_obj, estado_antes=reg_obj.estado, estado_desp=reg_obj.estado,
+                   datos_antes=_datos_antes, datos_desp=reg_obj.to_dict())
+
         if registros_ok:
             db.session.execute(db.insert(HoraExtra), registros_ok)
             db.session.flush()
-            # Log de auditoría para cada INSERT
             nuevos = HoraExtra.query.filter(
                 HoraExtra.reportado_por_id == current_user.id
             ).order_by(HoraExtra.id.desc()).limit(len(registros_ok)).all()
             for r in nuevos:
                 _audit("INSERT", r, estado_desp=r.estado, datos_desp=r.to_dict())
-            db.session.commit()
+
+        db.session.commit()
     except Exception as e:
         db.session.rollback()
         import traceback
@@ -479,6 +507,7 @@ def api_he_guardar():
     return jsonify({
         "ok": True,
         "guardados": len(registros_ok),
+        "compensados_actualizados": len(actualizaciones_comp),
         "omitidos": omitidos,
         "duplicados_omitidos": len(duplicados),
         "detalle_duplicados": duplicados,
