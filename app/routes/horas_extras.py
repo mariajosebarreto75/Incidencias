@@ -313,6 +313,18 @@ def api_he_guardar():
         except Exception:
             return None
 
+    import re as _re
+    def _hora(v):
+        """Extrae HH:MM de cualquier formato que llegue (string 'HH:MM', datetime de Handsontable, etc.)"""
+        if not v:
+            return ""
+        s = str(v).strip()
+        # Ya es HH:MM o HH:MM:SS
+        m = _re.search(r'\b(\d{1,2}):(\d{2})', s)
+        if m:
+            return f"{int(m.group(1)):02d}:{m.group(2)}"
+        return s[:20]  # fallback: truncar a 20 chars
+
     registros = []
     omitidos  = 0
     contratos_no_encontrados = {}   # nombre -> lista de filas
@@ -384,8 +396,8 @@ def api_he_guardar():
             "horas_reportadas":  int(float(f.get("horas_reportadas")  or 0)),
             "horas_compensadas": int(float(f.get("horas_compensadas") or 0)),
             "placa":             str(f.get("placa")       or "").strip(),
-            "hora_inicio":       str(f.get("hora_inicio") or "").strip(),
-            "hora_fin":          str(f.get("hora_fin")    or "").strip(),
+            "hora_inicio":       _hora(f.get("hora_inicio")),
+            "hora_fin":          _hora(f.get("hora_fin")),
             "autorizacion_sup":  str(f.get("autorizacion_sup") or "").strip(),
             "justificacion":     str(f.get("justificacion")    or "").strip(),
             "observacion":       str(f.get("observacion")      or "").strip(),
