@@ -1,0 +1,167 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Auditoría HE{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title"><i class="bi bi-shield-check me-2" style="color:var(--adm-accent)"></i>Auditoría — Horas Extras</h1>
+        <p class="adm-page-sub" id="subHeader">Historial de creaciones, modificaciones y eliminaciones</p>
+    </div>
+</div>
+
+<div id="alerta" class="adm-alert"></div>
+
+<!-- FILTROS -->
+<div class="adm-card" style="margin-bottom:1rem">
+    <div style="padding:14px 20px;display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-end">
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Contrato</label>
+            <select id="fContrato" class="form-select form-select-sm" style="min-width:200px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+                <option value="">Todos</option>
+                {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Operación</label>
+            <select id="fOp" class="form-select form-select-sm" style="min-width:130px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+                <option value="">Todas</option>
+                <option value="INSERT">Creación</option>
+                <option value="UPDATE">Modificación</option>
+                <option value="DELETE">Eliminación</option>
+            </select>
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Fecha labor desde</label>
+            <input type="date" id="fDesde" class="form-control form-control-sm" style="background:#0f172a;color:#e2e8f0;border-color:#334155;width:145px">
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Fecha labor hasta</label>
+            <input type="date" id="fHasta" class="form-control form-control-sm" style="background:#0f172a;color:#e2e8f0;border-color:#334155;width:145px">
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Usuario</label>
+            <input type="text" id="fUsuario" class="form-control form-control-sm" placeholder="Nombre..." style="background:#0f172a;color:#e2e8f0;border-color:#334155;width:160px">
+        </div>
+        <button onclick="cargar()" class="btn btn-sm btn-primary" style="height:31px">
+            <i class="bi bi-search me-1"></i>Buscar
+        </button>
+    </div>
+</div>
+
+<!-- TABLA -->
+<div class="adm-card">
+    <div style="overflow-x:auto">
+        <table class="table table-sm table-dark table-hover mb-0" id="tbl" style="font-size:.78rem;min-width:1100px">
+            <thead>
+                <tr style="color:#94a3b8;border-color:#1e293b">
+                    <th>Fecha/Hora</th>
+                    <th>Operación</th>
+                    <th>Contrato</th>
+                    <th>Fecha Labor</th>
+                    <th>Cédula</th>
+                    <th>Nombre</th>
+                    <th>Hrs</th>
+                    <th>Concepto</th>
+                    <th>Estado antes</th>
+                    <th>Estado desp.</th>
+                    <th>Usuario</th>
+                    <th>Rol</th>
+                    <th>IP</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="tbody">
+                <tr><td colspan="14" class="text-center text-secondary py-4">Use los filtros y presione Buscar</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="pie" style="padding:8px 16px;color:#64748b;font-size:.75rem"></div>
+</div>
+
+<!-- MODAL detalle -->
+<div class="modal fade" id="mdlDetalle" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="background:#1e293b;color:#e2e8f0;border-color:#334155">
+            <div class="modal-header" style="border-color:#334155">
+                <h5 class="modal-title" id="mdlTitulo">Detalle de cambio</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-6">
+                        <h6 style="color:#94a3b8">Datos ANTES</h6>
+                        <pre id="preAntes" style="background:#0f172a;padding:12px;border-radius:6px;font-size:.72rem;max-height:400px;overflow:auto;color:#cbd5e1"></pre>
+                    </div>
+                    <div class="col-6">
+                        <h6 style="color:#94a3b8">Datos DESPUÉS</h6>
+                        <pre id="preDespues" style="background:#0f172a;padding:12px;border-radius:6px;font-size:.72rem;max-height:400px;overflow:auto;color:#cbd5e1"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const OP_COLOR = { INSERT: '#22c55e', UPDATE: '#f59e0b', DELETE: '#ef4444' };
+const OP_LABEL = { INSERT: 'Creación', UPDATE: 'Modificación', DELETE: 'Eliminación' };
+let _rows = [];
+
+async function cargar() {
+    const params = new URLSearchParams({
+        contrato_id: document.getElementById('fContrato').value,
+        operacion:   document.getElementById('fOp').value,
+        fecha_desde: document.getElementById('fDesde').value,
+        fecha_hasta: document.getElementById('fHasta').value,
+        usuario:     document.getElementById('fUsuario').value,
+        limit:       500,
+    });
+    const r = await fetch('/admin/api/he/auditoria?' + params);
+    _rows = await r.json();
+    renderTabla();
+}
+
+function renderTabla() {
+    const tbody = document.getElementById('tbody');
+    if (!_rows.length) {
+        tbody.innerHTML = '<tr><td colspan="14" class="text-center text-secondary py-4">Sin resultados</td></tr>';
+        document.getElementById('pie').textContent = '';
+        return;
+    }
+    tbody.innerHTML = _rows.map((r, i) => `
+        <tr>
+            <td style="white-space:nowrap">${r.fecha}</td>
+            <td><span style="background:${OP_COLOR[r.operacion]}22;color:${OP_COLOR[r.operacion]};padding:2px 8px;border-radius:4px;font-weight:600">${OP_LABEL[r.operacion] || r.operacion}</span></td>
+            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.contrato}">${r.contrato}</td>
+            <td>${r.fecha_labor}</td>
+            <td>${r.cedula}</td>
+            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.nombre}">${r.nombre}</td>
+            <td>${r.horas_rep ?? ''}</td>
+            <td>${r.id_concepto} ${r.tipo_he ? '- ' + r.tipo_he.substring(0,20) : ''}</td>
+            <td>${badge(r.estado_antes)}</td>
+            <td>${badge(r.estado_desp)}</td>
+            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.usuario}</td>
+            <td>${r.rol}</td>
+            <td>${r.ip}</td>
+            <td><button class="btn btn-xs btn-outline-secondary" style="font-size:.7rem;padding:2px 6px" onclick="verDetalle(${i})"><i class="bi bi-eye"></i></button></td>
+        </tr>
+    `).join('');
+    document.getElementById('pie').textContent = `${_rows.length} registro(s)`;
+}
+
+function badge(estado) {
+    if (!estado) return '';
+    const map = { PENDIENTE:'#64748b', CONFORME:'#22c55e', 'NO CONFORME':'#ef4444', DESCONTADA:'#f59e0b' };
+    const col = map[estado] || '#64748b';
+    return `<span style="background:${col}22;color:${col};padding:2px 7px;border-radius:4px;font-size:.7rem">${estado}</span>`;
+}
+
+function verDetalle(i) {
+    const r = _rows[i];
+    document.getElementById('mdlTitulo').textContent = `${OP_LABEL[r.operacion] || r.operacion} — ID #${r.registro_id || ''}  (${r.fecha})`;
+    document.getElementById('preAntes').textContent   = r.estado_antes ? JSON.stringify(JSON.parse(r.datos_antes || '{}'), null, 2) : '(sin datos previos)';
+    document.getElementById('preDespues').textContent = r.estado_desp  ? JSON.stringify(JSON.parse(r.datos_desp  || '{}'), null, 2) : '(sin datos posteriores)';
+    new bootstrap.Modal(document.getElementById('mdlDetalle')).show();
+}
+</script>
+{% endblock %}

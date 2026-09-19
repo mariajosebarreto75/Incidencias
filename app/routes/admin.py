@@ -33,6 +33,7 @@ from app.models.supervisor import Supervisor
 from app.models.he_config import HeConfig
 from app.models.hora_extra import HoraExtra, CONCEPTOS_HE
 from app.models.he_corte import HeCorte
+from app.models.he_audit_log import HeAuditLog
 from app.models.semaforo import SemaforoCalificacion
 from app.models.compromiso import Compromiso
 
@@ -2028,6 +2029,65 @@ def he_configuracion():
         "password_corte_cerrado": HeConfig.get("password_corte_cerrado", ""),
     }
     return render_template("admin/he_configuracion.html", config=config)
+
+
+@admin_bp.route("/he/auditoria")
+@admin_required
+def he_auditoria():
+    contratos = Contrato.query.order_by(Contrato.contrato).all()
+    return render_template("admin/he_auditoria.html", contratos=contratos)
+
+
+@admin_bp.route("/api/he/auditoria")
+@admin_required
+def api_he_auditoria():
+    from sqlalchemy import text as sa_text
+    contrato_id  = request.args.get("contrato_id", type=int)
+    operacion    = request.args.get("operacion", "")
+    fecha_desde  = request.args.get("fecha_desde", "")
+    fecha_hasta  = request.args.get("fecha_hasta", "")
+    usuario_nom  = request.args.get("usuario", "").strip()
+    limit        = min(int(request.args.get("limit", 200)), 500)
+
+    q = HeAuditLog.query
+    if contrato_id:
+        q = q.filter(HeAuditLog.contrato_id == contrato_id)
+    if operacion:
+        q = q.filter(HeAuditLog.operacion == operacion)
+    if fecha_desde:
+        try:
+            from datetime import date as _date
+            q = q.filter(HeAuditLog.fecha_labor >= _date.fromisoformat(fecha_desde))
+        except Exception:
+            pass
+    if fecha_hasta:
+        try:
+            from datetime import date as _date
+            q = q.filter(HeAuditLog.fecha_labor <= _date.fromisoformat(fecha_hasta))
+        except Exception:
+            pass
+    if usuario_nom:
+        q = q.filter(HeAuditLog.usuario_nom.ilike(f"%{usuario_nom}%"))
+
+    rows = q.order_by(HeAuditLog.fecha.desc()).limit(limit).all()
+    return jsonify([{
+        "id":           r.id,
+        "operacion":    r.operacion,
+        "registro_id":  r.registro_id,
+        "contrato":     r.contrato_nom or "",
+        "fecha_labor":  r.fecha_labor.isoformat() if r.fecha_labor else "",
+        "cedula":       r.cedula or "",
+        "nombre":       r.nombre or "",
+        "horas_rep":    float(r.horas_rep) if r.horas_rep is not None else None,
+        "id_concepto":  r.id_concepto or "",
+        "tipo_he":      r.tipo_he or "",
+        "estado_antes": r.estado_antes or "",
+        "estado_desp":  r.estado_desp or "",
+        "usuario":      r.usuario_nom or "",
+        "rol":          r.usuario_rol or "",
+        "ip":           r.ip or "",
+        "fecha":        r.fecha.strftime("%Y-%m-%d %H:%M:%S") if r.fecha else "",
+    } for r in rows])
 
 
 @admin_bp.route("/api/he/config", methods=["POST"])

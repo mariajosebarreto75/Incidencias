@@ -478,6 +478,7 @@ def api_he_guardar():
             lote_keys[k] = i
             registros_ok.append(r)
 
+    _audit_pendientes = []  # acumular logs para commit separado
     try:
         # Actualizar registros compensados (0 reportadas → actualizar compensadas)
         for reg_obj, datos in actualizaciones_comp:
@@ -486,8 +487,8 @@ def api_he_guardar():
             reg_obj.horas_reportadas  = 0
             if datos.get("observacion"):
                 reg_obj.observacion = str(datos["observacion"]).strip()
-            _audit("UPDATE", reg_obj, estado_antes=reg_obj.estado, estado_desp=reg_obj.estado,
-                   datos_antes=_datos_antes, datos_desp=reg_obj.to_dict())
+            _audit_pendientes.append(("UPDATE", reg_obj, reg_obj.estado, reg_obj.estado,
+                                      _datos_antes, reg_obj.to_dict()))
 
         if registros_ok:
             db.session.execute(db.insert(HoraExtra), registros_ok)
@@ -496,13 +497,21 @@ def api_he_guardar():
                 HoraExtra.reportado_por_id == current_user.id
             ).order_by(HoraExtra.id.desc()).limit(len(registros_ok)).all()
             for r in nuevos:
-                _audit("INSERT", r, estado_desp=r.estado, datos_desp=r.to_dict())
+                _audit_pendientes.append(("INSERT", r, None, r.estado, None, r.to_dict()))
 
         db.session.commit()
     except Exception as e:
         db.session.rollback()
         import traceback
         return jsonify({"ok": False, "msg": str(e), "trace": traceback.format_exc()}), 500
+
+    # Commit de auditoría separado: nunca debe revertir la operación principal
+    try:
+        for op, reg, ea, ed, da, dd in _audit_pendientes:
+            _audit(op, reg, estado_antes=ea, estado_desp=ed, datos_antes=da, datos_desp=dd)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     return jsonify({
         "ok": True,
@@ -692,11 +701,36 @@ def api_he_bulk_delete():
         if not ids:
             return jsonify({"ok": False, "msg": "No hay registros seleccionados"}), 400
     registros_a_eliminar = HoraExtra.query.filter(HoraExtra.id.in_(ids)).all()
-    for r in registros_a_eliminar:
-        _audit("DELETE", r, estado_antes=r.estado, datos_antes=r.to_dict())
+    _snapshots = [(r.estado, r.to_dict(), r.contrato_id, r.fecha_labor, r.cedula,
+                   r.horas_reportadas, r.id_concepto, r.tipo_he, r.nombre)
+                  for r in registros_a_eliminar]
     deleted = len(registros_a_eliminar)
     HoraExtra.query.filter(HoraExtra.id.in_(ids)).delete(synchronize_session=False)
     db.session.commit()
+    # Auditoría después del commit principal
+    try:
+        ip = request.remote_addr
+        for (estado, datos, cid, fl, ced, hrs, conc, tipo, nom) in _snapshots:
+            db.session.add(HeAuditLog(
+                operacion    = "DELETE",
+                contrato_id  = cid,
+                fecha_labor  = fl,
+                cedula       = ced,
+                nombre       = nom,
+                horas_rep    = hrs,
+                id_concepto  = conc,
+                tipo_he      = tipo,
+                estado_antes = estado,
+                datos_antes  = json.dumps(datos, default=str),
+                usuario_id   = current_user.id,
+                usuario_nom  = current_user.nombre_completo,
+                usuario_rol  = current_user.rol,
+                ip           = ip,
+                fecha        = datetime.utcnow(),
+            ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     return jsonify({"ok": True, "eliminados": deleted})
 
 

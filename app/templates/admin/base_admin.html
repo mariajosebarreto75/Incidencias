@@ -290,7 +290,7 @@
     </div>
 
     <!-- ── HORAS EXTRAS ── -->
-    {% set he_active = ep in ['he_bp.he_dashboard','admin_bp.he_dashboard_acceso','admin_bp.he_kpis','admin_bp.he_cortes','admin_bp.he_configuracion'] %}
+    {% set he_active = ep in ['he_bp.he_dashboard','admin_bp.he_dashboard_acceso','admin_bp.he_kpis','admin_bp.he_cortes','admin_bp.he_configuracion','admin_bp.he_auditoria'] %}
     <div class="sb-group">
       <div class="sb-group-hdr {% if he_active %}open{% endif %}" onclick="toggleGroup(this)">
         <i class="bi bi-clock-history sb-group-hdr-icon"></i>
@@ -317,6 +317,10 @@
         <a href="{{ url_for('admin_bp.he_configuracion') }}"
            class="adm-nav-link {% if ep == 'admin_bp.he_configuracion' %}active{% endif %}">
           <i class="bi bi-gear"></i> Configuración
+        </a>
+        <a href="{{ url_for('admin_bp.he_auditoria') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.he_auditoria' %}active{% endif %}">
+          <i class="bi bi-shield-check"></i> Auditoría
         </a>
       </div>
     </div>
