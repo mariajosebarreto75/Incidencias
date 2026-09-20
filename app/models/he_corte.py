@@ -27,7 +27,7 @@ class HeCorte(db.Model):
             "nombre":         self.nombre,
             "fecha_inicio":   self.fecha_inicio.isoformat() if self.fecha_inicio else "",
             "fecha_fin":      self.fecha_fin.isoformat() if self.fecha_fin else "",
-            "estado":         self.estado,
+            "estado":         self.estado or "ABIERTO",
             "contrato_id":    self.contrato_id,
             "contrato":       self.contrato.contrato if self.contrato else "Todos",
             "creado_por":     self.creado_por.nombre_completo if self.creado_por else "",
