@@ -89,7 +89,17 @@
                         <i class="bi bi-infinity me-1"></i>Todo
                     </a>
                 </div>
-                <div class="ms-auto">
+                <div class="ms-auto d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="abrirModalManual()">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar registro
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="document.getElementById('inputImportarExcel').click()">
+                        <i class="bi bi-upload me-1"></i>Importar Excel
+                    </button>
+                    <input type="file" id="inputImportarExcel" accept=".xlsx,.xls" style="display:none" onchange="importarExcel(this)">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="descargarPlantilla()">
+                        <i class="bi bi-file-earmark-arrow-down me-1"></i>Plantilla
+                    </button>
                     <button id="btnExportar" type="button" class="btn btn-sm btn-hesego-dark">
                         <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
                     </button>
@@ -108,6 +118,91 @@
         <div id="tablaDistribucion"></div>
     </div>
 
+</div>
+
+<!-- MODAL AGREGAR REGISTRO MANUAL -->
+<div class="modal fade" id="mdlManual" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-plus-circle me-2 text-success"></i>Agregar registro manual</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="alertManual"></div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Fecha <span class="text-danger">*</span></label>
+            <input type="date" id="mFecha" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Contrato <span class="text-danger">*</span></label>
+            <input type="text" id="mContrato" class="form-control form-control-sm" placeholder="Nombre del contrato">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Recurso (cuadrilla) <span class="text-danger">*</span></label>
+            <input type="text" id="mRecurso" class="form-control form-control-sm" placeholder="Ej: CUAD_001">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Sede</label>
+            <input type="text" id="mSede" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Placa</label>
+            <input type="text" id="mPlaca" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Orden de trabajo</label>
+            <input type="text" id="mOrden" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Tipo de actividad</label>
+            <input type="text" id="mTipoAct" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Tipo de cuadrilla</label>
+            <input type="text" id="mTipoCua" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small fw-semibold">Número celular</label>
+            <input type="text" id="mCelular" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Hora salida sede</label>
+            <input type="time" id="mHoraSalida" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Hora llegada sede</label>
+            <input type="time" id="mHoraLlegada" class="form-control form-control-sm">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label small fw-semibold">Duración actividad</label>
+            <input type="text" id="mDuracion" class="form-control form-control-sm" placeholder="Ej: 120 min">
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold">Cédulas del personal (1 a 5)</label>
+            <div class="d-flex gap-2 flex-wrap">
+              <input type="text" id="mCed1" class="form-control form-control-sm" placeholder="Cédula 1" style="max-width:160px;">
+              <input type="text" id="mCed2" class="form-control form-control-sm" placeholder="Cédula 2" style="max-width:160px;">
+              <input type="text" id="mCed3" class="form-control form-control-sm" placeholder="Cédula 3" style="max-width:160px;">
+              <input type="text" id="mCed4" class="form-control form-control-sm" placeholder="Cédula 4" style="max-width:160px;">
+              <input type="text" id="mCed5" class="form-control form-control-sm" placeholder="Cédula 5" style="max-width:160px;">
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label small fw-semibold">Observación</label>
+            <textarea id="mObs" class="form-control form-control-sm" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success btn-sm" onclick="guardarManual()">
+          <i class="bi bi-check-lg me-1"></i>Guardar registro
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- DATOS -->
@@ -199,6 +294,95 @@
         });
     });
 })();
+</script>
+
+<script>
+// ── AGREGAR REGISTRO MANUAL ──────────────────────────────────────────────────
+function abrirModalManual() {
+    document.getElementById('alertManual').innerHTML = '';
+    ['mFecha','mContrato','mRecurso','mSede','mPlaca','mOrden','mTipoAct','mTipoCua',
+     'mCelular','mHoraSalida','mHoraLlegada','mDuracion','mCed1','mCed2','mCed3','mCed4','mCed5','mObs']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    new bootstrap.Modal(document.getElementById('mdlManual')).show();
+}
+
+async function guardarManual() {
+    const alerta = document.getElementById('alertManual');
+    const payload = {
+        fecha:              document.getElementById('mFecha').value,
+        contrato:           document.getElementById('mContrato').value,
+        recurso:            document.getElementById('mRecurso').value,
+        sede:               document.getElementById('mSede').value,
+        placa:              document.getElementById('mPlaca').value,
+        orden_trabajo:      document.getElementById('mOrden').value,
+        tipo_actividad:     document.getElementById('mTipoAct').value,
+        tipo_cuadrilla:     document.getElementById('mTipoCua').value,
+        numero_celular:     document.getElementById('mCelular').value,
+        hora_salida_sede:   document.getElementById('mHoraSalida').value,
+        hora_llegada_sede:  document.getElementById('mHoraLlegada').value,
+        duracion_actividad: document.getElementById('mDuracion').value,
+        cedula_1: document.getElementById('mCed1').value,
+        cedula_2: document.getElementById('mCed2').value,
+        cedula_3: document.getElementById('mCed3').value,
+        cedula_4: document.getElementById('mCed4').value,
+        cedula_5: document.getElementById('mCed5').value,
+        observacion: document.getElementById('mObs').value,
+    };
+    if (!payload.fecha || !payload.contrato || !payload.recurso) {
+        alerta.innerHTML = '<div class="alert alert-warning alert-sm py-2">Fecha, contrato y recurso son obligatorios.</div>';
+        return;
+    }
+    const r = await fetch('/coordinador/distribucion-operativa/manual', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('mdlManual')).hide();
+        location.reload();
+    } else {
+        alerta.innerHTML = `<div class="alert alert-danger alert-sm py-2">${d.msg}</div>`;
+    }
+}
+
+// ── IMPORTAR EXCEL ────────────────────────────────────────────────────────────
+async function importarExcel(input) {
+    const archivo = input.files[0];
+    if (!archivo) return;
+    const fd = new FormData();
+    fd.append('archivo', archivo);
+    input.value = '';
+    const btn = document.querySelector('[onclick*="inputImportarExcel"]');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Importando...'; }
+    try {
+        const r = await fetch('/coordinador/distribucion-operativa/importar-excel', { method: 'POST', body: fd });
+        const d = await r.json();
+        if (d.ok) {
+            let msg = `✅ ${d.insertados} registro(s) importados.`;
+            if (d.errores && d.errores.length) msg += `\n⚠️ ${d.errores.length} fila(s) con errores:\n` + d.errores.join('\n');
+            alert(msg);
+            location.reload();
+        } else {
+            alert('Error: ' + d.msg);
+        }
+    } catch(e) {
+        alert('Error de red: ' + e);
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-upload me-1"></i>Importar Excel'; }
+    }
+}
+
+// ── DESCARGAR PLANTILLA ───────────────────────────────────────────────────────
+function descargarPlantilla() {
+    const cols = ['fecha','contrato','sede','recurso','placa','orden_trabajo','tipo_actividad',
+                  'tipo_cuadrilla','hora_salida_sede','hora_llegada_sede','cedula_1','cedula_2',
+                  'cedula_3','cedula_4','cedula_5','numero_celular','duracion_actividad','observacion'];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([cols, cols.map(() => '')]);
+    XLSX.utils.book_append_sheet(wb, ws, 'distribucion');
+    XLSX.writeFile(wb, 'plantilla_distribucion_operativa.xlsx');
+}
 </script>
 
 {% endblock %}

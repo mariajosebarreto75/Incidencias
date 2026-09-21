@@ -868,3 +868,158 @@ def ver_evidencia_coor(ruta):
 
     ruta_abs = os.path.join(current_app.root_path, ruta)
     return send_from_directory(os.path.dirname(ruta_abs), os.path.basename(ruta_abs))
+
+
+# =====================================
+# DISTRIBUCIÓN OPERATIVA — CRUD MANUAL
+# =====================================
+
+@coordinador.route("/coordinador/distribucion-operativa/manual", methods=["POST"])
+@login_required
+def distribucion_manual_crear():
+    """Crea un registro manual en distribución operativa."""
+    d = request.get_json(silent=True) or {}
+    try:
+        from datetime import datetime as _dt, time as _time
+        def _t(v):
+            if not v:
+                return None
+            try:
+                parts = str(v).strip().split(":")
+                return _time(int(parts[0]), int(parts[1]))
+            except Exception:
+                return None
+
+        reg = DistribucionOperativa(
+            fecha              = _dt.strptime(d["fecha"], "%Y-%m-%d").date() if d.get("fecha") else None,
+            contrato           = str(d.get("contrato") or "").strip() or None,
+            sede               = str(d.get("sede") or "").strip() or None,
+            recurso            = str(d.get("recurso") or "").strip() or None,
+            placa              = str(d.get("placa") or "").strip() or None,
+            orden_trabajo      = str(d.get("orden_trabajo") or "").strip() or None,
+            tipo_actividad     = str(d.get("tipo_actividad") or "").strip() or None,
+            tipo_cuadrilla     = str(d.get("tipo_cuadrilla") or "").strip() or None,
+            hora_salida_sede   = _t(d.get("hora_salida_sede")),
+            hora_llegada_sede  = _t(d.get("hora_llegada_sede")),
+            cedula_1           = str(d.get("cedula_1") or "").strip() or None,
+            cedula_2           = str(d.get("cedula_2") or "").strip() or None,
+            cedula_3           = str(d.get("cedula_3") or "").strip() or None,
+            cedula_4           = str(d.get("cedula_4") or "").strip() or None,
+            cedula_5           = str(d.get("cedula_5") or "").strip() or None,
+            numero_celular     = str(d.get("numero_celular") or "").strip() or None,
+            duracion_actividad = str(d.get("duracion_actividad") or "").strip() or None,
+            observacion        = str(d.get("observacion") or "").strip() or None,
+            origen             = "manual",
+        )
+        if not reg.fecha or not reg.contrato or not reg.recurso:
+            return jsonify({"ok": False, "msg": "Fecha, contrato y recurso son obligatorios"}), 422
+        db.session.add(reg)
+        db.session.commit()
+        return jsonify({"ok": True, "id": reg.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"ok": False, "msg": str(e)}), 500
+
+
+@coordinador.route("/coordinador/distribucion-operativa/manual/<int:rid>", methods=["DELETE"])
+@login_required
+def distribucion_manual_eliminar(rid):
+    """Elimina un registro manual (solo origen=manual)."""
+    reg = DistribucionOperativa.query.get_or_404(rid)
+    if reg.origen == "gps_monitor":
+        return jsonify({"ok": False, "msg": "No se pueden eliminar registros de GPS Monitor"}), 403
+    db.session.delete(reg)
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
+@coordinador.route("/coordinador/distribucion-operativa/importar-excel", methods=["POST"])
+@login_required
+def distribucion_importar_excel():
+    """Importa registros desde un Excel con las columnas del modelo."""
+    import pandas as pd
+    from datetime import datetime as _dt
+
+    f = request.files.get("archivo")
+    if not f:
+        return jsonify({"ok": False, "msg": "No se recibió archivo"}), 400
+    try:
+        df = pd.read_excel(f, dtype=str)
+        df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
+    except Exception as e:
+        return jsonify({"ok": False, "msg": f"Error leyendo Excel: {e}"}), 400
+
+    cols_req = {"fecha", "contrato", "recurso"}
+    if not cols_req.issubset(set(df.columns)):
+        faltantes = cols_req - set(df.columns)
+        return jsonify({"ok": False, "msg": f"Columnas faltantes: {', '.join(faltantes)}"}), 422
+
+    def _s(row, col):
+        v = row.get(col, "")
+        if v is None or str(v).strip().lower() in ("", "nan", "none"):
+            return None
+        return str(v).strip()
+
+    def _t(v):
+        if not v:
+            return None
+        try:
+            from datetime import time as _time
+            parts = str(v).strip().split(":")
+            return _time(int(parts[0]), int(parts[1]))
+        except Exception:
+            return None
+
+    insertados = 0
+    errores = []
+    for i, row in df.iterrows():
+        fila = i + 2
+        try:
+            fecha_str = _s(row, "fecha")
+            if not fecha_str:
+                errores.append(f"Fila {fila}: fecha vacía"); continue
+            try:
+                fecha = _dt.strptime(fecha_str[:10], "%Y-%m-%d").date()
+            except Exception:
+                try:
+                    fecha = _dt.strptime(fecha_str[:10], "%d/%m/%Y").date()
+                except Exception:
+                    errores.append(f"Fila {fila}: fecha inválida '{fecha_str}'"); continue
+
+            contrato = _s(row, "contrato")
+            recurso  = _s(row, "recurso")
+            if not contrato or not recurso:
+                errores.append(f"Fila {fila}: contrato o recurso vacío"); continue
+
+            db.session.add(DistribucionOperativa(
+                fecha              = fecha,
+                contrato           = contrato,
+                sede               = _s(row, "sede"),
+                recurso            = recurso,
+                placa              = _s(row, "placa"),
+                orden_trabajo      = _s(row, "orden_trabajo"),
+                tipo_actividad     = _s(row, "tipo_actividad"),
+                tipo_cuadrilla     = _s(row, "tipo_cuadrilla"),
+                hora_salida_sede   = _t(_s(row, "hora_salida_sede")),
+                hora_llegada_sede  = _t(_s(row, "hora_llegada_sede")),
+                cedula_1           = _s(row, "cedula_1"),
+                cedula_2           = _s(row, "cedula_2"),
+                cedula_3           = _s(row, "cedula_3"),
+                cedula_4           = _s(row, "cedula_4"),
+                cedula_5           = _s(row, "cedula_5"),
+                numero_celular     = _s(row, "numero_celular"),
+                duracion_actividad = _s(row, "duracion_actividad"),
+                observacion        = _s(row, "observacion"),
+                origen             = "manual",
+            ))
+            insertados += 1
+        except Exception as e:
+            errores.append(f"Fila {fila}: {e}")
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"ok": False, "msg": str(e)}), 500
+
+    return jsonify({"ok": True, "insertados": insertados, "errores": errores})
