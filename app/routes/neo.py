@@ -1361,6 +1361,26 @@ def neo_distribucion_importar_excel():
     except Exception as e:
         return jsonify({"ok": False, "error": f"Error leyendo Excel: {e}"}), 400
 
+    # Alias: columnas del otro programador → campos del modelo
+    _alias = {
+        "recurso-cuadrilla":   "recurso",
+        "tipobrigada":         "tipo_cuadrilla",
+        "placa_vehiculo":      "placa",
+        "punto_salida":        "hora_salida_sede",
+        "hora_llegada_sede":   "hora_llegada_sede",
+        "persona_#1":          "cedula_1",
+        "persona_#2":          "cedula_2",
+        "persona_#3":          "cedula_3",
+        "persona_#4":          "cedula_4",
+        "persona_#5":          "cedula_5",
+        "orden_de_trabajo":    "orden_trabajo",
+        "tipo_actividad":      "tipo_actividad",
+        "duración_actividad":  "duracion_actividad",
+        "duracion_actividad":  "duracion_actividad",
+        "observación":         "observacion",
+    }
+    df.rename(columns=_alias, inplace=True)
+
     cols_req = {"fecha", "contrato", "recurso"}
     if not cols_req.issubset(set(df.columns)):
         faltantes = cols_req - set(df.columns)
@@ -1420,6 +1440,8 @@ def neo_distribucion_importar_excel():
                 cedula_4           = _s(row, "cedula_4"),
                 cedula_5           = _s(row, "cedula_5"),
                 numero_celular     = _s(row, "numero_celular"),
+                latitud            = _s(row, "latitud"),
+                longitud           = _s(row, "longitud"),
                 duracion_actividad = _s(row, "duracion_actividad"),
                 observacion        = _s(row, "observacion"),
                 origen             = "manual",

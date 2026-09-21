@@ -452,11 +452,13 @@ function importarExcel(input) {
 }
 
 function descargarPlantilla() {
-    const cols = ['fecha','contrato','sede','recurso','placa','orden_trabajo',
-                  'tipo_actividad','tipo_cuadrilla','hora_salida_sede','hora_llegada_sede',
-                  'cedula_1','cedula_2','cedula_3','cedula_4','cedula_5',
-                  'numero_celular','duracion_actividad','observacion'];
+    const cols = ['Contrato','SEDE','FECHA','ORDEN DE TRABAJO','TIPO ACTIVIDAD',
+                  'RECURSO-CUADRILLA','TIPOBRIGADA','PLACA VEHICULO',
+                  'PUNTO SALIDA','HORA LLEGADA SEDE',
+                  'PERSONA #1','PERSONA #2','PERSONA #3','PERSONA #4','PERSONA #5',
+                  'LATITUD','LONGITUD','DURACION ACTIVIDAD','OBSERVACION'];
     const ws = XLSX.utils.aoa_to_sheet([cols]);
+    ws['!cols'] = cols.map(() => ({ wch: 20 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Distribución');
     XLSX.writeFile(wb, 'plantilla_distribucion.xlsx');
