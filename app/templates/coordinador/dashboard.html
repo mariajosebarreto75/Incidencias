@@ -215,7 +215,7 @@
         {% endif %}
 
         <!-- ARCHIVO DE SEGUIMIENTO -->
-        {% if current_user.rol.lower() != 'supervisor' %}
+        {% if current_user.tiene_permiso('bi_seguimiento') %}
         <div class="col-sm-6 col-lg-4">
             <a href="{{ url_for('coordinador.bi_seguimiento') }}" class="text-decoration-none">
                 <div class="dash-card dash-card--seguimiento dash-card--sm">
@@ -236,6 +236,7 @@
         {% endif %}
 
         <!-- INSPECCIONES (Power BI) -->
+        {% if current_user.tiene_permiso('bi_inspecciones') %}
         <div class="col-sm-6 col-lg-4">
             <a href="https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9"
                target="_blank" class="text-decoration-none">
@@ -254,6 +255,7 @@
                 </div>
             </a>
         </div>
+        {% endif %}
 
         <!-- AGENDA DE COMPROMISOS -->
         {% if current_user.rol.lower() != 'supervisor' %}

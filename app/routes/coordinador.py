@@ -865,6 +865,8 @@ def semaforo_dashboard():
 @coordinador.route("/coordinador/bi-seguimiento")
 @login_required
 def bi_seguimiento():
+    if not current_user.tiene_permiso("bi_seguimiento"):
+        return redirect(url_for("coordinador.dashboard_coordinador"))
     return render_template("coordinador/bi_seguimiento.html")
 
 
