@@ -217,10 +217,9 @@
         <!-- ARCHIVO DE SEGUIMIENTO -->
         {% if current_user.rol.lower() != 'supervisor' %}
         <div class="col-sm-6 col-lg-4">
-            <a href="https://informesseguimientos.infinityfreeapp.com/dashboard.php"
-               target="_blank" class="text-decoration-none">
+            <a href="{{ url_for('coordinador.bi_seguimiento') }}" class="text-decoration-none">
                 <div class="dash-card dash-card--seguimiento dash-card--sm">
-                    <span class="dash-ext-badge"><i class="bi bi-box-arrow-up-right me-1"></i>Enlace externo</span>
+                    <span class="dash-ext-badge"><i class="bi bi-bar-chart-fill me-1"></i>Power BI</span>
                     <div class="dash-card-icon dash-card-icon--seguimiento dash-card-icon--sm">
                         <i class="bi bi-folder2-open"></i>
                     </div>
@@ -229,7 +228,7 @@
                         Acceda al sistema de seguimiento e informes operacionales.
                     </p>
                     <span class="dash-card-btn dash-card-btn--seguimiento">
-                        <i class="bi bi-box-arrow-up-right me-1"></i>Abrir
+                        <i class="bi bi-bar-chart-fill me-1"></i>Ver informe
                     </span>
                 </div>
             </a>

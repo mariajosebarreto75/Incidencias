@@ -862,6 +862,12 @@ def semaforo_dashboard():
     return render_template("coordinador/semaforo_dashboard.html")
 
 
+@coordinador.route("/coordinador/bi-seguimiento")
+@login_required
+def bi_seguimiento():
+    return render_template("coordinador/bi_seguimiento.html")
+
+
 @coordinador.route("/coordinador/evidencia-coor/<path:ruta>")
 @login_required
 def ver_evidencia_coor(ruta):
