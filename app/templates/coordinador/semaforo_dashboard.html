@@ -245,7 +245,11 @@ body { background: #f1f5f9 !important; }
     max-width: 140px;
     white-space: normal;
     border-right: 2px solid #e2e8f0;
+    transition: background .15s;
 }
+.sd-table tbody td.td-coor:hover { background: #f0f9ff !important; }
+.sd-coor-txt { display:block; }
+.sd-coor-vacio { color:#cbd5e1; font-style:italic; font-size:.68rem; }
 
 /* Chips de estado */
 .sd-cell {
@@ -525,23 +529,19 @@ function renderizar() {
     document.getElementById('kAmbarPct').textContent=`${((ca/tot)*100).toFixed(0)}% del total`;
     document.getElementById('kNd').textContent=nd;
 
-    // Encabezados
+    // Encabezados — orden: Distribución → Preoperacional → Archivos → HE
     const N=_fechas.length;
     let h1=`<tr class="tr-cat">
         <th class="th-info" rowspan="2" style="min-width:210px;border-bottom:2px solid #e2e8f0;">Contrato</th>
         <th style="text-align:left;background:#fff;min-width:140px;border-right:2px solid #e2e8f0;border-bottom:2px solid #e2e8f0;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;padding:11px 10px 8px;" rowspan="2">Coordinador</th>
         <th class="th-cat-distrib" colspan="${N}">🕐 Distribución Operativa</th>
-        <th class="th-cat-archivos sep-l" colspan="${N}">📁 Archivos (Eq / Ing / Per)</th>
         <th class="th-cat-preop   sep-l"  colspan="${N}">📋 Preoperacional</th>
+        <th class="th-cat-archivos sep-l" colspan="${N}">📁 Archivos (Eq / Ing / Per)</th>
         <th class="th-cat-he      sep-l"  colspan="${N}">⏱ Horas Extras</th>
         <th class="th-cat-resumen sep-l"  colspan="2">Resultado</th>
     </tr>`;
 
     let h2=`<tr class="tr-fechas">`;
-    const grupos=[
-        {sep:false},{sep:true},{sep:true},{sep:true}
-    ];
-    const names=["archivos","distrib","preop","he"];
     for(let g=0;g<4;g++){
         _fechas.forEach((f,i)=>{
             const fds=esFinDeSemana(f);
@@ -589,7 +589,8 @@ function renderizar() {
             const h=colorHE(rec?.he_valor);
             tdHE+=mkCell(h,fds,i===0);
 
-            for(const c of[worst,d,p,h]){if(c==='cv')cv2++;else if(c==='cr')cr2++;else if(c==='ca')ca2++;}
+            // orden nuevo: distrib, preop, arch, he
+            for(const c of[d,p,worst,h]){if(c==='cv')cv2++;else if(c==='cr')cr2++;else if(c==='ca')ca2++;}
         });
 
         const tot2=cv2+cr2+ca2;
@@ -598,15 +599,50 @@ function renderizar() {
         const pctTxt=pct===null?'N/D':pct+'%';
         const estadoTxt=pct===null?'—':pct>=80?'✔ Bien':pct>=50?'⚠ Regular':'✖ Crítico';
 
-        html+=`<tr data-search="${(row.contrato+' '+row.coordinador+' '+row.director).toLowerCase()}">
+        const coorTxt = row.coordinador
+            ? `<span class="sd-coor-txt" title="Clic para editar">${row.coordinador}</span>`
+            : `<span class="sd-coor-txt sd-coor-vacio" title="Clic para asignar coordinador">Sin asignar</span>`;
+
+        html+=`<tr data-search="${(row.contrato+' '+(row.coordinador||'')+' '+row.director).toLowerCase()}">
             <td class="td-contrato">${row.contrato}</td>
-            <td class="td-coor">${row.coordinador||'<span style="color:#cbd5e1;font-style:italic;font-size:.7rem;">Sin asignar</span>'}</td>
-            ${tdDistrib}${tdArch}${tdPreop}${tdHE}
+            <td class="td-coor" onclick="editarCoor(this,${row.contrato_id})" title="Clic para editar coordinador" style="cursor:pointer">
+                ${coorTxt}
+            </td>
+            ${tdDistrib}${tdPreop}${tdArch}${tdHE}
             <td class="sep-l"><span class="sd-pct ${pctCls}">${pctTxt}</span></td>
             <td><span class="sd-pct ${pctCls}">${estadoTxt}</span></td>
         </tr>`;
     }
     document.getElementById('sdTbody').innerHTML=html;
+}
+
+function editarCoor(td, contratoId) {
+    if(td.querySelector('input')) return;
+    const spanActual = td.querySelector('.sd-coor-txt');
+    const valActual = spanActual && !spanActual.classList.contains('sd-coor-vacio') ? spanActual.textContent.trim() : '';
+    td.innerHTML = `<input type="text" value="${valActual}" placeholder="Nombre coordinador"
+        style="width:100%;border:1.5px solid #2563eb;border-radius:6px;padding:4px 7px;font-size:.78rem;outline:none;"
+        onblur="guardarCoor(this,${contratoId})"
+        onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur();}">`;
+    td.querySelector('input').focus();
+}
+
+async function guardarCoor(input, contratoId) {
+    if(input.dataset.cancel) { cargar(); return; }
+    const val = input.value.trim();
+    try {
+        const r = await fetch('/admin/api/semaforo/coordinador', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({contrato_id: contratoId, coordinador: val})
+        });
+        const d = await r.json();
+        if(!d.ok) throw new Error(d.msg);
+        // Actualizar dato local
+        const row = _datos.find(x=>x.contrato_id===contratoId);
+        if(row) row.coordinador = d.coordinador;
+    } catch(e) { console.error(e); }
+    cargar();
 }
 
 function filtrarTabla(txt) {

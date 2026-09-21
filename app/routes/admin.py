@@ -2211,30 +2211,13 @@ def api_semaforo_dashboard():
         SemaforoCalificacion.contrato_id.in_(contrato_ids)
     ).order_by(SemaforoCalificacion.fecha).all()
 
-    # Construir mapa contrato_nombre → lista de coordinadores (via UserContrato + User)
-    # UserContrato.contrato es el nombre completo del contrato
-    contrato_nombres = [c.contrato for c in contratos]
-    uc_filas = UserContrato.query.filter(UserContrato.contrato.in_(contrato_nombres)).all()
-    user_ids_uc = list({uc.user_id for uc in uc_filas})
-    users_map = {u.id: u for u in User.query.filter(User.id.in_(user_ids_uc)).all()} if user_ids_uc else {}
-
-    coors_por_contrato = {}  # contrato_nombre → "Nombre1, Nombre2"
-    for uc in uc_filas:
-        u = users_map.get(uc.user_id)
-        if not u:
-            continue
-        nombre = u.nombre_completo or u.username
-        coors_por_contrato.setdefault(uc.contrato, []).append(nombre)
-    coors_por_contrato = {k: ", ".join(v) for k, v in coors_por_contrato.items()}
-
     # Agrupar por contrato
     data = {}
     for c in contratos:
-        coor = coors_por_contrato.get(c.contrato) or c.coordinador or ""
         data[c.id] = {
             "contrato_id": c.id,
             "contrato": c.contrato,
-            "coordinador": coor,
+            "coordinador": c.coordinador or "",
             "director": c.director or "",
             "dias": {}
         }
@@ -2243,6 +2226,21 @@ def api_semaforo_dashboard():
             data[r.contrato_id]["dias"][str(r.fecha)] = r.to_dict()
 
     return jsonify({"ok": True, "contratos": list(data.values())})
+
+
+@admin_bp.route("/api/semaforo/coordinador", methods=["POST"])
+@login_required
+def api_semaforo_set_coordinador():
+    """Asigna un coordinador (texto) a un contrato desde el dashboard semáforo."""
+    d = request.get_json(silent=True) or {}
+    contrato_id = d.get("contrato_id")
+    coordinador = str(d.get("coordinador") or "").strip()
+    if not contrato_id:
+        return jsonify({"ok": False, "msg": "contrato_id requerido"}), 400
+    c = Contrato.query.get_or_404(contrato_id)
+    c.coordinador = coordinador or None
+    db.session.commit()
+    return jsonify({"ok": True, "coordinador": c.coordinador or ""})
 
 
 # ============================================================
