@@ -23,6 +23,19 @@ function limpiarCamposAuto() {
     }
     const badge = document.getElementById("placaBadge");
     if (badge) { badge.textContent = "Auto"; badge.style.background = ""; badge.style.color = ""; }
+    _resetTipoCuadrillaAuto();
+}
+
+function _resetTipoCuadrillaAuto() {
+    const tcEl = document.getElementById("tipo_cuadrilla");
+    const tcBadge = document.getElementById("tipoCuadrillaBadge");
+    if (tcEl) {
+        tcEl.readOnly    = true;
+        tcEl.placeholder = "Automático";
+        tcEl.style.background = "";
+        tcEl.style.border = "";
+    }
+    if (tcBadge) { tcBadge.textContent = "Auto"; tcBadge.style.background = ""; tcBadge.style.color = ""; }
 }
 
 function limpiarContrato() {
@@ -245,6 +258,23 @@ document.getElementById("orden_trabajo")
         setField("tipo_actividad", esNA ? "" : tipoAct);
         setField("tipo_cuadrilla", opt.dataset.tipoCuadrilla || "");
         setField("meta",           opt.dataset.meta           || "");
+
+        // Cuando OT es NA y no hay tipo_cuadrilla automático, habilitar entrada manual
+        const tcEl    = document.getElementById("tipo_cuadrilla");
+        const tcBadge = document.getElementById("tipoCuadrillaBadge");
+        if (esNA && !(opt.dataset.tipoCuadrilla || "").trim()) {
+            if (tcEl) {
+                tcEl.readOnly    = false;
+                tcEl.placeholder = "Ingrese tipo de cuadrilla manualmente";
+                tcEl.style.background = "#fffbe6";
+                tcEl.style.border = "1.5px solid #f5a623";
+                tcEl.focus();
+            }
+            if (tcBadge) { tcBadge.textContent = "Manual"; tcBadge.style.background = "#f5a623"; tcBadge.style.color = "#fff"; }
+        } else {
+            _resetTipoCuadrillaAuto();
+        }
+
         // Si es SEDE + Salida tardía, la meta se calcula con los campos de SEDE
         if (typeof _calcularMetaSede === "function") _calcularMetaSede();
 
@@ -267,6 +297,33 @@ document.getElementById("orden_trabajo")
             if (badge) { badge.textContent = "Auto"; badge.style.background = ""; badge.style.color = ""; }
         }
     });
+
+// Buscar meta al escribir tipo_cuadrilla manualmente (debounced)
+(function () {
+    const tcEl = document.getElementById("tipo_cuadrilla");
+    if (!tcEl) return;
+    let _tcTimer = null;
+    tcEl.addEventListener("input", function () {
+        clearTimeout(_tcTimer);
+        const val = this.value.trim();
+        if (!val || this.readOnly) return;
+        _tcTimer = setTimeout(async function () {
+            const contrato = document.getElementById("contrato").value;
+            if (!contrato) return;
+            try {
+                const params = new URLSearchParams({ contrato, tipo_cuadrilla: val });
+                const resp   = await fetch("/neo/meta-cuadrilla?" + params);
+                const datos  = await resp.json();
+                if (datos.success) {
+                    setField("meta", datos.meta);
+                    determinarImpacto();
+                } else {
+                    setField("meta", "");
+                }
+            } catch (e) { /* silencioso */ }
+        }, 600);
+    });
+})();
 
 // =====================================
 // CONTADOR DE CARACTERES

@@ -790,6 +790,27 @@ def datos_operativos():
 
 
 # =====================================
+# META POR TIPO CUADRILLA (manual)
+# =====================================
+
+@neo.route("/neo/meta-cuadrilla")
+@login_required
+def meta_cuadrilla():
+    contrato      = request.args.get("contrato",      "").strip()
+    tipo_cuadrilla = request.args.get("tipo_cuadrilla", "").strip()
+    if not contrato or not tipo_cuadrilla:
+        return jsonify({"success": False, "meta": ""})
+    meta_obj = MetaOperativa.query.filter(
+        MetaOperativa.contrato == contrato,
+        MetaOperativa.Tipo_cuadrilla.ilike(tipo_cuadrilla)
+    ).first()
+    if meta_obj:
+        meta_valor = "{:,.0f}".format(meta_obj.Meta_Produccion).replace(",", ".")
+        return jsonify({"success": True, "meta": meta_valor})
+    return jsonify({"success": False, "meta": ""})
+
+
+# =====================================
 # SUBIR EVIDENCIA
 # =====================================
 
