@@ -454,7 +454,9 @@ function determinarImpacto() {
     if (impacto === "Bajo")  impactoEl.classList.add("impacto-bajo");
 
     // Afectación económica: Meta / 7 * duración_en_minutos
-    const meta  = parseFloat(document.getElementById("meta")?.value || 0) || 0;
+    // La meta viene formateada con puntos de miles (ej "2.930"), hay que limpiarlos
+    const metaStr = (document.getElementById("meta")?.value || "").replace(/\./g, "").replace(",", ".");
+    const meta  = parseFloat(metaStr) || 0;
     const afEl  = document.getElementById("afectacion");
     if (afEl) afEl.value = meta > 0 ? ((meta / 7) * duracionMin).toFixed(2) : "";
 
