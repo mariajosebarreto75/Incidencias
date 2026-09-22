@@ -786,29 +786,14 @@ def datos_operativos():
             "meta":           meta_valor
         })
 
-    return jsonify({"success": True, "ordenes": ordenes})
+    # Precargar todas las metas del contrato para lookup client-side
+    todas_metas = MetaOperativa.query.filter_by(contrato=contrato).all()
+    metas_map = {
+        m.Tipo_cuadrilla.strip().lower(): "{:,.0f}".format(m.Meta_Produccion).replace(",", ".")
+        for m in todas_metas if m.Tipo_cuadrilla
+    }
 
-
-# =====================================
-# META POR TIPO CUADRILLA (manual)
-# =====================================
-
-@neo.route("/neo/meta-cuadrilla", methods=["POST"])
-@login_required
-def meta_cuadrilla():
-    d = request.get_json(silent=True) or {}
-    contrato       = str(d.get("contrato",       "") or "").strip()
-    tipo_cuadrilla = str(d.get("tipo_cuadrilla", "") or "").strip()
-    if not contrato or not tipo_cuadrilla:
-        return jsonify({"success": False, "meta": ""})
-    meta_obj = MetaOperativa.query.filter(
-        MetaOperativa.contrato == contrato,
-        MetaOperativa.Tipo_cuadrilla.ilike(tipo_cuadrilla)
-    ).first()
-    if meta_obj:
-        meta_valor = "{:,.0f}".format(meta_obj.Meta_Produccion).replace(",", ".")
-        return jsonify({"success": True, "meta": meta_valor})
-    return jsonify({"success": False, "meta": ""})
+    return jsonify({"success": True, "ordenes": ordenes, "metas": metas_map})
 
 
 # =====================================

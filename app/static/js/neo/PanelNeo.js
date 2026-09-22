@@ -181,6 +181,9 @@ async function cargarDatosOperativos() {
 
         limpiarAlerta();
 
+        // Guardar metas del contrato para lookup manual de tipo_cuadrilla
+        window._metasContrato = datos.metas || {};
+
         const selOrden = document.getElementById("orden_trabajo");
         selOrden.innerHTML = '<option value="">— Seleccione una orden —</option>';
 
@@ -298,33 +301,17 @@ document.getElementById("orden_trabajo")
         }
     });
 
-// Buscar meta al escribir tipo_cuadrilla manualmente (debounced)
+// Buscar meta al escribir tipo_cuadrilla manualmente (lookup local)
 (function () {
     const tcEl = document.getElementById("tipo_cuadrilla");
     if (!tcEl) return;
-    let _tcTimer = null;
     tcEl.addEventListener("input", function () {
-        clearTimeout(_tcTimer);
-        const val = this.value.trim();
-        if (!val || this.readOnly) return;
-        _tcTimer = setTimeout(async function () {
-            const contrato = document.getElementById("contrato").value;
-            if (!contrato) return;
-            try {
-                const resp = await fetch("/neo/meta-cuadrilla", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contrato, tipo_cuadrilla: val })
-                });
-                const datos = await resp.json();
-                if (datos.success) {
-                    setField("meta", datos.meta);
-                    determinarImpacto();
-                } else {
-                    setField("meta", "");
-                }
-            } catch (e) { /* silencioso */ }
-        }, 600);
+        if (this.readOnly) return;
+        const val = this.value.trim().toLowerCase();
+        const metas = window._metasContrato || {};
+        const meta = metas[val] || "";
+        setField("meta", meta);
+        determinarImpacto();
     });
 })();
 
