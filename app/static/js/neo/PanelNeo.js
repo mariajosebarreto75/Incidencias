@@ -311,9 +311,12 @@ document.getElementById("orden_trabajo")
             const contrato = document.getElementById("contrato").value;
             if (!contrato) return;
             try {
-                const params = new URLSearchParams({ contrato, tipo_cuadrilla: val });
-                const resp   = await fetch("/neo/meta-cuadrilla?" + params);
-                const datos  = await resp.json();
+                const resp = await fetch("/neo/meta-cuadrilla", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contrato, tipo_cuadrilla: val })
+                });
+                const datos = await resp.json();
                 if (datos.success) {
                     setField("meta", datos.meta);
                     determinarImpacto();

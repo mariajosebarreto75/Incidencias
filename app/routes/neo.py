@@ -793,11 +793,12 @@ def datos_operativos():
 # META POR TIPO CUADRILLA (manual)
 # =====================================
 
-@neo.route("/neo/meta-cuadrilla")
+@neo.route("/neo/meta-cuadrilla", methods=["POST"])
 @login_required
 def meta_cuadrilla():
-    contrato      = request.args.get("contrato",      "").strip()
-    tipo_cuadrilla = request.args.get("tipo_cuadrilla", "").strip()
+    d = request.get_json(silent=True) or {}
+    contrato       = str(d.get("contrato",       "") or "").strip()
+    tipo_cuadrilla = str(d.get("tipo_cuadrilla", "") or "").strip()
     if not contrato or not tipo_cuadrilla:
         return jsonify({"success": False, "meta": ""})
     meta_obj = MetaOperativa.query.filter(
