@@ -535,3 +535,128 @@ def exportar_excel():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=compromisos.xlsx"},
     )
+
+
+# ── IMPORTAR EXCEL ─────────────────────────────────────────────────────────────
+
+@compromisos_bp.route("/importar-excel", methods=["POST"])
+@login_required
+def importar_excel():
+    if not _es_neo():
+        abort(403)
+    try:
+        import pandas as pd
+    except ImportError:
+        return jsonify({"ok": False, "error": "pandas no disponible"}), 500
+
+    archivo = request.files.get("archivo")
+    if not archivo or not archivo.filename.endswith((".xlsx", ".xls")):
+        return jsonify({"ok": False, "error": "Archivo inválido. Use .xlsx o .xls"}), 400
+
+    try:
+        df = pd.read_excel(archivo)
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"No se pudo leer el archivo: {e}"}), 400
+
+    # Normalizar nombres de columna
+    df.columns = [str(c).strip() for c in df.columns]
+    _alias = {
+        "fecha creación":         "fecha_creacion",
+        "fecha creacion":         "fecha_creacion",
+        "contrato":               "contrato",
+        "responsable":            "responsable",
+        "compromiso":             "compromiso",
+        "fecha entrega (acordada)": "fecha_entrega",
+        "fecha entrega acordada": "fecha_entrega",
+        "fecha entrega":          "fecha_entrega",
+        "estado":                 "estado",
+        "reprogramaciones":       "cantidad_reprogramaciones",
+        "fecha cierre (real)":    "fecha_entrega_real",
+        "fecha cierre real":      "fecha_entrega_real",
+        "evidencia (url)":        "evidencia_path",
+        "evidencia url":          "evidencia_path",
+        "atrasado":               "_ignorar",
+        "observación general":    "observacion_general",
+        "observacion general":    "observacion_general",
+    }
+    df.rename(columns={c: _alias.get(c.lower(), c.lower()) for c in df.columns}, inplace=True)
+
+    requeridas = {"contrato", "responsable", "compromiso", "fecha_entrega"}
+    faltantes = requeridas - set(df.columns)
+    if faltantes:
+        return jsonify({"ok": False, "error": f"Columnas faltantes: {', '.join(faltantes)}"}), 400
+
+    # Índice de contratos disponibles para el usuario
+    contratos_obj = _contratos_usuario()
+    contratos_map = {c.contrato.strip().lower(): c for c in contratos_obj}
+
+    insertados = 0
+    errores = []
+
+    def _parse_date(val):
+        if pd.isna(val) or val == "":
+            return None
+        if hasattr(val, "date"):
+            return val.date()
+        try:
+            return pd.to_datetime(str(val), dayfirst=True).date()
+        except Exception:
+            return None
+
+    for i, row in df.iterrows():
+        fila = i + 2  # número de fila Excel (1-indexed + cabecera)
+        contrato_nombre = str(row.get("contrato", "") or "").strip()
+        contrato_obj = contratos_map.get(contrato_nombre.lower())
+        if not contrato_obj:
+            errores.append(f"Fila {fila}: contrato '{contrato_nombre}' no encontrado")
+            continue
+
+        responsable = str(row.get("responsable", "") or "").strip()
+        compromiso_txt = str(row.get("compromiso", "") or "").strip()
+        if not responsable or not compromiso_txt:
+            errores.append(f"Fila {fila}: responsable o compromiso vacío")
+            continue
+
+        fecha_entrega = _parse_date(row.get("fecha_entrega"))
+        if not fecha_entrega:
+            errores.append(f"Fila {fila}: fecha_entrega inválida")
+            continue
+
+        fecha_creacion = _parse_date(row.get("fecha_creacion")) or date.today()
+        fecha_real     = _parse_date(row.get("fecha_entrega_real"))
+
+        estado = str(row.get("estado", "") or "Pendiente").strip()
+        if estado not in ("Pendiente", "En proceso", "Cerrado"):
+            estado = "Pendiente"
+
+        try:
+            reprog = int(row.get("cantidad_reprogramaciones") or 0)
+        except (ValueError, TypeError):
+            reprog = 0
+
+        evidencia = str(row.get("evidencia_path", "") or "").strip() or None
+        observacion = str(row.get("observacion_general", "") or "").strip() or None
+
+        c = Compromiso(
+            contrato_id=contrato_obj.id,
+            responsable=responsable,
+            compromiso=compromiso_txt,
+            fecha_creacion=fecha_creacion,
+            fecha_entrega=fecha_entrega,
+            fecha_entrega_real=fecha_real,
+            estado=estado,
+            cantidad_reprogramaciones=reprog,
+            evidencia_path=evidencia,
+            observacion_general=observacion,
+        )
+        db.session.add(c)
+        insertados += 1
+
+    if insertados:
+        db.session.commit()
+
+    return jsonify({
+        "ok": True,
+        "insertados": insertados,
+        "errores": errores,
+    })

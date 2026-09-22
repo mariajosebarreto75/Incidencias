@@ -769,6 +769,12 @@ body {
       <i class="bi bi-file-earmark-excel"></i>Exportar Excel
     </a>
     {% if es_neo %}
+    <label class="btn-ghost" style="cursor:pointer;margin:0;">
+      <i class="bi bi-upload"></i>Importar Excel
+      <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="importarCompromisos(this)">
+    </label>
+    {% endif %}
+    {% if es_neo %}
     <button class="btn-danger-ghost" id="btnElimMasivo" disabled onclick="eliminarSeleccionados()">
       <i class="bi bi-trash"></i>Eliminar seleccionados
     </button>
@@ -1350,5 +1356,43 @@ document.addEventListener('DOMContentLoaded', function() {
     new bootstrap.Tooltip(el, { trigger: 'hover' })
   );
 });
+
+async function importarCompromisos(input) {
+  const archivo = input.files[0];
+  if (!archivo) return;
+  input.value = "";
+
+  const fd = new FormData();
+  fd.append("archivo", archivo);
+
+  const btn = input.closest("label");
+  const textoOriginal = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importando…';
+  btn.style.pointerEvents = "none";
+
+  try {
+    const resp = await fetch("{{ url_for('compromisos.importar_excel') }}", {
+      method: "POST",
+      body: fd
+    });
+    const data = await resp.json();
+
+    if (data.ok) {
+      let msg = `✅ ${data.insertados} compromiso(s) importado(s) correctamente.`;
+      if (data.errores && data.errores.length) {
+        msg += `\n\n⚠️ ${data.errores.length} fila(s) con error:\n` + data.errores.join("\n");
+      }
+      alert(msg);
+      if (data.insertados > 0) location.reload();
+    } else {
+      alert("❌ Error: " + data.error);
+    }
+  } catch (e) {
+    alert("❌ Error de conexión al importar.");
+  } finally {
+    btn.innerHTML = textoOriginal;
+    btn.style.pointerEvents = "";
+  }
+}
 </script>
 {% endblock %}
