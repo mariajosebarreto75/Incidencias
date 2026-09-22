@@ -443,12 +443,12 @@ function determinarImpacto() {
     if (impacto === "Medio") impactoEl.classList.add("impacto-medio");
     if (impacto === "Bajo")  impactoEl.classList.add("impacto-bajo");
 
-    // Afectación económica: Meta / 7 * duración_en_minutos
-    // La meta viene formateada con puntos de miles (ej "2.930"), hay que limpiarlos
+    // Afectación económica: (Meta / 7 horas por día / 60 min por hora) × duración_en_minutos
+    // La meta viene formateada con puntos de miles (ej "2.457.051"), hay que limpiarlos
     const metaStr = (document.getElementById("meta")?.value || "").replace(/\./g, "").replace(",", ".");
     const meta  = parseFloat(metaStr) || 0;
     const afEl  = document.getElementById("afectacion");
-    if (afEl) afEl.value = meta > 0 ? ((meta / 7) * duracionMin).toFixed(2) : "";
+    if (afEl) afEl.value = meta > 0 ? ((meta / 7 / 60) * duracionMin).toFixed(2) : "";
 
 }
 
