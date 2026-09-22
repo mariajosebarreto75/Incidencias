@@ -181,6 +181,24 @@
 .neo-card-gps .neo-card-cta { color: #f5a623; }
 .neo-card-gps .neo-card-arrow { color: #f5a623; }
 
+/* ARCHIVO SEGUIMIENTO */
+.neo-card-seguimiento { border-color: rgba(249,115,22,.2); }
+.neo-card-seguimiento::before { background: linear-gradient(135deg, #fff7ed, #fff); }
+.neo-card-seguimiento:hover { border-color: #f97316; }
+.neo-card-seguimiento:hover::before { opacity: 1; }
+.neo-card-seguimiento .neo-card-icon { background: linear-gradient(135deg,#f97316,#ea580c); color:#fff; }
+.neo-card-seguimiento .neo-card-cta  { color: #f97316; }
+.neo-card-seguimiento .neo-card-arrow{ color: #f97316; }
+
+/* INSPECCIONES BI */
+.neo-card-inspecciones { border-color: rgba(124,58,237,.2); }
+.neo-card-inspecciones::before { background: linear-gradient(135deg, #f5f3ff, #fff); }
+.neo-card-inspecciones:hover { border-color: #7c3aed; }
+.neo-card-inspecciones:hover::before { opacity: 1; }
+.neo-card-inspecciones .neo-card-icon { background: linear-gradient(135deg,#7c3aed,#6d28d9); color:#fff; }
+.neo-card-inspecciones .neo-card-cta  { color: #7c3aed; }
+.neo-card-inspecciones .neo-card-arrow{ color: #7c3aed; }
+
 /* PARTES DE LA CARD */
 .neo-card-icon {
     width: 60px;

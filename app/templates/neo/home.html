@@ -113,6 +113,45 @@
 
         </a>
 
+        <!-- ARCHIVO DE SEGUIMIENTO -->
+        {% if current_user.tiene_permiso('bi_seguimiento') %}
+        <a href="{{ url_for('coordinador.bi_seguimiento') }}" class="neo-card neo-card-seguimiento">
+            <div class="neo-card-icon">
+                <i class="bi bi-folder2-open"></i>
+            </div>
+            <div class="neo-card-body">
+                <h2 class="neo-card-title">Archivo de Seguimiento</h2>
+                <p class="neo-card-desc">
+                    Acceda al informe operacional de seguimiento en Power BI.
+                </p>
+                <span class="neo-card-cta">
+                    Ver informe <i class="bi bi-bar-chart-fill ms-1"></i>
+                </span>
+            </div>
+            <div class="neo-card-arrow"><i class="bi bi-chevron-right"></i></div>
+        </a>
+        {% endif %}
+
+        <!-- INSPECCIONES BI -->
+        {% if current_user.tiene_permiso('bi_inspecciones') %}
+        <a href="https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9"
+           target="_blank" class="neo-card neo-card-inspecciones">
+            <div class="neo-card-icon">
+                <i class="bi bi-search"></i>
+            </div>
+            <div class="neo-card-body">
+                <h2 class="neo-card-title">Inspecciones</h2>
+                <p class="neo-card-desc">
+                    Visualice reportes e indicadores de inspección en Power BI.
+                </p>
+                <span class="neo-card-cta">
+                    Abrir <i class="bi bi-box-arrow-up-right ms-1"></i>
+                </span>
+            </div>
+            <div class="neo-card-arrow"><i class="bi bi-chevron-right"></i></div>
+        </a>
+        {% endif %}
+
         <!-- GPS MONITOR -->
         <a href="http://143.20.129.195/Auth/Login" target="_blank" class="neo-card neo-card-gps">
 
