@@ -1252,21 +1252,29 @@ body {
 const filterBody    = document.getElementById('filterBody');
 const filterChevron = document.getElementById('filterChevron');
 const filterToggle  = document.getElementById('filterToggle');
-let filtersOpen = false;
 
-// Auto-abrir si hay filtros activos
+// Abierto por defecto; solo se cierra si el usuario lo cerró explícitamente
+let _saved = false;
+try { _saved = localStorage.getItem('compromisos_filtros_cerrado') === '1'; } catch(e) {}
+let filtersOpen = !_saved;
+
+// Si hay filtros activos, forzar abierto siempre
 {% if contrato_id_sel or q_resp_sel or atrasado_sel or fecha_desde_sel or fecha_hasta_sel %}
 filtersOpen = true;
-filterBody.style.display = 'block';
-filterChevron.style.transform = 'rotate(180deg)';
-filterToggle.classList.add('open');
 {% endif %}
+
+if (filtersOpen) {
+  filterBody.style.display = 'block';
+  filterChevron.style.transform = 'rotate(180deg)';
+  filterToggle.classList.add('open');
+}
 
 function toggleFiltros() {
   filtersOpen = !filtersOpen;
   filterBody.style.display = filtersOpen ? 'block' : 'none';
   filterChevron.style.transform = filtersOpen ? 'rotate(180deg)' : '';
   filterToggle.classList.toggle('open', filtersOpen);
+  try { localStorage.setItem('compromisos_filtros_cerrado', filtersOpen ? '0' : '1'); } catch(e) {}
 }
 
 // ── Selección masiva ──
