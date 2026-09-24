@@ -34,6 +34,10 @@ from app.routes.notificaciones import crear_notificacion, coordinadores_de_contr
 
 neo = Blueprint("neo", __name__)
 
+# Afectación económica: (meta / HORAS_DIA_ESTANDAR) × horas_afectadas
+# Debe coincidir con la fórmula usada al crear el reporte (app/static/js/neo/PanelNeo.js)
+HORAS_DIA_ESTANDAR = 7.33
+
 # Traducción de tipos de alerta GPS → español
 TIPOS_ALERTA = {
     "speed_infraction":      "Velocidad excesiva",
@@ -580,10 +584,9 @@ def editar_reporte(id):
         # Recalcular afectación económica solo si el cliente no envió un valor
         if "afectacion" in d and d["afectacion"] not in (None, ""):
             reporte.afectacion_economica = _parsear_float(d["afectacion"])
-        elif reporte.impacto and reporte.horas_afectadas:
-            tarifas = {"Bajo": 20000, "Medio": 50000, "Alto": 100000}
+        elif reporte.meta and reporte.horas_afectadas:
             reporte.afectacion_economica = (
-                tarifas.get(reporte.impacto, 0) * reporte.horas_afectadas
+                (reporte.meta / HORAS_DIA_ESTANDAR) * reporte.horas_afectadas
             )
 
         # Evidencias (solo si se subió algo nuevo)
@@ -1064,7 +1067,6 @@ def api_actualizar_cuadrilla():
     metas_map = {(m.contrato.strip().lower(), m.Tipo_cuadrilla.strip().lower()): m.Meta_Produccion
                  for m in metas}
 
-    tarifas = {"Bajo": 20000, "Medio": 50000, "Alto": 100000}
     actualizados = 0
     no_encontrados = []
 
@@ -1103,8 +1105,8 @@ def api_actualizar_cuadrilla():
             reporte.horas_afectadas = round(diff_min / 60, 6)
 
             # Recalcular afectación económica
-            if reporte.impacto and reporte.horas_afectadas:
-                reporte.afectacion_economica = tarifas.get(reporte.impacto, 0) * reporte.horas_afectadas
+            if reporte.meta and reporte.horas_afectadas:
+                reporte.afectacion_economica = (reporte.meta / HORAS_DIA_ESTANDAR) * reporte.horas_afectadas
 
         actualizados += 1
 
