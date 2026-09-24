@@ -146,6 +146,15 @@
         </div>
     </div>
 
+    <!-- HORAS POR CONTRATO -->
+    <div class="dh-card" style="margin-bottom:1rem;">
+        <div class="dh-card-hdr">
+            <span class="dh-card-ttl"><i class="bi bi-building me-1" style="color:#a78bfa"></i>Horas reportadas por contrato</span>
+            <span id="chartContratosTag" class="dh-top-tag" style="display:none"></span>
+        </div>
+        <div class="chart-wrap" style="height:220px;"><canvas id="chartContratos"></canvas></div>
+    </div>
+
     <!-- LÍMITE LEGAL + SUPERVISORES -->
     <div class="dh-grid3">
         <!-- Límite legal 48h -->
@@ -393,6 +402,7 @@ async function cargar() {
     renderLimite(data.limite_legal);
     renderSupervisores(data.supervisores);
 
+    renderChartContratos(ranking);
     renderValorNomina(valorNomina);
     // Top tipo
     if (data.top_tipo) {
@@ -471,6 +481,53 @@ function renderChartTipo(tipos) {
         }
     });
     document.getElementById('chartTipo').style.cursor = 'pointer';
+}
+
+let chartContratos = null;
+function renderChartContratos(ranking) {
+    const wrap = document.getElementById('chartContratos').parentElement;
+    const ctx = document.getElementById('chartContratos').getContext('2d');
+    if (chartContratos) chartContratos.destroy();
+    if (!ranking || !ranking.length) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        return;
+    }
+    const top = ranking.slice(0, 10);
+    wrap.style.height = Math.max(180, top.length * 36) + 'px';
+    const labels = top.map(c => c.nombre);
+    const vals   = top.map(c => Math.round(c.hrs));
+    const palette = ['#38bdf8','#818cf8','#34d399','#fb923c','#f472b6','#facc15','#a78bfa','#f87171','#4ade80','#e879f9'];
+    const total = vals.reduce((s, v) => s + v, 0);
+    const tag = document.getElementById('chartContratosTag');
+    if (top.length) {
+        tag.style.display = '';
+        tag.textContent = '★ Mayor: ' + top[0].nombre.split(' ')[0] + '… (' + fmtHrs(top[0].hrs) + 'h)';
+    }
+    chartContratos = new Chart(ctx, {
+        type: 'bar',
+        plugins: [barValuePlugin],
+        data: { labels, datasets: [{ label: 'Hrs reportadas', data: vals,
+            backgroundColor: palette,
+            borderRadius: 4 }] },
+        options: {
+            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: {
+                    label: c => {
+                        const pct = total ? ((c.parsed.x / total) * 100).toFixed(1) : 0;
+                        return fmtHrs(c.parsed.x) + 'h (' + pct + '% del total)';
+                    }
+                }}
+            },
+            scales: {
+                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10}, callback: v => v.toLocaleString('es-CO') } },
+                y: { grid: { display: false }, ticks: { color: '#e2e8f0', font:{size:10} } }
+            },
+            layout: { padding: { right: 90 } }
+        }
+    });
 }
 
 // Convierte "2026-07-19" → "19-Jul"
