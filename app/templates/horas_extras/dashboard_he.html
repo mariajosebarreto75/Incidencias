@@ -127,11 +127,11 @@
             </div>
             <div class="chart-wrap"><canvas id="chartTipo"></canvas></div>
         </div>
-        <!-- Por día -->
+        <!-- Por día / Por contrato -->
         <div class="dh-card">
             <div class="dh-card-hdr" style="flex-wrap:wrap;gap:.5rem;">
                 <span class="dh-card-ttl"><i class="bi bi-graph-up me-1"></i><span id="chartDiaTitulo">Horas por día trabajado</span></span>
-                <div style="display:flex;gap:.4rem;margin-left:auto;">
+                <div style="display:flex;gap:.4rem;margin-left:auto;flex-wrap:wrap;">
                     <button id="btnDiaTrabajado" onclick="toggleSerie('trabajado')"
                         style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #38bdf8;background:#0e3a52;color:#38bdf8;">
                         Por día trabajado
@@ -140,19 +140,14 @@
                         style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #334155;background:transparent;color:#64748b;">
                         Días de reporte
                     </button>
+                    <button id="btnContratos" onclick="toggleSerie('contratos')"
+                        style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #334155;background:transparent;color:#64748b;">
+                        <i class="bi bi-building me-1"></i>Por contrato
+                    </button>
                 </div>
             </div>
-            <div class="chart-wrap"><canvas id="chartDia"></canvas></div>
+            <div id="wrapChartDia" class="chart-wrap"><canvas id="chartDia"></canvas></div>
         </div>
-    </div>
-
-    <!-- HORAS POR CONTRATO -->
-    <div class="dh-card" style="margin-bottom:1rem;">
-        <div class="dh-card-hdr">
-            <span class="dh-card-ttl"><i class="bi bi-building me-1" style="color:#a78bfa"></i>Horas reportadas por contrato</span>
-            <span id="chartContratosTag" class="dh-top-tag" style="display:none"></span>
-        </div>
-        <div id="wrapContratos" class="chart-wrap" style="height:120px;"><canvas id="chartContratos"></canvas></div>
     </div>
 
     <!-- LÍMITE LEGAL + SUPERVISORES -->
@@ -248,10 +243,24 @@ function limpiarDrill() {
     cargar();
 }
 
+let _vistaContratos = false;
+let _rankingCache   = [];
+
 function toggleSerie(which) {
-    // Al menos una serie debe estar activa
+    if (which === 'contratos') {
+        _vistaContratos = !_vistaContratos;
+        _actualizarBotonesDia();
+        if (_vistaContratos) {
+            _renderChartContratos();
+        } else {
+            _renderChartDiaActual();
+        }
+        return;
+    }
+    // Si estaba en vista contratos, volver a días
+    if (_vistaContratos) { _vistaContratos = false; }
     const otherKey = which === 'trabajado' ? 'reporte' : 'trabajado';
-    if (_serieActiva[which] && !_serieActiva[otherKey]) return; // no permitir desactivar la única activa
+    if (_serieActiva[which] && !_serieActiva[otherKey]) return;
     _serieActiva[which] = !_serieActiva[which];
     _actualizarBotonesDia();
     _renderChartDiaActual();
@@ -260,18 +269,30 @@ function toggleSerie(which) {
 function _actualizarBotonesDia() {
     const btnT = document.getElementById('btnDiaTrabajado');
     const btnR = document.getElementById('btnDiaReporte');
-    btnT.style.background  = _serieActiva.trabajado ? '#0e3a52'  : 'transparent';
-    btnT.style.color       = _serieActiva.trabajado ? '#38bdf8'  : '#64748b';
-    btnT.style.borderColor = _serieActiva.trabajado ? '#38bdf8'  : '#334155';
-    btnR.style.background  = _serieActiva.reporte   ? '#2d1f00'  : 'transparent';
-    btnR.style.color       = _serieActiva.reporte   ? '#fbbf24'  : '#64748b';
-    btnR.style.borderColor = _serieActiva.reporte   ? '#f59e0b'  : '#334155';
-    const ambos = _serieActiva.trabajado && _serieActiva.reporte;
-    const solo  = _serieActiva.trabajado ? 'Horas por día trabajado' : 'Horas por día de reporte';
-    document.getElementById('chartDiaTitulo').textContent = ambos ? 'Día trabajado vs Día de reporte' : solo;
+    const btnC = document.getElementById('btnContratos');
+    // Botón contratos activo
+    btnC.style.background  = _vistaContratos ? '#1e1040'    : 'transparent';
+    btnC.style.color       = _vistaContratos ? '#a78bfa'    : '#64748b';
+    btnC.style.borderColor = _vistaContratos ? '#a78bfa'    : '#334155';
+    // Botones días — atenuados cuando estamos en vista contratos
+    const dim = _vistaContratos;
+    btnT.style.background  = (!dim && _serieActiva.trabajado) ? '#0e3a52'  : 'transparent';
+    btnT.style.color       = (!dim && _serieActiva.trabajado) ? '#38bdf8'  : '#475569';
+    btnT.style.borderColor = (!dim && _serieActiva.trabajado) ? '#38bdf8'  : '#334155';
+    btnR.style.background  = (!dim && _serieActiva.reporte)   ? '#2d1f00'  : 'transparent';
+    btnR.style.color       = (!dim && _serieActiva.reporte)   ? '#fbbf24'  : '#475569';
+    btnR.style.borderColor = (!dim && _serieActiva.reporte)   ? '#f59e0b'  : '#334155';
+    if (_vistaContratos) {
+        document.getElementById('chartDiaTitulo').textContent = 'Horas reportadas por contrato';
+    } else {
+        const ambos = _serieActiva.trabajado && _serieActiva.reporte;
+        const solo  = _serieActiva.trabajado ? 'Horas por día trabajado' : 'Horas por día de reporte';
+        document.getElementById('chartDiaTitulo').textContent = ambos ? 'Día trabajado vs Día de reporte' : solo;
+    }
 }
 
 function _renderChartDiaActual() {
+    document.getElementById('wrapChartDia').style.height = '';
     const ctx = document.getElementById('chartDia').getContext('2d');
     if (chartDia) chartDia.destroy();
 
@@ -402,7 +423,8 @@ async function cargar() {
     renderLimite(data.limite_legal);
     renderSupervisores(data.supervisores);
 
-    renderChartContratos(ranking);
+    _rankingCache = ranking || [];
+    if (_vistaContratos) _renderChartContratos(); else _renderChartDiaActual();
     renderValorNomina(valorNomina);
     // Top tipo
     if (data.top_tipo) {
@@ -483,65 +505,54 @@ function renderChartTipo(tipos) {
     document.getElementById('chartTipo').style.cursor = 'pointer';
 }
 
-let chartContratos = null;
-function renderChartContratos(ranking) {
-    const wrap = document.getElementById('wrapContratos');
-    const ctx  = document.getElementById('chartContratos').getContext('2d');
-    if (chartContratos) chartContratos.destroy();
-    if (!ranking || !ranking.length) return;
-    const top = ranking.slice(0, 10);
-    // 32px por barra + 36px para el eje X
-    wrap.style.height = (top.length * 32 + 36) + 'px';
-    const labels = top.map(c => {
-        const n = c.nombre || '';
-        return n.length > 30 ? n.slice(0, 28) + '…' : n;
-    });
-    const vals   = top.map(c => Math.round(c.hrs));
+function _renderChartContratos() {
+    const wrap = document.getElementById('wrapChartDia');
+    const ctx  = document.getElementById('chartDia').getContext('2d');
+    if (chartDia) chartDia.destroy();
+    const top = _rankingCache.slice(0, 10);
+    if (!top.length) return;
+    wrap.style.height = Math.max(160, top.length * 36 + 40) + 'px';
     const palette = ['#38bdf8','#818cf8','#34d399','#fb923c','#f472b6','#facc15','#a78bfa','#f87171','#4ade80','#e879f9'];
-    const total = vals.reduce((s, v) => s + v, 0);
-    const tag = document.getElementById('chartContratosTag');
-    if (top.length) {
-        tag.style.display = '';
-        tag.textContent = '★ Mayor: ' + top[0].nombre.split(' ')[0] + '… (' + fmtHrs(top[0].hrs) + 'h)';
-    }
-    chartContratos = new Chart(ctx, {
+    const labels = top.map(c => { const n = c.nombre||''; return n.length > 32 ? n.slice(0,30)+'…' : n; });
+    const vals   = top.map(c => Math.round(c.hrs));
+    const total  = vals.reduce((s,v) => s+v, 0);
+    chartDia = new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets: [{ label: 'Hrs', data: vals,
-            backgroundColor: palette, borderRadius: 3,
-            barThickness: 18 }] },
+        data: { labels, datasets: [{ label: 'Hrs reportadas', data: vals,
+            backgroundColor: palette, borderRadius: 4, barThickness: 20 }] },
         options: {
             indexAxis: 'y',
             responsive: true, maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
                 tooltip: { callbacks: {
+                    title: items => items[0].label,
                     label: c => {
-                        const pct = total ? ((c.parsed.x / total) * 100).toFixed(1) : 0;
-                        return ' ' + fmtHrs(c.parsed.x) + 'h — ' + pct + '% del total';
+                        const pct = total ? ((c.parsed.x/total)*100).toFixed(1) : 0;
+                        return ' ' + fmtHrs(c.parsed.x) + 'h  (' + pct + '% del total)';
                     }
                 }}
             },
             scales: {
-                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:9},
-                    callback: v => v.toLocaleString('es-CO') } },
-                y: { grid: { display: false }, ticks: { color: '#e2e8f0', font:{size:9} } }
+                x: { grid:{color:'#1e293b'}, ticks:{color:'#64748b', font:{size:10},
+                    callback: v => v.toLocaleString('es-CO')} },
+                y: { grid:{display:false}, ticks:{color:'#e2e8f0', font:{size:10}} }
             },
-            layout: { padding: { right: 55 } },
-            animation: { duration: 400 }
+            layout: { padding: { right: 70 } },
+            animation: { duration: 350 }
         },
         plugins: [{
-            id: 'inlineVal',
+            id: 'cVal',
             afterDatasetsDraw(chart) {
-                const { ctx: c, scales: { x } } = chart;
+                const { ctx: c } = chart;
                 chart.getDatasetMeta(0).data.forEach((bar, i) => {
-                    const v = vals[i];
-                    if (!v) return;
+                    if (!vals[i]) return;
                     c.save();
-                    c.font = 'bold 9px sans-serif';
+                    c.font = 'bold 10px sans-serif';
                     c.fillStyle = palette[i % palette.length];
                     c.textBaseline = 'middle';
                     c.textAlign = 'left';
-                    c.fillText(fmtHrs(v) + 'h', bar.x + 5, bar.y);
+                    c.fillText(fmtHrs(vals[i])+'h', bar.x+6, bar.y);
                     c.restore();
                 });
             }
