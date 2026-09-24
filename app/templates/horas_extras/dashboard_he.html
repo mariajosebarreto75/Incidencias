@@ -292,7 +292,9 @@ function _actualizarBotonesDia() {
 }
 
 function _renderChartDiaActual() {
-    document.getElementById('wrapChartDia').style.height = '';
+    const wrap = document.getElementById('wrapChartDia');
+    wrap.style.height = '';
+    wrap.style.minHeight = '';
     const ctx = document.getElementById('chartDia').getContext('2d');
     if (chartDia) chartDia.destroy();
 
@@ -511,7 +513,9 @@ function _renderChartContratos() {
     if (chartDia) chartDia.destroy();
     const top = _rankingCache.slice(0, 10);
     if (!top.length) return;
-    wrap.style.height = Math.max(160, top.length * 36 + 40) + 'px';
+    const h = top.length * 38 + 44;
+    wrap.style.height = h + 'px';
+    wrap.style.minHeight = h + 'px';
     const palette = ['#38bdf8','#818cf8','#34d399','#fb923c','#f472b6','#facc15','#a78bfa','#f87171','#4ade80','#e879f9'];
     const labels = top.map(c => { const n = c.nombre||''; return n.length > 32 ? n.slice(0,30)+'…' : n; });
     const vals   = top.map(c => Math.round(c.hrs));
