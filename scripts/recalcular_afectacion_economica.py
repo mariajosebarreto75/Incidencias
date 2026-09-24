@@ -3,20 +3,24 @@ Script one-shot: recalcula afectacion_economica de todos los reportes operaciona
 usando la formula correcta (meta / 7.33) * horas_afectadas, la misma que usa el
 formulario de creacion en app/static/js/neo/PanelNeo.js y el backend (app/routes/neo.py).
 
-Ademas de corregir el resultado de la formula, repara el origen del dato 'meta'
-en dos casos detectados en el primer dry-run:
+Ademas de corregir el resultado de la formula, repara el origen del dato 'meta' en
+tres casos detectados:
 
-  1. Reportes sin 'meta' guardada: se busca el valor oficial en la tabla
+  1. Reportes de sede/salida tardia (tienen numero_recursos y meta_promedio):
+     la meta se recalcula SIEMPRE como numero_recursos * meta_promedio, sin
+     importar lo que haya guardado -- el formulario tenia un bug que aplicaba
+     la duracion dos veces (una al calcular la meta con /1440, otra al calcular
+     la afectacion), aplastando el resultado para incidencias cortas.
+
+  2. Reportes sin 'meta' guardada: se busca el valor oficial en la tabla
      metas_operativas por (contrato, tipo_cuadrilla) -- misma fuente de verdad
      que ahora usa el backend al crear/editar reportes. Si no hay match en el
      catalogo, el reporte queda para revision manual (no se toca).
 
-  2. Reportes con 'meta' implausiblemente pequena (ej. 452.499 en vez de
+  3. Reportes con 'meta' implausiblemente pequena (ej. 452.499 en vez de
      452499): esto viene de un bug ya corregido en _parsear_float, que
      interpretaba el punto de miles como decimal cuando el valor no traia
-     coma. Se corrige multiplicando por 1000 (se confirmo contra el propio
-     dataset: 452.499 * 1000 = 452499.0, un valor de meta real que aparece
-     en muchos otros reportes del mismo contrato/cuadrilla).
+     coma. Se corrige multiplicando por 1000.
 
 El detalle completo (linea por linea, con meta antes/despues) se escribe a un
 CSV junto al script; en la consola solo se muestra un resumen y ejemplos.
@@ -58,7 +62,7 @@ with app.app_context():
         ReporteOperacional.horas_afectadas.isnot(None)
     ).order_by(ReporteOperacional.id).all()
 
-    filas_csv = []
+    sede_corregida = []      # numero_recursos y meta_promedio presentes -> meta = n*m, siempre
     corregidos = []          # meta ya era plausible, solo cambia afectacion
     meta_recuperada = []     # meta era None, se recuperó del catálogo
     meta_corregida = []      # meta estaba /1000 por el bug viejo, se corrige *1000
@@ -66,6 +70,18 @@ with app.app_context():
     sin_cambio = 0
 
     for r in candidatos:
+        if r.numero_recursos and r.meta_promedio:
+            meta_correcta = round(r.numero_recursos * r.meta_promedio, 2)
+            nuevo_af = recalc(r, meta_correcta)
+            actual = round(r.afectacion_economica or 0, 2)
+            if r.meta == meta_correcta and abs(nuevo_af - actual) < 0.01:
+                sin_cambio += 1
+                continue
+            sede_corregida.append((r, actual, nuevo_af, r.meta, meta_correcta))
+            r.meta = meta_correcta
+            r.afectacion_economica = nuevo_af
+            continue
+
         clave = ((r.contrato or "").strip().lower(), _normalizar_cuadrilla(r.tipo_cuadrilla))
 
         if not r.meta:
@@ -100,6 +116,7 @@ with app.app_context():
 
     print(f"Reportes con horas_afectadas: {len(candidatos)}")
     print(f"Ya correctos (sin cambio):    {sin_cambio}")
+    resumen("Sede/salida tardía (meta = numero_recursos x meta_promedio)", sede_corregida)
     resumen("A corregir (meta ya era plausible)", corregidos)
     resumen("Meta recuperada del catálogo (antes None)", meta_recuperada)
     resumen("Meta corregida x1000 (bug de parseo viejo)", meta_corregida)
@@ -112,6 +129,11 @@ with app.app_context():
         for item in lista[:MAX_EJEMPLOS_CONSOLA]:
             print("  " + fmt(item))
 
+    imprimir_ejemplos(
+        "Sede/salida tardía", sede_corregida,
+        lambda t: f"#{t[0].id}: meta {t[3]} -> {t[4]}, afectacion {t[1] or 0:,.2f} -> {t[2]:,.2f} "
+                  f"(n={t[0].numero_recursos}, meta_promedio={t[0].meta_promedio})"
+    )
     imprimir_ejemplos(
         "A corregir", corregidos,
         lambda t: f"#{t[0].id}: afectacion {t[1]:,.2f} -> {t[2]:,.2f} (meta={t[0].meta})"
@@ -129,17 +151,10 @@ with app.app_context():
         lambda r: f"#{r.id}: contrato='{r.contrato}', tipo_cuadrilla='{r.tipo_cuadrilla}', afectacion_actual={r.afectacion_economica}"
     )
 
-    if corregidos or meta_recuperada or meta_corregida:
-        suma_antes = (
-            sum(a for _, a, _ in corregidos)
-            + sum((a or 0) for _, a, _, _, _ in meta_recuperada)
-            + sum((a or 0) for _, a, _, _, _ in meta_corregida)
-        )
-        suma_despues = (
-            sum(n for _, _, n in corregidos)
-            + sum(n for _, _, n, _, _ in meta_recuperada)
-            + sum(n for _, _, n, _, _ in meta_corregida)
-        )
+    todo_lo_corregido = sede_corregida + [(r, a, n, r.meta, r.meta) for r, a, n in corregidos] + meta_recuperada + meta_corregida
+    if todo_lo_corregido:
+        suma_antes = sum((a or 0) for _, a, _, _, _ in todo_lo_corregido)
+        suma_despues = sum(n for _, _, n, _, _ in todo_lo_corregido)
         print(f"\nSuma afectacion total (todo lo corregido) antes:  ${suma_antes:,.2f}")
         print(f"Suma afectacion total (todo lo corregido) despues: ${suma_despues:,.2f}")
 
@@ -148,20 +163,24 @@ with app.app_context():
     csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"recalculo_afectacion_{ts}.csv")
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["categoria", "id", "contrato", "tipo_cuadrilla", "meta_antes", "meta_despues",
-                     "horas_afectadas", "impacto", "afectacion_antes", "afectacion_despues"])
+        w.writerow(["categoria", "id", "contrato", "tipo_cuadrilla", "numero_recursos", "meta_promedio",
+                     "meta_antes", "meta_despues", "horas_afectadas", "impacto",
+                     "afectacion_antes", "afectacion_despues"])
+        for r, actual, nuevo, meta_antes, meta_despues in sede_corregida:
+            w.writerow(["sede_salida_tardia", r.id, r.contrato, r.tipo_cuadrilla, r.numero_recursos, r.meta_promedio,
+                        meta_antes, meta_despues, r.horas_afectadas, r.impacto, actual, nuevo])
         for r, actual, nuevo in corregidos:
-            w.writerow(["a_corregir", r.id, r.contrato, r.tipo_cuadrilla, r.meta, r.meta,
-                        r.horas_afectadas, r.impacto, actual, nuevo])
+            w.writerow(["a_corregir", r.id, r.contrato, r.tipo_cuadrilla, r.numero_recursos, r.meta_promedio,
+                        r.meta, r.meta, r.horas_afectadas, r.impacto, actual, nuevo])
         for r, actual, nuevo, meta_antes, meta_despues in meta_recuperada:
-            w.writerow(["meta_recuperada_catalogo", r.id, r.contrato, r.tipo_cuadrilla, meta_antes, meta_despues,
-                        r.horas_afectadas, r.impacto, actual, nuevo])
+            w.writerow(["meta_recuperada_catalogo", r.id, r.contrato, r.tipo_cuadrilla, r.numero_recursos, r.meta_promedio,
+                        meta_antes, meta_despues, r.horas_afectadas, r.impacto, actual, nuevo])
         for r, actual, nuevo, meta_antes, meta_despues in meta_corregida:
-            w.writerow(["meta_corregida_x1000", r.id, r.contrato, r.tipo_cuadrilla, meta_antes, meta_despues,
-                        r.horas_afectadas, r.impacto, actual, nuevo])
+            w.writerow(["meta_corregida_x1000", r.id, r.contrato, r.tipo_cuadrilla, r.numero_recursos, r.meta_promedio,
+                        meta_antes, meta_despues, r.horas_afectadas, r.impacto, actual, nuevo])
         for r in sin_meta_manual:
-            w.writerow(["sin_meta_manual", r.id, r.contrato, r.tipo_cuadrilla, r.meta, "",
-                        r.horas_afectadas, r.impacto, r.afectacion_economica, ""])
+            w.writerow(["sin_meta_manual", r.id, r.contrato, r.tipo_cuadrilla, r.numero_recursos, r.meta_promedio,
+                        r.meta, "", r.horas_afectadas, r.impacto, r.afectacion_economica, ""])
     print(f"\nDetalle completo escrito en: {csv_path}")
 
     if DRY_RUN:
@@ -169,5 +188,5 @@ with app.app_context():
         print("\n--dry-run: no se guardo ningun cambio.")
     else:
         db.session.commit()
-        total_tocados = len(corregidos) + len(meta_recuperada) + len(meta_corregida)
+        total_tocados = len(sede_corregida) + len(corregidos) + len(meta_recuperada) + len(meta_corregida)
         print(f"\nListo. {total_tocados} reportes actualizados.")

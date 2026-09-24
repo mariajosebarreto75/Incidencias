@@ -724,12 +724,13 @@ function _calcularMetaSede() {
     if (!_esSedeSalidaTardia()) return;
     const metaEl = document.getElementById("meta");
     if (!metaEl) return;
-    const n   = parseFloat(document.getElementById("numero_recursos")?.value) || 0;
-    const m   = parseFloat(document.getElementById("meta_promedio")?.value)   || 0;
-    const dur = duracionAMinutos(document.getElementById("duracion")?.value || "");
-    if (n > 0 && m > 0 && dur > 0) {
-        metaEl.value = ((n * m * dur) / 1440).toFixed(2);
-    } else if (n > 0 && m > 0) {
+    const n = parseFloat(document.getElementById("numero_recursos")?.value) || 0;
+    const m = parseFloat(document.getElementById("meta_promedio")?.value)   || 0;
+    // Meta total = suma de la meta de cada recurso afectado (n * meta_promedio).
+    // La duración NO se aplica aquí: ya se aplica una sola vez más abajo, al calcular
+    // la afectación económica ((meta / 7.33) * horas_afectadas). Aplicarla también aquí
+    // duplicaba su efecto y aplastaba el resultado para incidencias cortas.
+    if (n > 0 && m > 0) {
         metaEl.value = (n * m).toFixed(2);
     }
 }

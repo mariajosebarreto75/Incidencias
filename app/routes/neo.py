@@ -612,6 +612,11 @@ def editar_reporte(id):
             if meta_catalogo is not None:
                 reporte.meta = meta_catalogo
 
+        # Caso sede/salida tardía: meta = numero_recursos * meta_promedio, siempre
+        # (estos campos no son editables aquí, así que el valor recalculado es confiable)
+        if reporte.numero_recursos and reporte.meta_promedio:
+            reporte.meta = reporte.numero_recursos * reporte.meta_promedio
+
         # Recalcular afectación económica solo si el cliente no envió un valor
         if "afectacion" in d and d["afectacion"] not in (None, ""):
             reporte.afectacion_economica = _parsear_float(d["afectacion"])
@@ -958,6 +963,27 @@ def guardar_reporte():
             "mensaje": f"Formato de fecha u hora inválido: {e}"
         }), 400
 
+    numero_recursos_val = int(datos["numero_recursos"]) if datos.get("numero_recursos") else None
+    meta_promedio_val   = _parsear_float(datos.get("meta_promedio"))
+    tipo_incidencia_txt = datos.get("tipo_incidencia_nombre") or datos.get("tipo_incidencia", "")
+    sin_duracion         = _tipo_sin_duracion(tipo_incidencia_txt)
+
+    meta_val = None if sin_duracion else (
+        _buscar_meta_operativa(datos.get("contrato"), datos.get("tipo_cuadrilla"))
+        or (numero_recursos_val * meta_promedio_val if numero_recursos_val and meta_promedio_val else None)
+        or _parsear_float(datos.get("meta"))
+    )
+    horas_afectadas_val = None if sin_duracion else (
+        round((datetime.combine(fecha, hora_fin) - datetime.combine(fecha, hora_inicio)).total_seconds() / 3600, 6)
+        if hora_inicio and hora_fin and hora_fin > hora_inicio else
+        _parsear_float(datos.get("horas_afectadas"))
+    )
+    afectacion_val = None if sin_duracion else (
+        (meta_val / HORAS_DIA_ESTANDAR) * horas_afectadas_val
+        if meta_val and horas_afectadas_val else
+        _parsear_float(datos.get("afectacion"))
+    )
+
     try:
         reporte = ReporteOperacional(
             fecha_reporte       = fecha,
@@ -967,10 +993,7 @@ def guardar_reporte():
             orden_trabajo       = datos.get("orden_trabajo")   or None,
             tipo_actividad      = datos.get("tipo_actividad")  or None,
             tipo_cuadrilla      = datos.get("tipo_cuadrilla")  or None,
-            meta                = (
-                _buscar_meta_operativa(datos.get("contrato"), datos.get("tipo_cuadrilla"))
-                or _parsear_float(datos.get("meta"))
-            ),
+            meta                = meta_val,
             hora_inicio         = hora_inicio,
             hora_fin            = hora_fin,
             # Guardamos el texto histórico, no el ID del catálogo
@@ -981,22 +1004,14 @@ def guardar_reporte():
             impacto             = datos.get("impacto") or _calcular_impacto(
                                       datos.get("tipo_incidencia_nombre") or datos.get("tipo_incidencia", "")
                                   ) or None,
-            horas_afectadas     = (
-                None if _tipo_sin_duracion(datos.get("tipo_incidencia_nombre") or datos.get("tipo_incidencia", ""))
-                else round((datetime.combine(fecha, hora_fin) - datetime.combine(fecha, hora_inicio)).total_seconds() / 3600, 6)
-                if hora_inicio and hora_fin and hora_fin > hora_inicio else
-                _parsear_float(datos.get("horas_afectadas"))
-            ),
-            afectacion_economica = (
-                None if _tipo_sin_duracion(datos.get("tipo_incidencia_nombre") or datos.get("tipo_incidencia", ""))
-                else _parsear_float(datos.get("afectacion"))
-            ),
+            horas_afectadas     = horas_afectadas_val,
+            afectacion_economica = afectacion_val,
             evidencia_1         = datos["evidencia_1"],
             evidencia_2         = datos.get("evidencia_2") or None,
             reportado_por       = current_user.username,
             estado              = "Abierto",
-            numero_recursos     = int(datos["numero_recursos"]) if datos.get("numero_recursos") else None,
-            meta_promedio       = _parsear_float(datos.get("meta_promedio")),
+            numero_recursos     = numero_recursos_val,
+            meta_promedio       = meta_promedio_val,
         )
 
         db.session.add(reporte)
