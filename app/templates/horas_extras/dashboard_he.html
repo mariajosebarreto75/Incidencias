@@ -147,12 +147,12 @@
     </div>
 
     <!-- HORAS POR CONTRATO -->
-    <div class="dh-card" style="margin-bottom:1rem;padding-bottom:.75rem;">
+    <div class="dh-card" style="margin-bottom:1rem;">
         <div class="dh-card-hdr">
             <span class="dh-card-ttl"><i class="bi bi-building me-1" style="color:#a78bfa"></i>Horas reportadas por contrato</span>
             <span id="chartContratosTag" class="dh-top-tag" style="display:none"></span>
         </div>
-        <div class="chart-wrap" style="height:80px;"><canvas id="chartContratos"></canvas></div>
+        <div id="wrapContratos" class="chart-wrap" style="height:120px;"><canvas id="chartContratos"></canvas></div>
     </div>
 
     <!-- LÍMITE LEGAL + SUPERVISORES -->
@@ -485,16 +485,17 @@ function renderChartTipo(tipos) {
 
 let chartContratos = null;
 function renderChartContratos(ranking) {
-    const wrap = document.getElementById('chartContratos').parentElement;
-    const ctx = document.getElementById('chartContratos').getContext('2d');
+    const wrap = document.getElementById('wrapContratos');
+    const ctx  = document.getElementById('chartContratos').getContext('2d');
     if (chartContratos) chartContratos.destroy();
-    if (!ranking || !ranking.length) {
-        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-        return;
-    }
+    if (!ranking || !ranking.length) return;
     const top = ranking.slice(0, 10);
-    wrap.style.height = Math.max(80, top.length * 28) + 'px';
-    const labels = top.map(c => c.nombre);
+    // 32px por barra + 36px para el eje X
+    wrap.style.height = (top.length * 32 + 36) + 'px';
+    const labels = top.map(c => {
+        const n = c.nombre || '';
+        return n.length > 30 ? n.slice(0, 28) + '…' : n;
+    });
     const vals   = top.map(c => Math.round(c.hrs));
     const palette = ['#38bdf8','#818cf8','#34d399','#fb923c','#f472b6','#facc15','#a78bfa','#f87171','#4ade80','#e879f9'];
     const total = vals.reduce((s, v) => s + v, 0);
@@ -505,10 +506,9 @@ function renderChartContratos(ranking) {
     }
     chartContratos = new Chart(ctx, {
         type: 'bar',
-        plugins: [barValuePlugin],
-        data: { labels, datasets: [{ label: 'Hrs reportadas', data: vals,
-            backgroundColor: palette,
-            borderRadius: 4 }] },
+        data: { labels, datasets: [{ label: 'Hrs', data: vals,
+            backgroundColor: palette, borderRadius: 3,
+            barThickness: 18 }] },
         options: {
             indexAxis: 'y',
             responsive: true, maintainAspectRatio: false,
@@ -517,17 +517,35 @@ function renderChartContratos(ranking) {
                 tooltip: { callbacks: {
                     label: c => {
                         const pct = total ? ((c.parsed.x / total) * 100).toFixed(1) : 0;
-                        return fmtHrs(c.parsed.x) + 'h (' + pct + '% del total)';
+                        return ' ' + fmtHrs(c.parsed.x) + 'h — ' + pct + '% del total';
                     }
                 }}
             },
             scales: {
-                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:9}, callback: v => v.toLocaleString('es-CO') } },
-                y: { grid: { display: false }, ticks: { color: '#cbd5e1', font:{size:9},
-                    callback: v => v.length > 28 ? v.slice(0, 26) + '…' : v } }
+                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:9},
+                    callback: v => v.toLocaleString('es-CO') } },
+                y: { grid: { display: false }, ticks: { color: '#e2e8f0', font:{size:9} } }
             },
-            layout: { padding: { right: 60 } }
-        }
+            layout: { padding: { right: 55 } },
+            animation: { duration: 400 }
+        },
+        plugins: [{
+            id: 'inlineVal',
+            afterDatasetsDraw(chart) {
+                const { ctx: c, scales: { x } } = chart;
+                chart.getDatasetMeta(0).data.forEach((bar, i) => {
+                    const v = vals[i];
+                    if (!v) return;
+                    c.save();
+                    c.font = 'bold 9px sans-serif';
+                    c.fillStyle = palette[i % palette.length];
+                    c.textBaseline = 'middle';
+                    c.textAlign = 'left';
+                    c.fillText(fmtHrs(v) + 'h', bar.x + 5, bar.y);
+                    c.restore();
+                });
+            }
+        }]
     });
 }
 
