@@ -195,6 +195,20 @@ def _parsear_float(valor):
         return None
 
 
+def _buscar_meta_operativa(contrato, tipo_cuadrilla):
+    """Busca la meta oficial en la tabla metas_operativas por (contrato, tipo_cuadrilla).
+    Es la fuente de verdad: evita depender del valor de meta tecleado/formateado en el
+    frontend, que puede llegar vacío o mal parseado (ej. '452.499' interpretado como
+    decimal en vez de miles)."""
+    if not contrato or not tipo_cuadrilla:
+        return None
+    meta_op = MetaOperativa.query.filter(
+        db.func.lower(db.func.trim(MetaOperativa.contrato)) == contrato.strip().lower(),
+        db.func.lower(db.func.trim(MetaOperativa.Tipo_cuadrilla)) == tipo_cuadrilla.strip().lower(),
+    ).first()
+    return meta_op.Meta_Produccion if meta_op else None
+
+
 # =====================================
 # DISTRIBUCIÓN OPERATIVA (solo lectura)
 # =====================================
@@ -581,6 +595,13 @@ def editar_reporte(id):
         if impacto_calc:
             reporte.impacto = impacto_calc
 
+        # Meta: si cambió el contrato o el tipo de cuadrilla, tomar el valor oficial
+        # del catálogo de metas operativas en vez de confiar en texto tecleado
+        if "tipo_cuadrilla" in d or "contrato" in d:
+            meta_catalogo = _buscar_meta_operativa(reporte.contrato, reporte.tipo_cuadrilla)
+            if meta_catalogo is not None:
+                reporte.meta = meta_catalogo
+
         # Recalcular afectación económica solo si el cliente no envió un valor
         if "afectacion" in d and d["afectacion"] not in (None, ""):
             reporte.afectacion_economica = _parsear_float(d["afectacion"])
@@ -936,7 +957,10 @@ def guardar_reporte():
             orden_trabajo       = datos.get("orden_trabajo")   or None,
             tipo_actividad      = datos.get("tipo_actividad")  or None,
             tipo_cuadrilla      = datos.get("tipo_cuadrilla")  or None,
-            meta                = _parsear_float(datos.get("meta")),
+            meta                = (
+                _buscar_meta_operativa(datos.get("contrato"), datos.get("tipo_cuadrilla"))
+                or _parsear_float(datos.get("meta"))
+            ),
             hora_inicio         = hora_inicio,
             hora_fin            = hora_fin,
             # Guardamos el texto histórico, no el ID del catálogo
