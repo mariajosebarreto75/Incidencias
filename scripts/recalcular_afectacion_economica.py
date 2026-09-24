@@ -35,6 +35,7 @@ from run import create_app
 from app.extensions import db
 from app.models.reporte_operacional import ReporteOperacional
 from app.models.meta_operativa import MetaOperativa
+from app.routes.neo import _normalizar_cuadrilla
 
 HORAS_DIA_ESTANDAR = 7.33
 META_MIN_PLAUSIBLE = 1000  # metas reales observadas son > 100.000; por debajo de esto, se asume error de captura
@@ -49,7 +50,7 @@ def recalc(r, meta):
 app = create_app()
 with app.app_context():
     metas_map = {
-        (m.contrato.strip().lower(), m.Tipo_cuadrilla.strip().lower()): m.Meta_Produccion
+        (m.contrato.strip().lower(), _normalizar_cuadrilla(m.Tipo_cuadrilla)): m.Meta_Produccion
         for m in MetaOperativa.query.all()
     }
 
@@ -65,7 +66,7 @@ with app.app_context():
     sin_cambio = 0
 
     for r in candidatos:
-        clave = ((r.contrato or "").strip().lower(), (r.tipo_cuadrilla or "").strip().lower())
+        clave = ((r.contrato or "").strip().lower(), _normalizar_cuadrilla(r.tipo_cuadrilla))
 
         if not r.meta:
             meta_catalogo = metas_map.get(clave)

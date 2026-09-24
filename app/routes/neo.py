@@ -195,6 +195,12 @@ def _parsear_float(valor):
         return None
 
 
+def _normalizar_cuadrilla(s):
+    """Minúsculas y sin espacios (ni internos): 'CUAD (MTTO)' y 'CUAD(MTTO)' deben matchear."""
+    import re
+    return re.sub(r"\s+", "", (s or "").lower())
+
+
 def _buscar_meta_operativa(contrato, tipo_cuadrilla):
     """Busca la meta oficial en la tabla metas_operativas por (contrato, tipo_cuadrilla).
     Es la fuente de verdad: evita depender del valor de meta tecleado/formateado en el
@@ -202,11 +208,15 @@ def _buscar_meta_operativa(contrato, tipo_cuadrilla):
     decimal en vez de miles)."""
     if not contrato or not tipo_cuadrilla:
         return None
-    meta_op = MetaOperativa.query.filter(
-        db.func.lower(db.func.trim(MetaOperativa.contrato)) == contrato.strip().lower(),
-        db.func.lower(db.func.trim(MetaOperativa.Tipo_cuadrilla)) == tipo_cuadrilla.strip().lower(),
-    ).first()
-    return meta_op.Meta_Produccion if meta_op else None
+    contrato_norm = contrato.strip().lower()
+    tc_norm = _normalizar_cuadrilla(tipo_cuadrilla)
+    candidatas = MetaOperativa.query.filter(
+        db.func.lower(db.func.trim(MetaOperativa.contrato)) == contrato_norm
+    ).all()
+    for m in candidatas:
+        if _normalizar_cuadrilla(m.Tipo_cuadrilla) == tc_norm:
+            return m.Meta_Produccion
+    return None
 
 
 # =====================================
@@ -1086,9 +1096,9 @@ def api_actualizar_cuadrilla():
     if not filas:
         return jsonify({"ok": False, "msg": "Sin datos"}), 400
 
-    # Precargar metas en memoria: clave = (contrato.lower(), tipo_cuadrilla.lower())
+    # Precargar metas en memoria: clave = (contrato.lower(), tipo_cuadrilla normalizada)
     metas = MetaOperativa.query.all()
-    metas_map = {(m.contrato.strip().lower(), m.Tipo_cuadrilla.strip().lower()): m.Meta_Produccion
+    metas_map = {(m.contrato.strip().lower(), _normalizar_cuadrilla(m.Tipo_cuadrilla)): m.Meta_Produccion
                  for m in metas}
 
     actualizados = 0
@@ -1107,7 +1117,7 @@ def api_actualizar_cuadrilla():
         reporte.tipo_cuadrilla = tipo_cuadrilla or reporte.tipo_cuadrilla
 
         # Buscar meta operativa
-        tc = (reporte.tipo_cuadrilla or "").strip().lower()
+        tc = _normalizar_cuadrilla(reporte.tipo_cuadrilla)
         clave = (reporte.contrato.strip().lower(), tc)
         meta_val = metas_map.get(clave)
         if meta_val is not None:
