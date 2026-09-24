@@ -71,7 +71,11 @@ with app.app_context():
 
     for r in candidatos:
         if r.numero_recursos and r.meta_promedio:
-            meta_correcta = round(r.numero_recursos * r.meta_promedio, 2)
+            # meta_promedio pasa por el mismo _parsear_float que 'meta' -> mismo bug posible
+            meta_promedio_efectivo = r.meta_promedio
+            if meta_promedio_efectivo < META_MIN_PLAUSIBLE:
+                meta_promedio_efectivo = round(meta_promedio_efectivo * 1000, 2)
+            meta_correcta = round(r.numero_recursos * meta_promedio_efectivo, 2)
             nuevo_af = recalc(r, meta_correcta)
             actual = round(r.afectacion_economica or 0, 2)
             if r.meta == meta_correcta and abs(nuevo_af - actual) < 0.01:
