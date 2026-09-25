@@ -235,6 +235,9 @@ body{background:var(--bg);color:#1e293b;font-family:system-ui,-apple-system,sans
         <a href="{{ url_for('he_bp.he_dashboard') }}" class="dash-nav-item">
           <i class="bi bi-clock-history"></i> Horas extras
         </a>
+        <a href="{{ url_for('dashboard.centro_monitoreo') }}" class="dash-nav-item">
+          <i class="bi bi-grid-1x2"></i> Centro de Monitoreo
+        </a>
       </nav>
       <button type="button" class="btn-actualizar" onclick="document.getElementById('filter-form').submit()">
         <i class="bi bi-arrow-clockwise"></i> Actualizar

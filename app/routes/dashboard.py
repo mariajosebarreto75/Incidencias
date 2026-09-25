@@ -590,3 +590,28 @@ def indicadores():
         home_endpoint=home_por_rol.get(rol),
         reportes_por_analista=reportes_por_analista,
     )
+
+
+# =====================================
+# CENTRO DE MONITOREO - REPORTES
+# =====================================
+
+@dashboard.route("/centro-monitoreo")
+@login_required
+def centro_monitoreo():
+
+    if not (current_user.rol.lower() in ("admin", "director") or current_user.acceso_dashboard or current_user.tiene_permiso("dashboard_gerencial")):
+        abort(403)
+
+    rol = current_user.rol.lower()
+    home_por_rol = {
+        "neo":         "neo.home_neo",
+        "coordinador": "coordinador.dashboard_coordinador",
+        "admin":       "admin_bp.dashboard",
+        "director":    "dashboard.director",
+    }
+
+    return render_template(
+        "dashboard/centro_monitoreo.html",
+        home_endpoint=home_por_rol.get(rol),
+    )

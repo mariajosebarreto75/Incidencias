@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centro de Monitoreo - Reportes</title>
+<meta name="description" content="Command center ejecutivo para seguimiento de desviaciones operativas, contratos e impacto económico.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --bg:#F5F7FA;
+    --surface:#FFFFFF;
+    --surface-2:#EEF2F7;
+    --surface-3:#E3E9F1;
+    --border:#DDE4EC;
+    --ink:#101A2E;
+    --ink-muted:#5B6B84;
+    --ink-faint:#8393AC;
+    --navy:#0F1B36;
+    --navy-ink:#EAF1F8;
+    --accent:#0891B2;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E0F2FE;
+    --accent-2:#0E7490;
+    --good:#16A34A;
+    --good-soft:#DCFCE7;
+    --warn:#D97706;
+    --warn-soft:#FEF3C7;
+    --bad:#DC2626;
+    --bad-soft:#FEE2E2;
+    --info:#2563EB;
+    --info-soft:#DBEAFE;
+    --shadow:0 1px 2px rgba(16,26,46,.04), 0 8px 24px -12px rgba(16,26,46,.12);
+    --shadow-lg:0 24px 48px -16px rgba(16,26,46,.28);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0A1120; --surface:#111C31; --surface-2:#16233C; --surface-3:#1C2B47;
+      --border:#243554; --ink:#E9EFF9; --ink-muted:#93A3C2; --ink-faint:#6E7FA0;
+      --navy:#08101F; --navy-ink:#EAF1F8;
+      --accent:#22D3EE; --accent-ink:#06222B; --accent-soft:#0C3547; --accent-2:#67E8F9;
+      --good:#4ADE80; --good-soft:#0F2C1C; --warn:#FBBF24; --warn-soft:#3A2A0A;
+      --bad:#F87171; --bad-soft:#3A1418; --info:#60A5FA; --info-soft:#12233F;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+      --shadow-lg:0 24px 48px -16px rgba(0,0,0,.6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0A1120; --surface:#111C31; --surface-2:#16233C; --surface-3:#1C2B47;
+    --border:#243554; --ink:#E9EFF9; --ink-muted:#93A3C2; --ink-faint:#6E7FA0;
+    --navy:#08101F; --navy-ink:#EAF1F8;
+    --accent:#22D3EE; --accent-ink:#06222B; --accent-soft:#0C3547; --accent-2:#67E8F9;
+    --good:#4ADE80; --good-soft:#0F2C1C; --warn:#FBBF24; --warn-soft:#3A2A0A;
+    --bad:#F87171; --bad-soft:#3A1418; --info:#60A5FA; --info-soft:#12233F;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    --shadow-lg:0 24px 48px -16px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-inline:0;
+  }
+  #root{min-height:100%;}
+  h1,h2,h3,h4{font-family:"Manrope", system-ui, sans-serif; margin:0; text-wrap:balance;}
+  .num{font-family:"Manrope", system-ui, sans-serif; font-variant-numeric:tabular-nums; font-weight:800;}
+  .mono{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums;}
+  button{font-family:inherit;}
+  ::selection{background:var(--accent); color:var(--accent-ink);}
+  a{color:var(--accent);}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:20px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  }
+
+  /* ============ LAYOUT SHELL ============ */
+  .shell{display:flex; flex-direction:column; min-height:100vh;}
+
+  /* Topbar: estilo exacto de la plataforma (no modificar — logo, título, Volver/Salir) */
+  .topbar{
+    background:linear-gradient(90deg,#005f6b,#00b8c9);
+    padding:0 24px; display:flex; align-items:center; gap:16px; height:56px;
+    position:sticky; top:0; z-index:40;
+    box-shadow:0 2px 8px rgba(0,95,107,.35);
+  }
+  .topbar img{height:32px; filter:brightness(0) invert(1); opacity:.9; flex:none;}
+  .topbar-title{color:#fff; font-size:1rem; font-weight:700; line-height:1.3;}
+  .topbar-sub{color:rgba(255,255,255,.65); font-size:.75rem;}
+  .topbar-actions{display:flex; align-items:center; gap:8px; flex:none;}
+  .updated{font-size:11px; color:rgba(255,255,255,.65); display:none; text-align:right; line-height:1.2; margin-right:2px;}
+  @media (min-width:760px){ .updated{display:block;} }
+  .updated b{color:#fff; font-weight:600;}
+  .topbar-btn{
+    display:flex; align-items:center; gap:5px; background:rgba(255,255,255,.15); color:#fff;
+    border:1px solid rgba(255,255,255,.25); border-radius:6px; padding:6px 13px; font-size:.78rem;
+    font-weight:600; cursor:pointer; transition:background .15s;
+  }
+  .topbar-btn:hover{background:rgba(255,255,255,.25);}
+  .topbar-btn svg{flex:none;}
+  .topbar-btn.spinning svg{animation:spin .7s linear;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (max-width:600px){
+    .topbar{padding:0 14px; gap:10px;}
+    .topbar-btn{padding:7px 9px;}
+    .topbar-btn .btn-label{display:none;}
+  }
+
+  /* ============ FILTER BAR ============ */
+  .filterbar{
+    position:sticky; top:56px; z-index:35;
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:9px 20px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    box-shadow:var(--shadow);
+  }
+  .filter-scroll{display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1; min-width:0;}
+  .fchip{
+    display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--ink);
+    font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; position:relative;
+    transition:border-color .15s, background .15s;
+  }
+  .fchip:hover{border-color:var(--accent);}
+  .fchip.active{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-2);}
+  .fchip svg{flex:none; opacity:.7;}
+  .fchip .badge{
+    background:var(--accent); color:var(--accent-ink); border-radius:99px; font-size:10px; font-weight:700;
+    padding:1px 6px; line-height:1.4;
+  }
+  select.fchip{ appearance:none; -webkit-appearance:none; padding-right:24px;
+    background-image:linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 12px) 55%, calc(100% - 8px) 55%; background-size:4px 4px; background-repeat:no-repeat; opacity:.9;
+  }
+  .fbtns{display:flex; align-items:center; gap:8px; margin-left:auto; flex:none;}
+  .btn{
+    border-radius:8px; padding:7px 13px; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid transparent;
+    display:inline-flex; align-items:center; gap:6px; transition:filter .15s, transform .15s;
+  }
+  .btn:active{transform:scale(.96);}
+  .btn-primary{background:var(--accent); color:var(--accent-ink);}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent; color:var(--ink-muted); border-color:var(--border);}
+  .btn-ghost:hover{color:var(--ink); border-color:var(--ink-faint);}
+  .active-count{font-size:11.5px; color:var(--ink-muted); white-space:nowrap;}
+  .active-count b{color:var(--accent-2); font-weight:700;}
+
+  .icon-btn{
+    width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--ink-muted); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:background .15s, color .15s, transform .15s; flex:none;
+  }
+  .icon-btn:hover{background:var(--surface-3); color:var(--ink);}
+  .icon-btn:active{transform:scale(.94);}
+
+  .popover{
+    position:absolute; top:calc(100% + 6px); left:0; background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; box-shadow:var(--shadow-lg); padding:10px; width:240px; z-index:50;
+  }
+  .popover input[type="text"]{
+    width:100%; padding:7px 9px; border-radius:7px; border:1px solid var(--border); background:var(--surface-2);
+    color:var(--ink); font-size:12.5px; margin-bottom:8px;
+  }
+  .popover .opt{display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:12.5px; border-radius:6px; cursor:pointer;}
+  .popover .opt:hover{background:var(--surface-2);}
+  .popover-list{max-height:180px; overflow-y:auto;}
+
+  /* ============ NAV TABS ============ */
+  .tabbar{
+    display:flex; gap:4px; padding:8px 20px 0; background:var(--bg); overflow-x:auto;
+  }
+  .tab{
+    padding:9px 14px; font-size:12.8px; font-weight:600; color:var(--ink-muted); cursor:pointer;
+    border-bottom:2.5px solid transparent; white-space:nowrap; display:flex; align-items:center; gap:6px;
+    transition:color .15s;
+  }
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--accent-2); border-bottom-color:var(--accent);}
+  .tab .n{background:var(--surface-3); color:var(--ink-muted); border-radius:99px; padding:1px 7px; font-size:10.5px; font-weight:700;}
+  .tab.active .n{background:var(--accent-soft); color:var(--accent-2);}
+
+  main{flex:1; padding:16px 20px 40px; max-width:1560px; width:100%; margin:0 auto;}
+
+  /* ============ CARD ============ */
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    box-shadow:var(--shadow);
+  }
+  .card-head{display:flex; align-items:center; gap:10px; padding:14px 16px 4px;}
+  .card-head h3{font-size:14px; font-weight:700; letter-spacing:.1px;}
+  .card-head .hint{font-size:11px; color:var(--ink-faint); margin-left:auto; font-weight:500;}
+  .card-body{padding:10px 16px 16px;}
+  .sample-tag{
+    font-size:9.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--warn);
+    background:var(--warn-soft); padding:2px 7px; border-radius:99px; flex:none;
+  }
+
+  /* ============ KPI BAND ============ */
+  .kpi-band{display:grid; grid-template-columns:1.4fr repeat(6, 1fr); gap:10px; margin-bottom:14px;}
+  @media (max-width:1180px){ .kpi-band{grid-template-columns:repeat(3, 1fr);} }
+  @media (max-width:640px){ .kpi-band{grid-template-columns:repeat(2, 1fr);} }
+  .kpi{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px;
+    display:flex; flex-direction:column; gap:2px; box-shadow:var(--shadow); cursor:default;
+    transition:transform .15s, border-color .15s;
+  }
+  .kpi.clickable{cursor:pointer;}
+  .kpi.clickable:hover{transform:translateY(-2px); border-color:var(--accent);}
+  .kpi-top{display:flex; align-items:center; justify-content:space-between;}
+  .kpi-icon{width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex:none;}
+  .kpi-value{font-size:26px; line-height:1.05; letter-spacing:-.5px;}
+  .kpi.primary{
+    background:linear-gradient(160deg, var(--navy), #132544 70%); color:var(--navy-ink); border-color:transparent;
+    justify-content:center;
+  }
+  .kpi.primary .kpi-value{font-size:38px; color:#fff;}
+  .kpi.primary .kpi-label{color:#B9CBE4;}
+  .kpi.primary .kpi-sub{color:#8FADD6;}
+  .kpi-label{font-size:11.5px; font-weight:600; color:var(--ink-muted);}
+  .kpi-sub{font-size:10.5px; color:var(--ink-faint); font-weight:500;}
+  .kpi-pct{font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:99px;}
+
+  /* ============ MID GRID ============ */
+  .mid-grid{display:grid; grid-template-columns:1.55fr 1fr; gap:12px; margin-bottom:12px; align-items:stretch;}
+  @media (max-width:1020px){ .mid-grid{grid-template-columns:1fr;} }
+  .stack{display:flex; flex-direction:column; gap:12px;}
+
+  /* Contract impact bars */
+  .sortrow{display:flex; align-items:center; gap:6px;}
+  .sort-btn{
+    font-size:10.5px; font-weight:600; color:var(--ink-muted); background:var(--surface-2); border:1px solid var(--border);
+    padding:3px 8px; border-radius:99px; cursor:pointer;
+  }
+  .sort-btn.active{background:var(--accent-soft); color:var(--accent-2); border-color:var(--accent);}
+  .impact-row{
+    display:grid; grid-template-columns:150px 1fr 92px 72px; align-items:center; gap:10px;
+    padding:8px 4px; border-radius:9px; cursor:pointer; transition:background .12s;
+  }
+  .impact-row:hover{background:var(--surface-2);}
+  .impact-name{font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .impact-name .code{display:block; font-size:10px; color:var(--ink-faint); font-weight:500;}
+  .impact-track{height:9px; background:var(--surface-3); border-radius:99px; overflow:hidden; position:relative;}
+  .impact-fill{height:100%; border-radius:99px; background:linear-gradient(90deg, var(--accent-2), var(--accent)); transition:width .5s cubic-bezier(.2,.9,.2,1);}
+  .impact-val{font-size:12.5px; font-weight:700; text-align:right;}
+  .impact-hrs{font-size:11px; color:var(--ink-muted); text-align:right;}
+
+  /* Conformidad */
+  .conf-split{display:flex; align-items:stretch; gap:16px; padding:4px 0 10px;}
+  .conf-num{flex:1; text-align:center; cursor:pointer; border-radius:10px; padding:6px; transition:background .15s;}
+  .conf-num:hover{background:var(--surface-2);}
+  .conf-num .v{font-size:27px; display:block;}
+  .conf-num .l{font-size:11px; font-weight:600; color:var(--ink-muted); margin-top:2px;}
+  .conf-num.good .v{color:var(--good);}
+  .conf-num.bad .v{color:var(--bad);}
+  .conf-bar{height:12px; border-radius:99px; overflow:hidden; display:flex; border:1px solid var(--border);}
+  .conf-bar .seg{height:100%; transition:width .6s cubic-bezier(.2,.9,.2,1);}
+
+  /* Tipos de desviacion */
+  .type-row{
+    display:grid; grid-template-columns:1fr 46px; align-items:center; gap:10px; padding:8px 4px;
+    border-radius:9px; cursor:pointer; transition:background .12s;
+  }
+  .type-row:hover{background:var(--surface-2);}
+  .type-row-top{display:flex; align-items:center; justify-content:space-between; font-size:12px; margin-bottom:4px;}
+  .type-name{font-weight:600;}
+  .type-meta{color:var(--ink-muted); font-size:11px;}
+  .type-track{height:8px; background:var(--surface-3); border-radius:99px; overflow:hidden;}
+  .type-fill{height:100%; border-radius:99px;}
+  .type-pct{font-size:12.5px; font-weight:700; text-align:right; color:var(--ink-muted);}
+
+  /* Acciones */
+  .action-stack{display:flex; flex-direction:column; gap:9px;}
+  .action-row{display:flex; align-items:center; gap:10px; cursor:pointer; padding:5px 4px; border-radius:8px; transition:background .12s;}
+  .action-row:hover{background:var(--surface-2);}
+  .action-dot{width:9px; height:9px; border-radius:3px; flex:none;}
+  .action-name{font-size:12px; font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .action-n{font-size:12px; font-weight:700; color:var(--ink-muted); width:38px; text-align:right;}
+  .action-track{flex:2.2; height:7px; background:var(--surface-3); border-radius:99px; overflow:hidden;}
+  .action-fill{height:100%; border-radius:99px; background:var(--accent);}
+
+  /* ============ CASES LIST ============ */
+  .case-toolbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .search-box{
+    display:flex; align-items:center; gap:6px; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:8px; padding:6px 10px; flex:1; min-width:160px; max-width:260px;
+  }
+  .search-box input{border:none; background:transparent; outline:none; color:var(--ink); font-size:12.5px; width:100%;}
+  .search-box svg{color:var(--ink-faint); flex:none;}
+
+  .case-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  .case-table th{
+    text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint);
+    font-weight:700; padding:8px 10px; border-bottom:1px solid var(--border); cursor:pointer; white-space:nowrap;
+  }
+  .case-table th:hover{color:var(--accent-2);}
+  .case-table td{padding:10px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  .case-table tbody tr{cursor:pointer; transition:background .12s;}
+  .case-table tbody tr:hover{background:var(--surface-2);}
+  .case-list-cards{display:none; flex-direction:column; gap:8px;}
+  @media (max-width:760px){
+    .case-table{display:none;}
+    .case-list-cards{display:flex;}
+  }
+  .case-card{
+    border:1px solid var(--border); border-radius:11px; padding:11px 12px; cursor:pointer; background:var(--surface);
+  }
+  .case-card-top{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .case-card-foot{display:flex; align-items:center; justify-content:space-between; margin-top:8px; font-size:11.5px; color:var(--ink-muted);}
+
+  .pill{
+    display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px;
+    white-space:nowrap;
+  }
+  .pill.good{background:var(--good-soft); color:var(--good);}
+  .pill.bad{background:var(--bad-soft); color:var(--bad);}
+  .pill.warn{background:var(--warn-soft); color:var(--warn);}
+  .pill.info{background:var(--info-soft); color:var(--info);}
+  .pill.neutral{background:var(--surface-3); color:var(--ink-muted);}
+  .sev-dot{width:7px; height:7px; border-radius:50%; flex:none;}
+
+  .empty-note{font-size:12.5px; color:var(--ink-faint); text-align:center; padding:26px 10px;}
+
+  /* ============ TREND CHART ============ */
+  .metric-tabs{display:flex; gap:6px; flex-wrap:wrap;}
+  .metric-tab{
+    font-size:11.5px; font-weight:600; padding:6px 11px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--ink-muted); cursor:pointer;
+  }
+  .metric-tab.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+  .trend-wrap{position:relative;}
+  .trend-tooltip{
+    position:absolute; background:var(--navy); color:#fff; padding:7px 10px; border-radius:8px; font-size:11.5px;
+    pointer-events:none; box-shadow:var(--shadow-lg); white-space:nowrap; transform:translate(-50%,-115%); z-index:5;
+    line-height:1.4;
+  }
+  .trend-tooltip b{font-size:13px;}
+
+  /* ============ DRAWER ============ */
+  .backdrop{
+    position:fixed; inset:0; background:rgba(8,13,24,.5); backdrop-filter:blur(1px); z-index:80;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .backdrop.open{opacity:1; pointer-events:auto;}
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:min(420px, 100%); background:var(--surface);
+    border-left:1px solid var(--border); box-shadow:var(--shadow-lg); z-index:90;
+    transform:translateX(100%); transition:transform .28s cubic-bezier(.2,.9,.2,1);
+    display:flex; flex-direction:column;
+  }
+  .drawer.open{transform:translateX(0);}
+  .drawer-head{
+    display:flex; align-items:center; gap:10px; padding:16px 18px; border-bottom:1px solid var(--border);
+  }
+  .drawer-head h3{font-size:15px;}
+  .drawer-body{padding:18px; overflow-y:auto; flex:1;}
+  .dl-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:6px;}
+  .dl-item .l{font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint); font-weight:700; margin-bottom:3px;}
+  .dl-item .v{font-size:14.5px; font-weight:700;}
+  .drawer-sep{height:1px; background:var(--border); margin:16px 0;}
+
+  /* ============ misc ============ */
+  .grid-2{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
+  @media (max-width:520px){ .grid-2{grid-template-columns:1fr;} }
+  .view-title{display:flex; align-items:baseline; gap:10px; margin-bottom:12px;}
+  .view-title h2{font-size:18px;}
+  .view-title p{font-size:12.5px; color:var(--ink-muted); margin:0;}
+  .fade-in{animation:fadeIn .22s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script>
+  window.__APP_CONFIG__ = {
+    logoUrl: {{ url_for('static', filename='img/logo_hesego.png') | tojson }},
+    volverUrl: {{ (url_for(home_endpoint) if home_endpoint else "") | tojson }},
+    logoutUrl: {{ url_for('auth.logout') | tojson }},
+    userName: {{ current_user.nombre_completo | tojson }}
+  };
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+{% raw %}
+<script type="text/babel" data-presets="react">
+const {useState, useMemo, useEffect, useRef, useCallback} = React;
+const CONFIG = window.__APP_CONFIG__ || {logoUrl:"", volverUrl:"", logoutUrl:"", userName:""};
+
+/* ================= ICONS (inline, no external deps) ================= */
+const Icon = ({d, size=16, ...p}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" {...p}><path d={d}/></svg>
+);
+const IconMulti = ({size=16, paths, ...p}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" {...p}>{paths.map((d,i)=><path key={i} d={d}/>)}</svg>
+);
+const IcRefresh = p => <IconMulti paths={["M21 12a9 9 0 1 1-2.64-6.36","M21 3v6h-6"]} {...p}/>;
+const IcFilter = p => <Icon d="M4 4h16l-6 8v6l-4 2v-8L4 4z" {...p}/>;
+const IcSearch = p => <IconMulti paths={["M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z","M21 21l-4.35-4.35"]} {...p}/>;
+const IcX = p => <IconMulti paths={["M18 6 6 18","M6 6l12 12"]} {...p}/>;
+const IcChevDown = p => <Icon d="m6 9 6 6 6-6" {...p}/>;
+const IcChevRight = p => <Icon d="m9 18 6-6-6-6" {...p}/>;
+const IcBuilding = p => <IconMulti paths={["M4 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17","M15 21V10a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v11","M4 21h16","M8 7h1","M8 11h1","M8 15h1"]} {...p}/>;
+const IcAlert = p => <IconMulti paths={["M12 9v4","M10.3 3.9 1.8 18a1.5 1.5 0 0 0 1.3 2.2h17.8a1.5 1.5 0 0 0 1.3-2.2L13.7 3.9a1.5 1.5 0 0 0-2.6 0z","M12 16h.01"]} {...p}/>;
+const IcCheck = p => <IconMulti paths={["M22 11.1V12a10 10 0 1 1-5.9-9.1","M22 4 12 14.01l-3-3"]} {...p}/>;
+const IcXCircle = p => <IconMulti paths={["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z","m15 9-6 6","m9 9 6 6"]} {...p}/>;
+const IcClock = p => <IconMulti paths={["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z","M12 6v6l4 2"]} {...p}/>;
+const IcDollar = p => <IconMulti paths={["M12 1v22","M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"]} {...p}/>;
+const IcLayers = p => <IconMulti paths={["m12 2 9 5-9 5-9-5 9-5z","m3 13 9 5 9-5","m3 18 9 5 9-5"]} {...p}/>;
+const IcGrid = p => <IconMulti paths={["M4 4h6v6H4z","M14 4h6v6h-6z","M4 14h6v6H4z","M14 14h6v6h-6z"]} {...p}/>;
+const IcTrend = p => <IconMulti paths={["M22 7 13.5 15.5 8.5 10.5 2 17","M16 7h6v6"]} {...p}/>;
+const IcInbox = p => <IconMulti paths={["M22 12h-6l-2 3h-4l-2-3H2","M5.5 5h13l2.6 7v7a1 1 0 0 1-1 1H3.9a1 1 0 0 1-1-1v-7L5.5 5z"]} {...p}/>;
+const IcLock = p => <IconMulti paths={["M5 11h14v10H5z","M8 11V7a4 4 0 0 1 8 0v4"]} {...p}/>;
+const IcMap = p => <IconMulti paths={["M9 20 3 17V4l6 3","M9 20l6-3","M9 20V7","M15 17l6 3V7l-6-3","M15 17V4","M15 4 9 7"]} {...p}/>;
+const IcArrowLeft = p => <IconMulti paths={["M19 12H5","m12 19-7-7 7-7"]} {...p}/>;
+const IcLogout = p => <IconMulti paths={["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4","M16 17l5-5-5-5","M21 12H9"]} {...p}/>;
+
+/* ================= REAL DATA (given by the user, unchanged) ================= */
+const KPIS = {
+  totalReportes: 2125,
+  sinRespuesta: 412,
+  conformes: 1163,
+  noConformes: 449,
+  cerrados: 16,
+  horas: {h:1753, m:38},
+  afectacionTotal: 281101254,
+};
+const CONFORMIDAD = { conforme: {n:1163, pct:72.1}, noConforme: {n:449, pct:27.9} };
+
+const CONTRATOS_NOMBRADOS = [
+  {id:"014-CHAP", nombre:"014 MTTO CHAPARRAL", horas:338.7, afectacion:82358364},
+  {id:"014-ESPI", nombre:"014 MTTO ESPINAL", horas:330.9, afectacion:67000465},
+  {id:"OYMM-JAMU", nombre:"OYMM - Valle Sur Jamundí", horas:322.1, afectacion:40437911},
+  {id:"2876-TULU", nombre:"2876 OYMM TULUA", horas:220.9, afectacion:23903382},
+  {id:"2876-ZARZ", nombre:"2876 OYMM ZARZAL", horas:151.4, afectacion:20295597},
+  {id:"021-ESPI", nombre:"021 OYMM ESPINAL", horas:137.3, afectacion:14697379},
+];
+const SUMA_NOMBRADOS = CONTRATOS_NOMBRADOS.reduce((s,c)=>s+c.afectacion,0);
+const HORAS_NOMBRADOS = CONTRATOS_NOMBRADOS.reduce((s,c)=>s+c.horas,0);
+const OTROS_CONTRATO = {
+  id:"OTROS", nombre:"Otros contratos", horas: Math.max(0, +( (KPIS.horas.h + KPIS.horas.m/60) - HORAS_NOMBRADOS ).toFixed(1)),
+  afectacion: Math.max(0, KPIS.afectacionTotal - SUMA_NOMBRADOS),
+};
+const CONTRATOS = [...CONTRATOS_NOMBRADOS, OTROS_CONTRATO];
+
+const TIPOS_NOMBRADOS = [
+  {id:"salida-tardia", nombre:"Salida tardía", n:830, color:"var(--bad)"},
+  {id:"tiempo-muerto", nombre:"Tiempo muerto en ruta", n:414, color:"var(--warn)"},
+  {id:"fuera-ruta", nombre:"Fuera de ruta", n:319, color:"var(--info)"},
+  {id:"almuerzo", nombre:"Excede tiempo en almuerzo", n:184, color:"var(--accent)"},
+  {id:"final-temprana", nombre:"Finalización temprana", n:121, color:"#8B5CF6"},
+];
+const SUMA_TIPOS = TIPOS_NOMBRADOS.reduce((s,t)=>s+t.n,0);
+const OTROS_TIPO = {id:"otros-tipo", nombre:"Otros tipos", n: Math.max(0, KPIS.totalReportes - SUMA_TIPOS), color:"var(--ink-faint)"};
+const TIPOS = [...TIPOS_NOMBRADOS, OTROS_TIPO];
+
+const ACCIONES = [
+  {id:"justificado", nombre:"Justificado", n:1366, color:"var(--good)"},
+  {id:"llamado-verbal", nombre:"Llamado de atención verbal", n:227, color:"var(--warn)"},
+  {id:"recordatorio", nombre:"Recordatorio de funciones", n:68, color:"var(--info)"},
+  {id:"mal-reporte", nombre:"Mal reporte", n:20, color:"var(--bad)"},
+  {id:"actas", nombre:"Actas de compromiso", n:12, color:"#8B5CF6"},
+];
+const SUMA_ACCIONES = ACCIONES.reduce((s,a)=>s+a.n,0);
+
+/* ================= SAMPLE DATA (clearly illustrative — no source case-level export was provided) ================= */
+const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep"];
+function seeded(seed){ let s = seed; return () => { s = (s*9301+49297) % 233280; return s/233280; }; }
+const rnd = seeded(42);
+
+const CONFORMIDADES = ["Conforme","No conforme","Sin respuesta","Cerrado"];
+const CONF_STYLE = {
+  "Conforme":{pill:"good", icon: IcCheck},
+  "No conforme":{pill:"bad", icon: IcXCircle},
+  "Sin respuesta":{pill:"warn", icon: IcClock},
+  "Cerrado":{pill:"neutral", icon: IcLock},
+};
+
+const SAMPLE_CASES = Array.from({length: 42}).map((_, i) => {
+  const c = CONTRATOS_NOMBRADOS[Math.floor(rnd()*CONTRATOS_NOMBRADOS.length)];
+  const t = TIPOS_NOMBRADOS[Math.floor(rnd()*TIPOS_NOMBRADOS.length)];
+  const confRoll = rnd();
+  const conformidad = confRoll < 0.44 ? "Conforme" : confRoll < 0.72 ? "No conforme" : confRoll < 0.9 ? "Sin respuesta" : "Cerrado";
+  const accion = conformidad === "Sin respuesta" ? "—" : ACCIONES[Math.floor(rnd()*ACCIONES.length)].nombre;
+  const horas = +(1 + rnd()*9).toFixed(1);
+  const afectacion = Math.round((horas * (40000 + rnd()*160000)) / 10) * 10;
+  const day = 1 + Math.floor(rnd()*27);
+  const month = 8 + Math.floor(rnd()*2); // Aug/Sep 2026
+  const fecha = `2026-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+  return {
+    id: `OP-2026-${String(1200+i).padStart(4,"0")}`,
+    contrato: c.nombre, contratoId: c.id,
+    tipo: t.nombre, tipoId: t.id,
+    fecha, horas, afectacion, accion, conformidad,
+  };
+}).sort((a,b)=> b.fecha.localeCompare(a.fecha) || b.afectacion - a.afectacion);
+
+// Sample monthly trend — illustrative, shaped loosely around the real totals, not an assertion of real history.
+const TREND_SAMPLE = MESES.map((m, i) => {
+  const wave = 0.82 + 0.22*Math.sin(i*0.85) + (i/MESES.length)*0.18;
+  return {
+    mes: m,
+    reportes: Math.round(190 * wave),
+    horas: Math.round(140 * wave),
+    afectacion: Math.round(24000000 * wave),
+    conformes: Math.round(104 * wave),
+    noConformes: Math.round(40 * wave),
+  };
+});
+
+/* ================= FORMATTERS ================= */
+const fmtInt = n => new Intl.NumberFormat("es-CO").format(Math.round(n));
+const fmtMoney = n => "$" + new Intl.NumberFormat("es-CO").format(Math.round(n));
+const fmtMoneyCompact = n => {
+  if (n >= 1e9) return "$" + (n/1e9).toFixed(2).replace(/\.00$/,"") + "MM";
+  if (n >= 1e6) return "$" + (n/1e6).toFixed(1).replace(/\.0$/,"") + "M";
+  if (n >= 1e3) return "$" + (n/1e3).toFixed(0) + "K";
+  return "$" + fmtInt(n);
+};
+const fmtPct = n => n.toFixed(1).replace(".0","") + "%";
+const fmtFecha = iso => { const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
+
+/* ================= FILTER BAR ================= */
+const ANIOS = ["2025","2026"];
+const MESES_FILTRO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+function Popover({onClose, children, width}) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const onDoc = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    const onEsc = e => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onEsc);
+    return () => { document.removeEventListener("mousedown", onDoc); document.removeEventListener("keydown", onEsc); };
+  }, [onClose]);
+  return <div className="popover" ref={ref} style={width?{width}:{}}>{children}</div>;
+}
+
+function ContratoFilter({selected, setSelected}) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const options = CONTRATOS.filter(c => c.nombre.toLowerCase().includes(q.toLowerCase()));
+  const toggle = id => setSelected(s => s.includes(id) ? s.filter(x=>x!==id) : [...s, id]);
+  return (
+    <div style={{position:"relative"}}>
+      <div className={"fchip" + (selected.length ? " active" : "")} onClick={() => setOpen(o=>!o)}>
+        <IcBuilding size={13}/> Contrato {selected.length > 0 && <span className="badge">{selected.length}</span>}
+        <IcChevDown size={12}/>
+      </div>
+      {open && (
+        <Popover onClose={() => setOpen(false)}>
+          <input type="text" placeholder="Buscar contrato…" value={q} onChange={e=>setQ(e.target.value)} autoFocus/>
+          <div className="popover-list">
+            {options.map(c => (
+              <label className="opt" key={c.id}>
+                <input type="checkbox" checked={selected.includes(c.id)} onChange={()=>toggle(c.id)}/>
+                {c.nombre}
+              </label>
+            ))}
+            {options.length===0 && <div style={{fontSize:12,color:"var(--ink-faint)",padding:"6px 4px"}}>Sin resultados</div>}
+          </div>
+        </Popover>
+      )}
+    </div>
+  );
+}
+
+function SelectFilter({icon:IconEl, label, value, setValue, options}) {
+  return (
+    <select className={"fchip" + (value ? " active" : "")} value={value} onChange={e=>setValue(e.target.value)}>
+      <option value="">{label}</option>
+      {options.map(o => <option key={o.value||o} value={o.value||o}>{o.label||o}</option>)}
+    </select>
+  );
+}
+
+function FilterBar({filters, setFilters, onNavigate}) {
+  const activeCount = Object.values(filters).reduce((s,v)=> s + (Array.isArray(v) ? (v.length?1:0) : (v?1:0)), 0);
+  const clear = () => setFilters({contratos:[], anio:"", mes:"", tipo:"", accion:"", conformidad:""});
+  return (
+    <div className="filterbar">
+      <div className="filter-scroll">
+        <ContratoFilter selected={filters.contratos} setSelected={f=>setFilters(s=>({...s, contratos: typeof f==="function"?f(s.contratos):f}))}/>
+        <SelectFilter label="Año" value={filters.anio} setValue={v=>setFilters(s=>({...s,anio:v}))} options={ANIOS}/>
+        <SelectFilter label="Mes" value={filters.mes} setValue={v=>setFilters(s=>({...s,mes:v}))} options={MESES_FILTRO}/>
+        <SelectFilter label="Tipo de desviación" value={filters.tipo} setValue={v=>setFilters(s=>({...s,tipo:v}))}
+          options={TIPOS.map(t=>({value:t.id,label:t.nombre}))}/>
+        <SelectFilter label="Acción" value={filters.accion} setValue={v=>setFilters(s=>({...s,accion:v}))}
+          options={ACCIONES.map(a=>({value:a.id,label:a.nombre}))}/>
+        <SelectFilter label="Conformidad" value={filters.conformidad} setValue={v=>setFilters(s=>({...s,conformidad:v}))}
+          options={CONFORMIDADES}/>
+      </div>
+      <div className="fbtns">
+        {activeCount>0 && <span className="active-count">Filtros activos: <b>{activeCount}</b></span>}
+        <button className="btn btn-ghost" onClick={clear}><IcX size={13}/>Limpiar</button>
+        <button className="btn btn-primary" onClick={()=>onNavigate("casos")}><IcCheck size={13}/>Aplicar</button>
+      </div>
+    </div>
+  );
+}
+
+/* ================= KPI BAND ================= */
+function Kpi({icon:IconEl, label, value, sub, tint, primary, onClick}) {
+  return (
+    <div className={"kpi" + (primary?" primary":"") + (onClick?" clickable":"")} onClick={onClick}>
+      {!primary && (
+        <div className="kpi-top">
+          <div className="kpi-icon" style={{background: tint+"22", color:tint}}><IconEl size={14}/></div>
+        </div>
+      )}
+      <div className="kpi-value num">{value}</div>
+      <div className="kpi-label">{label}</div>
+      {sub && <div className="kpi-sub">{sub}</div>}
+    </div>
+  );
+}
+
+function KpiBand({onFilterConformidad}) {
+  const promedioCaso = KPIS.afectacionTotal / KPIS.totalReportes;
+  return (
+    <div className="kpi-band">
+      <Kpi primary label="Total de reportes" value={fmtInt(KPIS.totalReportes)} sub="Periodo consultado, todos los contratos"/>
+      <Kpi icon={IcClock} tint="var(--warn)" label="Sin respuesta" value={fmtInt(KPIS.sinRespuesta)}
+        sub={fmtPct(KPIS.sinRespuesta/KPIS.totalReportes*100)+" del total"}
+        onClick={()=>onFilterConformidad("Sin respuesta")}/>
+      <Kpi icon={IcCheck} tint="var(--good)" label="Conformes" value={fmtInt(KPIS.conformes)}
+        sub={fmtPct(CONFORMIDAD.conforme.pct)+" de evaluados"} onClick={()=>onFilterConformidad("Conforme")}/>
+      <Kpi icon={IcXCircle} tint="var(--bad)" label="No conformes" value={fmtInt(KPIS.noConformes)}
+        sub={fmtPct(CONFORMIDAD.noConforme.pct)+" de evaluados"} onClick={()=>onFilterConformidad("No conforme")}/>
+      <Kpi icon={IcLock} tint="var(--ink-faint)" label="Cerrados" value={fmtInt(KPIS.cerrados)}
+        sub={fmtPct(KPIS.cerrados/KPIS.totalReportes*100)+" del total"} onClick={()=>onFilterConformidad("Cerrado")}/>
+      <Kpi icon={IcClock} tint="var(--info)" label="Horas afectadas" value={`${KPIS.horas.h}h ${KPIS.horas.m}m`} sub="Acumulado del periodo"/>
+      <Kpi icon={IcDollar} tint="var(--accent)" label="Afectación económica" value={fmtMoneyCompact(KPIS.afectacionTotal)}
+        sub={fmtMoney(promedioCaso) + " prom./caso"}/>
+    </div>
+  );
+}
+
+/* ================= CONTRATOS IMPACT ================= */
+function ContratosImpact({onOpenDrawer, onFilterContrato}) {
+  const [sortBy, setSortBy] = useState("afectacion");
+  const sorted = useMemo(() => {
+    const arr = [...CONTRATOS];
+    if (sortBy === "afectacion") arr.sort((a,b)=>b.afectacion-a.afectacion);
+    if (sortBy === "horas") arr.sort((a,b)=>b.horas-a.horas);
+    if (sortBy === "pct") arr.sort((a,b)=> (b.afectacion/KPIS.afectacionTotal) - (a.afectacion/KPIS.afectacionTotal));
+    return arr;
+  }, [sortBy]);
+  const max = Math.max(...CONTRATOS.map(c=>c.afectacion));
+  return (
+    <div className="card">
+      <div className="card-head">
+        <IcMap size={15} color="var(--accent)"/>
+        <h3>¿Dónde está el problema?</h3>
+        <span className="hint">Impacto por contrato</span>
+      </div>
+      <div className="card-body">
+        <div className="sortrow" style={{marginBottom:8}}>
+          <span style={{fontSize:11,color:"var(--ink-faint)",marginRight:2}}>Ordenar por</span>
+          <button className={"sort-btn"+(sortBy==="afectacion"?" active":"")} onClick={()=>setSortBy("afectacion")}>Mayor afectación</button>
+          <button className={"sort-btn"+(sortBy==="horas"?" active":"")} onClick={()=>setSortBy("horas")}>Más horas</button>
+          <button className={"sort-btn"+(sortBy==="pct"?" active":"")} onClick={()=>setSortBy("pct")}>Mayor %</button>
+        </div>
+        {sorted.map(c => {
+          const pct = c.afectacion / KPIS.afectacionTotal * 100;
+          return (
+            <div className="impact-row" key={c.id} onClick={()=>c.id==="OTROS" ? onFilterContrato(null) : onOpenDrawer({kind:"contrato", data:c})}>
+              <div className="impact-name">{c.nombre}<span className="code mono">{c.id}</span></div>
+              <div className="impact-track"><div className="impact-fill" style={{width: (c.afectacion/max*100)+"%"}}/></div>
+              <div className="impact-val num">{fmtMoneyCompact(c.afectacion)}</div>
+              <div className="impact-hrs">{c.horas}h · {fmtPct(pct)}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ================= CONFORMIDAD CARD ================= */
+function ConformidadCard({onFilterConformidad}) {
+  return (
+    <div className="card">
+      <div className="card-head"><IcCheck size={15} color="var(--good)"/><h3>Conformidad</h3></div>
+      <div className="card-body">
+        <div className="conf-split">
+          <div className="conf-num good" onClick={()=>onFilterConformidad("Conforme")}>
+            <span className="v num">{fmtPct(CONFORMIDAD.conforme.pct)}</span>
+            <span className="l">Conforme · {fmtInt(CONFORMIDAD.conforme.n)}</span>
+          </div>
+          <div className="conf-num bad" onClick={()=>onFilterConformidad("No conforme")}>
+            <span className="v num">{fmtPct(CONFORMIDAD.noConforme.pct)}</span>
+            <span className="l">No conforme · {fmtInt(CONFORMIDAD.noConforme.n)}</span>
+          </div>
+        </div>
+        <div className="conf-bar">
+          <div className="seg" style={{width:CONFORMIDAD.conforme.pct+"%", background:"var(--good)"}}/>
+          <div className="seg" style={{width:CONFORMIDAD.noConforme.pct+"%", background:"var(--bad)"}}/>
+        </div>
+        <div style={{fontSize:10.5, color:"var(--ink-faint)", marginTop:8}}>Sobre {fmtInt(CONFORMIDAD.conforme.n+CONFORMIDAD.noConforme.n)} reportes evaluados</div>
+      </div>
+    </div>
+  );
+}
+
+/* ================= TIPOS DE DESVIACION ================= */
+function TiposCard({onFilterTipo, compact}) {
+  const list = compact ? TIPOS.slice(0,5) : TIPOS;
+  return (
+    <div className="card">
+      <div className="card-head"><IcAlert size={15} color="var(--bad)"/><h3>Tipos de desviación</h3>
+        <span className="hint">% del total de reportes</span></div>
+      <div className="card-body">
+        {list.map(t => {
+          const pct = t.n / KPIS.totalReportes * 100;
+          return (
+            <div className="type-row" key={t.id} onClick={()=>onFilterTipo(t.id)}>
+              <div>
+                <div className="type-row-top">
+                  <span className="type-name">{t.nombre}</span>
+                  <span className="type-meta">{fmtInt(t.n)} casos</span>
+                </div>
+                <div className="type-track"><div className="type-fill" style={{width:pct+"%", background:t.color}}/></div>
+              </div>
+              <div className="type-pct">{fmtPct(pct)}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ================= ACCIONES ================= */
+function AccionesCard({onFilterAccion}) {
+  const max = Math.max(...ACCIONES.map(a=>a.n));
+  return (
+    <div className="card">
+      <div className="card-head"><IcLayers size={15} color="var(--accent)"/><h3>Acciones tomadas</h3>
+        <span className="hint">{fmtInt(SUMA_ACCIONES)} acciones</span></div>
+      <div className="card-body action-stack">
+        {ACCIONES.map(a => (
+          <div className="action-row" key={a.id} onClick={()=>onFilterAccion(a.id)}>
+            <span className="action-dot" style={{background:a.color}}/>
+            <span className="action-name">{a.nombre}</span>
+            <div className="action-track"><div className="action-fill" style={{width:(a.n/max*100)+"%", background:a.color}}/></div>
+            <span className="action-n num">{fmtInt(a.n)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ================= CASOS LIST ================= */
+function applyFilters(cases, filters, search) {
+  return cases.filter(c => {
+    if (filters.contratos.length && !filters.contratos.includes(c.contratoId)) return false;
+    if (filters.tipo && c.tipoId !== filters.tipo) return false;
+    if (filters.accion) {
+      const accionObj = ACCIONES.find(a=>a.id===filters.accion);
+      if (!accionObj || c.accion !== accionObj.nombre) return false;
+    }
+    if (filters.conformidad && c.conformidad !== filters.conformidad) return false;
+    if (filters.anio && c.fecha.split("-")[0] !== filters.anio) return false;
+    if (filters.mes) {
+      const idx = MESES_FILTRO.indexOf(filters.mes) + 1;
+      if (+c.fecha.split("-")[1] !== idx) return false;
+    }
+    if (search && !(`${c.id} ${c.contrato} ${c.tipo}`.toLowerCase().includes(search.toLowerCase()))) return false;
+    return true;
+  });
+}
+
+function SeverityDot({conformidad}) {
+  const color = conformidad==="No conforme" ? "var(--bad)" : conformidad==="Sin respuesta" ? "var(--warn)" : conformidad==="Conforme" ? "var(--good)" : "var(--ink-faint)";
+  return <span className="sev-dot" style={{background:color}}/>;
+}
+
+function CasosCard({filters, onOpenDrawer, dense}) {
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState("afectacion");
+  const [sortDir, setSortDir] = useState(-1);
+  const filtered = useMemo(()=>applyFilters(SAMPLE_CASES, filters, search), [filters, search]);
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a,b) => {
+      let av=a[sortKey], bv=b[sortKey];
+      if (typeof av === "string") return sortDir * av.localeCompare(bv);
+      return sortDir * (av - bv);
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+  const list = dense ? sorted.slice(0,8) : sorted;
+  const toggleSort = k => { if (k===sortKey) setSortDir(d=>-d); else { setSortKey(k); setSortDir(-1); } };
+
+  return (
+    <div className="card">
+      <div className="card-head">
+        <IcInbox size={15} color="var(--warn)"/>
+        <h3>Casos que requieren atención</h3>
+        <span className="sample-tag">Muestra</span>
+        <span className="hint">{filtered.length} de {SAMPLE_CASES.length}</span>
+      </div>
+      <div className="card-body">
+        {!dense && (
+          <div className="case-toolbar" style={{marginBottom:10}}>
+            <div className="search-box">
+              <IcSearch size={14}/>
+              <input placeholder="Buscar caso, contrato o tipo…" value={search} onChange={e=>setSearch(e.target.value)}/>
+            </div>
+          </div>
+        )}
+        {list.length === 0 ? (
+          <div className="empty-note">Sin casos para estos filtros.</div>
+        ) : (
+          <>
+            <table className="case-table">
+              <thead><tr>
+                <th onClick={()=>toggleSort("id")}>Caso</th>
+                <th onClick={()=>toggleSort("contrato")}>Contrato</th>
+                <th onClick={()=>toggleSort("tipo")}>Tipo</th>
+                <th onClick={()=>toggleSort("fecha")}>Fecha</th>
+                <th onClick={()=>toggleSort("horas")}>Horas</th>
+                <th onClick={()=>toggleSort("afectacion")}>Impacto</th>
+                <th>Acción</th>
+                <th>Estado</th>
+              </tr></thead>
+              <tbody>
+                {list.map(c => (
+                  <tr key={c.id} onClick={()=>onOpenDrawer({kind:"caso", data:c})}>
+                    <td className="mono">{c.id}</td>
+                    <td>{c.contrato}</td>
+                    <td>{c.tipo}</td>
+                    <td className="mono">{fmtFecha(c.fecha)}</td>
+                    <td className="num" style={{fontWeight:600}}>{c.horas}h</td>
+                    <td className="num" style={{fontWeight:700}}>{fmtMoneyCompact(c.afectacion)}</td>
+                    <td>{c.accion}</td>
+                    <td><span className={"pill "+CONF_STYLE[c.conformidad].pill}><SeverityDot conformidad={c.conformidad}/>{c.conformidad}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="case-list-cards">
+              {list.map(c => (
+                <div className="case-card" key={c.id} onClick={()=>onOpenDrawer({kind:"caso", data:c})}>
+                  <div className="case-card-top">
+                    <SeverityDot conformidad={c.conformidad}/>
+                    <b style={{fontSize:12.5}}>{c.tipo}</b>
+                  </div>
+                  <div style={{fontSize:12,color:"var(--ink-muted)"}}>{c.contrato}</div>
+                  <div className="case-card-foot">
+                    <span>{c.horas}h afectadas</span>
+                    <span style={{fontWeight:700, color:"var(--ink)"}}>{fmtMoneyCompact(c.afectacion)}</span>
+                  </div>
+                  <div className="case-card-foot" style={{marginTop:2}}>
+                    <span className="mono">{fmtFecha(c.fecha)}</span>
+                    <span className={"pill "+CONF_STYLE[c.conformidad].pill}>{c.conformidad}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ================= TREND CHART ================= */
+const TREND_METRICS = [
+  {key:"reportes", label:"Reportes", color:"var(--accent)", fmt:fmtInt},
+  {key:"horas", label:"Horas afectadas", color:"var(--info)", fmt:n=>fmtInt(n)+"h"},
+  {key:"afectacion", label:"Afectación económica", color:"var(--bad)", fmt:fmtMoneyCompact},
+  {key:"conformes", label:"Conformes", color:"var(--good)", fmt:fmtInt},
+  {key:"noConformes", label:"No conformes", color:"var(--warn)", fmt:fmtInt},
+];
+
+function TrendChart() {
+  const [metric, setMetric] = useState("reportes");
+  const [hover, setHover] = useState(null);
+  const wrapRef = useRef(null);
+  const m = TREND_METRICS.find(x=>x.key===metric);
+  const data = TREND_SAMPLE;
+  const W = 900, H = 220, padL = 40, padR = 12, padT = 16, padB = 26;
+  const max = Math.max(...data.map(d=>d[metric])) * 1.15;
+  const x = i => padL + (W-padL-padR) * (i/(data.length-1));
+  const y = v => padT + (H-padT-padB) * (1 - v/max);
+  const pathLine = data.map((d,i)=> `${i===0?"M":"L"} ${x(i)} ${y(d[metric])}`).join(" ");
+  const pathArea = pathLine + ` L ${x(data.length-1)} ${H-padB} L ${x(0)} ${H-padB} Z`;
+
+  const onMove = e => {
+    const rect = wrapRef.current.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width * W;
+    let idx = Math.round((relX - padL) / (W-padL-padR) * (data.length-1));
+    idx = Math.max(0, Math.min(data.length-1, idx));
+    setHover(idx);
+  };
+
+  return (
+    <div className="card">
+      <div className="card-head">
+        <IcTrend size={15} color="var(--accent)"/>
+        <h3>Evolución de desviaciones</h3>
+        <span className="sample-tag">Muestra</span>
+      </div>
+      <div className="card-body">
+        <div className="metric-tabs" style={{marginBottom:10}}>
+          {TREND_METRICS.map(tm => (
+            <button key={tm.key} className={"metric-tab"+(metric===tm.key?" active":"")} onClick={()=>setMetric(tm.key)}>{tm.label}</button>
+          ))}
+        </div>
+        <div className="trend-wrap" ref={wrapRef} onMouseMove={onMove} onMouseLeave={()=>setHover(null)}>
+          <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%", height:"auto", display:"block"}}>
+            <defs>
+              <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={m.color} stopOpacity="0.28"/>
+                <stop offset="100%" stopColor={m.color} stopOpacity="0"/>
+              </linearGradient>
+            </defs>
+            {[0,0.25,0.5,0.75,1].map((f,i)=>(
+              <line key={i} x1={padL} x2={W-padR} y1={padT+(H-padT-padB)*f} y2={padT+(H-padT-padB)*f}
+                stroke="var(--border)" strokeWidth="1"/>
+            ))}
+            <path d={pathArea} fill="url(#trendFill)"/>
+            <path d={pathLine} fill="none" stroke={m.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            {data.map((d,i)=>(
+              <circle key={i} cx={x(i)} cy={y(d[metric])} r={hover===i?5:3}
+                fill={m.color} stroke="var(--surface)" strokeWidth="2"/>
+            ))}
+            {hover!==null && <line x1={x(hover)} x2={x(hover)} y1={padT} y2={H-padB} stroke={m.color} strokeWidth="1" strokeDasharray="3,3" opacity=".5"/>}
+            {data.map((d,i)=>(
+              <text key={i} x={x(i)} y={H-6} fontSize="11" fill="var(--ink-faint)" textAnchor="middle" fontFamily="IBM Plex Sans">{d.mes}</text>
+            ))}
+          </svg>
+          {hover!==null && (
+            <div className="trend-tooltip" style={{left: (x(hover)/W*100)+"%", top: (y(data[hover][metric])/H*100)+"%"}}>
+              {data[hover].mes} 2026<br/><b>{m.fmt(data[hover][metric])}</b>
+            </div>
+          )}
+        </div>
+        <div style={{fontSize:10.5, color:"var(--ink-faint)", marginTop:4}}>Tendencia ilustrativa — se reemplazará por el histórico real al conectar la fuente de datos.</div>
+      </div>
+    </div>
+  );
+}
+
+/* ================= DRAWER ================= */
+function Drawer({item, onClose}) {
+  const open = !!item;
+  useEffect(() => {
+    const onEsc = e => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onEsc);
+    return () => document.removeEventListener("keydown", onEsc);
+  }, [onClose]);
+
+  let title = "", subtitle = "", body = null;
+  if (item) {
+    if (item.kind === "caso") {
+      const c = item.data;
+      title = c.tipo; subtitle = c.contrato;
+      body = (
+        <>
+          <span className={"pill "+CONF_STYLE[c.conformidad].pill}><SeverityDot conformidad={c.conformidad}/>{c.conformidad}</span>
+          <div className="dl-grid">
+            <div className="dl-item"><div className="l">Caso</div><div className="v mono">{c.id}</div></div>
+            <div className="dl-item"><div className="l">Fecha</div><div className="v mono">{fmtFecha(c.fecha)}</div></div>
+            <div className="dl-item"><div className="l">Horas afectadas</div><div className="v">{c.horas}h</div></div>
+            <div className="dl-item"><div className="l">Impacto económico</div><div className="v">{fmtMoney(c.afectacion)}</div></div>
+            <div className="dl-item"><div className="l">Acción tomada</div><div className="v">{c.accion}</div></div>
+            <div className="dl-item"><div className="l">Contrato</div><div className="v">{c.contrato}</div></div>
+          </div>
+          <div className="drawer-sep"/>
+          <div style={{fontSize:12, color:"var(--ink-faint)"}}>Este caso pertenece a la muestra ilustrativa de la vista "Casos que requieren atención". Al conectar la fuente de datos, aquí se mostrará el detalle completo del reporte real (evidencias, observaciones y trazabilidad).</div>
+        </>
+      );
+    } else if (item.kind === "contrato") {
+      const c = item.data;
+      const pct = c.afectacion / KPIS.afectacionTotal * 100;
+      title = c.nombre; subtitle = c.id;
+      body = (
+        <>
+          <div className="dl-grid">
+            <div className="dl-item"><div className="l">Horas afectadas</div><div className="v">{c.horas}h</div></div>
+            <div className="dl-item"><div className="l">Afectación económica</div><div className="v">{fmtMoney(c.afectacion)}</div></div>
+            <div className="dl-item"><div className="l">% del total</div><div className="v">{fmtPct(pct)}</div></div>
+            <div className="dl-item"><div className="l">Costo/hora promedio</div><div className="v">{fmtMoney(c.afectacion/c.horas)}</div></div>
+          </div>
+          <div className="drawer-sep"/>
+          <div style={{fontSize:12, color:"var(--ink-faint)"}}>Cifras agregadas reales del periodo consultado. El desglose caso a caso de este contrato se habilitará al conectar la fuente de datos.</div>
+        </>
+      );
+    } else if (item.kind === "tipo") {
+      const t = item.data;
+      const pct = t.n / KPIS.totalReportes * 100;
+      title = t.nombre; subtitle = "Tipo de desviación";
+      body = (
+        <div className="dl-grid">
+          <div className="dl-item"><div className="l">Casos</div><div className="v">{fmtInt(t.n)}</div></div>
+          <div className="dl-item"><div className="l">% del total de reportes</div><div className="v">{fmtPct(pct)}</div></div>
+        </div>
+      );
+    } else if (item.kind === "accion") {
+      const a = item.data;
+      const pct = a.n / SUMA_ACCIONES * 100;
+      title = a.nombre; subtitle = "Acción tomada";
+      body = (
+        <div className="dl-grid">
+          <div className="dl-item"><div className="l">Casos</div><div className="v">{fmtInt(a.n)}</div></div>
+          <div className="dl-item"><div className="l">% de acciones registradas</div><div className="v">{fmtPct(pct)}</div></div>
+        </div>
+      );
+    }
+  }
+
+  return (
+    <>
+      <div className={"backdrop"+(open?" open":"")} onClick={onClose}/>
+      <div className={"drawer"+(open?" open":"")}>
+        {item && (
+          <>
+            <div className="drawer-head">
+              <div style={{flex:1, minWidth:0}}>
+                <h3 style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{title}</h3>
+                <div style={{fontSize:12, color:"var(--ink-muted)"}}>{subtitle}</div>
+              </div>
+              <button className="icon-btn" onClick={onClose}><IcX size={16}/></button>
+            </div>
+            <div className="drawer-body">{body}</div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ================= NAV ================= */
+const NAV = [
+  {id:"resumen", label:"Resumen", icon:IcGrid},
+  {id:"casos", label:"Casos", icon:IcInbox},
+  {id:"contratos", label:"Contratos", icon:IcBuilding},
+  {id:"desviaciones", label:"Desviaciones", icon:IcAlert},
+  {id:"analisis", label:"Análisis", icon:IcTrend},
+];
+
+/* ================= VIEWS ================= */
+function ResumenView({filters, setFilters, onOpenDrawer, onNav}) {
+  const setConf = v => { setFilters(s=>({...s, conformidad: s.conformidad===v?"":v})); onNav("casos"); };
+  const setContrato = () => onNav("contratos");
+  const setTipo = id => { setFilters(s=>({...s, tipo: s.tipo===id?"":id})); onNav("casos"); };
+  const setAccion = id => { setFilters(s=>({...s, accion: s.accion===id?"":id})); onNav("casos"); };
+  return (
+    <div className="fade-in">
+      <KpiBand onFilterConformidad={setConf}/>
+      <div className="mid-grid">
+        <ContratosImpact onOpenDrawer={onOpenDrawer} onFilterContrato={setContrato}/>
+        <div className="stack">
+          <ConformidadCard onFilterConformidad={setConf}/>
+          <TiposCard onFilterTipo={setTipo}/>
+        </div>
+      </div>
+      <div className="mid-grid" style={{gridTemplateColumns:"1fr"}}>
+        <CasosCard filters={filters} onOpenDrawer={onOpenDrawer} dense/>
+      </div>
+    </div>
+  );
+}
+
+function CasosView({filters, setFilters, onOpenDrawer}) {
+  return (
+    <div className="fade-in">
+      <div className="view-title"><h2>Casos que requieren atención</h2><p>Vista de muestra — filtros activos se aplican en tiempo real</p></div>
+      <CasosCard filters={filters} onOpenDrawer={onOpenDrawer}/>
+    </div>
+  );
+}
+
+function ContratosView({onOpenDrawer}) {
+  const [sortBy, setSortBy] = useState("afectacion");
+  const sorted = useMemo(() => {
+    const arr = [...CONTRATOS];
+    if (sortBy === "afectacion") arr.sort((a,b)=>b.afectacion-a.afectacion);
+    if (sortBy === "horas") arr.sort((a,b)=>b.horas-a.horas);
+    return arr;
+  }, [sortBy]);
+  return (
+    <div className="fade-in">
+      <div className="view-title"><h2>Contratos</h2><p>Impacto económico y horas afectadas por contrato</p></div>
+      <div className="card">
+        <div className="card-body" style={{paddingTop:16}}>
+          <div className="sortrow" style={{marginBottom:10}}>
+            <button className={"sort-btn"+(sortBy==="afectacion"?" active":"")} onClick={()=>setSortBy("afectacion")}>Mayor afectación</button>
+            <button className={"sort-btn"+(sortBy==="horas"?" active":"")} onClick={()=>setSortBy("horas")}>Más horas</button>
+          </div>
+          {sorted.map(c => {
+            const pct = c.afectacion/KPIS.afectacionTotal*100;
+            const max = Math.max(...CONTRATOS.map(x=>x.afectacion));
+            return (
+              <div className="impact-row" key={c.id} onClick={()=>c.id!=="OTROS" && onOpenDrawer({kind:"contrato", data:c})}>
+                <div className="impact-name">{c.nombre}<span className="code mono">{c.id}</span></div>
+                <div className="impact-track"><div className="impact-fill" style={{width:(c.afectacion/max*100)+"%"}}/></div>
+                <div className="impact-val num">{fmtMoneyCompact(c.afectacion)}</div>
+                <div className="impact-hrs">{c.horas}h · {fmtPct(pct)}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesviacionesView({onOpenDrawer, onFilterTipo}) {
+  return (
+    <div className="fade-in">
+      <div className="view-title"><h2>Tipos de desviación</h2><p>{fmtInt(KPIS.totalReportes)} reportes totales</p></div>
+      <div className="grid-2">
+        {TIPOS.map(t => {
+          const pct = t.n/KPIS.totalReportes*100;
+          return (
+            <div className="card" key={t.id} style={{cursor:"pointer"}} onClick={()=>t.id!=="otros-tipo" ? onOpenDrawer({kind:"tipo", data:t}) : onFilterTipo(null)}>
+              <div className="card-body" style={{paddingTop:16}}>
+                <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:10}}>
+                  <span className="action-dot" style={{background:t.color, width:11, height:11}}/>
+                  <b style={{fontSize:13.5}}>{t.nombre}</b>
+                </div>
+                <div style={{display:"flex", alignItems:"baseline", gap:10}}>
+                  <span className="num" style={{fontSize:28}}>{fmtInt(t.n)}</span>
+                  <span style={{fontSize:12, color:"var(--ink-muted)"}}>casos</span>
+                  <span className="pill info" style={{marginLeft:"auto"}}>{fmtPct(pct)} del total</span>
+                </div>
+                <div className="type-track" style={{marginTop:10}}><div className="type-fill" style={{width:pct+"%", background:t.color}}/></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{marginTop:14}}>
+        <AccionesCard onFilterAccion={()=>{}}/>
+      </div>
+    </div>
+  );
+}
+
+function AnalisisView() {
+  return (
+    <div className="fade-in">
+      <div className="view-title"><h2>Análisis</h2><p>Evolución temporal de indicadores clave</p></div>
+      <TrendChart/>
+      <div style={{height:12}}/>
+      <div className="grid-2">
+        <ConformidadCard onFilterConformidad={()=>{}}/>
+        <AccionesCard onFilterAccion={()=>{}}/>
+      </div>
+    </div>
+  );
+}
+
+/* ================= APP ================= */
+function App() {
+  const [tab, setTab] = useState("resumen");
+  const [filters, setFilters] = useState({contratos:[], anio:"", mes:"", tipo:"", accion:"", conformidad:""});
+  const [drawer, setDrawer] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState(() => new Date());
+
+  const filteredCount = useMemo(()=>applyFilters(SAMPLE_CASES, filters, "").length, [filters]);
+
+  const refresh = () => {
+    setRefreshing(true);
+    setTimeout(() => { setUpdatedAt(new Date()); setRefreshing(false); }, 700);
+  };
+
+  const onFilterTipo = id => setFilters(s=>({...s, tipo: id===null? "": (s.tipo===id?"":id)}));
+  const onFilterAccion = id => setFilters(s=>({...s, accion: id===null? "": (s.accion===id?"":id)}));
+
+  return (
+    <div className="shell">
+      <div className="topbar">
+        <img src={CONFIG.logoUrl} alt="Hesego"/>
+        <div style={{flex:1, minWidth:0}}>
+          <div className="topbar-title">Centro de Monitoreo - Reportes</div>
+          <div className="topbar-sub">{CONFIG.userName}</div>
+        </div>
+        <div className="topbar-actions">
+          <div className="updated">Actualizado<br/><b>{updatedAt.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</b></div>
+          <button className={"topbar-btn"+(refreshing?" spinning":"")} onClick={refresh} title="Actualizar datos">
+            <IcRefresh size={14}/><span className="btn-label">Actualizar</span>
+          </button>
+          {CONFIG.volverUrl && (
+            <button className="topbar-btn" title="Volver al menú" onClick={()=>window.location.href=CONFIG.volverUrl}>
+              <IcArrowLeft size={14}/><span className="btn-label">Volver</span>
+            </button>
+          )}
+          <button className="topbar-btn" title="Salir" onClick={()=>window.location.href=CONFIG.logoutUrl}>
+            <IcLogout size={14}/><span className="btn-label">Salir</span>
+          </button>
+        </div>
+      </div>
+
+      <FilterBar filters={filters} setFilters={setFilters} onNavigate={setTab}/>
+
+      <div className="tabbar">
+        {NAV.map(n => (
+          <div key={n.id} className={"tab"+(tab===n.id?" active":"")} onClick={()=>setTab(n.id)}>
+            <n.icon size={14}/>{n.label}
+            {n.id==="casos" && <span className="n">{filteredCount}</span>}
+          </div>
+        ))}
+      </div>
+
+      <main>
+        {tab==="resumen" && <ResumenView filters={filters} setFilters={setFilters} onOpenDrawer={setDrawer} onNav={setTab}/>}
+        {tab==="casos" && <CasosView filters={filters} setFilters={setFilters} onOpenDrawer={setDrawer}/>}
+        {tab==="contratos" && <ContratosView onOpenDrawer={setDrawer}/>}
+        {tab==="desviaciones" && <DesviacionesView onOpenDrawer={setDrawer} onFilterTipo={onFilterTipo}/>}
+        {tab==="analisis" && <AnalisisView/>}
+      </main>
+
+      <Drawer item={drawer} onClose={()=>setDrawer(null)}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+{% endraw %}
+
+</body>
+</html>
