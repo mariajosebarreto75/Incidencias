@@ -87,24 +87,29 @@
                     {% endif %}
 
                     <!-- SEGUIMIENTO dropdown -->
+                    {% if current_user.tiene_permiso('bi_seguimiento') or current_user.tiene_permiso('bi_inspecciones') or current_user.rol.lower() in ('admin','neo') %}
                     <li class="nav-item dropdown">
                         <a class="nav-link coor-nav-link dropdown-toggle" href="#"
                            data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-clipboard2-data me-1"></i>Seguimiento
                         </a>
                         <ul class="dropdown-menu dropdown-menu-coor">
+                            {% if current_user.tiene_permiso('bi_seguimiento') or current_user.rol.lower() in ('admin','neo') %}
                             <li>
                                 <a class="dropdown-item dropdown-item-coor"
-                                   href="/coordinador/seguimiento/archivo">
+                                   href="{{ url_for('coordinador.bi_seguimiento') }}">
                                     <i class="bi bi-folder2-open me-2"></i>Archivo de Seguimiento
                                 </a>
                             </li>
+                            {% endif %}
+                            {% if current_user.tiene_permiso('bi_inspecciones') or current_user.rol.lower() in ('admin','neo') %}
                             <li>
                                 <a class="dropdown-item dropdown-item-coor"
-                                   href="/coordinador/seguimiento/inspecciones">
+                                   href="{{ url_for('coordinador.bi_inspecciones') }}">
                                     <i class="bi bi-search me-2"></i>Inspecciones
                                 </a>
                             </li>
+                            {% endif %}
                             <li>
                                 <a class="dropdown-item dropdown-item-coor"
                                    href="{{ url_for('compromisos.index') }}">
@@ -113,6 +118,7 @@
                             </li>
                         </ul>
                     </li>
+                    {% endif %}
 
                     <!-- HORAS EXTRAS -->
                     <li class="nav-item{% if current_user.rol.lower() == 'admin' or current_user.tiene_permiso('dashboard_he') %} dropdown{% endif %}">
