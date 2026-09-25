@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centro de Monitoreo - Horas Extras</title>
+<meta name="description" content="Command center ejecutivo de horas extras: KPIs, impacto por contrato, tipos de HE, valor económico y límite legal, en vivo.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --bg:#F5F7FA;
+    --surface:#FFFFFF;
+    --surface-2:#EEF2F7;
+    --surface-3:#E3E9F1;
+    --border:#DDE4EC;
+    --ink:#101A2E;
+    --ink-muted:#5B6B84;
+    --ink-faint:#8393AC;
+    --navy:#0F1B36;
+    --navy-ink:#EAF1F8;
+    --accent:#0891B2;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E0F2FE;
+    --accent-2:#0E7490;
+    --good:#16A34A;
+    --good-soft:#DCFCE7;
+    --warn:#D97706;
+    --warn-soft:#FEF3C7;
+    --bad:#DC2626;
+    --bad-soft:#FEE2E2;
+    --info:#2563EB;
+    --info-soft:#DBEAFE;
+    --shadow:0 1px 2px rgba(16,26,46,.04), 0 8px 24px -12px rgba(16,26,46,.12);
+    --shadow-lg:0 24px 48px -16px rgba(16,26,46,.28);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0A1120; --surface:#111C31; --surface-2:#16233C; --surface-3:#1C2B47;
+      --border:#243554; --ink:#E9EFF9; --ink-muted:#93A3C2; --ink-faint:#6E7FA0;
+      --navy:#08101F; --navy-ink:#EAF1F8;
+      --accent:#22D3EE; --accent-ink:#06222B; --accent-soft:#0C3547; --accent-2:#67E8F9;
+      --good:#4ADE80; --good-soft:#0F2C1C; --warn:#FBBF24; --warn-soft:#3A2A0A;
+      --bad:#F87171; --bad-soft:#3A1418; --info:#60A5FA; --info-soft:#12233F;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+      --shadow-lg:0 24px 48px -16px rgba(0,0,0,.6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0A1120; --surface:#111C31; --surface-2:#16233C; --surface-3:#1C2B47;
+    --border:#243554; --ink:#E9EFF9; --ink-muted:#93A3C2; --ink-faint:#6E7FA0;
+    --navy:#08101F; --navy-ink:#EAF1F8;
+    --accent:#22D3EE; --accent-ink:#06222B; --accent-soft:#0C3547; --accent-2:#67E8F9;
+    --good:#4ADE80; --good-soft:#0F2C1C; --warn:#FBBF24; --warn-soft:#3A2A0A;
+    --bad:#F87171; --bad-soft:#3A1418; --info:#60A5FA; --info-soft:#12233F;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    --shadow-lg:0 24px 48px -16px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-inline:0;
+  }
+  #root{min-height:100%;}
+  h1,h2,h3,h4{font-family:"Manrope", system-ui, sans-serif; margin:0; text-wrap:balance;}
+  .num{font-family:"Manrope", system-ui, sans-serif; font-variant-numeric:tabular-nums; font-weight:800;}
+  .mono{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums;}
+  button{font-family:inherit;}
+  ::selection{background:var(--accent); color:var(--accent-ink);}
+  a{color:var(--accent);}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:20px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important; transition-duration:.001ms !important;}
+  }
+
+  /* ============ LAYOUT SHELL ============ */
+  .shell{display:flex; flex-direction:column; min-height:100vh;}
+
+  /* Topbar: estilo exacto de la plataforma (no modificar — logo, título, Volver/Salir) */
+  .topbar{
+    background:linear-gradient(90deg,#005f6b,#00b8c9);
+    padding:0 24px; display:flex; align-items:center; gap:16px; height:56px;
+    position:sticky; top:0; z-index:40;
+    box-shadow:0 2px 8px rgba(0,95,107,.35);
+  }
+  .topbar img{height:32px; filter:brightness(0) invert(1); opacity:.9; flex:none;}
+  .topbar-title{color:#fff; font-size:1rem; font-weight:700; line-height:1.3;}
+  .topbar-sub{color:rgba(255,255,255,.65); font-size:.75rem;}
+  .topbar-actions{display:flex; align-items:center; gap:8px; flex:none;}
+  .updated{font-size:11px; color:rgba(255,255,255,.65); display:none; text-align:right; line-height:1.2; margin-right:2px;}
+  @media (min-width:760px){ .updated{display:block;} }
+  .updated b{color:#fff; font-weight:600;}
+  .topbar-btn{
+    display:flex; align-items:center; gap:5px; background:rgba(255,255,255,.15); color:#fff;
+    border:1px solid rgba(255,255,255,.25); border-radius:6px; padding:6px 13px; font-size:.78rem;
+    font-weight:600; cursor:pointer; transition:background .15s;
+  }
+  .topbar-btn:hover{background:rgba(255,255,255,.25);}
+  .topbar-btn svg{flex:none;}
+  .topbar-btn.spinning svg{animation:spin .7s linear;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (max-width:600px){
+    .topbar{padding:0 14px; gap:10px;}
+    .topbar-btn{padding:7px 9px;}
+    .topbar-btn .btn-label{display:none;}
+  }
+
+  /* ============ FILTER BAR ============ */
+  .filterbar{
+    position:sticky; top:56px; z-index:35;
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:9px 20px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    box-shadow:var(--shadow);
+  }
+  .filter-scroll{display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1; min-width:0;}
+  .fchip{
+    display:flex; align-items:center; gap:6px; padding:6px 10px; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--ink);
+    font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; position:relative;
+    transition:border-color .15s, background .15s;
+  }
+  .fchip:hover{border-color:var(--accent);}
+  .fchip.active{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-2);}
+  .fchip svg{flex:none; opacity:.7;}
+  .fchip .badge{
+    background:var(--accent); color:var(--accent-ink); border-radius:99px; font-size:10px; font-weight:700;
+    padding:1px 6px; line-height:1.4;
+  }
+  select.fchip{ appearance:none; -webkit-appearance:none; padding-right:24px;
+    background-image:linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 12px) 55%, calc(100% - 8px) 55%; background-size:4px 4px; background-repeat:no-repeat; opacity:.9;
+  }
+  .fbtns{display:flex; align-items:center; gap:8px; margin-left:auto; flex:none;}
+  .btn{
+    border-radius:8px; padding:7px 13px; font-size:12.5px; font-weight:600; cursor:pointer; border:1px solid transparent;
+    display:inline-flex; align-items:center; gap:6px; transition:filter .15s, transform .15s;
+  }
+  .btn:active{transform:scale(.96);}
+  .btn-primary{background:var(--accent); color:var(--accent-ink);}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent; color:var(--ink-muted); border-color:var(--border);}
+  .btn-ghost:hover{color:var(--ink); border-color:var(--ink-faint);}
+  .active-count{font-size:11.5px; color:var(--ink-muted); white-space:nowrap;}
+  .active-count b{color:var(--accent-2); font-weight:700;}
+
+  .icon-btn{
+    width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--ink-muted); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:background .15s, color .15s, transform .15s; flex:none;
+  }
+  .icon-btn:hover{background:var(--surface-3); color:var(--ink);}
+  .icon-btn:active{transform:scale(.94);}
+
+  .popover{
+    position:absolute; top:calc(100% + 6px); left:0; background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; box-shadow:var(--shadow-lg); padding:10px; width:240px; z-index:50;
+  }
+  .popover input[type="text"]{
+    width:100%; padding:7px 9px; border-radius:7px; border:1px solid var(--border); background:var(--surface-2);
+    color:var(--ink); font-size:12.5px; margin-bottom:8px;
+  }
+  .popover .opt{display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:12.5px; border-radius:6px; cursor:pointer;}
+  .popover .opt:hover{background:var(--surface-2);}
+  .popover-list{max-height:180px; overflow-y:auto;}
+
+  /* ============ NAV TABS ============ */
+  .tabbar{
+    display:flex; gap:4px; padding:8px 20px 0; background:var(--bg); overflow-x:auto;
+  }
+  .tab{
+    padding:9px 14px; font-size:12.8px; font-weight:600; color:var(--ink-muted); cursor:pointer;
+    border-bottom:2.5px solid transparent; white-space:nowrap; display:flex; align-items:center; gap:6px;
+    transition:color .15s;
+  }
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--accent-2); border-bottom-color:var(--accent);}
+  .tab .n{background:var(--surface-3); color:var(--ink-muted); border-radius:99px; padding:1px 7px; font-size:10.5px; font-weight:700;}
+  .tab.active .n{background:var(--accent-soft); color:var(--accent-2);}
+
+  main{flex:1; padding:16px 20px 40px; max-width:1560px; width:100%; margin:0 auto;}
+
+  /* ============ CARD ============ */
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    box-shadow:var(--shadow);
+  }
+  .card-head{display:flex; align-items:center; gap:10px; padding:14px 16px 4px;}
+  .card-head h3{font-size:14px; font-weight:700; letter-spacing:.1px;}
+  .card-head .hint{font-size:11px; color:var(--ink-faint); margin-left:auto; font-weight:500;}
+  .card-body{padding:10px 16px 16px;}
+  .sample-tag{
+    font-size:9.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--warn);
+    background:var(--warn-soft); padding:2px 7px; border-radius:99px; flex:none;
+  }
+
+  /* ============ KPI BAND ============ */
+  .kpi-band{display:grid; grid-template-columns:1.4fr repeat(6, 1fr); gap:10px; margin-bottom:14px;}
+  @media (max-width:1180px){ .kpi-band{grid-template-columns:repeat(3, 1fr);} }
+  @media (max-width:640px){ .kpi-band{grid-template-columns:repeat(2, 1fr);} }
+  .kpi{
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 16px;
+    display:flex; flex-direction:column; gap:2px; box-shadow:var(--shadow); cursor:default;
+    transition:transform .15s, border-color .15s;
+  }
+  .kpi.clickable{cursor:pointer;}
+  .kpi.clickable:hover{transform:translateY(-2px); border-color:var(--accent);}
+  .kpi-top{display:flex; align-items:center; justify-content:space-between;}
+  .kpi-icon{width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex:none;}
+  .kpi-value{font-size:26px; line-height:1.05; letter-spacing:-.5px;}
+  .kpi.primary{
+    background:linear-gradient(160deg, var(--navy), #132544 70%); color:var(--navy-ink); border-color:transparent;
+    justify-content:center;
+  }
+  .kpi.primary .kpi-value{font-size:38px; color:#fff;}
+  .kpi.primary .kpi-label{color:#B9CBE4;}
+  .kpi.primary .kpi-sub{color:#8FADD6;}
+  .kpi-label{font-size:11.5px; font-weight:600; color:var(--ink-muted);}
+  .kpi-sub{font-size:10.5px; color:var(--ink-faint); font-weight:500;}
+  .kpi-pct{font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:99px;}
+
+  /* ============ MID GRID ============ */
+  .mid-grid{display:grid; grid-template-columns:1.55fr 1fr; gap:12px; margin-bottom:12px; align-items:stretch;}
+  @media (max-width:1020px){ .mid-grid{grid-template-columns:1fr;} }
+  .stack{display:flex; flex-direction:column; gap:12px;}
+
+  /* Contract impact bars */
+  .sortrow{display:flex; align-items:center; gap:6px;}
+  .sort-btn{
+    font-size:10.5px; font-weight:600; color:var(--ink-muted); background:var(--surface-2); border:1px solid var(--border);
+    padding:3px 8px; border-radius:99px; cursor:pointer;
+  }
+  .sort-btn.active{background:var(--accent-soft); color:var(--accent-2); border-color:var(--accent);}
+  .impact-row{
+    display:grid; grid-template-columns:150px 1fr 92px 72px; align-items:center; gap:10px;
+    padding:8px 4px; border-radius:9px; cursor:pointer; transition:background .12s;
+  }
+  .impact-row:hover{background:var(--surface-2);}
+  .impact-name{font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .impact-name .code{display:block; font-size:10px; color:var(--ink-faint); font-weight:500;}
+  .impact-track{height:9px; background:var(--surface-3); border-radius:99px; overflow:hidden; position:relative;}
+  .impact-fill{height:100%; border-radius:99px; background:linear-gradient(90deg, var(--accent-2), var(--accent)); transition:width .5s cubic-bezier(.2,.9,.2,1);}
+  .impact-val{font-size:12.5px; font-weight:700; text-align:right;}
+  .impact-hrs{font-size:11px; color:var(--ink-muted); text-align:right;}
+
+  /* Conformidad */
+  .conf-split{display:flex; align-items:stretch; gap:16px; padding:4px 0 10px;}
+  .conf-num{flex:1; text-align:center; cursor:pointer; border-radius:10px; padding:6px; transition:background .15s;}
+  .conf-num:hover{background:var(--surface-2);}
+  .conf-num .v{font-size:27px; display:block;}
+  .conf-num .l{font-size:11px; font-weight:600; color:var(--ink-muted); margin-top:2px;}
+  .conf-num.good .v{color:var(--good);}
+  .conf-num.bad .v{color:var(--bad);}
+  .conf-bar{height:12px; border-radius:99px; overflow:hidden; display:flex; border:1px solid var(--border);}
+  .conf-bar .seg{height:100%; transition:width .6s cubic-bezier(.2,.9,.2,1);}
+
+  /* Tipos de desviacion */
+  .type-row{
+    display:grid; grid-template-columns:1fr 46px; align-items:center; gap:10px; padding:8px 4px;
+    border-radius:9px; cursor:pointer; transition:background .12s;
+  }
+  .type-row:hover{background:var(--surface-2);}
+  .type-row-top{display:flex; align-items:center; justify-content:space-between; font-size:12px; margin-bottom:4px;}
+  .type-name{font-weight:600;}
+  .type-meta{color:var(--ink-muted); font-size:11px;}
+  .type-track{height:8px; background:var(--surface-3); border-radius:99px; overflow:hidden;}
+  .type-fill{height:100%; border-radius:99px;}
+  .type-pct{font-size:12.5px; font-weight:700; text-align:right; color:var(--ink-muted);}
+
+  /* Acciones */
+  .action-stack{display:flex; flex-direction:column; gap:9px;}
+  .action-row{display:flex; align-items:center; gap:10px; cursor:pointer; padding:5px 4px; border-radius:8px; transition:background .12s;}
+  .action-row:hover{background:var(--surface-2);}
+  .action-dot{width:9px; height:9px; border-radius:3px; flex:none;}
+  .action-name{font-size:12px; font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .action-n{font-size:12px; font-weight:700; color:var(--ink-muted); width:38px; text-align:right;}
+  .action-track{flex:2.2; height:7px; background:var(--surface-3); border-radius:99px; overflow:hidden;}
+  .action-fill{height:100%; border-radius:99px; background:var(--accent);}
+
+  /* ============ CASES LIST ============ */
+  .case-toolbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .search-box{
+    display:flex; align-items:center; gap:6px; background:var(--surface-2); border:1px solid var(--border);
+    border-radius:8px; padding:6px 10px; flex:1; min-width:160px; max-width:260px;
+  }
+  .search-box input{border:none; background:transparent; outline:none; color:var(--ink); font-size:12.5px; width:100%;}
+  .search-box svg{color:var(--ink-faint); flex:none;}
+
+  .case-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  .case-table th{
+    text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint);
+    font-weight:700; padding:8px 10px; border-bottom:1px solid var(--border); cursor:pointer; white-space:nowrap;
+  }
+  .case-table th:hover{color:var(--accent-2);}
+  .case-table td{padding:10px; border-bottom:1px solid var(--border); vertical-align:middle;}
+  .case-table tbody tr{cursor:pointer; transition:background .12s;}
+  .case-table tbody tr:hover{background:var(--surface-2);}
+  .case-list-cards{display:none; flex-direction:column; gap:8px;}
+  @media (max-width:760px){
+    .case-table{display:none;}
+    .case-list-cards{display:flex;}
+  }
+  .case-card{
+    border:1px solid var(--border); border-radius:11px; padding:11px 12px; cursor:pointer; background:var(--surface);
+  }
+  .case-card-top{display:flex; align-items:center; gap:8px; margin-bottom:6px;}
+  .case-card-foot{display:flex; align-items:center; justify-content:space-between; margin-top:8px; font-size:11.5px; color:var(--ink-muted);}
+
+  .pill{
+    display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 9px; border-radius:99px;
+    white-space:nowrap;
+  }
+  .pill.good{background:var(--good-soft); color:var(--good);}
+  .pill.bad{background:var(--bad-soft); color:var(--bad);}
+  .pill.warn{background:var(--warn-soft); color:var(--warn);}
+  .pill.info{background:var(--info-soft); color:var(--info);}
+  .pill.neutral{background:var(--surface-3); color:var(--ink-muted);}
+  .sev-dot{width:7px; height:7px; border-radius:50%; flex:none;}
+
+  .empty-note{font-size:12.5px; color:var(--ink-faint); text-align:center; padding:26px 10px;}
+
+  /* ============ TREND CHART ============ */
+  .metric-tabs{display:flex; gap:6px; flex-wrap:wrap;}
+  .metric-tab{
+    font-size:11.5px; font-weight:600; padding:6px 11px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface-2); color:var(--ink-muted); cursor:pointer;
+  }
+  .metric-tab.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+  .trend-wrap{position:relative;}
+  .trend-tooltip{
+    position:absolute; background:var(--navy); color:#fff; padding:7px 10px; border-radius:8px; font-size:11.5px;
+    pointer-events:none; box-shadow:var(--shadow-lg); white-space:nowrap; transform:translate(-50%,-115%); z-index:5;
+    line-height:1.4;
+  }
+  .trend-tooltip b{font-size:13px;}
+
+  /* ============ DRAWER ============ */
+  .backdrop{
+    position:fixed; inset:0; background:rgba(8,13,24,.5); backdrop-filter:blur(1px); z-index:80;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .backdrop.open{opacity:1; pointer-events:auto;}
+  .drawer{
+    position:fixed; top:0; right:0; height:100%; width:min(420px, 100%); background:var(--surface);
+    border-left:1px solid var(--border); box-shadow:var(--shadow-lg); z-index:90;
+    transform:translateX(100%); transition:transform .28s cubic-bezier(.2,.9,.2,1);
+    display:flex; flex-direction:column;
+  }
+  .drawer.open{transform:translateX(0);}
+  .drawer-head{
+    display:flex; align-items:center; gap:10px; padding:16px 18px; border-bottom:1px solid var(--border);
+  }
+  .drawer-head h3{font-size:15px;}
+  .drawer-body{padding:18px; overflow-y:auto; flex:1;}
+  .dl-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:6px;}
+  .dl-item .l{font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-faint); font-weight:700; margin-bottom:3px;}
+  .dl-item .v{font-size:14.5px; font-weight:700;}
+  .drawer-sep{height:1px; background:var(--border); margin:16px 0;}
+
+  /* ============ misc ============ */
+  .grid-2{display:grid; grid-template-columns:repeat(2,1fr); gap:10px;}
+  @media (max-width:520px){ .grid-2{grid-template-columns:1fr;} }
+  .view-title{display:flex; align-items:baseline; gap:10px; margin-bottom:12px;}
+  .view-title h2{font-size:18px;}
+  .view-title p{font-size:12.5px; color:var(--ink-muted); margin:0;}
+  .fade-in{animation:fadeIn .22s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script>
+  window.__APP_CONFIG__ = {
+    logoUrl: {{ url_for('static', filename='img/logo_hesego.png') | tojson }},
+    volverUrl: {{ (url_for(home_endpoint) if home_endpoint else "") | tojson }},
+    logoutUrl: {{ url_for('auth.logout') | tojson }},
+    userName: {{ current_user.nombre_completo | tojson }},
+    contratos: {{ contratos_json | tojson }},
+    cortes: {{ cortes_json | tojson }},
+    conceptos: {{ conceptos_json | tojson }},
+    api: {
+      dashboardData: {{ url_for('admin_bp.api_he_dashboard_data') | tojson }},
+      ranking: {{ url_for('he_bp.api_he_ranking_contratos') | tojson }},
+      valorNomina: {{ url_for('he_bp.api_he_valor_extra_nomina') | tojson }},
+      registros: {{ url_for('he_bp.api_he_registros') | tojson }}
+    }
+  };
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+{% raw %}
+<script type="text/babel" data-presets="react">
+const {useState, useMemo, useEffect, useRef, useCallback} = React;
+const CONFIG = window.__APP_CONFIG__ || {logoUrl:"", volverUrl:"", logoutUrl:"", userName:""};
+
+/* ================= ICONS ================= */
+const Icon = ({d, size=16, ...p}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" {...p}><path d={d}/></svg>
+);
+const IconMulti = ({size=16, paths, ...p}) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+       strokeLinecap="round" strokeLinejoin="round" {...p}>{paths.map((d,i)=><path key={i} d={d}/>)}</svg>
+);
+const IcRefresh = p => <IconMulti paths={["M21 12a9 9 0 1 1-2.64-6.36","M21 3v6h-6"]} {...p}/>;
+const IcArrowLeft = p => <IconMulti paths={["M19 12H5","m12 19-7-7 7-7"]} {...p}/>;
+const IcLogout = p => <IconMulti paths={["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4","M16 17l5-5-5-5","M21 12H9"]} {...p}/>;
+const IcX = p => <IconMulti paths={["M18 6 6 18","M6 6l12 12"]} {...p}/>;
+const IcSearch = p => <IconMulti paths={["M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z","M21 21l-4.35-4.35"]} {...p}/>;
+const IcBuilding = p => <IconMulti paths={["M4 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17","M15 21V10a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v11","M4 21h16","M8 7h1","M8 11h1","M8 15h1"]} {...p}/>;
+const IcAlert = p => <IconMulti paths={["M12 9v4","M10.3 3.9 1.8 18a1.5 1.5 0 0 0 1.3 2.2h17.8a1.5 1.5 0 0 0 1.3-2.2L13.7 3.9a1.5 1.5 0 0 0-2.6 0z","M12 16h.01"]} {...p}/>;
+const IcCheck = p => <IconMulti paths={["M22 11.1V12a10 10 0 1 1-5.9-9.1","M22 4 12 14.01l-3-3"]} {...p}/>;
+const IcXCircle = p => <IconMulti paths={["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z","m15 9-6 6","m9 9 6 6"]} {...p}/>;
+const IcClock = p => <IconMulti paths={["M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z","M12 6v6l4 2"]} {...p}/>;
+const IcDollar = p => <IconMulti paths={["M12 1v22","M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"]} {...p}/>;
+const IcLayers = p => <IconMulti paths={["m12 2 9 5-9 5-9-5 9-5z","m3 13 9 5 9-5","m3 18 9 5 9-5"]} {...p}/>;
+const IcGrid = p => <IconMulti paths={["M4 4h6v6H4z","M14 4h6v6h-6z","M4 14h6v6H4z","M14 14h6v6h-6z"]} {...p}/>;
+const IcTrend = p => <IconMulti paths={["M22 7 13.5 15.5 8.5 10.5 2 17","M16 7h6v6"]} {...p}/>;
+const IcInbox = p => <IconMulti paths={["M22 12h-6l-2 3h-4l-2-3H2","M5.5 5h13l2.6 7v7a1 1 0 0 1-1 1H3.9a1 1 0 0 1-1-1v-7L5.5 5z"]} {...p}/>;
+const IcShield = p => <IconMulti paths={["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"]} {...p}/>;
+const IcUsers = p => <IconMulti paths={["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2","M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z","M23 21v-2a4 4 0 0 0-3-3.87","M16 3.13a4 4 0 0 1 0 7.75"]} {...p}/>;
+
+/* ================= FORMATTERS ================= */
+const fmtInt = n => new Intl.NumberFormat("es-CO").format(Math.round(n||0));
+const fmtHoras = n => fmtInt(n) + "h";
+const fmtMoney = n => "$" + new Intl.NumberFormat("es-CO").format(Math.round(n||0));
+const fmtMoneyCompact = n => {
+  n = n || 0;
+  if (n >= 1e9) return "$" + (n/1e9).toFixed(2).replace(/\.00$/,"") + "MM";
+  if (n >= 1e6) return "$" + (n/1e6).toFixed(1).replace(/\.0$/,"") + "M";
+  if (n >= 1e3) return "$" + (n/1e3).toFixed(0) + "K";
+  return "$" + fmtInt(n);
+};
+const fmtPct = n => (n||0).toFixed(1).replace(".0","") + "%";
+const fmtFecha = iso => { if (!iso) return "—"; const [y,m,d] = String(iso).split("-"); return `${d}/${m}/${y}`; };
+
+const ESTADO_STYLE = {
+  "CONFORME":    {pill:"good"},
+  "NO CONFORME": {pill:"bad"},
+  "DESCONTADA":  {pill:"neutral"},
+  "PENDIENTE":   {pill:"warn"},
+};
+const LIMITE_STYLE = {
+  excede: {pill:"bad",  label:"Excede 48h"},
+  riesgo: {pill:"warn", label:"En riesgo"},
+  rango:  {pill:"good", label:"En rango"},
+};
+
+/* ================= DATA HOOKS ================= */
+function useHeDashboard(filters, tick) {
+  const [state, setState] = useState({loading:true, error:null, data:null, ranking:[], valorNomina:[]});
+  useEffect(() => {
+    let cancelled = false;
+    setState(s => ({...s, loading:true, error:null}));
+
+    const qDash = new URLSearchParams();
+    if (filters.contrato_id) qDash.set("contrato_id", filters.contrato_id);
+    if (filters.corte_id) qDash.set("corte_id", filters.corte_id);
+    if (!filters.corte_id && filters.fecha_desde) qDash.set("fecha_desde", filters.fecha_desde);
+    if (!filters.corte_id && filters.fecha_hasta) qDash.set("fecha_hasta", filters.fecha_hasta);
+    if (filters.id_concepto) qDash.set("tipo", filters.id_concepto);
+
+    const qRank = new URLSearchParams();
+    if (filters.corte_id) qRank.set("corte_id", filters.corte_id);
+    if (!filters.corte_id && filters.fecha_desde) qRank.set("fecha_desde", filters.fecha_desde);
+    if (!filters.corte_id && filters.fecha_hasta) qRank.set("fecha_hasta", filters.fecha_hasta);
+
+    const qVal = new URLSearchParams();
+    if (filters.contrato_id) qVal.set("contrato_id", filters.contrato_id);
+    if (filters.corte_id) qVal.set("corte_id", filters.corte_id);
+    if (!filters.corte_id && filters.fecha_desde) qVal.set("fecha_desde", filters.fecha_desde);
+    if (!filters.corte_id && filters.fecha_hasta) qVal.set("fecha_hasta", filters.fecha_hasta);
+
+    Promise.all([
+      fetch(CONFIG.api.dashboardData + "?" + qDash.toString()).then(r => r.json()),
+      fetch(CONFIG.api.ranking + "?" + qRank.toString()).then(r => r.json()),
+      fetch(CONFIG.api.valorNomina + "?" + qVal.toString()).then(r => r.json()),
+    ]).then(([data, ranking, valorNomina]) => {
+      if (cancelled) return;
+      if (data && data.error) throw new Error(data.error);
+      setState({
+        loading: false, error: null, data,
+        ranking: Array.isArray(ranking) ? ranking : [],
+        valorNomina: Array.isArray(valorNomina) ? valorNomina : [],
+      });
+    }).catch(err => {
+      if (cancelled) return;
+      setState({loading:false, error: String(err && err.message || err), data:null, ranking:[], valorNomina:[]});
+    });
+
+    return () => { cancelled = true; };
+  }, [filters.contrato_id, filters.corte_id, filters.fecha_desde, filters.fecha_hasta, filters.id_concepto, tick]);
+  return state;
+}
+
+function useRegistros(filters) {
+  const [state, setState] = useState({loading:true, error:null, rows:null});
+  useEffect(() => {
+    let cancelled = false;
+    setState(s => ({...s, loading:true}));
+    const q = new URLSearchParams();
+    if (filters.contrato_id) q.set("contrato_id", filters.contrato_id);
+    if (filters.corte_id) q.set("corte_id", filters.corte_id);
+    if (!filters.corte_id && filters.fecha_desde) q.set("fecha_desde", filters.fecha_desde);
+    if (!filters.corte_id && filters.fecha_hasta) q.set("fecha_hasta", filters.fecha_hasta);
+    if (filters.id_concepto) q.set("id_concepto", filters.id_concepto);
+    if (filters.estado) q.set("estado", filters.estado);
+    fetch(CONFIG.api.registros + "?" + q.toString()).then(r => r.json()).then(rows => {
+      if (cancelled) return;
+      setState({loading:false, error:null, rows: Array.isArray(rows) ? rows : []});
+    }).catch(err => {
+      if (cancelled) return;
+      setState({loading:false, error:String(err && err.message || err), rows:[]});
+    });
+    return () => { cancelled = true; };
+  }, [filters.contrato_id, filters.corte_id, filters.fecha_desde, filters.fecha_hasta, filters.id_concepto, filters.estado]);
+  return state;
+}
+
+/* ================= FILTER BAR ================= */
+function FilterBar({filters, setFilters, activeCount}) {
+  const clear = () => setFilters({contrato_id:"", corte_id:"", fecha_desde:"", fecha_hasta:"", id_concepto:"", estado:""});
+  const setCorte = v => setFilters(s => ({...s, corte_id:v, fecha_desde: v ? "" : s.fecha_desde, fecha_hasta: v ? "" : s.fecha_hasta}));
+  const setFecha = (k, v) => setFilters(s => ({...s, [k]:v, corte_id: v ? "" : s.corte_id}));
+  return (
+    <div className="filterbar">
+      <div className="filter-scroll">
+        <select className={"fchip"+(filters.contrato_id?" active":"")} value={filters.contrato_id}
+                onChange={e=>setFilters(s=>({...s, contrato_id:e.target.value}))}>
+          <option value="">Todos los contratos</option>
+          {CONFIG.contratos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+        </select>
+        <select className={"fchip"+(filters.corte_id?" active":"")} value={filters.corte_id} onChange={e=>setCorte(e.target.value)}>
+          <option value="">Todos los cortes</option>
+          {CONFIG.cortes.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+        </select>
+        <select className={"fchip"+(filters.id_concepto?" active":"")} value={filters.id_concepto}
+                onChange={e=>setFilters(s=>({...s, id_concepto:e.target.value}))}>
+          <option value="">Todos los tipos de HE</option>
+          {CONFIG.conceptos.map(c => <option key={c.codigo} value={c.codigo}>{c.codigo} – {c.nombre}</option>)}
+        </select>
+        <input type="date" className={"fchip"+(filters.fecha_desde?" active":"")} value={filters.fecha_desde}
+               onChange={e=>setFecha("fecha_desde", e.target.value)} title="Desde" disabled={!!filters.corte_id}/>
+        <input type="date" className={"fchip"+(filters.fecha_hasta?" active":"")} value={filters.fecha_hasta}
+               onChange={e=>setFecha("fecha_hasta", e.target.value)} title="Hasta" disabled={!!filters.corte_id}/>
+      </div>
+      <div className="fbtns">
+        {activeCount>0 && <span className="active-count">Filtros activos: <b>{activeCount}</b></span>}
+        <button className="btn btn-ghost" onClick={clear}><IcX size={13}/>Limpiar</button>
+      </div>
+    </div>
+  );
+}
+
+/* ================= KPI BAND ================= */
+function Kpi({icon:IconEl, label, value, sub, tint, primary, onClick}) {
+  return (
+    <div className={"kpi"+(primary?" primary":"")+(onClick?" clickable":"")} onClick={onClick}>
+      {!primary && (
+        <div className="kpi-top">
+          <div className="kpi-icon" style={{background:tint+"22", color:tint}}><IconEl size={14}/></div>
+        </div>
+      )}
+      <div className="kpi-value num">{value}</div>
+      <div className="kpi-label">{label}</div>
+      {sub && <div className="kpi-sub">{sub}</div>}
+    </div>
+  );
+}
+
+function KpiBand({kpis}) {
+  if (!kpis) return null;
+  return (
+    <div className="kpi-band">
+      <Kpi primary label="Total de registros" value={fmtInt(kpis.total)} sub="Con los filtros aplicados"/>
+      <Kpi icon={IcClock} tint="var(--warn)" label="Pendientes por revisar" value={fmtHoras(kpis.hrs_pendientes)} sub={fmtInt(kpis.pendientes)+" registros"}/>
+      <Kpi icon={IcLayers} tint="var(--info)" label="Hrs reportadas" value={fmtHoras(kpis.hrs_reportadas)} sub="Total del período"/>
+      <Kpi icon={IcCheck} tint="var(--good)" label="Hrs conformes" value={fmtHoras(kpis.hrs_conformes)} sub="Autorizadas conforme"/>
+      <Kpi icon={IcXCircle} tint="var(--bad)" label="Hrs no conformes" value={fmtHoras(kpis.hrs_no_conforme)} sub="Reportadas, rechazadas"/>
+      <Kpi icon={IcCheck} tint="var(--accent)" label="Total aprobadas" value={fmtHoras(kpis.hrs_autorizadas)} sub="Conforme + descontada"/>
+      <Kpi icon={IcXCircle} tint="var(--ink-faint)" label="Hrs descontadas" value={fmtHoras(kpis.hrs_descontadas)} sub="Autorizadas en descuento"/>
+    </div>
+  );
+}
+
+/* ================= CONTRATOS IMPACT (horas) ================= */
+function ContratosImpact({ranking, onOpenDrawer}) {
+  const [sortBy, setSortBy] = useState("hrs");
+  const sorted = useMemo(() => {
+    const arr = [...(ranking||[])];
+    arr.sort((a,b) => sortBy==="hrs" ? b.hrs-a.hrs : b.hrs_auth-a.hrs_auth);
+    return arr;
+  }, [ranking, sortBy]);
+  const max = Math.max(1, ...sorted.map(c=>c.hrs));
+  return (
+    <div className="card">
+      <div className="card-head"><IcBuilding size={15} color="var(--accent)"/><h3>Impacto por contrato</h3><span className="hint">Horas de HE</span></div>
+      <div className="card-body">
+        <div className="sortrow" style={{marginBottom:8}}>
+          <span style={{fontSize:11,color:"var(--ink-faint)",marginRight:2}}>Ordenar por</span>
+          <button className={"sort-btn"+(sortBy==="hrs"?" active":"")} onClick={()=>setSortBy("hrs")}>Más horas reportadas</button>
+          <button className={"sort-btn"+(sortBy==="hrs_auth"?" active":"")} onClick={()=>setSortBy("hrs_auth")}>Más horas aprobadas</button>
+        </div>
+        {sorted.length===0 && <div className="empty-note">Sin datos para estos filtros.</div>}
+        {sorted.map(c => (
+          <div className="impact-row" key={c.nombre} onClick={()=>onOpenDrawer({kind:"contrato", data:c})}>
+            <div className="impact-name">{c.nombre}</div>
+            <div className="impact-track"><div className="impact-fill" style={{width:(c.hrs/max*100)+"%"}}/></div>
+            <div className="impact-val num">{fmtHoras(c.hrs)}</div>
+            <div className="impact-hrs">{fmtHoras(c.hrs_auth)} aprob.</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ================= VALOR ECONOMICO POR CONTRATO ================= */
+function ValorEconomico({valorNomina, onOpenDrawer}) {
+  const sorted = useMemo(()=>[...(valorNomina||[])].sort((a,b)=>b.valor_rep-a.valor_rep), [valorNomina]);
+  const max = Math.max(1, ...sorted.map(c=>c.valor_rep));
+  const total = sorted.reduce((s,c)=>s+c.valor_rep,0);
+  return (
+    <div className="card">
+      <div className="card-head"><IcDollar size={15} color="var(--good)"/><h3>Valor económico por contrato</h3><span className="hint">{fmtMoneyCompact(total)} total</span></div>
+      <div className="card-body">
+        {sorted.length===0 && <div className="empty-note">Sin datos para estos filtros (requiere salario cargado por persona).</div>}
+        {sorted.map(c => (
+          <div className="impact-row" key={c.contrato_id} onClick={()=>onOpenDrawer({kind:"contrato-valor", data:c})}>
+            <div className="impact-name">{c.nombre}</div>
+            <div className="impact-track"><div className="impact-fill" style={{width:(c.valor_rep/max*100)+"%", background:"linear-gradient(90deg,var(--good),#22c55e)"}}/></div>
+            <div className="impact-val num">{fmtMoneyCompact(c.valor_rep)}</div>
+            <div className="impact-hrs">{fmtMoneyCompact(c.valor_pend)} pend.</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ================= HORAS POR TIPO DE HE ================= */
+const TIPO_PALETTE = ["var(--bad)","var(--warn)","var(--info)","var(--accent)","#8B5CF6","#0EA5E9","var(--good)"];
+
+function TiposHECard({porTipo, onFilterTipo}) {
+  const total = (porTipo||[]).reduce((s,t)=>s+t.hrs_reportadas,0) || 1;
+  return (
+    <div className="card">
+      <div className="card-head"><IcAlert size={15} color="var(--bad)"/><h3>Horas por tipo de HE</h3><span className="hint">% de horas reportadas</span></div>
+      <div className="card-body">
+        {(!porTipo || porTipo.length===0) && <div className="empty-note">Sin datos para estos filtros.</div>}
+        {(porTipo||[]).map((t,i) => {
+          const pct = t.hrs_reportadas/total*100;
+          return (
+            <div className="type-row" key={t.codigo} onClick={()=>onFilterTipo(t.codigo)}>
+              <div>
+                <div className="type-row-top">
+                  <span className="type-name">{t.codigo} – {t.tipo}</span>
+                  <span className="type-meta">{fmtHoras(t.hrs_reportadas)}</span>
+                </div>
+                <div className="type-track"><div className="type-fill" style={{width:pct+"%", background:TIPO_PALETTE[i%TIPO_PALETTE.length]}}/></div>
+              </div>
+              <div className="type-pct">{fmtPct(pct)}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ================= LIMITE LEGAL 48H ================= */
+function LimiteLegalCard({limite, onOpenDrawer}) {
+  const criticos = (limite||[]).filter(l => l.estado !== "rango");
+  return (
+    <div className="card">
+      <div className="card-head"><IcShield size={15} color="var(--bad)"/><h3>Límite legal de horas extras</h3>
+        <span className="hint">{criticos.length} en riesgo o excedidos</span></div>
+      <div className="card-body">
+        {criticos.length===0 && <div className="empty-note">Nadie en riesgo o excedido en este período.</div>}
+        {criticos.slice(0,12).map((l,i) => (
+          <div className="impact-row" key={i} style={{gridTemplateColumns:"1fr 100px 100px"}} onClick={()=>onOpenDrawer({kind:"limite", data:l})}>
+            <div className="impact-name">{l.nombre}<span className="code mono">{l.contrato}</span></div>
+            <div className="impact-val num">{fmtHoras(l.horas)}</div>
+            <span className={"pill "+LIMITE_STYLE[l.estado].pill} style={{justifySelf:"end"}}>{LIMITE_STYLE[l.estado].label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ================= SUPERVISORES ================= */
+function SupervisoresCard({supervisores}) {
+  const top = (supervisores||[]).slice(0,6);
+  const max = Math.max(1, ...top.map(s=>s.hrs_autorizadas));
+  return (
+    <div className="card">
+      <div className="card-head"><IcUsers size={15} color="var(--accent)"/><h3>Supervisores autorizantes</h3></div>
+      <div className="card-body action-stack">
+        {top.length===0 && <div className="empty-note">Sin datos.</div>}
+        {top.map(s => (
+          <div className="action-row" key={s.nombre}>
+            <span className="action-name">{s.nombre}</span>
+            <div className="action-track"><div className="action-fill" style={{width:(s.hrs_autorizadas/max*100)+"%"}}/></div>
+            <span className="action-n num">{fmtHoras(s.hrs_autorizadas)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ================= CASOS (registros reales) ================= */
+function CasosView({filters, setFilters, onOpenDrawer}) {
+  const {loading, error, rows} = useRegistros(filters);
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState("fecha_labor");
+  const [sortDir, setSortDir] = useState(-1);
+  const [limit, setLimit] = useState(100);
+
+  const filtered = useMemo(() => {
+    if (!rows) return [];
+    const s = search.toLowerCase();
+    return rows.filter(r => !s || `${r.cedula} ${r.nombre} ${r.contrato}`.toLowerCase().includes(s));
+  }, [rows, search]);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    arr.sort((a,b) => {
+      const av=a[sortKey], bv=b[sortKey];
+      if (typeof av === "string") return sortDir*String(av).localeCompare(String(bv));
+      return sortDir*((av||0)-(bv||0));
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
+  const toggleSort = k => { if (k===sortKey) setSortDir(d=>-d); else { setSortKey(k); setSortDir(-1); } };
+  const shown = sorted.slice(0, limit);
+
+  return (
+    <div className="fade-in">
+      <div className="view-title"><h2>Registros de horas extras</h2>
+        <p>{rows ? `${fmtInt(filtered.length)} de ${fmtInt(rows.length)} registros con los filtros actuales` : ""}</p></div>
+      <div className="card">
+        <div className="card-body" style={{paddingTop:16}}>
+          <div className="case-toolbar" style={{marginBottom:10}}>
+            <div className="search-box">
+              <IcSearch size={14}/>
+              <input placeholder="Buscar por cédula, nombre o contrato…" value={search} onChange={e=>setSearch(e.target.value)}/>
+            </div>
+            <select className="fchip" value={filters.estado||""} onChange={e=>setFilters(s=>({...s, estado:e.target.value}))}>
+              <option value="">Todos los estados</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="CONFORME">Conforme</option>
+              <option value="NO CONFORME">No conforme</option>
+              <option value="DESCONTADA">Descontada</option>
+            </select>
+          </div>
+          {loading && <div className="empty-note">Cargando registros…</div>}
+          {error && <div className="empty-note">No se pudieron cargar los registros: {error}</div>}
+          {!loading && !error && shown.length===0 && <div className="empty-note">Sin registros para estos filtros.</div>}
+          {!loading && !error && shown.length>0 && (
+            <>
+              <table className="case-table">
+                <thead><tr>
+                  <th onClick={()=>toggleSort("fecha_labor")}>Fecha</th>
+                  <th onClick={()=>toggleSort("nombre")}>Nombre</th>
+                  <th onClick={()=>toggleSort("contrato")}>Contrato</th>
+                  <th onClick={()=>toggleSort("tipo_he")}>Tipo HE</th>
+                  <th onClick={()=>toggleSort("horas_reportadas")}>Hrs rep.</th>
+                  <th onClick={()=>toggleSort("horas_autorizadas")}>Hrs aprob.</th>
+                  <th onClick={()=>toggleSort("estado")}>Estado</th>
+                </tr></thead>
+                <tbody>
+                  {shown.map(r => (
+                    <tr key={r.id} onClick={()=>onOpenDrawer({kind:"registro", data:r})}>
+                      <td className="mono">{fmtFecha(r.fecha_labor)}</td>
+                      <td>{r.nombre || r.cedula}</td>
+                      <td>{r.contrato}</td>
+                      <td>{r.tipo_he}</td>
+                      <td className="num" style={{fontWeight:600}}>{r.horas_reportadas}h</td>
+                      <td className="num" style={{fontWeight:600}}>{r.horas_autorizadas!=null ? r.horas_autorizadas+"h" : "—"}</td>
+                      <td><span className={"pill "+((ESTADO_STYLE[r.estado]||{}).pill||"neutral")}>{r.estado}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {sorted.length > limit && (
+                <div style={{textAlign:"center", marginTop:12}}>
+                  <button className="btn btn-ghost" onClick={()=>setLimit(l=>l+100)}>Mostrar más ({sorted.length - limit} restantes)</button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ================= TREND CHART (real, sin saturar de etiquetas) ================= */
+function TrendChartHE({porDia, porDiaReporte}) {
+  const [serie, setSerie] = useState("labor");
+  const [hover, setHover] = useState(null);
+  const wrapRef = useRef(null);
+  const data = (serie==="labor" ? porDia : porDiaReporte) || [];
+  const W = 1000, H = 240, padL = 46, padR = 12, padT = 16, padB = 30;
+  const max = Math.max(1, ...data.map(d=>d.horas)) * 1.12;
+  const n = Math.max(1, data.length-1);
+  const x = i => padL + (W-padL-padR) * (i/n);
+  const y = v => padT + (H-padT-padB) * (1 - v/max);
+  const pathLine = data.map((d,i)=> `${i===0?"M":"L"} ${x(i)} ${y(d.horas)}`).join(" ");
+  const pathArea = data.length ? pathLine + ` L ${x(data.length-1)} ${H-padB} L ${x(0)} ${H-padB} Z` : "";
+  const tickCount = Math.min(7, data.length);
+  const tickIdx = Array.from({length:tickCount}, (_,i)=> Math.round(i*(data.length-1)/Math.max(1,tickCount-1)));
+
+  const onMove = e => {
+    if (!data.length) return;
+    const rect = wrapRef.current.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width * W;
+    let idx = Math.round((relX - padL) / (W-padL-padR) * n);
+    idx = Math.max(0, Math.min(data.length-1, idx));
+    setHover(idx);
+  };
+
+  return (
+    <div className="card">
+      <div className="card-head"><IcTrend size={15} color="var(--accent)"/><h3>Horas por día</h3></div>
+      <div className="card-body">
+        <div className="metric-tabs" style={{marginBottom:10}}>
+          <button className={"metric-tab"+(serie==="labor"?" active":"")} onClick={()=>setSerie("labor")}>Por día trabajado</button>
+          <button className={"metric-tab"+(serie==="reporte"?" active":"")} onClick={()=>setSerie("reporte")}>Por día de reporte</button>
+        </div>
+        {data.length===0 ? <div className="empty-note">Sin datos para estos filtros.</div> : (
+          <div className="trend-wrap" ref={wrapRef} onMouseMove={onMove} onMouseLeave={()=>setHover(null)}>
+            <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%", height:"auto", display:"block"}}>
+              <defs>
+                <linearGradient id="trendFillHe" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.25"/>
+                  <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"/>
+                </linearGradient>
+              </defs>
+              {[0,0.25,0.5,0.75,1].map((f,i)=>(
+                <line key={i} x1={padL} x2={W-padR} y1={padT+(H-padT-padB)*f} y2={padT+(H-padT-padB)*f} stroke="var(--border)" strokeWidth="1"/>
+              ))}
+              <path d={pathArea} fill="url(#trendFillHe)"/>
+              <path d={pathLine} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              {hover!==null && (
+                <>
+                  <line x1={x(hover)} x2={x(hover)} y1={padT} y2={H-padB} stroke="var(--accent)" strokeWidth="1" strokeDasharray="3,3" opacity=".5"/>
+                  <circle cx={x(hover)} cy={y(data[hover].horas)} r="4" fill="var(--accent)" stroke="var(--surface)" strokeWidth="2"/>
+                </>
+              )}
+              {tickIdx.map((idx,i) => (
+                <text key={i} x={x(idx)} y={H-8} fontSize="10.5" fill="var(--ink-faint)" textAnchor="middle" fontFamily="IBM Plex Sans">
+                  {fmtFecha(data[idx].fecha)}
+                </text>
+              ))}
+            </svg>
+            {hover!==null && (
+              <div className="trend-tooltip" style={{left:(x(hover)/W*100)+"%", top:(y(data[hover].horas)/H*100)+"%"}}>
+                {fmtFecha(data[hover].fecha)}<br/><b>{fmtHoras(data[hover].horas)}</b>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ================= DRAWER ================= */
+function Drawer({item, onClose}) {
+  const open = !!item;
+  useEffect(() => {
+    const onEsc = e => { if (e.key==="Escape") onClose(); };
+    document.addEventListener("keydown", onEsc);
+    return () => document.removeEventListener("keydown", onEsc);
+  }, [onClose]);
+
+  let title="", subtitle="", body=null;
+  if (item) {
+    if (item.kind === "contrato") {
+      const c = item.data;
+      title = c.nombre; subtitle = "Impacto por contrato";
+      body = (
+        <>
+          <div className="dl-grid">
+            <div className="dl-item"><div className="l">Horas reportadas</div><div className="v">{fmtHoras(c.hrs)}</div></div>
+            <div className="dl-item"><div className="l">Horas aprobadas</div><div className="v">{fmtHoras(c.hrs_auth)}</div></div>
+          </div>
+          <div className="drawer-sep"/>
+          <div style={{fontSize:12, fontWeight:700, marginBottom:8}}>Por tipo de HE</div>
+          {(c.conceptos||[]).map(cc => (
+            <div key={cc.concepto} style={{display:"flex", justifyContent:"space-between", fontSize:12.5, padding:"6px 0", borderBottom:"1px solid var(--border)"}}>
+              <span>{cc.tipo}</span><b className="num">{fmtHoras(cc.hrs)}</b>
+            </div>
+          ))}
+        </>
+      );
+    } else if (item.kind === "contrato-valor") {
+      const c = item.data;
+      title = c.nombre; subtitle = "Valor económico";
+      body = (
+        <>
+          <div className="dl-grid">
+            <div className="dl-item"><div className="l">Valor reportado</div><div className="v">{fmtMoney(c.valor_rep)}</div></div>
+            <div className="dl-item"><div className="l">Valor aprobado</div><div className="v">{fmtMoney(c.valor_auth)}</div></div>
+            <div className="dl-item"><div className="l">Valor pendiente</div><div className="v">{fmtMoney(c.valor_pend)}</div></div>
+            <div className="dl-item"><div className="l">Técnicos</div><div className="v">{(c.tecnicos||[]).length}</div></div>
+          </div>
+          <div className="drawer-sep"/>
+          <div style={{fontSize:12, fontWeight:700, marginBottom:8}}>Top técnicos</div>
+          {(c.tecnicos||[]).slice(0,8).map(t => (
+            <div key={t.cedula} style={{display:"flex", justifyContent:"space-between", fontSize:12.5, padding:"6px 0", borderBottom:"1px solid var(--border)"}}>
+              <span>{t.nombre || t.cedula}</span><b className="num">{fmtMoney(t.valor_rep)}</b>
+            </div>
+          ))}
+        </>
+      );
+    } else if (item.kind === "limite") {
+      const l = item.data;
+      title = l.nombre; subtitle = l.contrato;
+      body = (
+        <>
+          <span className={"pill "+LIMITE_STYLE[l.estado].pill}>{LIMITE_STYLE[l.estado].label}</span>
+          <div className="dl-grid">
+            <div className="dl-item"><div className="l">Cédula</div><div className="v mono">{l.cedula}</div></div>
+            <div className="dl-item"><div className="l">Período</div><div className="v">{l.mes}</div></div>
+            <div className="dl-item"><div className="l">Horas HE acumuladas</div><div className="v">{fmtHoras(l.horas)}</div></div>
+            <div className="dl-item"><div className="l">Límite legal</div><div className="v">48h</div></div>
+          </div>
+        </>
+      );
+    } else if (item.kind === "registro") {
+      const r = item.data;
+      title = r.nombre || r.cedula; subtitle = r.contrato;
+      body = (
+        <>
+          <span className={"pill "+((ESTADO_STYLE[r.estado]||{}).pill||"neutral")}>{r.estado}</span>
+          <div className="dl-grid">
+            <div className="dl-item"><div className="l">Fecha labor</div><div className="v mono">{fmtFecha(r.fecha_labor)}</div></div>
+            <div className="dl-item"><div className="l">Tipo HE</div><div className="v">{r.tipo_he}</div></div>
+            <div className="dl-item"><div className="l">Horas reportadas</div><div className="v">{r.horas_reportadas}h</div></div>
+            <div className="dl-item"><div className="l">Horas aprobadas</div><div className="v">{r.horas_autorizadas!=null ? r.horas_autorizadas+"h" : "—"}</div></div>
+            <div className="dl-item"><div className="l">Horario</div><div className="v mono">{r.hora_inicio}–{r.hora_fin}</div></div>
+            <div className="dl-item"><div className="l">Supervisor</div><div className="v">{r.autorizacion_sup||"—"}</div></div>
+          </div>
+          <div className="drawer-sep"/>
+          {r.justificacion && <div style={{fontSize:12.5, marginBottom:8}}><b>Justificación:</b> {r.justificacion}</div>}
+          {r.obs_neo && <div style={{fontSize:12.5, color:"var(--ink-muted)"}}><b>Observación NEO:</b> {r.obs_neo}</div>}
+        </>
+      );
+    } else if (item.kind === "tipo") {
+      const t = item.data;
+      title = t.codigo + " – " + t.tipo; subtitle = "Tipo de hora extra";
+      body = (
+        <div className="dl-grid">
+          <div className="dl-item"><div className="l">Registros</div><div className="v">{fmtInt(t.registros)}</div></div>
+          <div className="dl-item"><div className="l">Horas reportadas</div><div className="v">{fmtHoras(t.hrs_reportadas)}</div></div>
+          <div className="dl-item"><div className="l">Horas aprobadas</div><div className="v">{fmtHoras(t.hrs_autorizadas)}</div></div>
+        </div>
+      );
+    }
+  }
+
+  return (
+    <>
+      <div className={"backdrop"+(open?" open":"")} onClick={onClose}/>
+      <div className={"drawer"+(open?" open":"")}>
+        {item && (
+          <>
+            <div className="drawer-head">
+              <div style={{flex:1, minWidth:0}}>
+                <h3 style={{overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{title}</h3>
+                <div style={{fontSize:12, color:"var(--ink-muted)"}}>{subtitle}</div>
+              </div>
+              <button className="icon-btn" onClick={onClose}><IcX size={16}/></button>
+            </div>
+            <div className="drawer-body">{body}</div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ================= NAV + VIEWS ================= */
+const NAV = [
+  {id:"resumen",    label:"Resumen",       icon:IcGrid},
+  {id:"casos",      label:"Registros",     icon:IcInbox},
+  {id:"contratos",  label:"Contratos",     icon:IcBuilding},
+  {id:"tipos",      label:"Tipos de HE",   icon:IcLayers},
+  {id:"analisis",   label:"Análisis",      icon:IcTrend},
+];
+
+function ResumenView({dash, ranking, valorNomina, onOpenDrawer, onFilterTipo}) {
+  return (
+    <div className="fade-in">
+      <KpiBand kpis={dash.kpis}/>
+      <div className="mid-grid">
+        <ContratosImpact ranking={ranking} onOpenDrawer={onOpenDrawer}/>
+        <div className="stack">
+          <TiposHECard porTipo={dash.por_tipo} onFilterTipo={onFilterTipo}/>
+          <SupervisoresCard supervisores={dash.supervisores}/>
+        </div>
+      </div>
+      <div className="mid-grid">
+        <LimiteLegalCard limite={dash.limite_legal} onOpenDrawer={onOpenDrawer}/>
+        <ValorEconomico valorNomina={valorNomina} onOpenDrawer={onOpenDrawer}/>
+      </div>
+    </div>
+  );
+}
+
+function ContratosView({ranking, valorNomina, onOpenDrawer}) {
+  return (
+    <div className="fade-in">
+      <div className="view-title"><h2>Contratos</h2><p>Horas y valor económico de horas extras</p></div>
+      <div className="mid-grid">
+        <ContratosImpact ranking={ranking} onOpenDrawer={onOpenDrawer}/>
+        <ValorEconomico valorNomina={valorNomina} onOpenDrawer={onOpenDrawer}/>
+      </div>
+    </div>
+  );
+}
+
+function TiposView({dash, onOpenDrawer}) {
+  const porTipo = dash.por_tipo || [];
+  const total = porTipo.reduce((s,t)=>s+t.hrs_reportadas,0) || 1;
+  return (
+    <div className="fade-in">
+      <div className="view-title"><h2>Tipos de hora extra</h2><p>{fmtHoras(total)} reportadas en total</p></div>
+      <div className="grid-2">
+        {porTipo.map((t,i) => {
+          const pct = t.hrs_reportadas/total*100;
+          return (
+            <div className="card" key={t.codigo} style={{cursor:"pointer"}} onClick={()=>onOpenDrawer({kind:"tipo", data:t})}>
+              <div className="card-body" style={{paddingTop:16}}>
+                <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:10}}>
+                  <span className="action-dot" style={{background:TIPO_PALETTE[i%TIPO_PALETTE.length], width:11, height:11}}/>
+                  <b style={{fontSize:13.5}}>{t.codigo} – {t.tipo}</b>
+                </div>
+                <div style={{display:"flex", alignItems:"baseline", gap:10}}>
+                  <span className="num" style={{fontSize:26}}>{fmtHoras(t.hrs_reportadas)}</span>
+                  <span className="pill info" style={{marginLeft:"auto"}}>{fmtPct(pct)}</span>
+                </div>
+                <div className="type-track" style={{marginTop:10}}><div className="type-fill" style={{width:pct+"%", background:TIPO_PALETTE[i%TIPO_PALETTE.length]}}/></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AnalisisView({dash}) {
+  return (
+    <div className="fade-in">
+      <div className="view-title"><h2>Análisis</h2><p>Evolución diaria de horas extras</p></div>
+      <TrendChartHE porDia={dash.por_dia} porDiaReporte={dash.por_dia_reporte}/>
+      <div style={{height:12}}/>
+      <SupervisoresCard supervisores={dash.supervisores}/>
+    </div>
+  );
+}
+
+/* ================= APP ================= */
+function App() {
+  const [tab, setTab] = useState("resumen");
+  const [filters, setFilters] = useState({contrato_id:"", corte_id:"", fecha_desde:"", fecha_hasta:"", id_concepto:"", estado:""});
+  const [drawer, setDrawer] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshTick, setRefreshTick] = useState(0);
+  const [updatedAt, setUpdatedAt] = useState(() => new Date());
+  const {loading, error, data, ranking, valorNomina} = useHeDashboard(filters, refreshTick);
+
+  useEffect(() => { if (!loading) setUpdatedAt(new Date()); }, [loading]);
+
+  const refresh = () => {
+    setRefreshing(true);
+    setRefreshTick(t => t+1);
+    setTimeout(()=>setRefreshing(false), 700);
+  };
+
+  const activeCount = ["contrato_id","corte_id","fecha_desde","fecha_hasta","id_concepto"].filter(k=>filters[k]).length;
+  const onFilterTipo = codigo => { setFilters(s=>({...s, id_concepto: s.id_concepto===codigo?"":codigo})); setTab("casos"); };
+
+  return (
+    <div className="shell">
+      <div className="topbar">
+        <img src={CONFIG.logoUrl} alt="Hesego"/>
+        <div style={{flex:1, minWidth:0}}>
+          <div className="topbar-title">Centro de Monitoreo - Horas Extras</div>
+          <div className="topbar-sub">{CONFIG.userName}</div>
+        </div>
+        <div className="topbar-actions">
+          <div className="updated">Actualizado<br/><b>{updatedAt.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</b></div>
+          <button className={"topbar-btn"+(refreshing?" spinning":"")} onClick={refresh} title="Actualizar datos">
+            <IcRefresh size={14}/><span className="btn-label">Actualizar</span>
+          </button>
+          {CONFIG.volverUrl && (
+            <button className="topbar-btn" title="Volver al menú" onClick={()=>window.location.href=CONFIG.volverUrl}>
+              <IcArrowLeft size={14}/><span className="btn-label">Volver</span>
+            </button>
+          )}
+          <button className="topbar-btn" title="Salir" onClick={()=>window.location.href=CONFIG.logoutUrl}>
+            <IcLogout size={14}/><span className="btn-label">Salir</span>
+          </button>
+        </div>
+      </div>
+
+      <FilterBar filters={filters} setFilters={setFilters} activeCount={activeCount}/>
+
+      <div className="tabbar">
+        {NAV.map(n => (
+          <div key={n.id} className={"tab"+(tab===n.id?" active":"")} onClick={()=>setTab(n.id)}>
+            <n.icon size={14}/>{n.label}
+          </div>
+        ))}
+      </div>
+
+      <main>
+        {loading && !data && <div className="empty-note" style={{padding:"60px 0"}}>Cargando datos en vivo…</div>}
+        {error && <div className="empty-note" style={{padding:"60px 0"}}>No se pudieron cargar los datos: {error}</div>}
+        {data && (
+          <>
+            {tab==="resumen"    && <ResumenView dash={data} ranking={ranking} valorNomina={valorNomina} onOpenDrawer={setDrawer} onFilterTipo={onFilterTipo}/>}
+            {tab==="casos"      && <CasosView filters={filters} setFilters={setFilters} onOpenDrawer={setDrawer}/>}
+            {tab==="contratos"  && <ContratosView ranking={ranking} valorNomina={valorNomina} onOpenDrawer={setDrawer}/>}
+            {tab==="tipos"      && <TiposView dash={data} onOpenDrawer={setDrawer}/>}
+            {tab==="analisis"   && <AnalisisView dash={data}/>}
+          </>
+        )}
+      </main>
+
+      <Drawer item={drawer} onClose={()=>setDrawer(null)}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+{% endraw %}
+
+</body>
+</html>
