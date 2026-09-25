@@ -112,11 +112,36 @@
     </div>
   </div>
 </div>
+
+<!-- MODAL CONFIRMAR REABRIR -->
+<div class="modal fade" id="modalReabrir" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-unlock me-2"></i>Reabrir corte</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:.85rem;color:#94a3b8">
+            ¿Confirmas reabrir el corte <strong id="reabrirNombre" style="color:#e2e8f0"></strong>?<br>
+            Los coordinadores podrán volver a editar los registros de este período.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-sm" style="background:#16a34a;color:#fff;border:none" onclick="confirmarReabrir()">
+            <i class="bi bi-unlock-fill"></i> Reabrir corte
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 let _pendCerrarId = null;
+let _pendReabrirId = null;
 
 async function cargar() {
     const cid = document.getElementById('fContrato').value;
@@ -143,7 +168,9 @@ function renderTabla(cortes) {
             <td>${estadoBadge(c.estado)}</td>
             <td style="text-align:right;font-size:.85rem">${(c.total_registros||0).toLocaleString('es-CO')}</td>
             <td class="actions">
-                ${c.estado==='ABIERTO' ? `<button class="btn-edit" onclick="abrirCerrar(${c.id},'${(c.nombre||'').replace(/'/g,"\\'")}')"><i class="bi bi-lock"></i> Cerrar</button>` : ''}
+                ${c.estado==='ABIERTO'
+                    ? `<button class="btn-edit" onclick="abrirCerrar(${c.id},'${(c.nombre||'').replace(/'/g,"\\'")}')"><i class="bi bi-lock"></i> Cerrar</button>`
+                    : `<button class="btn-edit" onclick="abrirReabrir(${c.id},'${(c.nombre||'').replace(/'/g,"\\'")}')"><i class="bi bi-unlock"></i> Abrir</button>`}
                 <button class="btn-del" onclick="eliminarCorte(${c.id},'${(c.nombre||'').replace(/'/g,"\\'")}')"><i class="bi bi-trash"></i></button>
             </td>
         </tr>`).join('');
@@ -161,13 +188,13 @@ async function crearCorte() {
         mostrarAlerta('alertaNuevo','Nombre, fecha inicio y fecha fin son requeridos.','danger'); return;
     }
     const r = await apiFetch('/api/he/cortes','POST',data);
-    if (r.success || r.id) {
+    if (r.ok) {
         const info = document.getElementById('ncInfo');
         info.style.display = 'block';
-        info.innerHTML = `<i class="bi bi-check-circle text-success"></i> Corte creado. Se asignaron <strong>${r.asignados||0}</strong> registros existentes dentro del período.`;
+        info.innerHTML = `<i class="bi bi-check-circle text-success"></i> Corte creado. Se asignaron <strong>${r.registros_asignados||0}</strong> registros existentes dentro del período.`;
         setTimeout(()=>{ bootstrap.Modal.getInstance(document.getElementById('modalNuevoCorte')).hide(); cargar(); },1800);
     } else {
-        mostrarAlerta('alertaNuevo', r.mensaje||'Error al crear','danger');
+        mostrarAlerta('alertaNuevo', r.msg||'Error al crear','danger');
     }
 }
 
@@ -180,15 +207,28 @@ function abrirCerrar(id, nombre) {
 async function confirmarCerrar() {
     const r = await apiFetch(`/api/he/cortes/${_pendCerrarId}/cerrar`,'POST',{});
     bootstrap.Modal.getInstance(document.getElementById('modalCerrar')).hide();
-    if (r.success) { mostrarAlerta('alerta','Corte cerrado correctamente.','success'); cargar(); }
-    else mostrarAlerta('alerta', r.mensaje||'Error','danger');
+    if (r.ok || r.success) { mostrarAlerta('alerta','Corte cerrado correctamente.','success'); cargar(); }
+    else mostrarAlerta('alerta', r.msg||r.mensaje||'Error','danger');
+}
+
+function abrirReabrir(id, nombre) {
+    _pendReabrirId = id;
+    document.getElementById('reabrirNombre').textContent = nombre;
+    abrirModal('modalReabrir');
+}
+
+async function confirmarReabrir() {
+    const r = await apiFetch(`/api/he/cortes/${_pendReabrirId}/abrir`,'POST',{});
+    bootstrap.Modal.getInstance(document.getElementById('modalReabrir')).hide();
+    if (r.ok || r.success) { mostrarAlerta('alerta','Corte reabierto correctamente.','success'); cargar(); }
+    else mostrarAlerta('alerta', r.msg||r.mensaje||'Error','danger');
 }
 
 async function eliminarCorte(id, nombre) {
     if (!confirm(`¿Eliminar el corte "${nombre}"?\nLos registros HE quedarán sin corte asignado (no se eliminan).`)) return;
     const r = await apiFetch(`/api/he/cortes/${id}`,'DELETE',{eliminar_registros:false});
-    if (r.success) { mostrarAlerta('alerta','Corte eliminado.','success'); cargar(); }
-    else mostrarAlerta('alerta', r.mensaje||'Error','danger');
+    if (r.ok) { mostrarAlerta('alerta','Corte eliminado.','success'); cargar(); }
+    else mostrarAlerta('alerta', r.msg||r.error||'Error','danger');
 }
 
 cargar();

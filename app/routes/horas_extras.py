@@ -1366,6 +1366,20 @@ def api_he_cortes_cerrar(corte_id):
     return jsonify({"ok": True, "corte": corte.to_dict()})
 
 
+@he_bp.route("/api/he/cortes/<int:corte_id>/abrir", methods=["POST"])
+@login_required
+def api_he_cortes_abrir(corte_id):
+    """Reabrir un corte cerrado."""
+    corte = HeCorte.query.get_or_404(corte_id)
+    if corte.estado != "CERRADO":
+        return jsonify({"ok": False, "msg": "El corte no está cerrado"}), 400
+    corte.estado         = "ABIERTO"
+    corte.cerrado_por_id = None
+    corte.fecha_cierre   = None
+    db.session.commit()
+    return jsonify({"ok": True, "corte": corte.to_dict()})
+
+
 @he_bp.route("/api/he/cortes/<int:corte_id>", methods=["DELETE"])
 @login_required
 def api_he_cortes_eliminar(corte_id):
