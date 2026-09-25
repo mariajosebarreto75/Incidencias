@@ -224,44 +224,6 @@ def he_dashboard():
                            base_template=base_template)
 
 
-# ── CENTRO DE MONITOREO - HORAS EXTRAS (vista ejecutiva) ─────────────────────
-@he_bp.route("/he/centro-monitoreo")
-@login_required
-def he_centro_monitoreo():
-    rol = current_user.rol.lower()
-    if not (rol == "admin" or current_user.tiene_permiso("dashboard_he")):
-        abort(403)
-
-    contratos = _contratos_del_usuario()
-
-    _todos_cortes = HeCorte.query.order_by(HeCorte.fecha_inicio.desc(), HeCorte.contrato_id.desc()).all()
-    _vistos = set()
-    cortes = []
-    for _c in _todos_cortes:
-        _key = (_c.fecha_inicio, _c.fecha_fin)
-        if _key not in _vistos:
-            _vistos.add(_key)
-            cortes.append(_c)
-
-    home_por_rol = {
-        "neo":         "neo.home_neo",
-        "coordinador": "coordinador.dashboard_coordinador",
-        "admin":       "admin_bp.dashboard",
-        "director":    "dashboard.director",
-    }
-
-    return render_template(
-        "horas_extras/centro_monitoreo_he.html",
-        contratos_json=[{"id": c.id, "nombre": c.contrato} for c in contratos],
-        cortes_json=[{
-            "id": c.id, "nombre": c.nombre,
-            "fecha_inicio": c.fecha_inicio.isoformat(), "fecha_fin": c.fecha_fin.isoformat(),
-        } for c in cortes],
-        conceptos_json=[{"codigo": k, "nombre": v} for k, v in CONCEPTOS_HE.items()],
-        home_endpoint=home_por_rol.get(rol),
-    )
-
-
 # ── HUB: página de selección de módulo ───────────────────────────────────────
 @he_bp.route("/horas-extras")
 @login_required
