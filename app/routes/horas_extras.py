@@ -213,15 +213,15 @@ def he_dashboard():
         if _key not in _vistos:
             _vistos.add(_key)
             cortes.append(_c)
-    if rol in ("coordinador", "director", "supervisor"):
-        base_template = "coordinador/navbarcoor.html"
-    elif rol == "neo":
-        base_template = "neo/navbNeo.html"
-    else:
-        base_template = "neo/navbNeo.html"
+    home_por_rol = {
+        "neo":         "neo.home_neo",
+        "coordinador": "coordinador.dashboard_coordinador",
+        "admin":       "admin_bp.dashboard",
+        "director":    "dashboard.director",
+    }
     return render_template("horas_extras/dashboard_he.html",
                            contratos=contratos, cortes=cortes,
-                           base_template=base_template)
+                           home_endpoint=home_por_rol.get(rol))
 
 
 # ── HUB: página de selección de módulo ───────────────────────────────────────

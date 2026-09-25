@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboards</title>
+<meta name="description" content="Selector de dashboards ejecutivos: Centro de Monitoreo y Horas Extras.">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --bg:#F5F7FA; --surface:#FFFFFF; --border:#DDE4EC; --ink:#101A2E; --ink-muted:#5B6B84;
+    --accent:#0891B2; --accent-2:#0E7490; --accent-soft:#E0F2FE;
+    --shadow:0 1px 2px rgba(16,26,46,.04), 0 8px 24px -12px rgba(16,26,46,.12);
+    --shadow-lg:0 24px 48px -16px rgba(16,26,46,.22);
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:"IBM Plex Sans", system-ui, sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2{font-family:"Manrope", system-ui, sans-serif; margin:0;}
+
+  .topbar{
+    background:linear-gradient(90deg,#005f6b,#00b8c9);
+    padding:0 24px; display:flex; align-items:center; gap:16px; height:56px;
+    box-shadow:0 2px 8px rgba(0,95,107,.35);
+  }
+  .topbar img{height:32px; filter:brightness(0) invert(1); opacity:.9; flex:none;}
+  .topbar-title{color:#fff; font-size:1rem; font-weight:700; font-family:"Manrope", system-ui, sans-serif;}
+  .topbar-sub{color:rgba(255,255,255,.65); font-size:.75rem;}
+  .topbar-btn{
+    display:flex; align-items:center; gap:5px; background:rgba(255,255,255,.15); color:#fff;
+    border:1px solid rgba(255,255,255,.25); border-radius:6px; padding:6px 13px; font-size:.78rem;
+    font-weight:600; cursor:pointer; text-decoration:none; transition:background .15s;
+  }
+  .topbar-btn:hover{background:rgba(255,255,255,.25); color:#fff;}
+
+  main{max-width:900px; margin:0 auto; padding:56px 20px;}
+  .intro{margin-bottom:36px;}
+  .intro h1{font-size:24px; letter-spacing:-.3px;}
+  .intro p{font-size:14px; color:var(--ink-muted); margin:6px 0 0;}
+
+  .cards{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:640px){ .cards{grid-template-columns:1fr;} }
+
+  .pick-card{
+    display:block; text-decoration:none; color:inherit;
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:28px 26px; box-shadow:var(--shadow); transition:transform .15s, box-shadow .15s, border-color .15s;
+  }
+  .pick-card:hover{ transform:translateY(-3px); box-shadow:var(--shadow-lg); border-color:var(--accent); }
+  .pick-icon{
+    width:46px; height:46px; border-radius:12px; background:var(--accent-soft); color:var(--accent-2);
+    display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:16px;
+  }
+  .pick-card h2{font-size:17px; margin-bottom:6px;}
+  .pick-card p{font-size:13px; color:var(--ink-muted); line-height:1.5; margin:0;}
+  .pick-go{margin-top:16px; font-size:12.5px; font-weight:700; color:var(--accent-2); display:flex; align-items:center; gap:4px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+    <div style="flex:1; min-width:0;">
+        <div class="topbar-title">Dashboards</div>
+        <div class="topbar-sub">{{ current_user.nombre_completo }}</div>
+    </div>
+    {% if home_endpoint %}
+    <a href="{{ url_for(home_endpoint) }}" class="topbar-btn" title="Volver al menú">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    {% endif %}
+    <a href="{{ url_for('auth.logout') }}" class="topbar-btn" title="Salir">
+        <i class="bi bi-box-arrow-right"></i> Salir
+    </a>
+</div>
+
+<main>
+    <div class="intro">
+        <h1>¿Qué quieres ver?</h1>
+        <p>Elige un dashboard ejecutivo para continuar.</p>
+    </div>
+    <div class="cards">
+        <a class="pick-card" href="{{ url_for('dashboard.centro_monitoreo') }}">
+            <div class="pick-icon"><i class="bi bi-grid-1x2"></i></div>
+            <h2>Centro de Monitoreo</h2>
+            <p>Reportes de desviaciones operativas: impacto por contrato, tipos de desviación, conformidad y casos.</p>
+            <div class="pick-go">Entrar <i class="bi bi-arrow-right"></i></div>
+        </a>
+        <a class="pick-card" href="{{ url_for('he_bp.he_dashboard') }}">
+            <div class="pick-icon"><i class="bi bi-clock-history"></i></div>
+            <h2>Horas Extras</h2>
+            <p>KPIs de horas extras, tipos de HE, horas por día, control de límite legal y valor de nómina.</p>
+            <div class="pick-go">Entrar <i class="bi bi-arrow-right"></i></div>
+        </a>
+    </div>
+</main>
+
+</body>
+</html>

@@ -1,79 +1,106 @@
-{% extends base_template %}
-{% block title %}Dashboard Horas Extras{% endblock %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horas Extras</title>
+<meta name="description" content="Dashboard ejecutivo de horas extras: KPIs, tipos de HE, horas por día, control de límite legal y valor de nómina, en vivo.">
 
-{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root { --dh-bg: #0f172a; --dh-card: #1e293b; --dh-border: #334155; --dh-text: #e2e8f0; --dh-sub: #94a3b8; }
-.dh-wrap       { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
-.dh-header     { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.8rem; margin-bottom:1.2rem; }
-.dh-dashnav    { display:flex; gap:4px; background:#1e293b; border:1px solid #334155; border-radius:8px; padding:4px; }
-.dh-dashnav a  { display:flex; align-items:center; gap:6px; color:#94a3b8; text-decoration:none; font-size:.75rem; font-weight:600; padding:5px 13px; border-radius:6px; transition:background .15s,color .15s; white-space:nowrap; }
-.dh-dashnav a:hover  { background:#334155; color:#e2e8f0; }
-.dh-dashnav a.active { background:#0284c7; color:#fff; }
-.dh-title      { font-size:1.25rem; font-weight:700; color:var(--dh-text); margin:0; }
-.dh-sub        { font-size:.8rem; color:var(--dh-sub); margin:2px 0 0; }
-.dh-card       { background:var(--dh-card); border:1px solid var(--dh-border); border-radius:10px; }
+:root { --dh-bg: #F5F7FA; --dh-card: #FFFFFF; --dh-border: #DDE4EC; --dh-text: #101A2E; --dh-sub: #5B6B84; }
+*{box-sizing:border-box;}
+body{ background:var(--dh-bg); color:var(--dh-text); font-family:"IBM Plex Sans", system-ui, sans-serif; -webkit-font-smoothing:antialiased; margin:0; }
+.num{font-family:"Manrope", system-ui, sans-serif; font-variant-numeric:tabular-nums;}
+
+/* Topbar: estilo exacto de la plataforma (no modificar — logo, título, Volver/Salir) */
+.topbar{
+    background:linear-gradient(90deg,#005f6b,#00b8c9);
+    padding:0 24px; display:flex; align-items:center; gap:16px; height:56px;
+    position:sticky; top:0; z-index:40;
+    box-shadow:0 2px 8px rgba(0,95,107,.35);
+}
+.topbar img{height:32px; filter:brightness(0) invert(1); opacity:.9; flex:none;}
+.topbar-title{color:#fff; font-size:1rem; font-weight:700; font-family:"Manrope", system-ui, sans-serif; line-height:1.3;}
+.topbar-sub{color:rgba(255,255,255,.65); font-size:.75rem;}
+.topbar-actions{display:flex; align-items:center; gap:8px; flex:none;}
+.topbar-btn{
+    display:flex; align-items:center; gap:5px; background:rgba(255,255,255,.15); color:#fff;
+    border:1px solid rgba(255,255,255,.25); border-radius:6px; padding:6px 13px; font-size:.78rem;
+    font-weight:600; cursor:pointer; text-decoration:none; transition:background .15s;
+}
+.topbar-btn:hover{background:rgba(255,255,255,.25); color:#fff;}
+@media (max-width:600px){ .topbar{padding:0 14px; gap:10px;} .topbar-btn{padding:7px 9px;} .topbar-btn .btn-label{display:none;} }
+
+.dh-wrap       { padding: 1.5rem; max-width: 1440px; margin: 0 auto; }
+.dh-card       { background:var(--dh-card); border:1px solid var(--dh-border); border-radius:14px; box-shadow:0 1px 2px rgba(16,26,46,.04), 0 8px 24px -12px rgba(16,26,46,.12); }
 .dh-filters    { display:flex; gap:.7rem; flex-wrap:wrap; align-items:flex-end; padding:14px 18px; }
-.dh-filter-lbl { font-size:.72rem; color:var(--dh-sub); display:block; margin-bottom:3px; }
-.dh-select     { background:#0f172a; color:var(--dh-text); border:1px solid var(--dh-border); border-radius:6px; padding:5px 10px; font-size:.8rem; }
+.dh-filter-lbl { font-size:.72rem; font-weight:600; color:var(--dh-sub); display:block; margin-bottom:3px; }
+.dh-select     { background:#F5F7FA; color:var(--dh-text); border:1px solid var(--dh-border); border-radius:8px; padding:6px 10px; font-size:.8rem; }
 .dh-kpis       { display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:.8rem; margin-bottom:1rem; }
-.dh-kpi        { background:var(--dh-card); border:1px solid var(--dh-border); border-radius:10px; padding:16px 18px; }
-.dh-kpi-val    { font-size:1.7rem; font-weight:800; color:var(--dh-text); line-height:1; }
-.dh-kpi-lbl    { font-size:.72rem; color:var(--dh-sub); margin-top:4px; }
+.dh-kpi        { background:var(--dh-card); border:1px solid var(--dh-border); border-radius:14px; padding:16px 18px; box-shadow:0 1px 2px rgba(16,26,46,.04), 0 8px 24px -12px rgba(16,26,46,.12); }
+.dh-kpi-val    { font-family:"Manrope", system-ui, sans-serif; font-variant-numeric:tabular-nums; font-size:1.7rem; font-weight:800; color:var(--dh-text); line-height:1; }
+.dh-kpi-lbl    { font-size:.72rem; font-weight:600; color:var(--dh-sub); margin-top:4px; }
 .dh-kpi-icon   { font-size:1.2rem; margin-bottom:6px; }
 .dh-grid2      { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
 .dh-grid3      { display:grid; grid-template-columns:3fr 2fr; gap:1rem; margin-bottom:1rem; }
-.dh-card-hdr   { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--dh-border); }
-.dh-card-ttl   { font-size:.85rem; font-weight:700; color:var(--dh-text); }
+.dh-card-hdr   { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 12px; border-bottom:1px solid var(--dh-border); }
+.dh-card-ttl   { font-size:.85rem; font-weight:700; font-family:"Manrope", system-ui, sans-serif; color:var(--dh-text); }
 .dh-table      { width:100%; border-collapse:collapse; font-size:.78rem; }
-.dh-table th   { background:#0f172a; color:#64748b; font-weight:600; text-transform:uppercase; font-size:.68rem; letter-spacing:.04em; padding:8px 12px; text-align:left; }
-.dh-table td   { padding:7px 12px; border-bottom:1px solid #1e293b; color:var(--dh-sub); }
+.dh-table th   { background:#F5F7FA; color:#8393AC; font-weight:600; text-transform:uppercase; font-size:.68rem; letter-spacing:.04em; padding:8px 12px; text-align:left; }
+.dh-table td   { padding:7px 12px; border-bottom:1px solid #EEF2F7; color:var(--dh-sub); }
 .dh-table tr:last-child td { border-bottom:none; }
-.dh-table tr:hover td { background:#0f172a33; }
+.dh-table tr:hover td { background:#F5F7FA; }
 .badge-estado  { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.68rem; font-weight:700; }
-.dh-top-tag    { background:#1d4ed8; color:#bfdbfe; padding:3px 10px; border-radius:999px; font-size:.72rem; font-weight:600; }
-.alerta-row    { background:#450a0a22 !important; }
-.alerta-row td { color:#f87171 !important; }
-.warn-row      { background:#451a0322 !important; }
-.warn-row td   { color:#fcd34d !important; }
-.dh-btn        { background:#1d4ed8; color:#fff; border:none; border-radius:6px; padding:6px 14px; font-size:.8rem; cursor:pointer; }
-.dh-btn:hover  { background:#1e40af; }
-.dh-btn-sec    { background:#1e293b; color:#94a3b8; border:1px solid #334155; border-radius:6px; padding:6px 14px; font-size:.8rem; cursor:pointer; }
+.dh-top-tag    { background:#E0F2FE; color:#0E7490; padding:3px 10px; border-radius:999px; font-size:.72rem; font-weight:600; }
+.alerta-row    { background:#FEE2E2 !important; }
+.alerta-row td { color:#DC2626 !important; }
+.warn-row      { background:#FEF3C7 !important; }
+.warn-row td   { color:#D97706 !important; }
+.dh-btn        { background:#0891B2; color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:.8rem; font-weight:600; cursor:pointer; }
+.dh-btn:hover  { filter:brightness(1.08); }
+.dh-btn-sec    { background:#F5F7FA; color:#5B6B84; border:1px solid #DDE4EC; border-radius:8px; padding:7px 14px; font-size:.8rem; font-weight:600; cursor:pointer; }
+.dh-btn-sec:hover { color:#101A2E; border-color:#8393AC; }
 .chart-wrap    { padding:14px 18px; height:260px; position:relative; }
 @media(max-width:768px){ .dh-grid2,.dh-grid3{ grid-template-columns:1fr; } }
 </style>
-{% endblock %}
+</head>
+<body>
 
-{% block content %}
-<div class="dh-wrap">
-    <!-- HEADER -->
-    <div class="dh-header">
-        <div>
-            <h1 class="dh-title"><i class="bi bi-clock-history me-2" style="color:#38bdf8"></i>Dashboard — Horas Extras</h1>
-            <p class="dh-sub">Indicadores en tiempo real del módulo de horas extras</p>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <nav class="dh-dashnav">
-                <a href="{{ url_for('dashboard.indicadores') }}">
-                    <i class="bi bi-speedometer2"></i> Indicadores NEO
-                </a>
-                <a href="{{ url_for('he_bp.he_dashboard') }}" class="active">
-                    <i class="bi bi-clock-history"></i> Horas Extras
-                </a>
-            </nav>
-            <button class="dh-btn" onclick="cargar()"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar</button>
-        </div>
+<div class="topbar">
+    <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+    <div style="flex:1; min-width:0;">
+        <div class="topbar-title">Horas Extras</div>
+        <div class="topbar-sub">{{ current_user.nombre_completo }}</div>
     </div>
+    <div class="topbar-actions">
+        <button class="topbar-btn" onclick="cargar()" title="Actualizar datos">
+            <i class="bi bi-arrow-clockwise"></i><span class="btn-label">Actualizar</span>
+        </button>
+        {% if home_endpoint %}
+        <a href="{{ url_for(home_endpoint) }}" class="topbar-btn" title="Volver al menú">
+            <i class="bi bi-arrow-left"></i><span class="btn-label">Volver</span>
+        </a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="topbar-btn" title="Salir">
+            <i class="bi bi-box-arrow-right"></i><span class="btn-label">Salir</span>
+        </a>
+    </div>
+</div>
 
+<div class="dh-wrap">
     <!-- CHIP filtro drill-down activo -->
     <div id="drillChip" hidden style="margin-bottom:.6rem;display:flex;align-items:center;gap:.6rem;
-         background:#1d4ed822;border:1px solid #1d4ed8;border-radius:8px;padding:7px 14px;">
-        <i class="bi bi-funnel-fill" style="color:#60a5fa"></i>
-        <span id="drillLabel" style="color:#93c5fd;font-size:.82rem;font-weight:600"></span>
+         background:#E0F2FE;border:1px solid #0E7490;border-radius:8px;padding:7px 14px;">
+        <i class="bi bi-funnel-fill" style="color:#0E7490"></i>
+        <span id="drillLabel" style="color:#0E7490;font-size:.82rem;font-weight:600"></span>
         <button onclick="limpiarDrill()"
-                style="margin-left:auto;background:#334155;border:none;border-radius:5px;
-                       color:#e2e8f0;font-size:.75rem;padding:3px 10px;cursor:pointer;">
+                style="margin-left:auto;background:#DDE4EC;border:none;border-radius:5px;
+                       color:#101A2E;font-size:.75rem;padding:3px 10px;cursor:pointer;">
             <i class="bi bi-x me-1"></i>Quitar filtro
         </button>
     </div>
@@ -109,11 +136,11 @@
 
     <!-- KPI CARDS -->
     <div class="dh-kpis" id="kpiRow">
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#38bdf8"><i class="bi bi-clipboard2-data"></i></div><div class="dh-kpi-val" id="k_total">—</div><div class="dh-kpi-lbl">Total registros</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#f59e0b"><i class="bi bi-hourglass-split"></i></div><div class="dh-kpi-val" id="k_pend" style="color:#b45309">—</div><div class="dh-kpi-lbl">Pendientes por revisar</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#a78bfa"><i class="bi bi-clock-history"></i></div><div class="dh-kpi-val" id="k_rep">—</div><div class="dh-kpi-lbl">Hrs reportadas</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#4ade80"><i class="bi bi-check-circle-fill"></i></div><div class="dh-kpi-val" id="k_auth">—</div><div class="dh-kpi-lbl">Total aprobadas</div></div>
-        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#fcd34d"><i class="bi bi-dash-circle-fill"></i></div><div class="dh-kpi-val" id="k_desc">—</div><div class="dh-kpi-lbl">Hrs descontadas</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#0891B2"><i class="bi bi-clipboard2-data"></i></div><div class="dh-kpi-val" id="k_total">—</div><div class="dh-kpi-lbl">Total registros</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#D97706"><i class="bi bi-hourglass-split"></i></div><div class="dh-kpi-val" id="k_pend" style="color:#D97706">—</div><div class="dh-kpi-lbl">Pendientes por revisar</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#8B5CF6"><i class="bi bi-clock-history"></i></div><div class="dh-kpi-val" id="k_rep">—</div><div class="dh-kpi-lbl">Hrs reportadas</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#16A34A"><i class="bi bi-check-circle-fill"></i></div><div class="dh-kpi-val" id="k_auth">—</div><div class="dh-kpi-lbl">Total aprobadas</div></div>
+        <div class="dh-kpi"><div class="dh-kpi-icon" style="color:#D97706"><i class="bi bi-dash-circle-fill"></i></div><div class="dh-kpi-val" id="k_desc">—</div><div class="dh-kpi-lbl">Hrs descontadas</div></div>
         <span id="k_noconf" hidden>—</span>
     </div>
 
@@ -133,15 +160,15 @@
                 <span class="dh-card-ttl"><i class="bi bi-graph-up me-1"></i><span id="chartDiaTitulo">Horas por día trabajado</span></span>
                 <div style="display:flex;gap:.4rem;margin-left:auto;flex-wrap:wrap;">
                     <button id="btnDiaTrabajado" onclick="toggleSerie('trabajado')"
-                        style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #38bdf8;background:#0e3a52;color:#38bdf8;">
+                        style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #0891B2;background:#E0F2FE;color:#0891B2;">
                         Por día trabajado
                     </button>
                     <button id="btnDiaReporte" onclick="toggleSerie('reporte')"
-                        style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #334155;background:transparent;color:#64748b;">
+                        style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #DDE4EC;background:transparent;color:#8393AC;">
                         Días de reporte
                     </button>
                     <button id="btnContratos" onclick="toggleSerie('contratos')"
-                        style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #334155;background:transparent;color:#64748b;">
+                        style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;border:1px solid #DDE4EC;background:transparent;color:#8393AC;">
                         <i class="bi bi-building me-1"></i>Por contrato
                     </button>
                 </div>
@@ -155,12 +182,12 @@
         <!-- Límite legal 48h -->
         <div class="dh-card">
             <div class="dh-card-hdr">
-                <span class="dh-card-ttl"><i class="bi bi-person-lines-fill me-1" style="color:#f87171"></i>Control HE por persona — HE puras (03,04,05,06)</span>
+                <span class="dh-card-ttl"><i class="bi bi-person-lines-fill me-1" style="color:#DC2626"></i>Control HE por persona — HE puras (03,04,05,06)</span>
             </div>
             <div style="overflow-x:auto;max-height:320px;overflow-y:auto">
                 <table class="dh-table" id="tblLimite">
                     <thead><tr><th>Colaborador</th><th>Contrato</th><th>Período</th><th style="text-align:right">Hrs HE</th><th>Estado</th></tr></thead>
-                    <tbody id="tbodyLimite"><tr><td colspan="5" style="text-align:center;padding:20px;color:#475569">Sin datos</td></tr></tbody>
+                    <tbody id="tbodyLimite"><tr><td colspan="5" style="text-align:center;padding:20px;color:#8393AC">Sin datos</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -172,7 +199,7 @@
             <div style="overflow-x:auto;max-height:320px;overflow-y:auto">
                 <table class="dh-table" id="tblSup">
                     <thead><tr><th>Supervisor</th><th style="text-align:right">Registros</th><th style="text-align:right">Hrs Rep.</th><th style="text-align:right">Hrs Aut.</th></tr></thead>
-                    <tbody id="tbodySup"><tr><td colspan="4" style="text-align:center;padding:20px;color:#475569">Sin datos</td></tr></tbody>
+                    <tbody id="tbodySup"><tr><td colspan="4" style="text-align:center;padding:20px;color:#8393AC">Sin datos</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -181,7 +208,7 @@
     <!-- VALOR EXTRA NÓMINA -->
     <div class="dh-card" style="margin-bottom:1.5rem;">
         <div class="dh-card-hdr" style="justify-content:space-between;">
-            <span class="dh-card-ttl"><i class="bi bi-currency-dollar me-1" style="color:#4ade80"></i>Valor Extra Nómina — Reportado vs Autorizado</span>
+            <span class="dh-card-ttl"><i class="bi bi-currency-dollar me-1" style="color:#16A34A"></i>Valor Extra Nómina — Reportado vs Autorizado</span>
             <div style="display:flex;gap:6px;">
                 <button class="dh-btn-sec" onclick="normalizarConceptos()" style="font-size:.72rem;padding:4px 12px;">
                     <i class="bi bi-wrench me-1"></i>Normalizar códigos
@@ -194,29 +221,27 @@
         <!-- KPIs valor nómina -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;padding:14px 18px;border-bottom:1px solid var(--dh-border);">
             <div class="dh-kpi" style="padding:12px 16px;">
-                <div class="dh-kpi-icon" style="color:#a78bfa"><i class="bi bi-file-earmark-text"></i></div>
+                <div class="dh-kpi-icon" style="color:#8B5CF6"><i class="bi bi-file-earmark-text"></i></div>
                 <div class="dh-kpi-val" id="kv_rep" style="font-size:1.3rem">—</div>
                 <div class="dh-kpi-lbl">Valor Extra Nómina Reportado</div>
             </div>
             <div class="dh-kpi" style="padding:12px 16px;">
-                <div class="dh-kpi-icon" style="color:#4ade80"><i class="bi bi-patch-check-fill"></i></div>
-                <div class="dh-kpi-val" id="kv_auth" style="font-size:1.3rem;color:#4ade80">—</div>
+                <div class="dh-kpi-icon" style="color:#16A34A"><i class="bi bi-patch-check-fill"></i></div>
+                <div class="dh-kpi-val" id="kv_auth" style="font-size:1.3rem;color:#16A34A">—</div>
                 <div class="dh-kpi-lbl">Valor Extra Nómina Autorizado</div>
             </div>
             <div class="dh-kpi" style="padding:12px 16px;">
-                <div class="dh-kpi-icon" style="color:#f87171"><i class="bi bi-arrow-down-circle-fill"></i></div>
-                <div class="dh-kpi-val" id="kv_diff" style="font-size:1.3rem;color:#f87171">—</div>
+                <div class="dh-kpi-icon" style="color:#DC2626"><i class="bi bi-arrow-down-circle-fill"></i></div>
+                <div class="dh-kpi-val" id="kv_diff" style="font-size:1.3rem;color:#DC2626">—</div>
                 <div class="dh-kpi-lbl">Diferencia (Rep − Aut)</div>
             </div>
         </div>
         <div id="valorNominaTable" style="overflow-x:auto;">
-            <div style="text-align:center;padding:24px;color:#475569;">Sin datos</div>
+            <div style="text-align:center;padding:24px;color:#8393AC;">Sin datos</div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
 let chartTipo = null, chartDia = null;
 let _diasTrabajado = [], _diasReporte = [];
@@ -271,17 +296,17 @@ function _actualizarBotonesDia() {
     const btnR = document.getElementById('btnDiaReporte');
     const btnC = document.getElementById('btnContratos');
     // Botón contratos activo
-    btnC.style.background  = _vistaContratos ? '#1e1040'    : 'transparent';
-    btnC.style.color       = _vistaContratos ? '#a78bfa'    : '#64748b';
-    btnC.style.borderColor = _vistaContratos ? '#a78bfa'    : '#334155';
+    btnC.style.background  = _vistaContratos ? '#EDE9FE'    : 'transparent';
+    btnC.style.color       = _vistaContratos ? '#8B5CF6'    : '#8393AC';
+    btnC.style.borderColor = _vistaContratos ? '#8B5CF6'    : '#DDE4EC';
     // Botones días — atenuados cuando estamos en vista contratos
     const dim = _vistaContratos;
-    btnT.style.background  = (!dim && _serieActiva.trabajado) ? '#0e3a52'  : 'transparent';
-    btnT.style.color       = (!dim && _serieActiva.trabajado) ? '#38bdf8'  : '#475569';
-    btnT.style.borderColor = (!dim && _serieActiva.trabajado) ? '#38bdf8'  : '#334155';
-    btnR.style.background  = (!dim && _serieActiva.reporte)   ? '#2d1f00'  : 'transparent';
-    btnR.style.color       = (!dim && _serieActiva.reporte)   ? '#fbbf24'  : '#475569';
-    btnR.style.borderColor = (!dim && _serieActiva.reporte)   ? '#f59e0b'  : '#334155';
+    btnT.style.background  = (!dim && _serieActiva.trabajado) ? '#E0F2FE'  : 'transparent';
+    btnT.style.color       = (!dim && _serieActiva.trabajado) ? '#0891B2'  : '#8393AC';
+    btnT.style.borderColor = (!dim && _serieActiva.trabajado) ? '#0891B2'  : '#DDE4EC';
+    btnR.style.background  = (!dim && _serieActiva.reporte)   ? '#FEF3C7'  : 'transparent';
+    btnR.style.color       = (!dim && _serieActiva.reporte)   ? '#D97706'  : '#8393AC';
+    btnR.style.borderColor = (!dim && _serieActiva.reporte)   ? '#D97706'  : '#DDE4EC';
     if (_vistaContratos) {
         document.getElementById('chartDiaTitulo').textContent = 'Horas reportadas por contrato';
     } else {
@@ -312,18 +337,18 @@ function _renderChartDiaActual() {
         datasets.push({
             label: 'Día trabajado',
             data: todasFechas.map(f => Math.round(mapT[f] || 0)),
-            borderColor: '#38bdf8', backgroundColor: '#38bdf822',
+            borderColor: '#0891B2', backgroundColor: 'rgba(8,145,178,.15)',
             fill: !_serieActiva.reporte, tension: 0.3,
-            pointRadius: 4, pointBackgroundColor: '#38bdf8',
+            pointRadius: 4, pointBackgroundColor: '#0891B2',
         });
     }
     if (_serieActiva.reporte) {
         datasets.push({
             label: 'Día de reporte',
             data: todasFechas.map(f => Math.round(mapR[f] || 0)),
-            borderColor: '#fbbf24', backgroundColor: '#fbbf2422',
+            borderColor: '#D97706', backgroundColor: 'rgba(217,119,6,.15)',
             fill: !_serieActiva.trabajado, tension: 0.3,
-            pointRadius: 4, pointBackgroundColor: '#fbbf24',
+            pointRadius: 4, pointBackgroundColor: '#D97706',
         });
     }
 
@@ -334,7 +359,7 @@ function _renderChartDiaActual() {
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: {
-                legend: { display: datasets.length > 1, labels: { color: '#e2e8f0', font: { size: 11 } } },
+                legend: { display: datasets.length > 1, labels: { color: '#101A2E', font: { size: 11 } } },
                 tooltip: {
                     mode: 'index',
                     intersect: false,
@@ -350,8 +375,8 @@ function _renderChartDiaActual() {
                 }
             },
             scales: {
-                x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font:{size:10}, maxRotation: 45 } },
-                y: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10}, callback: v => fmtHrs(v) + 'h' } }
+                x: { grid: { color: '#FFFFFF' }, ticks: { color: '#5B6B84', font:{size:10}, maxRotation: 45 } },
+                y: { grid: { color: '#FFFFFF' }, ticks: { color: '#8393AC', font:{size:10}, callback: v => fmtHrs(v) + 'h' } }
             },
             onClick(_, elements) {
                 if (!elements.length) return;
@@ -460,7 +485,7 @@ const barValuePlugin = {
                 const txt = val.toLocaleString('es-CO') + 'h';
                 ctx.save();
                 ctx.font = 'bold 11px sans-serif';
-                ctx.fillStyle = '#e2e8f0';
+                ctx.fillStyle = '#101A2E';
                 ctx.textBaseline = 'middle';
                 ctx.textAlign = 'left';
                 ctx.fillText(txt, bar.x + 6, bar.y);
@@ -478,12 +503,12 @@ function renderChartTipo(tipos) {
         return nombre ? t.codigo + ' – ' + nombre : t.codigo;
     });
     const vals   = tipos.map(t => Math.round(t.hrs_reportadas));
-    const colors = ['#38bdf8','#818cf8','#34d399','#fb923c','#f472b6','#facc15','#a78bfa'];
+    const colors = ['#0891B2','#8B5CF6','#16A34A','#EA580C','#EC4899','#CA8A04','#8B5CF6'];
     chartTipo = new Chart(ctx, {
         type: 'bar',
         plugins: [barValuePlugin],
         data: { labels, datasets: [{ label: 'Hrs reportadas', data: vals,
-            backgroundColor: tipos.map((t,i) => _drill.tipo === t.codigo ? '#facc15' : colors[i%colors.length]),
+            backgroundColor: tipos.map((t,i) => _drill.tipo === t.codigo ? '#CA8A04' : colors[i%colors.length]),
             borderRadius: 4 }] },
         options: {
             indexAxis: 'y',
@@ -492,9 +517,9 @@ function renderChartTipo(tipos) {
                 tooltip: { callbacks: { label: c => c.parsed.x.toLocaleString('es-CO') + 'h — clic para filtrar' } }
             },
             scales: {
-                x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', font:{size:10},
+                x: { grid: { color: '#FFFFFF' }, ticks: { color: '#8393AC', font:{size:10},
                     callback: v => v.toLocaleString('es-CO') } },
-                y: { grid: { display: false }, ticks: { color: '#e2e8f0', font:{size:11} } }
+                y: { grid: { display: false }, ticks: { color: '#101A2E', font:{size:11} } }
             },
             layout: { padding: { right: 90 } },
             onClick(_, elements) {
@@ -516,7 +541,7 @@ function _renderChartContratos() {
     const h = top.length * 38 + 44;
     wrap.style.height = h + 'px';
     wrap.style.minHeight = h + 'px';
-    const palette = ['#38bdf8','#818cf8','#34d399','#fb923c','#f472b6','#facc15','#a78bfa','#f87171','#4ade80','#e879f9'];
+    const palette = ['#0891B2','#8B5CF6','#16A34A','#EA580C','#EC4899','#CA8A04','#8B5CF6','#DC2626','#16A34A','#D946EF'];
     const labels = top.map(c => { const n = c.nombre||''; return n.length > 42 ? n.slice(0,40)+'…' : n; });
     const vals   = top.map(c => Math.round(c.hrs));
     const total  = vals.reduce((s,v) => s+v, 0);
@@ -538,9 +563,9 @@ function _renderChartContratos() {
                 }}
             },
             scales: {
-                x: { grid:{color:'#1e293b'}, ticks:{color:'#64748b', font:{size:10},
+                x: { grid:{color:'#FFFFFF'}, ticks:{color:'#8393AC', font:{size:10},
                     callback: v => v.toLocaleString('es-CO')} },
-                y: { grid:{display:false}, ticks:{color:'#e2e8f0', font:{size:10}},
+                y: { grid:{display:false}, ticks:{color:'#101A2E', font:{size:10}},
                     afterFit(scale) { scale.width = 200; } }
             },
             layout: { padding: { right: 70 } },
@@ -575,18 +600,18 @@ function fmtFecha(iso) {
 function renderLimite(lista) {
     const tbody = document.getElementById('tbodyLimite');
     if (!lista.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#4ade80"><i class="bi bi-check-circle me-1"></i>Sin registros de horas extras</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#16A34A"><i class="bi bi-check-circle me-1"></i>Sin registros de horas extras</td></tr>';
         return;
     }
     const badgeCfg = {
-        excede: { cls: 'alerta-row', bg: '#450a0a', color: '#f87171', icon: '⚠', label: 'Excede 48h' },
-        riesgo: { cls: 'warn-row',   bg: '#451a03', color: '#fcd34d', icon: '⚡', label: 'En Riesgo' },
-        rango:  { cls: '',           bg: '#052e16', color: '#4ade80', icon: '✔', label: 'En Rango' },
+        excede: { cls: 'alerta-row', bg: '#FEE2E2', color: '#DC2626', icon: '⚠', label: 'Excede 48h' },
+        riesgo: { cls: 'warn-row',   bg: '#FEF3C7', color: '#D97706', icon: '⚡', label: 'En Riesgo' },
+        rango:  { cls: '',           bg: '#DCFCE7', color: '#16A34A', icon: '✔', label: 'En Rango' },
     };
     tbody.innerHTML = lista.map(r => {
         const cfg = badgeCfg[r.estado] || badgeCfg.rango;
         const badge = `<span class="badge-estado" style="background:${cfg.bg};color:${cfg.color}">${cfg.icon} ${cfg.label}</span>`;
-        const activo = _drill.cedula === r.cedula ? 'background:#1d4ed833;outline:1px solid #60a5fa;' : '';
+        const activo = _drill.cedula === r.cedula ? 'background:#E0F2FE;outline:1px solid #0E7490;' : '';
         return `<tr class="${cfg.cls}" style="cursor:pointer;${activo}"
                     onclick="aplicarDrill({cedula:'${r.cedula}'}, 'Persona: ${r.nombre.replace(/'/g,"\\'")}')">
             <td><strong>${r.nombre}</strong><br><span style="font-size:.68rem;opacity:.7">${r.cedula}</span></td>
@@ -600,16 +625,16 @@ function renderLimite(lista) {
 
 function renderSupervisores(lista) {
     const tbody = document.getElementById('tbodySup');
-    if (!lista.length) { tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:#475569">Sin datos</td></tr>'; return; }
+    if (!lista.length) { tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:#8393AC">Sin datos</td></tr>'; return; }
     tbody.innerHTML = lista.map(s => {
-        const activo = _drill.supervisor === s.nombre ? 'background:#1d4ed833;outline:1px solid #60a5fa;' : '';
+        const activo = _drill.supervisor === s.nombre ? 'background:#E0F2FE;outline:1px solid #0E7490;' : '';
         const nombre = s.nombre.replace(/'/g, "\\'");
         return `<tr style="cursor:pointer;${activo}"
                     onclick="aplicarDrill({supervisor:'${nombre}'}, 'Supervisor: ${nombre}')">
-            <td style="color:#e2e8f0">${s.nombre}</td>
+            <td style="color:#101A2E">${s.nombre}</td>
             <td style="text-align:right">${fmt(s.registros)}</td>
-            <td style="text-align:right;color:#a78bfa">${fmt(s.hrs_reportadas)}h</td>
-            <td style="text-align:right;color:#4ade80;font-weight:600">${fmt(s.hrs_autorizadas)}h</td>
+            <td style="text-align:right;color:#8B5CF6">${fmt(s.hrs_reportadas)}h</td>
+            <td style="text-align:right;color:#16A34A;font-weight:600">${fmt(s.hrs_autorizadas)}h</td>
         </tr>`;
     }).join('');
 }
@@ -634,7 +659,7 @@ function renderValorNomina(data) {
     document.getElementById('kv_diff').textContent = fmtCOP(totalDiff);
 
     if (!data || !data.length) {
-        cont.innerHTML = '<div style="text-align:center;padding:24px;color:#475569;">Sin datos o sin salarios cargados en personas</div>';
+        cont.innerHTML = '<div style="text-align:center;padding:24px;color:#8393AC;">Sin datos o sin salarios cargados en personas</div>';
         return;
     }
     const maxVal = data[0].valor_rep || 1;
@@ -643,7 +668,7 @@ function renderValorNomina(data) {
     const valDiff  = (rep, pend, auth) => Math.max(0, (rep - pend) - auth);
 
     let html = `<table style="width:100%;border-collapse:collapse;font-size:.8rem;">
-        <thead><tr style="background:#0f172a;color:#94a3b8;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
+        <thead><tr style="background:#EEF2F7;color:#5B6B84;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;">
             <th style="padding:8px 14px;text-align:left;">Contrato</th>
             <th style="padding:8px 14px;text-align:right;width:90px;">Hrs Rep.</th>
             <th style="padding:8px 14px;text-align:right;width:90px;">Hrs Aut.</th>
@@ -662,28 +687,28 @@ function renderValorNomina(data) {
         const cHrsPend = c.hrs_pend   || 0;
         const cDiff    = valDiff(c.valor_rep, cPend, c.valor_auth);
         const cHrsDesc = hrsDesc(c.hrs_rep||0, cHrsPend, c.hrs_auth||0);
-        html += `<tr style="border-bottom:1px solid #334155;">
-            <td style="padding:8px 14px;color:#e2e8f0;font-weight:600;">${c.nombre}</td>
-            <td style="padding:8px 14px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(c.hrs_rep||0)}</td>
-            <td style="padding:8px 14px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(c.hrs_auth||0)}</td>
-            <td style="padding:8px 14px;text-align:right;color:#f87171;font-weight:600;font-variant-numeric:tabular-nums;">${Math.round(cHrsDesc)}</td>
-            <td style="padding:8px 14px;text-align:right;color:#a78bfa;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(c.valor_rep)}</td>
-            <td style="padding:8px 14px;text-align:right;color:#4ade80;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(c.valor_auth)}</td>
-            <td style="padding:8px 14px;text-align:right;color:#fb923c;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(cDiff)}</td>
+        html += `<tr style="border-bottom:1px solid #DDE4EC;">
+            <td style="padding:8px 14px;color:#101A2E;font-weight:600;">${c.nombre}</td>
+            <td style="padding:8px 14px;text-align:right;color:#5B6B84;font-variant-numeric:tabular-nums;">${Math.round(c.hrs_rep||0)}</td>
+            <td style="padding:8px 14px;text-align:right;color:#5B6B84;font-variant-numeric:tabular-nums;">${Math.round(c.hrs_auth||0)}</td>
+            <td style="padding:8px 14px;text-align:right;color:#DC2626;font-weight:600;font-variant-numeric:tabular-nums;">${Math.round(cHrsDesc)}</td>
+            <td style="padding:8px 14px;text-align:right;color:#8B5CF6;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(c.valor_rep)}</td>
+            <td style="padding:8px 14px;text-align:right;color:#16A34A;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(c.valor_auth)}</td>
+            <td style="padding:8px 14px;text-align:right;color:#EA580C;font-weight:700;font-variant-numeric:tabular-nums;">${fmtCOP(cDiff)}</td>
             <td style="padding:8px 14px;">
-                <div style="background:#1e3a4c;border-radius:4px;height:8px;overflow:hidden;position:relative;">
-                    <div style="background:#7c3aed;height:100%;width:${pct}%;border-radius:4px;"></div>
-                    <div style="background:#4ade80;height:100%;width:${authPct}%;border-radius:4px;position:absolute;top:0;left:0;opacity:.7;"></div>
+                <div style="background:#E3E9F1;border-radius:4px;height:8px;overflow:hidden;position:relative;">
+                    <div style="background:#8B5CF6;height:100%;width:${pct}%;border-radius:4px;"></div>
+                    <div style="background:#16A34A;height:100%;width:${authPct}%;border-radius:4px;position:absolute;top:0;left:0;opacity:.7;"></div>
                 </div>
             </td>
             <td style="padding:4px 8px;text-align:center;">
-                <button onclick="toggleVnTec(this,${ci})" style="background:none;border:1px solid #334155;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:.85rem;color:#94a3b8;line-height:1;">+</button>
+                <button onclick="toggleVnTec(this,${ci})" style="background:none;border:1px solid #DDE4EC;border-radius:5px;width:24px;height:24px;cursor:pointer;font-size:.85rem;color:#5B6B84;line-height:1;">+</button>
             </td>
         </tr>
         <tr id="vn-tec-${ci}" style="display:none;">
-            <td colspan="9" style="padding:0 0 0 28px;background:#1a2a3a;">
+            <td colspan="9" style="padding:0 0 0 28px;background:#F5F7FA;">
                 <table style="width:100%;border-collapse:collapse;font-size:.77rem;">
-                    <thead><tr style="color:#64748b;text-transform:uppercase;font-size:.7rem;">
+                    <thead><tr style="color:#8393AC;text-transform:uppercase;font-size:.7rem;">
                         <th style="padding:6px 10px;text-align:left;">Técnico</th>
                         <th style="padding:6px 10px;text-align:left;width:110px;">Cédula</th>
                         <th style="padding:6px 10px;text-align:right;width:80px;">Hrs Rep.</th>
@@ -699,23 +724,23 @@ function renderValorNomina(data) {
             const tHrsPend = tec.hrs_pend   || 0;
             const tDiff    = valDiff(tec.valor_rep, tPend, tec.valor_auth);
             const tHrsDesc = hrsDesc(tec.hrs_rep||0, tHrsPend, tec.hrs_auth||0);
-            html += `<tr style="border-bottom:1px solid #1e3a4c;">
-                <td style="padding:6px 10px;color:#e2e8f0;font-weight:600;">${tec.nombre}</td>
-                <td style="padding:6px 10px;color:#64748b;font-variant-numeric:tabular-nums;">${tec.cedula}</td>
-                <td style="padding:6px 10px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(tec.hrs_rep||0)}</td>
-                <td style="padding:6px 10px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(tec.hrs_auth||0)}</td>
-                <td style="padding:6px 10px;text-align:right;color:#f87171;font-weight:600;font-variant-numeric:tabular-nums;">${Math.round(tHrsDesc)}</td>
-                <td style="padding:6px 10px;text-align:right;color:#a78bfa;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_rep)}</td>
-                <td style="padding:6px 10px;text-align:right;color:#4ade80;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_auth)}</td>
-                <td style="padding:6px 10px;text-align:right;color:#fb923c;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tDiff)}</td>
+            html += `<tr style="border-bottom:1px solid #E3E9F1;">
+                <td style="padding:6px 10px;color:#101A2E;font-weight:600;">${tec.nombre}</td>
+                <td style="padding:6px 10px;color:#8393AC;font-variant-numeric:tabular-nums;">${tec.cedula}</td>
+                <td style="padding:6px 10px;text-align:right;color:#5B6B84;font-variant-numeric:tabular-nums;">${Math.round(tec.hrs_rep||0)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#5B6B84;font-variant-numeric:tabular-nums;">${Math.round(tec.hrs_auth||0)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#DC2626;font-weight:600;font-variant-numeric:tabular-nums;">${Math.round(tHrsDesc)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#8B5CF6;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_rep)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#16A34A;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tec.valor_auth)}</td>
+                <td style="padding:6px 10px;text-align:right;color:#EA580C;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(tDiff)}</td>
                 <td style="padding:4px 6px;text-align:center;">
-                    <button onclick="toggleVnConc(this,${ci},${ti})" style="background:none;border:1px solid #334155;border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:.78rem;color:#64748b;line-height:1;">+</button>
+                    <button onclick="toggleVnConc(this,${ci},${ti})" style="background:none;border:1px solid #DDE4EC;border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:.78rem;color:#8393AC;line-height:1;">+</button>
                 </td>
             </tr>
             <tr id="vn-conc-${ci}-${ti}" style="display:none;">
-                <td colspan="9" style="padding:0 0 0 20px;background:#172032;">
+                <td colspan="9" style="padding:0 0 0 20px;background:#E3E9F1;">
                     <table style="width:100%;border-collapse:collapse;font-size:.75rem;">
-                        <thead><tr style="color:#475569;text-transform:uppercase;font-size:.68rem;">
+                        <thead><tr style="color:#8393AC;text-transform:uppercase;font-size:.68rem;">
                             <th style="padding:5px 10px;text-align:left;">Tipo de HE</th>
                             <th style="padding:5px 10px;text-align:right;width:90px;">Hrs Rep.</th>
                             <th style="padding:5px 10px;text-align:right;width:90px;">Hrs Aut.</th>
@@ -724,12 +749,12 @@ function renderValorNomina(data) {
                         </tr></thead><tbody>`;
             (tec.conceptos || []).forEach(conc => {
                 const concHrsDesc = Math.max(0, (conc.hrs_rep||0) - (conc.hrs_auth||0));
-                html += `<tr style="border-bottom:1px solid #1e293b;">
-                    <td style="padding:5px 10px;color:#cbd5e1;">${conc.codigo} — ${conc.tipo}</td>
-                    <td style="padding:5px 10px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(conc.hrs_rep || 0)}</td>
-                    <td style="padding:5px 10px;text-align:right;color:#94a3b8;font-variant-numeric:tabular-nums;">${Math.round(conc.hrs_auth || 0)}</td>
-                    <td style="padding:5px 10px;text-align:right;color:#818cf8;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_rep)}</td>
-                    <td style="padding:5px 10px;text-align:right;color:#34d399;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_auth)}</td>
+                html += `<tr style="border-bottom:1px solid #FFFFFF;">
+                    <td style="padding:5px 10px;color:#101A2E;">${conc.codigo} — ${conc.tipo}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#5B6B84;font-variant-numeric:tabular-nums;">${Math.round(conc.hrs_rep || 0)}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#5B6B84;font-variant-numeric:tabular-nums;">${Math.round(conc.hrs_auth || 0)}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#8B5CF6;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_rep)}</td>
+                    <td style="padding:5px 10px;text-align:right;color:#16A34A;font-weight:600;font-variant-numeric:tabular-nums;">${fmtCOP(conc.valor_auth)}</td>
                 </tr>`;
             });
             html += `</tbody></table></td></tr>`;
@@ -787,8 +812,8 @@ cargar();
   var paused = false;
 
   var badge = document.createElement('div');
-  badge.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;align-items:center;gap:8px;background:#1e293b;border:1px solid #334155;border-radius:999px;padding:6px 14px 6px 10px;box-shadow:0 2px 10px rgba(0,0,0,.25);font-size:.75rem;font-weight:600;color:#94a3b8;cursor:pointer;user-select:none;';
-  badge.innerHTML = '<span id="ar-dot" style="width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;"></span><span id="ar-txt">Actualizando en 5:00</span>';
+  badge.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;align-items:center;gap:8px;background:#FFFFFF;border:1px solid #DDE4EC;border-radius:999px;padding:6px 14px 6px 10px;box-shadow:0 2px 10px rgba(0,0,0,.25);font-size:.75rem;font-weight:600;color:#5B6B84;cursor:pointer;user-select:none;';
+  badge.innerHTML = '<span id="ar-dot" style="width:7px;height:7px;border-radius:50%;background:#16A34A;flex-shrink:0;"></span><span id="ar-txt">Actualizando en 5:00</span>';
   badge.title = 'Clic para pausar/reanudar';
   document.body.appendChild(badge);
 
@@ -805,11 +830,13 @@ cargar();
 
   badge.addEventListener('click', function(){
     paused = !paused;
-    dot.style.background = paused ? '#f59e0b' : '#10b981';
+    dot.style.background = paused ? '#D97706' : '#16A34A';
     txt.textContent = paused ? 'Auto-refresh pausado' : 'Actualizando en ' + fmt(remaining);
   });
 
   setInterval(tick, 1000);
 })();
 </script>
-{% endblock %}
+
+</body>
+</html>
