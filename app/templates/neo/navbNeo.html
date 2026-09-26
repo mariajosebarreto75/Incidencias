@@ -51,21 +51,23 @@
             <div class="collapse navbar-collapse" id="navNeo">
 
                 <!-- LINKS -->
-                <ul class="navbar-nav me-auto ms-3">
+                <ul class="navbar-nav me-auto ms-3" style="gap:2px;">
 
                     {% if current_user.is_authenticated %}
 
                     <li class="nav-item">
                         <a class="nav-link neo-nav-link" href="{{ url_for('neo.home_neo') }}">
-                            <i class="bi bi-house me-1"></i>Inicio
+                            <i class="bi bi-house"></i>Inicio
                         </a>
                     </li>
+
+                    <li class="d-none d-lg-flex neo-nav-sep"></li>
 
                     <!-- NEO dropdown -->
                     <li class="nav-item dropdown">
                         <a class="nav-link neo-nav-link dropdown-toggle" href="#"
                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-broadcast-pin me-1"></i>NEO
+                            <i class="bi bi-broadcast-pin"></i>NEO
                         </a>
                         <ul class="dropdown-menu dropdown-menu-neo">
                             <li>
@@ -95,7 +97,7 @@
                         {% if (current_user.tiene_permiso('horas_extras') and current_user.tiene_permiso('dashboard_he')) or current_user.rol.lower() == 'admin' %}
                         <a class="nav-link neo-nav-link dropdown-toggle" href="#"
                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-clock-history me-1"></i>Horas Extras
+                            <i class="bi bi-clock-history"></i>Horas Extras
                         </a>
                         <ul class="dropdown-menu">
                             {% if current_user.tiene_permiso('horas_extras') or current_user.rol.lower() == 'admin' %}
@@ -109,11 +111,11 @@
                         </ul>
                         {% elif current_user.tiene_permiso('horas_extras') %}
                         <a class="nav-link neo-nav-link" href="/horas-extras">
-                            <i class="bi bi-clock-history me-1"></i>Horas Extras
+                            <i class="bi bi-clock-history"></i>Horas Extras
                         </a>
                         {% else %}
                         <a class="nav-link neo-nav-link" href="{{ url_for('he_bp.he_dashboard') }}">
-                            <i class="bi bi-bar-chart-line me-1"></i>Dashboard HE
+                            <i class="bi bi-bar-chart-line"></i>Dashboard HE
                         </a>
                         {% endif %}
                     </li>
@@ -123,15 +125,17 @@
                     <li class="nav-item">
                         <a class="nav-link neo-nav-link"
                            href="{{ url_for('compromisos.index') }}">
-                            <i class="bi bi-calendar-check me-1"></i>Compromisos
+                            <i class="bi bi-calendar-check"></i>Compromisos
                         </a>
                     </li>
+
+                    <li class="d-none d-lg-flex neo-nav-sep"></li>
 
                     <!-- GPS dropdown -->
                     <li class="nav-item dropdown">
                         <a class="nav-link neo-nav-link dropdown-toggle" href="#"
                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-geo-alt-fill me-1"></i>GPS
+                            <i class="bi bi-geo-alt-fill"></i>GPS
                         </a>
                         <ul class="dropdown-menu dropdown-menu-neo">
                             <li>
@@ -152,13 +156,14 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link neo-nav-link position-relative"
-                           href="{{ url_for('neo.alertas_gps') }}">
-                            <i class="bi bi-bell me-1"></i>Alertas
+                        <a class="nav-link neo-nav-link"
+                           href="{{ url_for('neo.alertas_gps') }}"
+                           style="display:flex;align-items:center;gap:5px;">
+                            <i class="bi bi-bell"></i>Alertas
                             <span id="navBadgeAlertas"
-                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill"
-                                  style="background:#f5a623;color:#0d1b2a;font-size:.6rem;
-                                         min-width:18px;padding:3px 5px;display:none">
+                                  style="background:#f5a623;color:#0d1b2a;font-size:.6rem;font-weight:800;
+                                         min-width:16px;height:16px;padding:0 4px;border-radius:20px;
+                                         display:none;align-items:center;justify-content:center;line-height:1">
                                 0
                             </span>
                         </a>
@@ -167,7 +172,7 @@
                     {% if current_user.rol.lower() == 'admin' or current_user.acceso_dashboard %}
                     <li class="nav-item">
                         <a class="nav-link neo-nav-link" href="{{ url_for('dashboard.dashboards_hub') }}">
-                            <i class="bi bi-bar-chart-line me-1"></i>Dashboard
+                            <i class="bi bi-bar-chart-line"></i>Dashboard
                         </a>
                     </li>
                     {% endif %}
@@ -300,8 +305,10 @@
             .then(d => {
                 const b = document.getElementById("navBadgeAlertas");
                 if (b) {
-                    if (d.pendientes > 0) { b.textContent = d.pendientes; b.style.display = ""; }
-                    else b.style.display = "none";
+                    if (d.pendientes > 0) {
+                        b.textContent = d.pendientes > 99 ? "99+" : d.pendientes;
+                        b.style.display = "inline-flex";
+                    } else b.style.display = "none";
                 }
                 // Sonar si llegaron nuevas alertas GPS
                 if (_alertasPrevCount >= 0 && d.pendientes > _alertasPrevCount) {

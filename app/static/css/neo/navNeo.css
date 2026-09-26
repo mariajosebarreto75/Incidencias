@@ -41,17 +41,30 @@ body {
 /* LINKS */
 .neo-nav-link {
     color: rgba(255, 255, 255, 0.88) !important;
-    font-size: .88rem;
+    font-size: .84rem;
     font-weight: 500;
     border-radius: 8px;
-    padding: 6px 12px !important;
+    padding: 5px 10px !important;
     transition: all .2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .neo-nav-link:hover,
 .neo-nav-link.active {
     color: #fff !important;
     background: rgba(255, 255, 255, 0.18);
+}
+
+/* Separador entre secciones del nav */
+.neo-nav-sep {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,.2);
+    margin: 0 4px;
+    align-self: center;
 }
 
 /* USER CHIP */
