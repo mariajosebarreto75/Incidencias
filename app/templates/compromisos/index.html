@@ -235,6 +235,39 @@ body {
   color: var(--ink-3); border-color: var(--border); background: var(--surface-2); opacity: .65;
 }
 
+/* ── search bar ── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  padding: .35rem .65rem;
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.search-bar:focus-within {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(15,118,110,.12);
+}
+.search-bar i { color: var(--ink-3); font-size: .85rem; flex-shrink: 0; }
+.search-bar input {
+  border: none; outline: none; background: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .83rem; color: var(--ink);
+  width: 100%;
+}
+.search-bar input::placeholder { color: var(--ink-3); }
+.search-clear {
+  background: none; border: none; color: var(--ink-3);
+  cursor: pointer; padding: 0; font-size: .75rem; line-height: 1;
+  display: none;
+}
+.search-clear:hover { color: var(--red); }
+
 /* ── action bar ── */
 .action-bar {
   display: flex;
@@ -599,6 +632,50 @@ body {
   outline: none;
 }
 
+/* ── highlight búsqueda ── */
+mark.hl {
+  background: rgba(15,118,110,.18);
+  color: var(--teal);
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 600;
+}
+
+/* ── sort headers ── */
+.ag-table thead th.sortable {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 1.4rem;
+}
+.ag-table thead th.sortable::after {
+  content: '\F282';
+  font-family: 'bootstrap-icons';
+  position: absolute;
+  right: .5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .65rem;
+  color: var(--border-2);
+  font-style: normal;
+  transition: color .1s;
+}
+.ag-table thead th.sortable:hover::after { color: var(--ink-3); }
+.ag-table thead th.sort-asc::after  { content: '\F235'; color: var(--teal) !important; }
+.ag-table thead th.sort-desc::after { content: '\F229'; color: var(--teal) !important; }
+.ag-table thead th.sortable:hover   { background: #EFF6FF; color: var(--ink-2); }
+
+/* ── fila oculta por filtro client-side ── */
+.ag-table tbody tr.row-hidden { display: none; }
+
+/* ── no-results message ── */
+.no-results-row td {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: .9rem;
+}
+
 /* ── responsive ── */
 @media (max-width: 900px) {
   .kpi-strip { grid-template-columns: repeat(3, 1fr); }
@@ -764,19 +841,30 @@ body {
       <i class="bi bi-plus-lg"></i>Crear compromiso
     </button>
     {% endif %}
+
+    <!-- Búsqueda en tiempo real -->
+    <div class="search-bar">
+      <i class="bi bi-search"></i>
+      <input type="text" id="searchInput" placeholder="Buscar por compromiso, responsable, contrato…"
+             oninput="buscarTabla(this.value)" autocomplete="off">
+      <button class="search-clear" id="searchClear" onclick="limpiarBusqueda()" title="Limpiar búsqueda">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
     <a href="{{ url_for('compromisos.exportar_excel') }}?{{ request.query_string.decode() }}"
        class="btn-ghost" style="text-decoration:none;">
-      <i class="bi bi-file-earmark-excel"></i>Exportar Excel
+      <i class="bi bi-file-earmark-excel"></i>Excel
     </a>
     {% if es_neo %}
     <label class="btn-ghost" style="cursor:pointer;margin:0;">
-      <i class="bi bi-upload"></i>Importar Excel
+      <i class="bi bi-upload"></i>Importar
       <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="importarCompromisos(this)">
     </label>
     {% endif %}
     {% if es_neo %}
     <button class="btn-danger-ghost" id="btnElimMasivo" disabled onclick="eliminarSeleccionados()">
-      <i class="bi bi-trash"></i>Eliminar seleccionados
+      <i class="bi bi-trash"></i>Eliminar
     </button>
     <label class="select-all-label">
       <input type="checkbox" id="chkTodo" onchange="toggleTodo(this)"
@@ -784,7 +872,7 @@ body {
       Seleccionar todo
     </label>
     {% endif %}
-    <span class="ag-count">{{ compromisos|length }} registro(s)</span>
+    <span class="ag-count" id="agCount">{{ compromisos|length }} registro(s)</span>
   </div>
 
   <!-- ── TABLA ── -->
@@ -795,14 +883,14 @@ body {
       <thead>
         <tr>
           {% if es_neo %}<th style="width:36px;"></th>{% endif %}
-          <th>Contrato</th>
-          <th>Responsable</th>
+          <th class="sortable" data-col="contrato">Contrato</th>
+          <th class="sortable" data-col="responsable">Responsable</th>
           <th>Compromiso</th>
-          <th>Creación</th>
-          <th>Entrega</th>
-          <th>Estado</th>
-          <th>Reprog.</th>
-          <th>Cierre</th>
+          <th class="sortable" data-col="creacion">Creación</th>
+          <th class="sortable" data-col="entrega">Entrega</th>
+          <th class="sortable" data-col="estado">Estado</th>
+          <th class="sortable" data-col="reprog" style="text-align:center;">Reprog.</th>
+          <th class="sortable" data-col="cierre">Cierre</th>
           <th>Atrasado</th>
           <th>Obs.</th>
           <th>Evidencia</th>
@@ -811,7 +899,16 @@ body {
       </thead>
       <tbody>
         {% for c in compromisos %}
-        <tr class="{% if c.atrasado %}row-atr{% endif %}">
+        <tr class="{% if c.atrasado %}row-atr{% endif %}"
+            data-search="{{ (c.contrato.contrato ~ ' ' ~ c.responsable ~ ' ' ~ c.compromiso)|lower }}"
+            data-contrato="{{ c.contrato.contrato|lower }}"
+            data-responsable="{{ c.responsable|lower }}"
+            data-estado="{{ c.estado|lower }}"
+            data-entrega="{{ c.fecha_entrega.strftime('%Y-%m-%d') }}"
+            data-creacion="{{ c.fecha_creacion.strftime('%Y-%m-%d') }}"
+            data-cierre="{{ c.fecha_entrega_real.strftime('%Y-%m-%d') if c.fecha_entrega_real else '' }}"
+            data-reprog="{{ c.cantidad_reprogramaciones }}"
+            data-atrasado="{{ '1' if c.atrasado else '0' }}">
 
           {% if es_neo %}
           <td>
@@ -1248,17 +1345,17 @@ body {
 {% endif %}
 
 <script>
-// ── Filtros toggle ──
+// ══════════════════════════════════════════════════
+//  FILTROS TOGGLE (persistido en localStorage)
+// ══════════════════════════════════════════════════
 const filterBody    = document.getElementById('filterBody');
 const filterChevron = document.getElementById('filterChevron');
 const filterToggle  = document.getElementById('filterToggle');
 
-// Abierto por defecto; solo se cierra si el usuario lo cerró explícitamente
 let _saved = false;
 try { _saved = localStorage.getItem('compromisos_filtros_cerrado') === '1'; } catch(e) {}
 let filtersOpen = !_saved;
 
-// Si hay filtros activos, forzar abierto siempre
 {% if contrato_id_sel or q_resp_sel or atrasado_sel or fecha_desde_sel or fecha_hasta_sel %}
 filtersOpen = true;
 {% endif %}
@@ -1277,7 +1374,115 @@ function toggleFiltros() {
   try { localStorage.setItem('compromisos_filtros_cerrado', filtersOpen ? '0' : '1'); } catch(e) {}
 }
 
-// ── Selección masiva ──
+// ══════════════════════════════════════════════════
+//  BÚSQUEDA EN TIEMPO REAL (client-side)
+// ══════════════════════════════════════════════════
+const _allRows    = Array.from(document.querySelectorAll('.ag-table tbody tr[data-search]'));
+const _countEl    = document.getElementById('agCount');
+let   _noResRow   = null;
+let   _searchTimer = null;
+
+function buscarTabla(q) {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => _aplicarBusqueda(q.trim().toLowerCase()), 80);
+  const clearBtn = document.getElementById('searchClear');
+  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+}
+
+function _aplicarBusqueda(q) {
+  let visible = 0;
+  _allRows.forEach(row => {
+    const hay = !q || row.dataset.search.includes(q);
+    row.classList.toggle('row-hidden', !hay);
+    if (hay) {
+      visible++;
+      // highlight
+      _highlightRow(row, q);
+    }
+  });
+  _actualizarContador(visible);
+  _manejarNoResults(visible);
+}
+
+function _highlightRow(row, q) {
+  // Sólo celdas de texto: responsable, compromiso, contrato
+  row.querySelectorAll('.responsable-cell, .comp-texto, .contrato-chip').forEach(el => {
+    const original = el.dataset.original || el.textContent;
+    el.dataset.original = original;
+    if (!q) { el.innerHTML = original; return; }
+    const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    el.innerHTML = original.replace(re, '<mark class="hl">$1</mark>');
+  });
+}
+
+function limpiarBusqueda() {
+  const inp = document.getElementById('searchInput');
+  inp.value = '';
+  buscarTabla('');
+  inp.focus();
+}
+
+function _actualizarContador(n) {
+  if (!_countEl) return;
+  const total = _allRows.length;
+  _countEl.textContent = n === total ? `${total} registro(s)` : `${n} de ${total} registro(s)`;
+}
+
+function _manejarNoResults(visible) {
+  const tbody = document.querySelector('.ag-table tbody');
+  if (!tbody) return;
+  if (!_noResRow) {
+    _noResRow = document.createElement('tr');
+    _noResRow.className = 'no-results-row';
+    _noResRow.innerHTML = `<td colspan="20"><i class="bi bi-search me-2"></i>Sin resultados para esta búsqueda.</td>`;
+  }
+  if (visible === 0) {
+    if (!_noResRow.parentElement) tbody.appendChild(_noResRow);
+  } else {
+    _noResRow.remove();
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  ORDENAMIENTO DE COLUMNAS
+// ══════════════════════════════════════════════════
+let _sortCol = null, _sortDir = 1;
+
+document.querySelectorAll('.ag-table thead th.sortable').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (_sortCol === col) {
+      _sortDir *= -1;
+    } else {
+      _sortCol = col; _sortDir = 1;
+    }
+    document.querySelectorAll('.ag-table thead th').forEach(h => {
+      h.classList.remove('sort-asc', 'sort-desc');
+    });
+    th.classList.add(_sortDir === 1 ? 'sort-asc' : 'sort-desc');
+    _sortTabla(col, _sortDir);
+  });
+});
+
+function _sortTabla(col, dir) {
+  const tbody = document.querySelector('.ag-table tbody');
+  if (!tbody) return;
+  const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
+  rows.sort((a, b) => {
+    let va = a.dataset[col] || '', vb = b.dataset[col] || '';
+    // fechas y números: comparación directa
+    if (/^\d{4}-\d{2}-\d{2}$/.test(va) || /^\d+$/.test(va)) {
+      return (va < vb ? -1 : va > vb ? 1 : 0) * dir;
+    }
+    return va.localeCompare(vb, 'es') * dir;
+  });
+  rows.forEach(r => tbody.appendChild(r));
+  if (_noResRow && _noResRow.parentElement) tbody.appendChild(_noResRow);
+}
+
+// ══════════════════════════════════════════════════
+//  SELECCIÓN MASIVA
+// ══════════════════════════════════════════════════
 function toggleTodo(chk) {
   document.querySelectorAll('.chk-comp').forEach(c => c.checked = chk.checked);
   actualizarBtnElim();
@@ -1300,7 +1505,9 @@ function eliminarSeleccionados() {
   document.getElementById('formElimMasivo').submit();
 }
 
-// ── Observación AJAX ──
+// ══════════════════════════════════════════════════
+//  OBSERVACIÓN AJAX
+// ══════════════════════════════════════════════════
 function guardarObs(id) {
   const texto = document.getElementById('obsTexto' + id).value.trim();
   if (!texto) { alert('Escribe una observación antes de guardar.'); return; }
@@ -1320,7 +1527,9 @@ function guardarObs(id) {
     .catch(() => alert('Error de red.'));
 }
 
-// ── Contrato rápido ──
+// ══════════════════════════════════════════════════
+//  CONTRATO RÁPIDO (en modal crear)
+// ══════════════════════════════════════════════════
 function onContratoChange(sel) {
   if (sel.value === '__nuevo__') {
     document.getElementById('rowNuevoContrato').style.display = 'flex';
@@ -1354,7 +1563,9 @@ function crearContratoRapido() {
     .catch(() => alert('Error de red.'));
 }
 
-// ── Tooltips ──
+// ══════════════════════════════════════════════════
+//  TOOLTIPS
+// ══════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function() {
   if (typeof bootstrap === 'undefined') return;
   document.querySelectorAll('[title]').forEach(el => {
@@ -1365,31 +1576,26 @@ document.addEventListener('DOMContentLoaded', function() {
   );
 });
 
+// ══════════════════════════════════════════════════
+//  IMPORTAR EXCEL
+// ══════════════════════════════════════════════════
 async function importarCompromisos(input) {
   const archivo = input.files[0];
   if (!archivo) return;
   input.value = "";
-
   const fd = new FormData();
   fd.append("archivo", archivo);
-
   const btn = input.closest("label");
   const textoOriginal = btn.innerHTML;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importando…';
   btn.style.pointerEvents = "none";
-
   try {
-    const resp = await fetch("{{ url_for('compromisos.importar_excel') }}", {
-      method: "POST",
-      body: fd
-    });
+    const resp = await fetch("{{ url_for('compromisos.importar_excel') }}", { method: "POST", body: fd });
     const data = await resp.json();
-
     if (data.ok) {
       let msg = `✅ ${data.insertados} compromiso(s) importado(s) correctamente.`;
-      if (data.errores && data.errores.length) {
+      if (data.errores && data.errores.length)
         msg += `\n\n⚠️ ${data.errores.length} fila(s) con error:\n` + data.errores.join("\n");
-      }
       alert(msg);
       if (data.insertados > 0) location.reload();
     } else {
