@@ -353,11 +353,12 @@ def api_crear_usuario():
     u = User(
         username=username,
         nombre_completo=nombre,
-        password_hash=password,
+        password_hash="",
         rol=rol,
         contrato=d.get("contrato") or None,
         activo=True
     )
+    u.set_password(password)
     db.session.add(u)
     db.session.commit()
     return jsonify({"success": True, "id": u.id})
@@ -381,7 +382,7 @@ def api_editar_usuario(id):
     if "permiso" in d:
         u.set_permiso(d["permiso"], bool(d.get("valor", False)))
     if d.get("password"):
-        u.password_hash = d["password"].strip()
+        u.set_password(d["password"].strip())
     db.session.commit()
     return jsonify({"success": True})
 
@@ -1618,7 +1619,7 @@ def api_cambiar_password_usuario(id):
         return jsonify({"success": False, "mensaje": "La contraseña no puede estar vacía"}), 400
     if len(nueva) < 4:
         return jsonify({"success": False, "mensaje": "Mínimo 4 caracteres"}), 400
-    u.password_hash = nueva
+    u.set_password(nueva)
     db.session.commit()
     return jsonify({"success": True})
 
