@@ -451,9 +451,33 @@ sessionStorage.removeItem('coor_panel_contrato');
     if (btnLim) {
         btnLim.addEventListener('click', () => {
             sessionStorage.removeItem('coor_panel_chip');
+            sessionStorage.removeItem('coor_panel_filter_url');
             if (window.FilterPersist) FilterPersist.clear();
         });
     }
+})();
+
+/* ── Persistencia de URL de filtros ──────────────────────────────────────────
+   Guarda la URL con sus filtros GET al hacer clic en "Ver / Responder".
+   Al regresar a la página sin parámetros, redirige a la URL guardada.        */
+(function () {
+    const URL_KEY = 'coor_panel_filter_url';
+
+    if (!window.location.search) {
+        var guardada = sessionStorage.getItem(URL_KEY);
+        if (guardada) {
+            try {
+                var u = new URL(guardada);
+                if (u.search) { window.location.replace(guardada); return; }
+            } catch (e) {}
+        }
+    }
+
+    document.querySelectorAll('.vr-btn-ver').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            sessionStorage.setItem(URL_KEY, window.location.href);
+        });
+    });
 })();
 
 // ══ NOTIFICACIONES COORDINADOR ════════════════════════════════

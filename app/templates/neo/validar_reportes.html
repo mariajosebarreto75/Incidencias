@@ -156,7 +156,7 @@
                         <i class="bi bi-search"></i> Filtrar
                     </button>
                     <a href="{{ url_for('neo.validar_reportes') }}" class="vr-btn-limpiar" id="btnLimpiarFiltros"
-                       onclick="sessionStorage.removeItem('neo_vr_chip');if(window.FilterPersist)FilterPersist.clear();">
+                       onclick="sessionStorage.removeItem('neo_vr_chip');sessionStorage.removeItem('neo_vr_filter_url');sessionStorage.removeItem('neo_vr_checks');if(window.FilterPersist)FilterPersist.clear();">
                         <i class="bi bi-x-circle"></i> Limpiar todo
                     </a>
                 </div>
@@ -514,6 +514,45 @@
         this.value = "";
     });
 
+})();
+
+/* ── Persistencia de URL de filtros ─────────────────────────────────────────
+   Cuando el analista hace clic en "Ver" se guarda la URL actual (con todos los
+   filtros como parámetros GET). Si la página carga sin parámetros y hay una URL
+   guardada, se redirige automáticamente para restaurar los filtros aplicados.
+   El botón "Limpiar todo" borra la URL guardada.                              */
+(function () {
+    const URL_KEY = 'neo_vr_filter_url';
+
+    // Al cargar sin parámetros → restaurar filtros anteriores si los hay
+    if (!window.location.search) {
+        const guardada = sessionStorage.getItem(URL_KEY);
+        if (guardada) {
+            // Verificar que la URL guardada sí tiene parámetros (no es la misma base)
+            try {
+                const u = new URL(guardada);
+                if (u.search) {
+                    window.location.replace(guardada);
+                    return; // detener el resto del script mientras redirige
+                }
+            } catch (e) {}
+        }
+    }
+
+    // Al hacer clic en cualquier botón "Ver", guardar la URL actual
+    document.querySelectorAll('.vr-btn-ver').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            sessionStorage.setItem(URL_KEY, window.location.href);
+        });
+    });
+
+    // Al limpiar filtros, borrar también la URL guardada
+    var btnLim = document.getElementById('btnLimpiarFiltros');
+    if (btnLim) {
+        btnLim.addEventListener('click', function () {
+            sessionStorage.removeItem(URL_KEY);
+        });
+    }
 })();
 
 /* Limpiar claves obsoletas de la persistencia anterior */
