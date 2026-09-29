@@ -1495,6 +1495,20 @@ function accionRendererCoor(instance, td, row, col, prop, value) {
 }
 
 async function cargarHistorial(corteId) {
+    // Guardar estado de filtros para restaurar al volver a la página
+    try {
+        const _fpKey = 'fp_' + location.pathname;
+        const _fps = JSON.parse(sessionStorage.getItem(_fpKey) || '{}');
+        const _cid = document.getElementById("gridContrato")?.value;
+        const _fc  = document.getElementById("fCorte")?.value;
+        const _fd  = document.getElementById("fDesde")?.value;
+        const _fh  = document.getElementById("fHasta")?.value;
+        if (_cid) _fps.gridContrato = _cid;
+        if (_fc)  _fps.fCorte       = _fc;
+        if (_fd)  _fps.fDesde       = _fd;
+        if (_fh)  _fps.fHasta       = _fh;
+        sessionStorage.setItem(_fpKey, JSON.stringify(_fps));
+    } catch(_e) {}
     const cid   = document.getElementById("gridContrato").value;
     const corte = corteId || (document.getElementById("fCorte")?.value ?? "");
     const desde = document.getElementById("fDesde")?.value ?? "";
@@ -1620,7 +1634,18 @@ async function cargarHistorial(corteId) {
         }
         _currentValIds = [..._fullValIds];
         _actualizarKpisCoor(_fullValData);
-        setTimeout(() => { _refreshFilterBtnsC(hotVal); _restaurarChip(); }, 0);
+        setTimeout(() => {
+            _refreshFilterBtnsC(hotVal);
+            // Re-aplicar chip activo desde DOM (evita flash cuando cargarHistorial
+            // se llama concurrentemente y borra _htValFilters mientras el usuario
+            // ya había seleccionado un chip). Solo si no es el chip "Todos".
+            const _chipActivo = document.querySelector('.he-chip.active:not(.ch-all)');
+            if (_chipActivo) {
+                const _m = (_chipActivo.getAttribute('onclick') || '').match(/filtrarChip\('([^']+)'/);
+                if (_m) { _htValFilters = { [V_ESTADO]: new Set([_m[1]]) }; _applyAllFiltersCoor(); return; }
+            }
+            _restaurarChip();
+        }, 0);
     } catch(e) { console.error("cargarHistorial:", e); }
 }
 
