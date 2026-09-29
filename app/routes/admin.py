@@ -2105,10 +2105,24 @@ def api_he_config_guardar():
 
 # ── Semáforo de actividades ───────────────────────────────────────────────────
 
+# Contratos que no aplican para el semáforo (no clasificables operativamente)
+_SEMAFORO_EXCLUIR = {
+    "centro monitoreo (neo)",
+    "nodo de eficiencia operacional",
+    "reunión gerencial",
+    "solar fotovoltaico",
+    "valle sur integral (1983) - oymm - jamundi",
+    "valle sur integral (1983) - oymm - pradera",
+}
+
+def _filtrar_semaforo(contratos):
+    return [c for c in contratos if c.contrato.strip().lower() not in _SEMAFORO_EXCLUIR]
+
+
 @admin_bp.route("/semaforo")
 @admin_required
 def semaforo():
-    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    contratos = _filtrar_semaforo(Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all())
     contratos_json = [{"id": c.id, "contrato": c.contrato, "coordinador": c.coordinador or ""} for c in contratos]
     return render_template("admin/semaforo.html", contratos=contratos, contratos_json=contratos_json)
 
@@ -2173,9 +2187,11 @@ def api_semaforo_rango():
         hasta = date.fromisoformat(hasta_str)
     except Exception:
         return jsonify({"ok": False, "msg": "Fechas inválidas"}), 400
+    ids_ok = [c.id for c in _filtrar_semaforo(Contrato.query.filter_by(activo=True).all())]
     registros = SemaforoCalificacion.query.filter(
         SemaforoCalificacion.fecha >= desde,
-        SemaforoCalificacion.fecha <= hasta
+        SemaforoCalificacion.fecha <= hasta,
+        SemaforoCalificacion.contrato_id.in_(ids_ok)
     ).order_by(SemaforoCalificacion.fecha).all()
     return jsonify({"ok": True, "data": [r.to_dict() for r in registros]})
 
@@ -2193,14 +2209,12 @@ def api_semaforo_dashboard():
         return jsonify({"ok": False, "msg": "Fechas inválidas"}), 400
 
     rol = current_user.rol.lower()
-    # Filtrar contratos por usuario si no es admin
-    _EXCLUIR = ["nodo de eficiencia operacional"]
     if rol == "admin":
         contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     else:
         ids_uc = [uc.contrato_id for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
         contratos = Contrato.query.filter(Contrato.id.in_(ids_uc), Contrato.activo == True).order_by(Contrato.contrato).all()
-    contratos = [c for c in contratos if c.contrato.strip().lower() not in _EXCLUIR]
+    contratos = _filtrar_semaforo(contratos)
 
     contrato_ids = [c.id for c in contratos]
     contrato_map = {c.id: c for c in contratos}
