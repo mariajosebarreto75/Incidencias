@@ -187,16 +187,6 @@ def nuevo():
     return render_template("compromisos/form.html", contratos=contratos, form={})
 
 
-# ── DETALLE ───────────────────────────────────────────────────────────────────
-
-@compromisos_bp.route("/<int:comp_id>")
-@login_required
-def detalle(comp_id):
-    comp = Compromiso.query.get_or_404(comp_id)
-    if not _puede_ver_contrato(comp.contrato_id):
-        abort(403)
-    return render_template("compromisos/detalle.html", comp=comp)
-
 
 # ── REPROGRAMAR ───────────────────────────────────────────────────────────────
 
