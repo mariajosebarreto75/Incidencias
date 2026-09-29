@@ -63,7 +63,10 @@ def login():
             flash("Usuario no encontrado", "danger")
             return redirect(url_for("auth.login"))
 
-        if user.password_hash != password:
+        # Verificar contraseña: soporta hash werkzeug (nuevo) y texto plano (legado)
+        pwd_ok = user.check_password(password) if user.password_hash.startswith("pbkdf2:") else (user.password_hash == password)
+
+        if not pwd_ok:
             session["login_intentos"] = session.get("login_intentos", 0) + 1
             intentos = session["login_intentos"]
 
@@ -81,6 +84,11 @@ def login():
                 "danger"
             )
             return redirect(url_for("auth.login"))
+
+        # Migración silenciosa: hashear contraseñas que aún estén en texto plano
+        if not user.password_hash.startswith("pbkdf2:"):
+            user.set_password(password)
+            db.session.commit()
 
         # Login exitoso — limpiar intentos
         session.pop("login_intentos", None)
@@ -116,6 +124,11 @@ def cambiar_password():
     nueva         = (request.form.get("nueva_password") or "").strip()
     confirmar     = (request.form.get("confirmar_password") or "").strip()
 
+    # Solo permitir si la sesión tiene este usuario bloqueado por intentos fallidos
+    if session.get("login_usuario") != username or session.get("login_intentos", 0) < MAX_INTENTOS:
+        flash("No se puede cambiar la contraseña en este momento.", "danger")
+        return redirect(url_for("auth.login"))
+
     if not username or not nueva:
         flash("Completa todos los campos.", "danger")
         return redirect(url_for("auth.login"))
@@ -133,7 +146,7 @@ def cambiar_password():
         flash("Usuario no encontrado.", "danger")
         return redirect(url_for("auth.login"))
 
-    user.password_hash = nueva
+    user.set_password(nueva)
     db.session.commit()
 
     # Limpiar intentos fallidos
