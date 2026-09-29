@@ -2244,7 +2244,7 @@ def api_semaforo_dashboard():
 
 
 @admin_bp.route("/api/semaforo/coordinador", methods=["POST"])
-@login_required
+@admin_required
 def api_semaforo_set_coordinador():
     """Asigna un coordinador (texto) a un contrato desde el dashboard semáforo."""
     d = request.get_json(silent=True) or {}
