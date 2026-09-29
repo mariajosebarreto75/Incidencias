@@ -2121,6 +2121,19 @@ def _filtrar_semaforo(contratos):
     return [c for c in contratos if not _excluir(c.contrato)]
 
 
+@admin_bp.route("/semaforo/debug-contratos")
+@admin_required
+def semaforo_debug_contratos():
+    todos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    filtrados = _filtrar_semaforo(todos)
+    ids_filtrados = {c.id for c in filtrados}
+    return jsonify({
+        "todos": [{"id": c.id, "nombre": c.contrato, "lower": c.contrato.strip().lower()} for c in todos],
+        "excluidos": [{"id": c.id, "nombre": c.contrato} for c in todos if c.id not in ids_filtrados],
+        "incluidos": [{"id": c.id, "nombre": c.contrato} for c in filtrados],
+    })
+
+
 @admin_bp.route("/semaforo")
 @admin_required
 def semaforo():
