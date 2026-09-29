@@ -2105,18 +2105,20 @@ def api_he_config_guardar():
 
 # ── Semáforo de actividades ───────────────────────────────────────────────────
 
-# Contratos que no aplican para el semáforo (no clasificables operativamente)
-_SEMAFORO_EXCLUIR = {
-    "centro monitoreo (neo)",
-    "nodo de eficiencia operacional",
-    "reunión gerencial",
+# Fragmentos de nombre que identifican contratos no clasificables en el semáforo
+_SEMAFORO_EXCLUIR_KW = [
+    "centro monitoreo",
+    "nodo de eficiencia",
+    "reuni",        # "Reunión Gerencial" con o sin acento
     "solar fotovoltaico",
-    "valle sur integral (1983) - oymm - jamundi",
-    "valle sur integral (1983) - oymm - pradera",
-}
+    "valle sur integral",
+]
 
 def _filtrar_semaforo(contratos):
-    return [c for c in contratos if c.contrato.strip().lower() not in _SEMAFORO_EXCLUIR]
+    def _excluir(nombre):
+        n = nombre.strip().lower()
+        return any(kw in n for kw in _SEMAFORO_EXCLUIR_KW)
+    return [c for c in contratos if not _excluir(c.contrato)]
 
 
 @admin_bp.route("/semaforo")
