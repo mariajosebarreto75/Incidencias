@@ -213,7 +213,10 @@
             <i class="bi bi-shield-lock" style="color:#7c3aed;font-size:.85rem;"></i>
             <span style="font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:#475569;">Contraseña:</span>
             <span id="pwd-mask-{{ u.id }}" style="font-family:monospace;color:#94a3b8;font-size:.82rem;letter-spacing:.1em;">••••••••</span>
-            <span id="pwd-txt-{{ u.id }}"  style="font-family:monospace;color:#c084fc;font-size:.82rem;display:none;">{{ u.password_hash }}</span>
+            <span id="pwd-txt-{{ u.id }}"  style="font-family:monospace;font-size:.82rem;display:none;
+                {% if u.password_hash.startswith('pbkdf2:') or u.password_hash.startswith('scrypt:') %}color:#f59e0b;font-style:italic;{% else %}color:#c084fc;{% endif %}">
+                {% if u.password_hash.startswith('pbkdf2:') or u.password_hash.startswith('scrypt:') %}(contraseña hasheada — usar "Cambiar pwd"){% else %}{{ u.password_hash }}{% endif %}
+            </span>
             <button onclick="togglePwdVer({{ u.id }})" id="btn-ver-pwd-{{ u.id }}"
                 style="margin-left:auto;background:none;border:none;cursor:pointer;color:#475569;font-size:.78rem;padding:2px 6px;border-radius:4px;transition:color .15s;"
                 title="Ver/ocultar contraseña">
@@ -520,7 +523,36 @@ async function guardarPwd() {
     if (!pwd) { mostrarAlerta('alertaPwd', 'Ingresa la nueva contraseña.', 'danger'); return; }
     if (pwd !== conf) { document.getElementById('pwdMismatch').style.display = ''; return; }
     const r = await apiFetch('/admin/api/usuarios/' + id + '/password', 'PUT', { password: pwd });
-    if (r.success) { bootstrap.Modal.getInstance(document.getElementById('modalPwd'))?.hide(); location.reload(); }
+    if (r.success) {
+        // Mostrar la contraseña nueva antes de cerrar
+        document.getElementById('pwdNueva').value    = '';
+        document.getElementById('pwdConfirmar').value = '';
+        document.getElementById('alertaPwd').innerHTML =
+            `<div style="background:#052e16;border:1px solid #166534;border-radius:8px;padding:.6rem .8rem;">
+                <div style="font-size:.72rem;color:#86efac;font-weight:700;margin-bottom:.35rem;">
+                    <i class="bi bi-check-circle-fill me-1"></i>Contraseña actualizada
+                </div>
+                <div style="font-size:.7rem;color:#94a3b8;margin-bottom:.4rem;">Contraseña establecida:</div>
+                <div style="display:flex;align-items:center;gap:.5rem;">
+                    <code style="flex:1;background:#0a1628;border:1px solid #166534;border-radius:5px;
+                                 padding:.3rem .6rem;font-size:.85rem;color:#c084fc;letter-spacing:.05em;"
+                          id="pwdMostrada">${pwd}</code>
+                    <button onclick="navigator.clipboard.writeText('${pwd.replace(/'/g,"\\'")}').then(()=>{this.innerHTML='<i class=\\'bi bi-check-lg\\'></i>';})"
+                            style="background:#166534;border:none;border-radius:5px;color:#86efac;
+                                   padding:.3rem .5rem;cursor:pointer;font-size:.8rem;" title="Copiar">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                </div>
+                <div style="font-size:.65rem;color:#475569;margin-top:.4rem;">Anota esta contraseña — no se mostrará de nuevo.</div>
+            </div>`;
+        document.getElementById('alertaPwd').style.display = 'block';
+        // Botón para cerrar y recargar
+        document.querySelector('#modalPwd .modal-footer').innerHTML =
+            `<button style="padding:.4rem 1.2rem;border-radius:7px;border:none;background:#166534;color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;"
+                     onclick="bootstrap.Modal.getInstance(document.getElementById('modalPwd'))?.hide();location.reload();">
+                <i class="bi bi-check-lg me-1"></i>Listo
+             </button>`;
+    }
     else mostrarAlerta('alertaPwd', r.mensaje || 'Error al cambiar contraseña', 'danger');
 }
 
@@ -543,7 +575,27 @@ async function crearUsuario() {
     if (contratos.length > 0) {
         await apiFetch("/admin/api/usuarios/" + r.id + "/contratos", "POST", { contratos: contratos });
     }
-    location.reload();
+    // Mostrar la contraseña antes de recargar
+    mostrarAlerta("alertaCreate",
+        `<div style="background:#052e16;border:1px solid #166534;border-radius:8px;padding:.6rem .8rem;">
+            <div style="font-size:.72rem;color:#86efac;font-weight:700;margin-bottom:.35rem;">
+                <i class="bi bi-check-circle-fill me-1"></i>Usuario <strong>${username}</strong> creado
+            </div>
+            <div style="font-size:.7rem;color:#94a3b8;margin-bottom:.4rem;">Contraseña:</div>
+            <div style="display:flex;align-items:center;gap:.5rem;">
+                <code style="flex:1;background:#0a1628;border:1px solid #166534;border-radius:5px;
+                             padding:.3rem .6rem;font-size:.85rem;color:#c084fc;letter-spacing:.05em;">${password}</code>
+                <button onclick="navigator.clipboard.writeText('${password.replace(/'/g,"\\'")}').then(()=>{this.innerHTML='<i class=\\'bi bi-check-lg\\'></i>';})"
+                        style="background:#166534;border:none;border-radius:5px;color:#86efac;
+                               padding:.3rem .5rem;cursor:pointer;font-size:.8rem;">
+                    <i class="bi bi-clipboard"></i>
+                </button>
+            </div>
+            <div style="font-size:.65rem;color:#475569;margin-top:.4rem;">Anota esta contraseña antes de continuar.</div>
+        </div>`,
+        "success"
+    );
+    setTimeout(() => location.reload(), 8000);
 }
 </script>
 {% endblock %}
