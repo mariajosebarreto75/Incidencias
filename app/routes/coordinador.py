@@ -1049,6 +1049,8 @@ def distribucion_importar_excel():
 @coordinador.route("/coordinador/preoperacionales")
 @login_required
 def preoperacionales():
+    if not current_user.tiene_permiso("preoperacionales"):
+        return redirect(url_for("coordinador.dashboard_coordinador"))
     return render_template("coordinador/preoperacionales.html")
 
 

@@ -87,7 +87,7 @@
                     {% endif %}
 
                     <!-- SEGUIMIENTO dropdown -->
-                    {% if current_user.tiene_permiso('bi_seguimiento') or current_user.tiene_permiso('bi_inspecciones') or current_user.rol.lower() in ('admin','neo') %}
+                    {% if current_user.tiene_permiso('bi_seguimiento') or current_user.tiene_permiso('bi_inspecciones') or current_user.tiene_permiso('preoperacionales') or current_user.rol.lower() in ('admin','neo') %}
                     <li class="nav-item dropdown">
                         <a class="nav-link coor-nav-link dropdown-toggle" href="#"
                            data-bs-toggle="dropdown" aria-expanded="false">
@@ -107,6 +107,14 @@
                                 <a class="dropdown-item dropdown-item-coor"
                                    href="{{ url_for('coordinador.bi_inspecciones') }}">
                                     <i class="bi bi-search me-2"></i>Inspecciones
+                                </a>
+                            </li>
+                            {% endif %}
+                            {% if current_user.tiene_permiso('preoperacionales') or current_user.rol.lower() in ('admin','neo') %}
+                            <li>
+                                <a class="dropdown-item dropdown-item-coor"
+                                   href="{{ url_for('coordinador.preoperacionales') }}">
+                                    <i class="bi bi-clipboard2-check me-2"></i>Preoperacionales
                                 </a>
                             </li>
                             {% endif %}

@@ -381,6 +381,16 @@
                            onchange="togglePermiso(this)">
                     <span><i class="bi bi-search me-1" style="color:#a78bfa;"></i>Inspecciones BI</span>
                 </label>
+                <label class="nu-check-label" style="border-color:{% if 'preoperacionales' in perms %}#059669{% else %}#1e293b{% endif %};"
+                       title="Dashboard de Preoperacionales — cumplimiento por sede, contrato y fecha">
+                    <input type="checkbox"
+                           class="perm-ck"
+                           data-uid="{{ u.id }}"
+                           data-permiso="preoperacionales"
+                           {% if 'preoperacionales' in perms %}checked{% endif %}
+                           onchange="togglePermiso(this)">
+                    <span><i class="bi bi-clipboard2-check me-1" style="color:#34d399;"></i>Preoperacionales</span>
+                </label>
             </div>
         </div>
     </div>
