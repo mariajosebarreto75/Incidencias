@@ -383,6 +383,7 @@ def api_editar_usuario(id):
         u.set_permiso(d["permiso"], bool(d.get("valor", False)))
     if d.get("password"):
         u.set_password(d["password"].strip())
+        u.must_change_password = True
     db.session.commit()
     return jsonify({"success": True})
 
@@ -1620,6 +1621,7 @@ def api_cambiar_password_usuario(id):
     if len(nueva) < 4:
         return jsonify({"success": False, "mensaje": "Mínimo 4 caracteres"}), 400
     u.set_password(nueva)
+    u.must_change_password = True
     db.session.commit()
     return jsonify({"success": True})
 

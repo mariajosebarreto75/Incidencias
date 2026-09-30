@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cambio de contraseña — Incidencias NEO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #f0f4f8;
+        }
+
+        .side-left {
+            flex: 1;
+            background: linear-gradient(160deg, #005f6b 0%, #00b8c9 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2.5rem;
+            min-height: 100vh;
+        }
+        .side-left img {
+            width: 110px;
+            filter: drop-shadow(0 6px 24px rgba(0,0,0,.25));
+            margin-bottom: 2rem;
+        }
+        .side-left-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #fff;
+            text-align: center;
+            line-height: 1.25;
+            margin-bottom: .75rem;
+        }
+        .side-left-sub {
+            font-size: .9rem;
+            color: rgba(255,255,255,.75);
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.6;
+        }
+
+        .side-right {
+            width: 440px;
+            min-height: 100vh;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2.5rem;
+            overflow-y: auto;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: .4rem;
+        }
+        .subtitle {
+            font-size: .85rem;
+            color: #64748b;
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
+        }
+
+        .alert {
+            padding: .7rem 1rem;
+            border-radius: 8px;
+            font-size: .85rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: .5rem;
+        }
+        .alert-danger  { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .alert-info    { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .alert-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+        label {
+            display: block;
+            font-size: .78rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: .3rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .field { margin-bottom: 1.1rem; position: relative; }
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: .65rem 2.4rem .65rem .85rem;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            font-size: .9rem;
+            color: #0f172a;
+            transition: border-color .2s, box-shadow .2s;
+            outline: none;
+            background: #fff;
+        }
+        input:focus {
+            border-color: #00b8c9;
+            box-shadow: 0 0 0 3px rgba(0,184,201,.15);
+        }
+        .toggle-pwd {
+            position: absolute;
+            right: .7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #94a3b8;
+            font-size: 1rem;
+            padding: 2px;
+            line-height: 1;
+        }
+        .toggle-pwd:hover { color: #005f6b; }
+
+        .btn-submit {
+            width: 100%;
+            padding: .75rem;
+            background: linear-gradient(135deg, #005f6b, #00b8c9);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: .95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity .2s;
+            margin-top: .5rem;
+        }
+        .btn-submit:hover { opacity: .9; }
+
+        .pwd-strength { margin-top: .4rem; display: none; }
+        .pwd-strength-bar {
+            height: 4px;
+            border-radius: 2px;
+            background: #e2e8f0;
+            overflow: hidden;
+            margin-bottom: .3rem;
+        }
+        .pwd-strength-fill { height: 100%; width: 0; transition: width .3s, background .3s; border-radius: 2px; }
+        .pwd-strength-text { font-size: .72rem; color: #64748b; }
+
+        .requisitos {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: .7rem .9rem;
+            margin-bottom: 1rem;
+            font-size: .78rem;
+            color: #64748b;
+        }
+        .requisitos li { list-style: none; margin-bottom: .15rem; display: flex; align-items: center; gap: .4rem; }
+        .req-ok { color: #15803d; }
+        .req-no { color: #94a3b8; }
+
+        .back-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: .8rem;
+            color: #94a3b8;
+        }
+        .back-link a { color: #00b8c9; text-decoration: none; }
+        .back-link a:hover { text-decoration: underline; }
+
+        @media (max-width: 700px) {
+            .side-left { display: none; }
+            .side-right { width: 100%; padding: 2rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="side-left">
+    <img src="/static/logo.png" alt="Hesego" onerror="this.style.display='none'">
+    <div class="side-left-title">Seguridad de tu cuenta</div>
+    <div class="side-left-sub">
+        Para proteger tu cuenta debes establecer una contraseña personal antes de continuar.
+    </div>
+</div>
+
+<div class="side-right">
+
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in msgs %}
+        <div class="alert alert-{{ cat }}">
+          <i class="bi bi-{% if cat == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %}-fill"></i>
+          {{ msg }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <h2><i class="bi bi-shield-lock" style="color:#00b8c9;margin-right:.4rem;"></i>Cambiar contraseña</h2>
+    <p class="subtitle">
+        Hola <strong>{{ username }}</strong>, debes establecer una contraseña personal
+        para acceder al sistema.
+    </p>
+
+    <form method="POST" action="/cambio-obligatorio/guardar">
+
+        <div class="field">
+            <label>Contraseña actual</label>
+            <input type="password" name="pwd_actual" id="pwd_actual" required autocomplete="current-password">
+            <button type="button" class="toggle-pwd" onclick="togglePwd('pwd_actual',this)">
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+
+        <div class="field">
+            <label>Nueva contraseña</label>
+            <input type="password" name="nueva" id="nueva_pwd" required autocomplete="new-password"
+                   oninput="evaluarPwd(this.value)">
+            <button type="button" class="toggle-pwd" onclick="togglePwd('nueva_pwd',this)">
+                <i class="bi bi-eye"></i>
+            </button>
+            <div class="pwd-strength" id="strengthBlock">
+                <div class="pwd-strength-bar"><div class="pwd-strength-fill" id="strengthFill"></div></div>
+                <div class="pwd-strength-text" id="strengthText"></div>
+            </div>
+        </div>
+
+        <ul class="requisitos" id="reqs">
+            <li id="r-len"><i class="bi bi-circle req-no"></i> Mínimo 8 caracteres</li>
+            <li id="r-may"><i class="bi bi-circle req-no"></i> Una letra mayúscula</li>
+            <li id="r-min"><i class="bi bi-circle req-no"></i> Una letra minúscula</li>
+            <li id="r-num"><i class="bi bi-circle req-no"></i> Un número</li>
+            <li id="r-esp"><i class="bi bi-circle req-no"></i> Un carácter especial (!@#$...)</li>
+        </ul>
+
+        <div class="field">
+            <label>Confirmar nueva contraseña</label>
+            <input type="password" name="confirmacion" id="confirm_pwd" required autocomplete="new-password">
+            <button type="button" class="toggle-pwd" onclick="togglePwd('confirm_pwd',this)">
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+
+        <button type="submit" class="btn-submit">
+            <i class="bi bi-check-circle"></i> Guardar nueva contraseña
+        </button>
+    </form>
+
+    <div class="back-link">
+        <a href="/logout" onclick="return confirm('¿Cancelar y volver al inicio de sesión?')">
+            <i class="bi bi-arrow-left-circle"></i> Volver al inicio de sesión
+        </a>
+    </div>
+
+</div>
+
+<script>
+function togglePwd(id, btn) {
+    const inp = document.getElementById(id);
+    const icon = btn.querySelector('i');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        inp.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+}
+
+function evaluarPwd(v) {
+    const blk = document.getElementById('strengthBlock');
+    blk.style.display = v ? 'block' : 'none';
+
+    const checks = {
+        'r-len': v.length >= 8,
+        'r-may': /[A-Z]/.test(v),
+        'r-min': /[a-z]/.test(v),
+        'r-num': /\d/.test(v),
+        'r-esp': /[^A-Za-z0-9]/.test(v),
+    };
+
+    let score = Object.values(checks).filter(Boolean).length;
+
+    Object.entries(checks).forEach(([id, ok]) => {
+        const li = document.getElementById(id);
+        li.querySelector('i').className = ok
+            ? 'bi bi-check-circle-fill req-ok'
+            : 'bi bi-circle req-no';
+    });
+
+    const fill = document.getElementById('strengthFill');
+    const text = document.getElementById('strengthText');
+    const colors = ['#ef4444','#f97316','#eab308','#84cc16','#22c55e'];
+    const labels = ['Muy débil','Débil','Regular','Buena','Fuerte'];
+    fill.style.width = (score * 20) + '%';
+    fill.style.background = colors[score - 1] || '#e2e8f0';
+    text.textContent = score ? labels[score - 1] : '';
+}
+</script>
+</body>
+</html>

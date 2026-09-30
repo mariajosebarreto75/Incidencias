@@ -65,6 +65,9 @@ class User(
     # Contraseña en texto visible para consulta del administrador
     contrasena = db.Column(db.String(255), nullable=True)
 
+    # True → el usuario debe cambiar contraseña antes de entrar al sistema
+    must_change_password = db.Column(db.Boolean, default=True, nullable=False, server_default="true")
+
     # ======================
     # PERMISOS
     # ======================

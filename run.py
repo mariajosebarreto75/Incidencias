@@ -27,6 +27,7 @@ from app.models.he_config import HeConfig
 from app.models.semaforo import SemaforoCalificacion
 from app.models.compromiso import Compromiso, HistorialReprogramacion
 from app.models.escalamiento import EscalamientoIncidencia
+from app.models.pwd_change_code import PwdChangeCode
 
 from app.routes.auth import auth
 from app.routes.dashboard import dashboard
@@ -67,6 +68,9 @@ _MIGRACIONES = [
     "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS numero_recursos INTEGER",
     "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS meta_promedio NUMERIC(10,2)",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS contrasena VARCHAR(255)",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT TRUE",
+    # Admin nunca necesita cambio obligatorio
+    "UPDATE users SET must_change_password = FALSE WHERE rol = 'admin'",
 ]
 
 _SUPERVISORES_SEED = [
@@ -279,6 +283,23 @@ def create_app():
     @app.route("/")
     def home():
         return redirect(url_for("auth.login"))
+
+    # Bloquea acceso a rutas internas mientras haya un cambio de contraseña obligatorio pendiente
+    @app.before_request
+    def verificar_cambio_obligatorio():
+        from flask import session, request as req, redirect, url_for
+        if not session.get("mcp_uid"):
+            return
+        # Rutas permitidas mientras el usuario está en el flujo de cambio obligatorio
+        rutas_permitidas = {
+            "auth.cambio_obligatorio",
+            "auth.cambio_obligatorio_guardar",
+            "auth.logout",
+            "auth.login",
+            "static",
+        }
+        if req.endpoint and req.endpoint not in rutas_permitidas:
+            return redirect(url_for("auth.cambio_obligatorio"))
 
     return app
 
