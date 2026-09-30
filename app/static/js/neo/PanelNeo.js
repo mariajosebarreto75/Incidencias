@@ -731,8 +731,7 @@ function _calcularMetaSede() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-    // Limpiar horas al cargar para evitar autocompletado del navegador
+function _limpiarHoras() {
     ["hora_inicio", "hora_fin"].forEach(function(id) {
         const el = document.getElementById(id);
         if (el) el.value = "";
@@ -741,6 +740,15 @@ document.addEventListener("DOMContentLoaded", function () {
     if (chip) chip.textContent = "—";
     const hidDur = document.getElementById("duracion");
     if (hidDur) hidDur.value = "";
+    const ha = document.getElementById("horas_afectadas");
+    if (ha) ha.value = "";
+}
+
+// El navegador puede aplicar autocompletado después de DOMContentLoaded,
+// por eso se limpian inmediatamente y de nuevo con delay de 400ms.
+document.addEventListener("DOMContentLoaded", function () {
+    _limpiarHoras();
+    setTimeout(_limpiarHoras, 400);
 
     const selTipo    = document.getElementById("tipo_incidencia");
     const selRecurso = document.getElementById("recurso");
@@ -753,6 +761,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (inpNR)  inpNR.addEventListener("input",  _calcularMetaSede);
     if (inpMP)  inpMP.addEventListener("input",  _calcularMetaSede);
     if (inpDur) inpDur.addEventListener("change", _calcularMetaSede);
+});
+
+// Cubre el caso del botón Atrás del navegador (bfcache)
+window.addEventListener("pageshow", function(e) {
+    _limpiarHoras();
+    setTimeout(_limpiarHoras, 400);
 });
 
 // =====================================
