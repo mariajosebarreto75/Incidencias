@@ -9,6 +9,8 @@
   --warn:  #d97706;
   --bad:   #dc2626;
   --neu:   #64748b;
+  --gps:   #7c3aed;
+  --sky:   #0284c7;
   --bg:    #f1f5f9;
   --card:  #ffffff;
   --bdr:   #e2e8f0;
@@ -19,7 +21,6 @@
 
 .preop-wrap { padding: 1.25rem 1.5rem; background: var(--bg); min-height: 100vh; }
 
-/* Barra superior */
 .preop-header {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: .75rem; margin-bottom: 1.25rem;
@@ -27,7 +28,6 @@
 .preop-title { font-size: 1.2rem; font-weight: 800; color: var(--txt); }
 .preop-meta  { font-size: .75rem; color: var(--sub); }
 
-/* Filtros */
 .filtros {
   display: flex; flex-wrap: wrap; gap: .5rem;
   background: var(--card); border: 1px solid var(--bdr);
@@ -60,33 +60,34 @@
 .btn-sync:hover { border-color: var(--teal); color: var(--teal); }
 .btn-sync.loading { opacity: .5; pointer-events: none; }
 
-/* Alerta de error */
 .alert-preop {
   background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
   border-radius: 8px; padding: .7rem 1rem; font-size: .83rem;
   margin-bottom: 1rem; display: none;
 }
 
-/* KPI tiles */
+/* KPIs */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
   gap: .75rem; margin-bottom: 1.25rem;
 }
 .kpi-card {
   background: var(--card); border: 1px solid var(--bdr);
-  border-radius: 10px; padding: 1rem 1.1rem;
+  border-radius: 10px; padding: .9rem 1rem;
   border-left: 4px solid var(--neu);
 }
 .kpi-card.ok   { border-left-color: var(--ok); }
 .kpi-card.warn { border-left-color: var(--warn); }
 .kpi-card.bad  { border-left-color: var(--bad); }
+.kpi-card.gps  { border-left-color: var(--gps); }
+.kpi-card.sky  { border-left-color: var(--sky); }
 .kpi-card.neu  { border-left-color: var(--neu); }
-.kpi-label { font-size: .72rem; color: var(--sub); text-transform: uppercase;
-             letter-spacing: .04em; margin-bottom: .3rem; }
-.kpi-value { font-size: 1.8rem; font-weight: 800; color: var(--txt);
+.kpi-label { font-size: .7rem; color: var(--sub); text-transform: uppercase;
+             letter-spacing: .04em; margin-bottom: .25rem; }
+.kpi-value { font-size: 1.7rem; font-weight: 800; color: var(--txt);
              font-variant-numeric: tabular-nums; line-height: 1; }
-.kpi-sub   { font-size: .75rem; color: var(--sub); margin-top: .2rem; }
+.kpi-sub   { font-size: .72rem; color: var(--sub); margin-top: .18rem; }
 
 /* Gráficas */
 .charts-grid {
@@ -100,12 +101,97 @@
 }
 .chart-card.wide { grid-column: span 2; }
 .chart-title {
-  font-size: .8rem; font-weight: 700; color: var(--txt);
+  font-size: .78rem; font-weight: 700; color: var(--txt);
   margin-bottom: .75rem; text-transform: uppercase; letter-spacing: .04em;
 }
-.chart-wrap { position: relative; height: 220px; }
+.chart-wrap { position: relative; height: 210px; }
 
-/* Tabla top */
+/* Sección de tablas */
+.section-hdr {
+  font-size: .85rem; font-weight: 700; color: var(--txt);
+  text-transform: uppercase; letter-spacing: .04em;
+  margin: 1.4rem 0 .75rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.section-badge {
+  font-size: .72rem; font-weight: 700; padding: .15rem .5rem;
+  border-radius: 99px; background: #ede9fe; color: var(--gps);
+}
+.section-badge.bad { background: #fef2f2; color: var(--bad); }
+
+/* Filtros de tabla */
+.tbl-filtros {
+  display: flex; flex-wrap: wrap; gap: .45rem;
+  background: #f8fafc; border: 1px solid var(--bdr);
+  border-radius: 8px; padding: .5rem .75rem;
+  margin-bottom: .75rem; align-items: center;
+}
+.tbl-filtros select, .tbl-filtros input {
+  padding: .3rem .55rem; border: 1.5px solid var(--bdr);
+  border-radius: 6px; font-size: .78rem; color: var(--txt);
+  background: #fff; outline: none;
+}
+.tbl-filtros select:focus, .tbl-filtros input:focus { border-color: var(--teal); }
+.tbl-filtros input { min-width: 160px; }
+.btn-tbl {
+  padding: .3rem .7rem; background: var(--teal); color: #fff;
+  border: none; border-radius: 6px; font-size: .78rem;
+  font-weight: 600; cursor: pointer;
+}
+.btn-tbl:hover { opacity: .88; }
+.btn-tbl-sec {
+  padding: .3rem .65rem; background: none;
+  border: 1.5px solid var(--bdr); border-radius: 6px;
+  font-size: .78rem; color: var(--sub); cursor: pointer;
+}
+.btn-tbl-sec:hover { border-color: var(--teal); color: var(--teal); }
+
+/* Tabla de datos */
+.data-table-wrap { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+.data-table th {
+  text-align: left; padding: .4rem .6rem;
+  border-bottom: 2px solid var(--bdr); color: var(--sub);
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .04em;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: .4rem .6rem; border-bottom: 1px solid var(--bdr);
+  color: var(--txt); white-space: nowrap;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #f8fafc; }
+
+/* Badges de estado */
+.est-badge {
+  display: inline-block; padding: .15rem .5rem;
+  border-radius: 5px; font-size: .7rem; font-weight: 600;
+  white-space: nowrap;
+}
+.est-1 { background: #dcfce7; color: #15803d; }
+.est-2 { background: #ede9fe; color: #6d28d9; }
+.est-3 { background: #fef9c3; color: #854d0e; }
+.est-4 { background: #f3e8ff; color: #7c3aed; }
+.est-5 { background: #f1f5f9; color: #475569; }
+.est-6 { background: #fef2f2; color: #b91c1c; }
+.est-7 { background: #dbeafe; color: #1d4ed8; }
+.est-8 { background: #ecfdf5; color: #047857; }
+
+/* Paginación */
+.paginacion {
+  display: flex; align-items: center; gap: .4rem;
+  margin-top: .75rem; font-size: .78rem; justify-content: flex-end;
+}
+.pag-btn {
+  padding: .25rem .6rem; border: 1.5px solid var(--bdr);
+  border-radius: 5px; cursor: pointer; background: #fff;
+  color: var(--txt); font-size: .78rem;
+}
+.pag-btn:hover { border-color: var(--teal); color: var(--teal); }
+.pag-btn:disabled { opacity: .4; cursor: default; }
+.pag-info { color: var(--sub); }
+
+/* Top tabla */
 .top-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
 .top-table th {
   text-align: left; padding: .45rem .6rem;
@@ -117,6 +203,7 @@
 .badge-bad  { background: #fef2f2; color: var(--bad);  padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
 .badge-ok   { background: #f0fdf4; color: var(--ok);   padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
 .badge-warn { background: #fffbeb; color: var(--warn);  padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
+.badge-gps  { background: #ede9fe; color: var(--gps);  padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
 
 /* Spinner */
 .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--bdr);
@@ -125,7 +212,11 @@
 .loading-overlay {
   position: fixed; inset: 0; background: rgba(255,255,255,.65);
   display: flex; align-items: center; justify-content: center;
-  z-index: 999; display: none;
+  z-index: 999;
+}
+.tbl-loading {
+  text-align: center; color: var(--sub); padding: 1.5rem;
+  font-size: .82rem;
 }
 
 @media (max-width: 768px) {
@@ -136,7 +227,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="loading-overlay" id="overlay"><div class="spinner"></div></div>
+<div class="loading-overlay" id="overlay" style="display:none"><div class="spinner"></div></div>
 
 <div class="preop-wrap">
 
@@ -148,10 +239,9 @@
     </div>
   </div>
 
-  <!-- Error -->
   <div class="alert-preop" id="alertaError"></div>
 
-  <!-- Filtros -->
+  <!-- Filtros globales -->
   <div class="filtros">
     <select id="fSede"><option value="">Todas las sedes</option></select>
     <select id="fContrato"><option value="">Todos los contratos</option></select>
@@ -159,9 +249,7 @@
     <select id="fTipo"><option value="">Todos los tipos</option></select>
     <button class="btn-aplicar" onclick="cargar()">Aplicar</button>
     <button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar</button>
-    <button class="btn-sync" id="btnSync" onclick="sincronizar()">
-      ↻ Actualizar datos
-    </button>
+    <button class="btn-sync" id="btnSync" onclick="sincronizar()">↻ Actualizar datos</button>
   </div>
 
   <!-- KPIs -->
@@ -169,23 +257,29 @@
     <div class="kpi-card neu">
       <div class="kpi-label">Total registros</div>
       <div class="kpi-value" id="kTotal">—</div>
+      <div class="kpi-sub">vehículos en período</div>
     </div>
     <div class="kpi-card ok">
-      <div class="kpi-label">Cumplimiento</div>
+      <div class="kpi-label">% Cumplimiento</div>
       <div class="kpi-value" id="kPctCumple">—</div>
       <div class="kpi-sub" id="kCumple">— confirmados</div>
     </div>
     <div class="kpi-card bad">
-      <div class="kpi-label">Incumplimiento</div>
+      <div class="kpi-label">% Incumplimiento</div>
       <div class="kpi-value" id="kPctIncumple">—</div>
-      <div class="kpi-sub" id="kIncumple">— con movimiento sin preop.</div>
+      <div class="kpi-sub" id="kIncumple">— sin preoperacional</div>
     </div>
     <div class="kpi-card warn">
       <div class="kpi-label">Sin movimiento</div>
       <div class="kpi-value" id="kSinMov">—</div>
       <div class="kpi-sub">vehículos inactivos</div>
     </div>
-    <div class="kpi-card neu">
+    <div class="kpi-card gps">
+      <div class="kpi-label">Sin GPS</div>
+      <div class="kpi-value" id="kSinGps">—</div>
+      <div class="kpi-sub">estados 2 y 4</div>
+    </div>
+    <div class="kpi-card sky">
       <div class="kpi-label">Con movimiento</div>
       <div class="kpi-value" id="kConMov">—</div>
       <div class="kpi-sub">debían tener preop.</div>
@@ -206,7 +300,7 @@
     </div>
 
     <div class="chart-card">
-      <div class="chart-title">Cumplimiento por sede</div>
+      <div class="chart-title">Cumplimiento por sede (%)</div>
       <div class="chart-wrap"><canvas id="chartSedes"></canvas></div>
     </div>
 
@@ -220,19 +314,70 @@
 
   </div>
 
+  <!-- Detalle de placas -->
+  <div class="section-hdr">
+    🚗 Detalle de placas
+    <span class="section-badge bad" id="badgePlacas">0</span>
+  </div>
+
+  <div class="tbl-filtros">
+    <select id="pEstado" onchange="cargarPlacas(1)">
+      <option value="">Todos los estados</option>
+    </select>
+    <input type="text" id="pBuscar" placeholder="Buscar placa, contrato…" oninput="cargarPlacas(1)">
+    <button class="btn-tbl-sec" onclick="limpiarPlacas()">Limpiar</button>
+  </div>
+
+  <div class="data-table-wrap">
+    <table class="data-table" id="tablaPlacas">
+      <thead>
+        <tr>
+          <th>Placa</th><th>Tipo</th><th>Sede</th><th>Contrato</th>
+          <th>Fecha</th><th>Preoperacional</th><th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyPlacas"><tr><td colspan="7" class="tbl-loading">Cargando…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="paginacion" id="pagPlacas"></div>
+
+  <!-- Vehículos sin GPS -->
+  <div class="section-hdr" style="margin-top:1.75rem">
+    📡 Vehículos sin GPS
+    <span class="section-badge" id="badgeGps">0</span>
+  </div>
+  <p style="font-size:.78rem;color:var(--sub);margin-bottom:.75rem">
+    Vehículos con estados <strong>2. Preoperacional Confirmado y sin GPS</strong>
+    o <strong>4. Enviado sin aprobación y sin GPS</strong>.
+  </p>
+
+  <div class="data-table-wrap">
+    <table class="data-table" id="tablaGps">
+      <thead>
+        <tr>
+          <th>Placa</th><th>Tipo</th><th>Sede</th><th>Contrato</th>
+          <th>Fecha</th><th>Preoperacional</th><th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyGps"><tr><td colspan="7" class="tbl-loading">Cargando…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="paginacion" id="pagGps"></div>
+
 </div><!-- /preop-wrap -->
 
 <script>
 let _charts = {};
+let _pPlacas = 1, _pGps = 1;
+let _estadosDisponibles = [];
+let _filtrosGlobales = {};
 
 function _destruir(id) {
   if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
 }
-
 function mostrarError(msg) {
   const el = document.getElementById('alertaError');
-  el.textContent = '⚠️ ' + msg;
-  el.style.display = 'block';
+  el.textContent = '⚠️ ' + msg; el.style.display = 'block';
 }
 function ocultarError() {
   document.getElementById('alertaError').style.display = 'none';
@@ -249,6 +394,8 @@ function cargar() {
   if (fecha)    params.set('fecha', fecha);
   if (tipo)     params.set('tipo', tipo);
 
+  _filtrosGlobales = { sede, contrato, fecha, tipo };
+
   document.getElementById('overlay').style.display = 'flex';
   ocultarError();
 
@@ -261,6 +408,9 @@ function cargar() {
         return;
       }
       renderizar(data);
+      _pPlacas = 1; _pGps = 1;
+      cargarPlacas(1);
+      cargarGps(1);
     })
     .catch(e => {
       document.getElementById('overlay').style.display = 'none';
@@ -306,20 +456,31 @@ function poblarSelect(id, opciones, actual) {
   });
 }
 
+function _estadoBadge(estado) {
+  const n = parseInt(estado.charAt(0)) || 0;
+  const cls = n >= 1 && n <= 8 ? 'est-' + n : '';
+  return `<span class="est-badge ${cls}">${estado}</span>`;
+}
+
 function renderizar(data) {
   const k = data.kpis;
   const fa = data.filtros_activos || {};
 
-  // KPIs
-  document.getElementById('kTotal').textContent    = k.total.toLocaleString();
+  document.getElementById('kTotal').textContent       = k.total.toLocaleString();
   document.getElementById('kPctCumple').textContent   = k.pct_cumplimiento + '%';
-  document.getElementById('kCumple').textContent   = k.cumple.toLocaleString() + ' confirmados';
+  document.getElementById('kCumple').textContent      = k.cumple.toLocaleString() + ' confirmados';
   document.getElementById('kPctIncumple').textContent = k.pct_incumplimiento + '%';
-  document.getElementById('kIncumple').textContent = k.incumple.toLocaleString() + ' con mov. sin preop.';
-  document.getElementById('kSinMov').textContent   = k.sin_mov.toLocaleString();
-  document.getElementById('kConMov').textContent   = (k.con_movimiento || 0).toLocaleString();
+  document.getElementById('kIncumple').textContent    = k.incumple.toLocaleString() + ' sin preop.';
+  document.getElementById('kSinMov').textContent      = k.sin_mov.toLocaleString();
+  document.getElementById('kConMov').textContent      = (k.con_movimiento || 0).toLocaleString();
 
-  // Meta
+  // KPI sin GPS: contar de estados
+  const estados = data.estados || [];
+  const sinGps = estados
+    .filter(e => e.estado.toLowerCase().includes('sin gps'))
+    .reduce((s, e) => s + e.total, 0);
+  document.getElementById('kSinGps').textContent = sinGps.toLocaleString();
+
   if (data.meta && data.meta.actualizado) {
     const d = new Date(data.meta.actualizado + 'Z');
     document.getElementById('metaInfo').textContent =
@@ -327,7 +488,6 @@ function renderizar(data) {
       ` · ${k.total.toLocaleString()} registros`;
   }
 
-  // Filtros
   const op = data.opciones || {};
   poblarSelect('fSede',     op.sedes     || [], fa.sede);
   poblarSelect('fContrato', op.contratos || [], fa.contrato);
@@ -360,10 +520,9 @@ function renderizar(data) {
     }
   });
 
-  // Estados (dona)
+  // Donut estados
   _destruir('chartEstados');
-  const estados = data.estados || [];
-  const coloresEstados = ['#16a34a','#4ade80','#f59e0b','#fbbf24','#94a3b8','#dc2626','#fb923c'];
+  const coloresEstados = ['#16a34a','#7c3aed','#d97706','#6d28d9','#94a3b8','#dc2626','#3b82f6','#059669'];
   _charts['chartEstados'] = new Chart(document.getElementById('chartEstados'), {
     type: 'doughnut',
     data: {
@@ -380,7 +539,7 @@ function renderizar(data) {
     }
   });
 
-  // Cumplimiento por sede (barra horizontal)
+  // Sedes horizontal
   _destruir('chartSedes');
   const sedes = (data.sedes || []).sort((a, b) => b.pct - a.pct);
   _charts['chartSedes'] = new Chart(document.getElementById('chartSedes'), {
@@ -402,7 +561,7 @@ function renderizar(data) {
     }
   });
 
-  // Tabla top incumplimiento
+  // Top incumplimiento
   const tbody = document.querySelector('#tablaTop tbody');
   tbody.innerHTML = '';
   (data.top_incumplimiento || []).forEach((row, i) => {
@@ -412,6 +571,127 @@ function renderizar(data) {
       <td><span class="badge-bad">${row.incumple}</span></td>
     </tr>`;
   });
+
+  // Poblar select de estados para tabla placas
+  if (_estadosDisponibles.length === 0 && estados.length > 0) {
+    _estadosDisponibles = estados.map(e => e.estado);
+    const sel = document.getElementById('pEstado');
+    _estadosDisponibles.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e; opt.textContent = e;
+      sel.appendChild(opt);
+    });
+  }
+}
+
+// ─── Tabla placas ─────────────────────────────────────────────────────────────
+function _placasParams(page) {
+  const p = new URLSearchParams();
+  if (_filtrosGlobales.sede)     p.set('sede', _filtrosGlobales.sede);
+  if (_filtrosGlobales.contrato) p.set('contrato', _filtrosGlobales.contrato);
+  if (_filtrosGlobales.fecha)    p.set('fecha', _filtrosGlobales.fecha);
+  if (_filtrosGlobales.tipo)     p.set('tipo', _filtrosGlobales.tipo);
+  const estado = document.getElementById('pEstado').value;
+  const q      = document.getElementById('pBuscar').value.trim();
+  if (estado) p.set('estado', estado);
+  if (q)      p.set('q', q);
+  p.set('page', page);
+  return p;
+}
+
+function cargarPlacas(page) {
+  _pPlacas = page;
+  const tbody = document.getElementById('tbodyPlacas');
+  tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading"><div class="spinner"></div></td></tr>';
+
+  fetch('/coordinador/preoperacionales/placas?' + _placasParams(page).toString())
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('badgePlacas').textContent = data.total.toLocaleString();
+      tbody.innerHTML = '';
+      if (!data.filas.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading">Sin resultados</td></tr>';
+        document.getElementById('pagPlacas').innerHTML = '';
+        return;
+      }
+      data.filas.forEach(r => {
+        tbody.innerHTML += `<tr>
+          <td><strong>${r.placa}</strong></td>
+          <td>${r.tipo}</td><td>${r.sede}</td><td>${r.contrato}</td>
+          <td>${r.fecha}</td><td>${r.preop || '—'}</td>
+          <td>${_estadoBadge(r.estado)}</td>
+        </tr>`;
+      });
+      _renderPag('pagPlacas', page, data.pages, cargarPlacas);
+
+      // Poblar estados si aún no se hizo
+      if (_estadosDisponibles.length === 0 && data.estados) {
+        _estadosDisponibles = data.estados;
+        const sel = document.getElementById('pEstado');
+        data.estados.forEach(e => {
+          const opt = document.createElement('option');
+          opt.value = e; opt.textContent = e;
+          sel.appendChild(opt);
+        });
+      }
+    })
+    .catch(() => {
+      tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading">Error al cargar</td></tr>';
+    });
+}
+
+function limpiarPlacas() {
+  document.getElementById('pEstado').value = '';
+  document.getElementById('pBuscar').value = '';
+  cargarPlacas(1);
+}
+
+// ─── Tabla sin GPS ─────────────────────────────────────────────────────────────
+function cargarGps(page) {
+  _pGps = page;
+  const tbody = document.getElementById('tbodyGps');
+  tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading"><div class="spinner"></div></td></tr>';
+
+  const p = new URLSearchParams();
+  if (_filtrosGlobales.sede)     p.set('sede', _filtrosGlobales.sede);
+  if (_filtrosGlobales.contrato) p.set('contrato', _filtrosGlobales.contrato);
+  if (_filtrosGlobales.fecha)    p.set('fecha', _filtrosGlobales.fecha);
+  if (_filtrosGlobales.tipo)     p.set('tipo', _filtrosGlobales.tipo);
+  p.set('sin_gps', '1');
+  p.set('page', page);
+
+  fetch('/coordinador/preoperacionales/placas?' + p.toString())
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('badgeGps').textContent = data.total.toLocaleString();
+      tbody.innerHTML = '';
+      if (!data.filas.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading">Sin vehículos sin GPS en el período</td></tr>';
+        document.getElementById('pagGps').innerHTML = '';
+        return;
+      }
+      data.filas.forEach(r => {
+        tbody.innerHTML += `<tr>
+          <td><strong>${r.placa}</strong></td>
+          <td>${r.tipo}</td><td>${r.sede}</td><td>${r.contrato}</td>
+          <td>${r.fecha}</td><td>${r.preop || '—'}</td>
+          <td>${_estadoBadge(r.estado)}</td>
+        </tr>`;
+      });
+      _renderPag('pagGps', page, data.pages, cargarGps);
+    })
+    .catch(() => {
+      tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading">Error al cargar</td></tr>';
+    });
+}
+
+function _renderPag(elId, page, pages, fn) {
+  const el = document.getElementById(elId);
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <button class="pag-btn" onclick="${fn.name}(${page - 1})" ${page <= 1 ? 'disabled' : ''}>← Ant.</button>
+    <span class="pag-info">Página ${page} de ${pages}</span>
+    <button class="pag-btn" onclick="${fn.name}(${page + 1})" ${page >= pages ? 'disabled' : ''}>Sig. →</button>`;
 }
 
 // Carga inicial

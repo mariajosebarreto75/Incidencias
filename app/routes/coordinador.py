@@ -1073,3 +1073,56 @@ def preoperacionales_sincronizar():
     from app.services.preoperacionales_service import sincronizar
     resultado = sincronizar()
     return jsonify(resultado), 200 if resultado["ok"] else 500
+
+
+@coordinador.route("/coordinador/preoperacionales/placas")
+@login_required
+def preoperacionales_placas():
+    from app.services.preoperacionales_service import obtener_datos
+    registros, _ = obtener_datos()
+
+    sede     = request.args.get("sede") or None
+    contrato = request.args.get("contrato") or None
+    fecha    = request.args.get("fecha") or None
+    tipo     = request.args.get("tipo") or None
+    estado   = request.args.get("estado") or None
+    q        = (request.args.get("q") or "").strip().lower()
+    solo_sin_gps = request.args.get("sin_gps") == "1"
+
+    resultado = registros
+    if sede:     resultado = [r for r in resultado if r["sede"] == sede]
+    if contrato: resultado = [r for r in resultado if r["contrato"] == contrato]
+    if fecha:    resultado = [r for r in resultado if r["fecha_str"] == fecha]
+    if tipo:     resultado = [r for r in resultado if r["tipo"] == tipo]
+    if estado:   resultado = [r for r in resultado if r["estado"] == estado]
+    if solo_sin_gps:
+        resultado = [r for r in resultado if "sin gps" in r["estado"].lower()]
+    if q:
+        resultado = [r for r in resultado if q in r["placa"].lower()
+                     or q in r["contrato"].lower() or q in r["sede"].lower()]
+
+    page  = max(1, int(request.args.get("page", 1)))
+    limit = 50
+    total = len(resultado)
+    inicio = (page - 1) * limit
+    pagina = resultado[inicio:inicio + limit]
+
+    filas = [{
+        "placa":    r["placa"],
+        "tipo":     r["tipo"],
+        "sede":     r["sede"],
+        "contrato": r["contrato"],
+        "fecha":    r["fecha_str"],
+        "preop":    r["preop"],
+        "estado":   r["estado"],
+    } for r in pagina]
+
+    estados_disponibles = sorted({r["estado"] for r in registros if r["estado"]})
+
+    return jsonify({
+        "filas":    filas,
+        "total":    total,
+        "page":     page,
+        "pages":    (total + limit - 1) // limit,
+        "estados":  estados_disponibles,
+    })
