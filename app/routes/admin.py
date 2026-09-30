@@ -2332,7 +2332,7 @@ def descargar_evidencia_compromiso(comp_id):
 # PREOPERACIONALES — Configuración
 # ============================================================
 
-@admin_bp.route("/admin/preoperacionales")
+@admin_bp.route("/preoperacionales")
 @admin_required
 def preoperacionales_config():
     from app.services.preoperacionales_service import obtener_datos, datos_dashboard
@@ -2343,7 +2343,7 @@ def preoperacionales_config():
                            config=current_app.config)
 
 
-@admin_bp.route("/admin/preoperacionales/sincronizar", methods=["POST"])
+@admin_bp.route("/preoperacionales/sincronizar", methods=["POST"])
 @admin_required
 def preoperacionales_sincronizar():
     from app.services.preoperacionales_service import sincronizar
