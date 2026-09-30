@@ -974,10 +974,18 @@ def guardar_reporte():
         or _parsear_float(datos.get("meta"))
     )
     horas_afectadas_val = None if sin_duracion else (
-        round((datetime.combine(fecha, hora_fin) - datetime.combine(fecha, hora_inicio)).total_seconds() / 3600, 6)
-        if hora_inicio and hora_fin and hora_fin > hora_inicio else
         _parsear_float(datos.get("horas_afectadas"))
     )
+    duracion_val = datos.get("duracion") or None
+    if not sin_duracion and hora_inicio and hora_fin:
+        _dt_ini = datetime.combine(fecha, hora_inicio)
+        _dt_fin = datetime.combine(fecha, hora_fin)
+        if _dt_fin <= _dt_ini:
+            _dt_fin += timedelta(days=1)
+        _diff_min = int((_dt_fin - _dt_ini).total_seconds() // 60)
+        horas_afectadas_val = round(_diff_min / 60, 6)
+        _h, _m = divmod(_diff_min, 60)
+        duracion_val = f"{_h}h {_m:02d}m"
     afectacion_val = None if sin_duracion else (
         (meta_val / HORAS_DIA_ESTANDAR) * horas_afectadas_val
         if meta_val and horas_afectadas_val else
@@ -1000,7 +1008,7 @@ def guardar_reporte():
             tipo_incidencia     = datos.get("tipo_incidencia_nombre") or datos["tipo_incidencia"],
             parametro_neo       = datos.get("parametro_neo_nombre")   or "",
             observacion         = datos.get("observacion")            or "",
-            duracion            = datos.get("duracion")               or None,
+            duracion            = duracion_val,
             impacto             = datos.get("impacto") or _calcular_impacto(
                                       datos.get("tipo_incidencia_nombre") or datos.get("tipo_incidencia", "")
                                   ) or None,

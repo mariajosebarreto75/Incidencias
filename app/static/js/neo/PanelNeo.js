@@ -352,12 +352,8 @@ function calcularDuracion() {
     let   diferencia = (finDate - inicioDate) / 1000;
 
     if (diferencia < 0) {
-        mostrarAlerta(
-            "La hora de fin debe ser mayor que la hora de inicio.",
-            "warning"
-        );
-        setField("impacto", "");
-        return;
+        // Turno nocturno que cruza medianoche (ej. 23:37 → 00:22)
+        diferencia += 86400;
     }
 
     const horas    = Math.floor(diferencia / 3600);
