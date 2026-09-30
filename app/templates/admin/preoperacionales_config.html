@@ -88,7 +88,12 @@
 {% block content %}
 <div class="pc-wrap">
 
-  <div class="pc-title"><i class="bi bi-clipboard2-check" style="color:#34d399"></i> Preoperacionales</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:.25rem;">
+    <div class="pc-title" style="margin-bottom:0;"><i class="bi bi-clipboard2-check" style="color:#34d399"></i> Preoperacionales</div>
+    <button class="btn-sync-admin" style="background:#0d9488;" onclick="abrirTabla()">
+      <i class="bi bi-table"></i> Ver tabla / base
+    </button>
+  </div>
   <div class="pc-sub">Configuración, estado de conexión y resumen de datos del informe SharePoint.</div>
 
   <div class="alert-pc" id="alertaSync"></div>
@@ -352,6 +357,183 @@ function sincronizar() {
       alerta.textContent = '✗ Error de conexión: ' + e.message;
       alerta.style.display = 'block';
     });
+}
+</script>
+
+<!-- ═══════════════════════════════ MODAL TABLA ═══════════════════════════════ -->
+<div id="modalTabla" style="display:none;position:fixed;inset:0;z-index:9000;
+     background:rgba(0,0,0,.72);overflow-y:auto;padding:2rem 1rem;">
+  <div style="max-width:1300px;margin:0 auto;background:#0f172a;border:1px solid #1e293b;
+              border-radius:14px;overflow:hidden;">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:1rem 1.5rem;border-bottom:1px solid #1e293b;">
+      <div style="font-size:1rem;font-weight:800;color:#f1f5f9;">
+        <i class="bi bi-table" style="color:#2dd4bf;margin-right:.4rem;"></i>
+        Base de datos — Ultimos9Dias
+        <span id="tbl-total-badge" style="font-size:.75rem;font-weight:600;
+              color:#94a3b8;margin-left:.6rem;"></span>
+      </div>
+      <button onclick="cerrarTabla()" style="background:none;border:none;color:#64748b;
+              font-size:1.4rem;cursor:pointer;line-height:1;">×</button>
+    </div>
+
+    <!-- Filtros -->
+    <div style="display:flex;flex-wrap:wrap;gap:.6rem;padding:1rem 1.5rem;
+                border-bottom:1px solid #1e293b;background:#0a1120;">
+      <input id="tbl-q" type="text" placeholder="🔍 Buscar placa, contrato, sede…"
+             oninput="tblBuscar()"
+             style="flex:1;min-width:180px;background:#1e293b;border:1px solid #2dd4bf44;
+                    border-radius:7px;padding:.38rem .75rem;color:#f1f5f9;font-size:.82rem;">
+      <select id="tbl-sede"     onchange="cargarTabla(1)" style="background:#1e293b;border:1px solid #2dd4bf44;border-radius:7px;padding:.38rem .65rem;color:#cbd5e1;font-size:.82rem;"><option value="">Todas las sedes</option></select>
+      <select id="tbl-contrato" onchange="cargarTabla(1)" style="background:#1e293b;border:1px solid #2dd4bf44;border-radius:7px;padding:.38rem .65rem;color:#cbd5e1;font-size:.82rem;"><option value="">Todos los contratos</option></select>
+      <select id="tbl-tipo"     onchange="cargarTabla(1)" style="background:#1e293b;border:1px solid #2dd4bf44;border-radius:7px;padding:.38rem .65rem;color:#cbd5e1;font-size:.82rem;"><option value="">Todos los tipos</option></select>
+      <select id="tbl-fecha"    onchange="cargarTabla(1)" style="background:#1e293b;border:1px solid #2dd4bf44;border-radius:7px;padding:.38rem .65rem;color:#cbd5e1;font-size:.82rem;"><option value="">Todas las fechas</option></select>
+      <select id="tbl-estado"   onchange="cargarTabla(1)" style="background:#1e293b;border:1px solid #2dd4bf44;border-radius:7px;padding:.38rem .65rem;color:#cbd5e1;font-size:.82rem;"><option value="">Todos los estados</option></select>
+      <button onclick="limpiarFiltrosTabla()"
+              style="background:#1e293b;border:1px solid #334155;border-radius:7px;
+                     padding:.38rem .8rem;color:#94a3b8;font-size:.82rem;cursor:pointer;">
+        Limpiar filtros
+      </button>
+    </div>
+
+    <!-- Tabla -->
+    <div style="overflow-x:auto;max-height:60vh;">
+      <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
+        <thead>
+          <tr style="background:#0a1120;position:sticky;top:0;z-index:1;">
+            <th style="padding:.55rem .75rem;text-align:left;color:#2dd4bf;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1e293b;white-space:nowrap;">Placa</th>
+            <th style="padding:.55rem .75rem;text-align:left;color:#2dd4bf;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1e293b;white-space:nowrap;">Tipo vehículo</th>
+            <th style="padding:.55rem .75rem;text-align:left;color:#2dd4bf;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1e293b;white-space:nowrap;">Sede</th>
+            <th style="padding:.55rem .75rem;text-align:left;color:#2dd4bf;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1e293b;white-space:nowrap;">Contrato</th>
+            <th style="padding:.55rem .75rem;text-align:left;color:#2dd4bf;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1e293b;white-space:nowrap;">Fecha</th>
+            <th style="padding:.55rem .75rem;text-align:left;color:#2dd4bf;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1e293b;white-space:nowrap;">Movimiento</th>
+            <th style="padding:.55rem .75rem;text-align:left;color:#2dd4bf;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1e293b;white-space:nowrap;">Preoperacional</th>
+            <th style="padding:.55rem .75rem;text-align:left;color:#2dd4bf;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1e293b;white-space:nowrap;">Estado</th>
+            <th style="padding:.55rem .75rem;text-align:left;color:#2dd4bf;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid #1e293b;white-space:nowrap;">Mes</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body">
+          <tr><td colspan="9" style="padding:2rem;text-align:center;color:#64748b;">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    <div id="tbl-paginacion" style="display:flex;align-items:center;justify-content:center;
+         gap:.5rem;padding:.9rem 1.5rem;border-top:1px solid #1e293b;flex-wrap:wrap;"></div>
+  </div>
+</div>
+
+<script>
+let _tblPage = 1;
+let _tblOpcionesListas = false;
+let _tblBuscarTimer = null;
+
+function abrirTabla() {
+  document.getElementById('modalTabla').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  if (!_tblOpcionesListas) cargarTabla(1);
+}
+function cerrarTabla() {
+  document.getElementById('modalTabla').style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.getElementById('modalTabla').addEventListener('click', function(e){
+  if (e.target === this) cerrarTabla();
+});
+
+function tblBuscar() {
+  clearTimeout(_tblBuscarTimer);
+  _tblBuscarTimer = setTimeout(() => cargarTabla(1), 350);
+}
+
+function limpiarFiltrosTabla() {
+  ['tbl-q','tbl-sede','tbl-contrato','tbl-tipo','tbl-fecha','tbl-estado'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  cargarTabla(1);
+}
+
+function cargarTabla(page) {
+  _tblPage = page || 1;
+  const params = new URLSearchParams({
+    page: _tblPage,
+    q:        document.getElementById('tbl-q')?.value        || '',
+    sede:     document.getElementById('tbl-sede')?.value     || '',
+    contrato: document.getElementById('tbl-contrato')?.value || '',
+    tipo:     document.getElementById('tbl-tipo')?.value     || '',
+    fecha:    document.getElementById('tbl-fecha')?.value    || '',
+    estado:   document.getElementById('tbl-estado')?.value   || '',
+  });
+
+  const body = document.getElementById('tbl-body');
+  body.innerHTML = '<tr><td colspan="9" style="padding:1.5rem;text-align:center;color:#64748b;">Cargando…</td></tr>';
+
+  fetch('/admin/preoperacionales/tabla?' + params)
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok) { body.innerHTML = '<tr><td colspan="9" style="color:#f87171;padding:1rem;">Error al cargar.</td></tr>'; return; }
+
+      if (!_tblOpcionesListas && d.opciones) {
+        _llenarSelect('tbl-sede',     d.opciones.sedes,     'Todas las sedes');
+        _llenarSelect('tbl-contrato', d.opciones.contratos, 'Todos los contratos');
+        _llenarSelect('tbl-tipo',     d.opciones.tipos,     'Todos los tipos');
+        _llenarSelect('tbl-fecha',    d.opciones.fechas,    'Todas las fechas');
+        _llenarSelect('tbl-estado',   d.opciones.estados,   'Todos los estados');
+        _tblOpcionesListas = true;
+      }
+
+      document.getElementById('tbl-total-badge').textContent = d.total.toLocaleString() + ' registros';
+
+      if (!d.filas.length) {
+        body.innerHTML = '<tr><td colspan="9" style="padding:2rem;text-align:center;color:#64748b;">Sin resultados con esos filtros.</td></tr>';
+      } else {
+        const _color = r => r.cumple ? '#34d399' : r.incumple ? '#f87171' : r.sin_mov ? '#fbbf24' : '#94a3b8';
+        body.innerHTML = d.filas.map(r => `
+          <tr style="border-bottom:1px solid #1e293b;cursor:default;"
+              onmouseover="this.style.background='#1e293b55'" onmouseout="this.style.background=''">
+            <td style="padding:.45rem .75rem;color:#f1f5f9;font-weight:700;white-space:nowrap;">${r.placa}</td>
+            <td style="padding:.45rem .75rem;color:#cbd5e1;">${r.tipo||'—'}</td>
+            <td style="padding:.45rem .75rem;color:#cbd5e1;">${r.sede||'—'}</td>
+            <td style="padding:.45rem .75rem;color:#cbd5e1;">${r.contrato||'—'}</td>
+            <td style="padding:.45rem .75rem;color:#94a3b8;white-space:nowrap;">${r.fecha||'—'}</td>
+            <td style="padding:.45rem .75rem;color:#94a3b8;text-align:right;font-variant-numeric:tabular-nums;">${r.movimiento}</td>
+            <td style="padding:.45rem .75rem;color:#cbd5e1;">${r.preop||'—'}</td>
+            <td style="padding:.45rem .75rem;white-space:nowrap;">
+              <span style="color:${_color(r)};font-weight:600;font-size:.74rem;">${r.estado}</span>
+            </td>
+            <td style="padding:.45rem .75rem;color:#64748b;">${r.mes||'—'}</td>
+          </tr>`).join('');
+      }
+
+      const pag = document.getElementById('tbl-paginacion');
+      if (d.pages <= 1) { pag.innerHTML = ''; return; }
+      let html = '';
+      const _btn = (p, label, active) =>
+        `<button onclick="cargarTabla(${p})" style="background:${active?'#0d9488':'#1e293b'};
+         border:1px solid ${active?'#2dd4bf':'#334155'};border-radius:6px;padding:.3rem .65rem;
+         color:${active?'#fff':'#94a3b8'};font-size:.78rem;cursor:pointer;">${label}</button>`;
+      if (_tblPage > 1) html += _btn(_tblPage-1, '‹ Anterior', false);
+      const start = Math.max(1, _tblPage-2), end = Math.min(d.pages, _tblPage+2);
+      for (let p = start; p <= end; p++) html += _btn(p, p, p === _tblPage);
+      if (_tblPage < d.pages) html += _btn(_tblPage+1, 'Siguiente ›', false);
+      html += `<span style="color:#64748b;font-size:.75rem;margin-left:.4rem;">Página ${_tblPage} de ${d.pages}</span>`;
+      pag.innerHTML = html;
+    })
+    .catch(() => {
+      body.innerHTML = '<tr><td colspan="9" style="color:#f87171;padding:1rem;">Error de conexión.</td></tr>';
+    });
+}
+
+function _llenarSelect(id, opciones, placeholder) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const val = sel.value;
+  sel.innerHTML = `<option value="">${placeholder}</option>` +
+    opciones.map(o => `<option value="${o}"${o===val?' selected':''}>${o}</option>`).join('');
 }
 </script>
 {% endblock %}

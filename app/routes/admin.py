@@ -2376,6 +2376,70 @@ def preoperacionales_subir():
     return jsonify(resultado), 200 if resultado["ok"] else 500
 
 
+@admin_bp.route("/preoperacionales/tabla")
+@admin_required
+def preoperacionales_tabla():
+    from app.services.preoperacionales_service import obtener_datos
+    registros, _ = obtener_datos()
+
+    sede     = request.args.get("sede", "").strip()
+    contrato = request.args.get("contrato", "").strip()
+    fecha    = request.args.get("fecha", "").strip()
+    tipo     = request.args.get("tipo", "").strip()
+    estado   = request.args.get("estado", "").strip()
+    busqueda = request.args.get("q", "").strip().lower()
+    page     = max(1, int(request.args.get("page", 1)))
+    per_page = 50
+
+    if sede:     registros = [r for r in registros if r["sede"] == sede]
+    if contrato: registros = [r for r in registros if r["contrato"] == contrato]
+    if fecha:    registros = [r for r in registros if r["fecha_str"] == fecha]
+    if tipo:     registros = [r for r in registros if r["tipo"] == tipo]
+    if estado:   registros = [r for r in registros if r["estado"] == estado]
+    if busqueda:
+        registros = [r for r in registros if busqueda in r["placa"].lower()
+                     or busqueda in r["contrato"].lower()
+                     or busqueda in r["sede"].lower()]
+
+    total = len(registros)
+    inicio = (page - 1) * per_page
+    pagina = registros[inicio:inicio + per_page]
+
+    filas = [{
+        "placa":     r["placa"],
+        "tipo":      r["tipo"],
+        "sede":      r["sede"],
+        "contrato":  r["contrato"],
+        "fecha":     r["fecha_str"],
+        "movimiento": str(r["movimiento"]) if r["movimiento"] is not None else "—",
+        "preop":     r["preop"],
+        "estado":    r["estado"],
+        "mes":       r["mes"],
+        "cumple":    r["cumple"],
+        "incumple":  r["incumple"],
+        "sin_mov":   r["sin_mov"],
+    } for r in pagina]
+
+    from app.services.preoperacionales_service import obtener_datos as _od
+    todos, _ = _od()
+    opciones = {
+        "sedes":     sorted({r["sede"]     for r in todos if r["sede"]}),
+        "contratos": sorted({r["contrato"] for r in todos if r["contrato"]}),
+        "fechas":    sorted({r["fecha_str"] for r in todos if r["fecha_str"]}),
+        "tipos":     sorted({r["tipo"]     for r in todos if r["tipo"]}),
+        "estados":   sorted({r["estado"]   for r in todos if r["estado"]}),
+    }
+
+    return jsonify({
+        "ok": True,
+        "filas": filas,
+        "total": total,
+        "page": page,
+        "pages": max(1, -(-total // per_page)),
+        "opciones": opciones,
+    })
+
+
 @admin_bp.route("/preoperacionales/guardar-config", methods=["POST"])
 @admin_required
 def preoperacionales_guardar_config():
