@@ -16,7 +16,7 @@ from flask_login import (
     current_user
 )
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 
 from app.extensions import db
