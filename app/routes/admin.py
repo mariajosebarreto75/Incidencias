@@ -2349,3 +2349,28 @@ def preoperacionales_sincronizar():
     from app.services.preoperacionales_service import sincronizar
     resultado = sincronizar()
     return jsonify(resultado), 200 if resultado["ok"] else 500
+
+
+@admin_bp.route("/preoperacionales/subir", methods=["POST"])
+@admin_required
+def preoperacionales_subir():
+    import os
+    archivo = request.files.get("archivo")
+    if not archivo:
+        return jsonify({"ok": False, "error": "No se recibió ningún archivo."}), 400
+
+    nombre = archivo.filename or ""
+    if not nombre.lower().endswith((".xlsx", ".xls")):
+        return jsonify({"ok": False, "error": "El archivo debe ser .xlsx o .xls."}), 400
+
+    # Guardar en la carpeta data montada en el contenedor
+    data_dir = os.path.join(current_app.root_path, "..", "data")
+    os.makedirs(data_dir, exist_ok=True)
+    ruta_destino = os.path.join(data_dir, "InformePreoperacional.xlsx")
+    archivo.save(ruta_destino)
+
+    # Sincronizar inmediatamente con el archivo recién subido
+    from app.services.preoperacionales_service import sincronizar
+    resultado = sincronizar()
+    resultado["mensaje"] = "Archivo subido y sincronizado correctamente."
+    return jsonify(resultado), 200 if resultado["ok"] else 500

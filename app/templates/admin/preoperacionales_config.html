@@ -152,10 +152,16 @@
         </div>
         {% endif %}
 
-        <div style="margin-top:1.25rem;">
+        <div style="margin-top:1.25rem;display:flex;gap:.75rem;flex-wrap:wrap;">
           <button class="btn-sync-admin" id="btnSync" onclick="sincronizar()">
             <i class="bi bi-arrow-repeat"></i> Sincronizar ahora
           </button>
+          <button class="btn-sync-admin" style="background:#0f172a;border:1.5px solid #334155;color:#94a3b8;"
+                  onclick="document.getElementById('inputArchivo').click()">
+            <i class="bi bi-upload"></i> Subir archivo Excel
+          </button>
+          <input type="file" id="inputArchivo" accept=".xlsx,.xls" style="display:none"
+                 onchange="subirArchivo(this)">
         </div>
       </div>
 
@@ -239,6 +245,39 @@
 </div>
 
 <script>
+function subirArchivo(input) {
+  const archivo = input.files[0];
+  if (!archivo) return;
+  const alerta = document.getElementById('alertaSync');
+  alerta.className = 'alert-pc';
+  alerta.textContent = '⏳ Subiendo archivo… espera un momento.';
+  alerta.style.display = 'block';
+
+  const form = new FormData();
+  form.append('archivo', archivo);
+
+  fetch('/admin/preoperacionales/subir', { method: 'POST', body: form })
+    .then(r => r.json())
+    .then(d => {
+      if (d.ok) {
+        alerta.className = 'alert-pc ok';
+        alerta.textContent = '✓ ' + (d.mensaje || 'Archivo subido correctamente') +
+                             ' — ' + (d.registros || 0) + ' registros cargados. Recarga para ver los datos.';
+      } else {
+        alerta.className = 'alert-pc err';
+        alerta.textContent = '✗ Error: ' + (d.error || 'Error desconocido');
+      }
+      alerta.style.display = 'block';
+      input.value = '';
+    })
+    .catch(e => {
+      alerta.className = 'alert-pc err';
+      alerta.textContent = '✗ Error de conexión: ' + e.message;
+      alerta.style.display = 'block';
+      input.value = '';
+    });
+}
+
 function sincronizar() {
   const btn = document.getElementById('btnSync');
   const alerta = document.getElementById('alertaSync');
