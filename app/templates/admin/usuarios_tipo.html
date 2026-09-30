@@ -255,6 +255,14 @@
                            onchange="togglePermiso(this)">
                     <span><i class="bi bi-search me-1" style="color:#a78bfa;"></i>Inspecciones BI</span>
                 </label>
+                <label class="nu-check-label" style="border-color:{% if 'preoperacionales' in perms %}#0d9488{% else %}#1e293b{% endif %};"
+                       title="Acceso al dashboard de Preoperacionales">
+                    <input type="checkbox" class="perm-ck"
+                           data-uid="{{ u.id }}" data-permiso="preoperacionales"
+                           {% if 'preoperacionales' in perms %}checked{% endif %}
+                           onchange="togglePermiso(this)">
+                    <span><i class="bi bi-clipboard-check me-1" style="color:#0d9488;"></i>Preoperacionales</span>
+                </label>
             </div>
         </div>
     </div>
@@ -429,7 +437,7 @@ async function togglePermiso(cb) {
     const valor   = cb.checked;
     const r = await apiFetch('/admin/api/usuarios/' + uid, 'PUT', { permiso, valor });
     if (r.success) {
-        const colores = { horas_extras: '#7c3aed', neo_reportes: '#0284c7', dashboard_gerencial: '#0d9488', semaforo: '#f59e0b', bi_seguimiento: '#f97316', bi_inspecciones: '#7c3aed' };
+        const colores = { horas_extras: '#7c3aed', neo_reportes: '#0284c7', dashboard_gerencial: '#0d9488', semaforo: '#f59e0b', bi_seguimiento: '#f97316', bi_inspecciones: '#7c3aed', preoperacionales: '#0d9488' };
         cb.parentElement.style.borderColor = valor ? (colores[permiso] || '#7c3aed') : '#1e293b';
         mostrarAlerta('alerta',
             valor ? '✓ Permiso «' + permiso + '» otorgado' : 'Permiso «' + permiso + '» removido',
