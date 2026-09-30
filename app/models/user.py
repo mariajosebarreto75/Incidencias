@@ -1,7 +1,10 @@
 import json
+from datetime import datetime, timedelta
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.extensions import db
+
+_MESES_VIGENCIA = 6
 
 
 class User(
@@ -68,6 +71,9 @@ class User(
     # True → el usuario debe cambiar contraseña antes de entrar al sistema
     must_change_password = db.Column(db.Boolean, default=True, nullable=False, server_default="true")
 
+    # Fecha del último cambio de contraseña (para expiración cada 6 meses)
+    password_changed_at = db.Column(db.DateTime, nullable=True)
+
     # ======================
     # PERMISOS
     # ======================
@@ -98,6 +104,12 @@ class User(
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         self.contrasena = password
+        self.password_changed_at = datetime.utcnow()
+
+    def password_expirada(self) -> bool:
+        if not self.password_changed_at:
+            return True
+        return datetime.utcnow() > self.password_changed_at + timedelta(days=_MESES_VIGENCIA * 30)
 
     def check_password(
         self,

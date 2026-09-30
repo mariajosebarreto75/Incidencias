@@ -67,6 +67,7 @@ _MIGRACIONES = [
     "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS meta_promedio NUMERIC(10,2)",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS contrasena VARCHAR(255)",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT TRUE",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP",
     # Admin nunca necesita cambio obligatorio
     "UPDATE users SET must_change_password = FALSE WHERE rol = 'admin'",
 ]

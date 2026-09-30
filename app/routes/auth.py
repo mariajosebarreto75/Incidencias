@@ -89,10 +89,14 @@ def login():
         session.pop("login_intentos", None)
         session.pop("login_usuario",  None)
 
-        # ── Cambio obligatorio pendiente (no aplica a admin) ─────────────────
-        if user.must_change_password and user.rol.lower() != "admin":
-            session[_SESSION_MCP] = user.id
-            return redirect(url_for("auth.cambio_obligatorio"))
+        # ── Cambio obligatorio o contraseña expirada (no aplica a admin) ──────
+        if user.rol.lower() != "admin":
+            if user.must_change_password or user.password_expirada():
+                user.must_change_password = True
+                from app.extensions import db as _db
+                _db.session.commit()
+                session[_SESSION_MCP] = user.id
+                return redirect(url_for("auth.cambio_obligatorio"))
 
         login_user(user)
         return _redirect_por_rol(user)
