@@ -1040,3 +1040,34 @@ def distribucion_importar_excel():
         return jsonify({"ok": False, "msg": str(e)}), 500
 
     return jsonify({"ok": True, "insertados": insertados, "errores": errores})
+
+
+# ============================================================
+# PREOPERACIONALES
+# ============================================================
+
+@coordinador.route("/coordinador/preoperacionales")
+@login_required
+def preoperacionales():
+    return render_template("coordinador/preoperacionales.html")
+
+
+@coordinador.route("/coordinador/preoperacionales/datos")
+@login_required
+def preoperacionales_datos():
+    from app.services.preoperacionales_service import datos_dashboard
+    filtros = {
+        "sede":     request.args.get("sede") or None,
+        "contrato": request.args.get("contrato") or None,
+        "fecha":    request.args.get("fecha") or None,
+        "tipo":     request.args.get("tipo") or None,
+    }
+    return jsonify(datos_dashboard(filtros))
+
+
+@coordinador.route("/coordinador/preoperacionales/sincronizar", methods=["POST"])
+@login_required
+def preoperacionales_sincronizar():
+    from app.services.preoperacionales_service import sincronizar
+    resultado = sincronizar()
+    return jsonify(resultado), 200 if resultado["ok"] else 500

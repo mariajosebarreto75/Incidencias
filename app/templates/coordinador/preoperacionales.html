@@ -1,0 +1,420 @@
+{% extends "coordinador/navbarcoor.html" %}
+{% block title %}Dashboard Preoperacionales{% endblock %}
+
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --ok:    #16a34a;
+  --warn:  #d97706;
+  --bad:   #dc2626;
+  --neu:   #64748b;
+  --bg:    #f1f5f9;
+  --card:  #ffffff;
+  --bdr:   #e2e8f0;
+  --txt:   #0f172a;
+  --sub:   #64748b;
+  --teal:  #0d9488;
+}
+
+.preop-wrap { padding: 1.25rem 1.5rem; background: var(--bg); min-height: 100vh; }
+
+/* Barra superior */
+.preop-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: .75rem; margin-bottom: 1.25rem;
+}
+.preop-title { font-size: 1.2rem; font-weight: 800; color: var(--txt); }
+.preop-meta  { font-size: .75rem; color: var(--sub); }
+
+/* Filtros */
+.filtros {
+  display: flex; flex-wrap: wrap; gap: .5rem;
+  background: var(--card); border: 1px solid var(--bdr);
+  border-radius: 10px; padding: .65rem .9rem;
+  margin-bottom: 1.25rem; align-items: center;
+}
+.filtros select {
+  padding: .35rem .6rem; border: 1.5px solid var(--bdr);
+  border-radius: 6px; font-size: .8rem; color: var(--txt);
+  background: #fff; outline: none; min-width: 160px;
+}
+.filtros select:focus { border-color: var(--teal); }
+.btn-aplicar {
+  padding: .38rem .9rem; background: var(--teal); color: #fff;
+  border: none; border-radius: 6px; font-size: .8rem;
+  font-weight: 600; cursor: pointer;
+}
+.btn-aplicar:hover { opacity: .88; }
+.btn-limpiar {
+  padding: .38rem .75rem; background: none;
+  border: 1.5px solid var(--bdr); border-radius: 6px;
+  font-size: .8rem; color: var(--sub); cursor: pointer;
+}
+.btn-limpiar:hover { border-color: var(--teal); color: var(--teal); }
+.btn-sync {
+  margin-left: auto; padding: .38rem .9rem;
+  background: none; border: 1.5px solid var(--bdr);
+  border-radius: 6px; font-size: .8rem; color: var(--sub); cursor: pointer;
+}
+.btn-sync:hover { border-color: var(--teal); color: var(--teal); }
+.btn-sync.loading { opacity: .5; pointer-events: none; }
+
+/* Alerta de error */
+.alert-preop {
+  background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+  border-radius: 8px; padding: .7rem 1rem; font-size: .83rem;
+  margin-bottom: 1rem; display: none;
+}
+
+/* KPI tiles */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: .75rem; margin-bottom: 1.25rem;
+}
+.kpi-card {
+  background: var(--card); border: 1px solid var(--bdr);
+  border-radius: 10px; padding: 1rem 1.1rem;
+  border-left: 4px solid var(--neu);
+}
+.kpi-card.ok   { border-left-color: var(--ok); }
+.kpi-card.warn { border-left-color: var(--warn); }
+.kpi-card.bad  { border-left-color: var(--bad); }
+.kpi-card.neu  { border-left-color: var(--neu); }
+.kpi-label { font-size: .72rem; color: var(--sub); text-transform: uppercase;
+             letter-spacing: .04em; margin-bottom: .3rem; }
+.kpi-value { font-size: 1.8rem; font-weight: 800; color: var(--txt);
+             font-variant-numeric: tabular-nums; line-height: 1; }
+.kpi-sub   { font-size: .75rem; color: var(--sub); margin-top: .2rem; }
+
+/* Gráficas */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem; margin-bottom: 1.25rem;
+}
+.chart-card {
+  background: var(--card); border: 1px solid var(--bdr);
+  border-radius: 10px; padding: 1rem 1.1rem;
+}
+.chart-card.wide { grid-column: span 2; }
+.chart-title {
+  font-size: .8rem; font-weight: 700; color: var(--txt);
+  margin-bottom: .75rem; text-transform: uppercase; letter-spacing: .04em;
+}
+.chart-wrap { position: relative; height: 220px; }
+
+/* Tabla top */
+.top-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.top-table th {
+  text-align: left; padding: .45rem .6rem;
+  border-bottom: 2px solid var(--bdr); color: var(--sub);
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
+}
+.top-table td { padding: .45rem .6rem; border-bottom: 1px solid var(--bdr); color: var(--txt); }
+.top-table tr:last-child td { border-bottom: none; }
+.badge-bad  { background: #fef2f2; color: var(--bad);  padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
+.badge-ok   { background: #f0fdf4; color: var(--ok);   padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
+.badge-warn { background: #fffbeb; color: var(--warn);  padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
+
+/* Spinner */
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--bdr);
+           border-top-color: var(--teal); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(255,255,255,.65);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 999; display: none;
+}
+
+@media (max-width: 768px) {
+  .charts-grid { grid-template-columns: 1fr; }
+  .chart-card.wide { grid-column: span 1; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="loading-overlay" id="overlay"><div class="spinner"></div></div>
+
+<div class="preop-wrap">
+
+  <!-- Cabecera -->
+  <div class="preop-header">
+    <div>
+      <div class="preop-title">📋 Dashboard Preoperacionales</div>
+      <div class="preop-meta" id="metaInfo">Cargando datos…</div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="alert-preop" id="alertaError"></div>
+
+  <!-- Filtros -->
+  <div class="filtros">
+    <select id="fSede"><option value="">Todas las sedes</option></select>
+    <select id="fContrato"><option value="">Todos los contratos</option></select>
+    <select id="fFecha"><option value="">Todas las fechas</option></select>
+    <select id="fTipo"><option value="">Todos los tipos</option></select>
+    <button class="btn-aplicar" onclick="cargar()">Aplicar</button>
+    <button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar</button>
+    <button class="btn-sync" id="btnSync" onclick="sincronizar()">
+      ↻ Actualizar datos
+    </button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi-card neu">
+      <div class="kpi-label">Total registros</div>
+      <div class="kpi-value" id="kTotal">—</div>
+    </div>
+    <div class="kpi-card ok">
+      <div class="kpi-label">Cumplimiento</div>
+      <div class="kpi-value" id="kPctCumple">—</div>
+      <div class="kpi-sub" id="kCumple">— confirmados</div>
+    </div>
+    <div class="kpi-card bad">
+      <div class="kpi-label">Incumplimiento</div>
+      <div class="kpi-value" id="kPctIncumple">—</div>
+      <div class="kpi-sub" id="kIncumple">— con movimiento sin preop.</div>
+    </div>
+    <div class="kpi-card warn">
+      <div class="kpi-label">Sin movimiento</div>
+      <div class="kpi-value" id="kSinMov">—</div>
+      <div class="kpi-sub">vehículos inactivos</div>
+    </div>
+    <div class="kpi-card neu">
+      <div class="kpi-label">Con movimiento</div>
+      <div class="kpi-value" id="kConMov">—</div>
+      <div class="kpi-sub">debían tener preop.</div>
+    </div>
+  </div>
+
+  <!-- Gráficas -->
+  <div class="charts-grid">
+
+    <div class="chart-card wide">
+      <div class="chart-title">Cumplimiento diario</div>
+      <div class="chart-wrap"><canvas id="chartSerie"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Distribución por estado</div>
+      <div class="chart-wrap"><canvas id="chartEstados"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title">Cumplimiento por sede</div>
+      <div class="chart-wrap"><canvas id="chartSedes"></canvas></div>
+    </div>
+
+    <div class="chart-card wide">
+      <div class="chart-title">Top 10 contratos con incumplimiento</div>
+      <table class="top-table" id="tablaTop">
+        <thead><tr><th>#</th><th>Contrato</th><th>Incumplimientos</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div><!-- /preop-wrap -->
+
+<script>
+let _charts = {};
+
+function _destruir(id) {
+  if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+}
+
+function mostrarError(msg) {
+  const el = document.getElementById('alertaError');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+}
+function ocultarError() {
+  document.getElementById('alertaError').style.display = 'none';
+}
+
+function cargar() {
+  const params = new URLSearchParams();
+  const sede     = document.getElementById('fSede').value;
+  const contrato = document.getElementById('fContrato').value;
+  const fecha    = document.getElementById('fFecha').value;
+  const tipo     = document.getElementById('fTipo').value;
+  if (sede)     params.set('sede', sede);
+  if (contrato) params.set('contrato', contrato);
+  if (fecha)    params.set('fecha', fecha);
+  if (tipo)     params.set('tipo', tipo);
+
+  document.getElementById('overlay').style.display = 'flex';
+  ocultarError();
+
+  fetch('/coordinador/preoperacionales/datos?' + params.toString())
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById('overlay').style.display = 'none';
+      if (data.meta && !data.meta.ok) {
+        mostrarError(data.meta.error || 'Error al cargar datos');
+        return;
+      }
+      renderizar(data);
+    })
+    .catch(e => {
+      document.getElementById('overlay').style.display = 'none';
+      mostrarError('Error de conexión: ' + e.message);
+    });
+}
+
+function limpiarFiltros() {
+  ['fSede','fContrato','fFecha','fTipo'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  cargar();
+}
+
+function sincronizar() {
+  const btn = document.getElementById('btnSync');
+  btn.classList.add('loading');
+  btn.textContent = '↻ Actualizando…';
+  fetch('/coordinador/preoperacionales/sincronizar', { method: 'POST' })
+    .then(r => r.json())
+    .then(d => {
+      btn.classList.remove('loading');
+      btn.textContent = '↻ Actualizar datos';
+      if (d.ok) cargar();
+      else mostrarError(d.error || 'Error al sincronizar');
+    })
+    .catch(() => {
+      btn.classList.remove('loading');
+      btn.textContent = '↻ Actualizar datos';
+    });
+}
+
+function poblarSelect(id, opciones, actual) {
+  const sel = document.getElementById(id);
+  const first = sel.options[0];
+  sel.innerHTML = '';
+  sel.appendChild(first);
+  opciones.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o; opt.textContent = o;
+    if (o === actual) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function renderizar(data) {
+  const k = data.kpis;
+  const fa = data.filtros_activos || {};
+
+  // KPIs
+  document.getElementById('kTotal').textContent    = k.total.toLocaleString();
+  document.getElementById('kPctCumple').textContent   = k.pct_cumplimiento + '%';
+  document.getElementById('kCumple').textContent   = k.cumple.toLocaleString() + ' confirmados';
+  document.getElementById('kPctIncumple').textContent = k.pct_incumplimiento + '%';
+  document.getElementById('kIncumple').textContent = k.incumple.toLocaleString() + ' con mov. sin preop.';
+  document.getElementById('kSinMov').textContent   = k.sin_mov.toLocaleString();
+  document.getElementById('kConMov').textContent   = (k.con_movimiento || 0).toLocaleString();
+
+  // Meta
+  if (data.meta && data.meta.actualizado) {
+    const d = new Date(data.meta.actualizado + 'Z');
+    document.getElementById('metaInfo').textContent =
+      `Última actualización: ${d.toLocaleDateString('es-CO')} ${d.toLocaleTimeString('es-CO')}` +
+      ` · ${k.total.toLocaleString()} registros`;
+  }
+
+  // Filtros
+  const op = data.opciones || {};
+  poblarSelect('fSede',     op.sedes     || [], fa.sede);
+  poblarSelect('fContrato', op.contratos || [], fa.contrato);
+  poblarSelect('fFecha',    op.fechas    || [], fa.fecha);
+  poblarSelect('fTipo',     op.tipos     || [], fa.tipo);
+
+  // Serie temporal
+  _destruir('chartSerie');
+  const serie = data.serie_temporal || [];
+  _charts['chartSerie'] = new Chart(document.getElementById('chartSerie'), {
+    type: 'bar',
+    data: {
+      labels: serie.map(s => s.fecha),
+      datasets: [
+        { label: 'Confirmados', data: serie.map(s => s.cumple),
+          backgroundColor: '#16a34a', stack: 'a' },
+        { label: 'Incumplimiento', data: serie.map(s => s.incumple),
+          backgroundColor: '#dc2626', stack: 'a' },
+        { label: 'Otros', data: serie.map(s => s.total - s.cumple - s.incumple),
+          backgroundColor: '#cbd5e1', stack: 'a' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Estados (dona)
+  _destruir('chartEstados');
+  const estados = data.estados || [];
+  const coloresEstados = ['#16a34a','#4ade80','#f59e0b','#fbbf24','#94a3b8','#dc2626','#fb923c'];
+  _charts['chartEstados'] = new Chart(document.getElementById('chartEstados'), {
+    type: 'doughnut',
+    data: {
+      labels: estados.map(e => e.estado.replace(/^\d+\.\s*/, '')),
+      datasets: [{ data: estados.map(e => e.total),
+                   backgroundColor: coloresEstados,
+                   borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Cumplimiento por sede (barra horizontal)
+  _destruir('chartSedes');
+  const sedes = (data.sedes || []).sort((a, b) => b.pct - a.pct);
+  _charts['chartSedes'] = new Chart(document.getElementById('chartSedes'), {
+    type: 'bar',
+    data: {
+      labels: sedes.map(s => s.sede),
+      datasets: [{ label: '% Cumplimiento', data: sedes.map(s => s.pct),
+                   backgroundColor: sedes.map(s => s.pct >= 80 ? '#16a34a' : s.pct >= 60 ? '#f59e0b' : '#dc2626'),
+                   borderRadius: 4 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, callback: v => v + '%' } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Tabla top incumplimiento
+  const tbody = document.querySelector('#tablaTop tbody');
+  tbody.innerHTML = '';
+  (data.top_incumplimiento || []).forEach((row, i) => {
+    tbody.innerHTML += `<tr>
+      <td>${i + 1}</td>
+      <td>${row.contrato}</td>
+      <td><span class="badge-bad">${row.incumple}</span></td>
+    </tr>`;
+  });
+}
+
+// Carga inicial
+cargar();
+</script>
+{% endblock %}

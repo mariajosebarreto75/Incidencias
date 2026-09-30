@@ -40,3 +40,7 @@ class Config:
     # URL pública de la app (para links en WhatsApp)
     APP_URL = os.getenv("APP_URL", "http://localhost:5000")
 
+    # Preoperacionales — Excel en SharePoint
+    PREOP_SHAREPOINT_URL    = os.getenv("PREOP_SHAREPOINT_URL", "")
+    PREOP_REFRESH_MINUTES   = int(os.getenv("PREOP_REFRESH_MINUTES", "30"))
+

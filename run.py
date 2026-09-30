@@ -232,6 +232,16 @@ def create_app():
                 from app.services.escalamiento_service import verificar_timeouts
                 verificar_timeouts()
 
+        # Preoperacionales — sincronización periódica desde SharePoint
+        _preop_minutes = app.config.get("PREOP_REFRESH_MINUTES", 30)
+
+        @scheduler.task("interval", id="sync_preoperacionales",
+                        minutes=_preop_minutes, misfire_grace_time=120)
+        def job_sync_preoperacionales():
+            with app.app_context():
+                from app.services.preoperacionales_service import sincronizar
+                sincronizar()
+
         # Purga mensual: el día 1 de cada mes elimina alertas del mes anterior
         @scheduler.task("cron", id="purga_alertas_mes_anterior", day=1, hour=2, minute=0)
         def job_purga_alertas():
@@ -259,6 +269,14 @@ def create_app():
                     print(f"[Plan GPS] Sync inicial: {resultado}")
             except Exception as e:
                 print(f"[Plan GPS] Sync inicial falló: {e}")
+
+            try:
+                with app.app_context():
+                    from app.services.preoperacionales_service import sincronizar
+                    res = sincronizar()
+                    print(f"[Preop] Sync inicial: {res}")
+            except Exception as e:
+                print(f"[Preop] Sync inicial falló: {e}")
 
     # Blueprints
     app.register_blueprint(auth)
