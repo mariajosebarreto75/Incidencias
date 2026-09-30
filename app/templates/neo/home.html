@@ -152,6 +152,25 @@
         </a>
         {% endif %}
 
+        <!-- PREOPERACIONALES -->
+        {% if current_user.tiene_permiso('preoperacionales') %}
+        <a href="{{ url_for('coordinador.preoperacionales') }}" class="neo-card" style="border-left:4px solid #0d9488;">
+            <div class="neo-card-icon" style="background:#ccfbf1;color:#0d9488;">
+                <i class="bi bi-clipboard-check"></i>
+            </div>
+            <div class="neo-card-body">
+                <h2 class="neo-card-title">Preoperacionales</h2>
+                <p class="neo-card-desc">
+                    Dashboard de cumplimiento, estados de vehículos y detalle de placas.
+                </p>
+                <span class="neo-card-cta" style="color:#0d9488;">
+                    Ver dashboard →
+                </span>
+            </div>
+            <div class="neo-card-arrow"><i class="bi bi-chevron-right"></i></div>
+        </a>
+        {% endif %}
+
         <!-- GPS MONITOR -->
         <a href="http://143.20.129.195/Auth/Login" target="_blank" class="neo-card neo-card-gps">
 
