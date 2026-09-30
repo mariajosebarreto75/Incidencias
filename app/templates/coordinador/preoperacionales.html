@@ -369,6 +369,13 @@
 <script>
 let _charts = {};
 let _pPlacas = 1, _pGps = 1;
+
+function _fmtFecha(iso) {
+  if (!iso) return '—';
+  const p = iso.split('-');
+  if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+  return iso;
+}
 let _estadosDisponibles = [];
 let _filtrosGlobales = {};
 
@@ -450,7 +457,9 @@ function poblarSelect(id, opciones, actual) {
   sel.appendChild(first);
   opciones.forEach(o => {
     const opt = document.createElement('option');
-    opt.value = o; opt.textContent = o;
+    opt.value = o;
+    // Fechas ISO → mostrar dd/mm/yyyy, el value sigue siendo ISO para el backend
+    opt.textContent = (id === 'fFecha') ? _fmtFecha(o) : o;
     if (o === actual) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -500,7 +509,7 @@ function renderizar(data) {
   _charts['chartSerie'] = new Chart(document.getElementById('chartSerie'), {
     type: 'bar',
     data: {
-      labels: serie.map(s => s.fecha),
+      labels: serie.map(s => _fmtFecha(s.fecha)),
       datasets: [
         { label: 'Confirmados', data: serie.map(s => s.cumple),
           backgroundColor: '#16a34a', stack: 'a' },
@@ -618,7 +627,7 @@ function cargarPlacas(page) {
         tbody.innerHTML += `<tr>
           <td><strong>${r.placa}</strong></td>
           <td>${r.tipo}</td><td>${r.sede}</td><td>${r.contrato}</td>
-          <td>${r.fecha}</td><td>${r.preop || '—'}</td>
+          <td>${_fmtFecha(r.fecha)}</td><td>${r.preop || '—'}</td>
           <td>${_estadoBadge(r.estado)}</td>
         </tr>`;
       });
@@ -674,7 +683,7 @@ function cargarGps(page) {
         tbody.innerHTML += `<tr>
           <td><strong>${r.placa}</strong></td>
           <td>${r.tipo}</td><td>${r.sede}</td><td>${r.contrato}</td>
-          <td>${r.fecha}</td><td>${r.preop || '—'}</td>
+          <td>${_fmtFecha(r.fecha)}</td><td>${r.preop || '—'}</td>
           <td>${_estadoBadge(r.estado)}</td>
         </tr>`;
       });
