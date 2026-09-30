@@ -2,12 +2,11 @@ import re
 
 from flask import (
     Blueprint, render_template, request,
-    redirect, url_for, flash, session, jsonify
+    redirect, url_for, flash, session
 )
-from flask_login import login_user, logout_user, login_required, current_user
+from flask_login import login_user, logout_user, login_required
 
 from app.models.user import User
-from app.models.pwd_change_code import PwdChangeCode
 from app.extensions import db
 
 
@@ -201,11 +200,3 @@ def logout():
     return redirect(url_for("auth.login"))
 
 
-# ── Util ───────────────────────────────────────────────────────────────────────
-
-def _ocultar_correo(email: str) -> str:
-    if "@" not in email:
-        return "correo registrado"
-    local, domain = email.split("@", 1)
-    visible = local[:2] if len(local) >= 2 else local[0]
-    return f"{visible}{'*' * (len(local) - len(visible))}@{domain}"

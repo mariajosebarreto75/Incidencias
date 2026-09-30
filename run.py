@@ -27,8 +27,6 @@ from app.models.he_config import HeConfig
 from app.models.semaforo import SemaforoCalificacion
 from app.models.compromiso import Compromiso, HistorialReprogramacion
 from app.models.escalamiento import EscalamientoIncidencia
-from app.models.pwd_change_code import PwdChangeCode
-
 from app.routes.auth import auth
 from app.routes.dashboard import dashboard
 from app.routes.coordinador import coordinador

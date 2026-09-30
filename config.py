@@ -40,9 +40,3 @@ class Config:
     # URL pública de la app (para links en WhatsApp)
     APP_URL = os.getenv("APP_URL", "http://localhost:5000")
 
-    # SMTP — envío de correos (código de verificación de cambio de contraseña)
-    SMTP_HOST     = os.getenv("SMTP_HOST", "")
-    SMTP_PORT     = os.getenv("SMTP_PORT", "587")
-    SMTP_USER     = os.getenv("SMTP_USER", "")
-    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-    SMTP_FROM     = os.getenv("SMTP_FROM", "")
