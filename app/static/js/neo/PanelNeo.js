@@ -732,6 +732,16 @@ function _calcularMetaSede() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    // Limpiar horas al cargar para evitar autocompletado del navegador
+    ["hora_inicio", "hora_fin"].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.value = "";
+    });
+    const chip = document.getElementById("duracion_display");
+    if (chip) chip.textContent = "—";
+    const hidDur = document.getElementById("duracion");
+    if (hidDur) hidDur.value = "";
+
     const selTipo    = document.getElementById("tipo_incidencia");
     const selRecurso = document.getElementById("recurso");
     if (selTipo)    selTipo.addEventListener("change",    _actualizarFilaSede);
