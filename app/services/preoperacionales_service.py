@@ -36,9 +36,53 @@ _ESTADOS_OK = {
 _ESTADO_SIN_MOVIMIENTO = "5. Vehículo sin movimiento"
 _ESTADO_INCUMPLIMIENTO = "6. Vehículo con movimiento sin preoperacional"
 
-# ── Cache en memoria ──────────────────────────────────────────────────────────
+# ── Cache en memoria + persistencia en disco ──────────────────────────────────
 _cache: dict = {}
 _cache_lock = Lock()
+
+_DATA_DIR  = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+_CACHE_FILE = os.path.join(_DATA_DIR, "preop_cache.json")
+
+
+def _guardar_cache_disco(registros: list[dict], meta: dict):
+    """Serializa el cache a disco para que todos los workers puedan leerlo."""
+    try:
+        os.makedirs(_DATA_DIR, exist_ok=True)
+        payload = {
+            "meta": meta,
+            "datos": [
+                {**r, "fecha": r["fecha"].isoformat() if r.get("fecha") else None}
+                for r in registros
+            ],
+        }
+        tmp = _CACHE_FILE + ".tmp"
+        import json as _json
+        with open(tmp, "w", encoding="utf-8") as f:
+            _json.dump(payload, f, ensure_ascii=False)
+        os.replace(tmp, _CACHE_FILE)
+    except Exception as e:
+        log.warning("[Preop] No se pudo guardar cache en disco: %s", e)
+
+
+def _cargar_cache_disco() -> tuple[list[dict], Optional[dict]]:
+    """Carga el cache desde disco si existe."""
+    try:
+        import json as _json
+        from datetime import date as _date
+        with open(_CACHE_FILE, encoding="utf-8") as f:
+            payload = _json.load(f)
+        registros = []
+        for r in payload.get("datos", []):
+            fecha_str = r.get("fecha") or ""
+            try:
+                fecha = _date.fromisoformat(fecha_str) if fecha_str else None
+            except Exception:
+                fecha = None
+            r["fecha"] = fecha
+            registros.append(r)
+        return registros, payload.get("meta")
+    except Exception:
+        return [], None
 
 
 def _url() -> str:
@@ -175,6 +219,7 @@ def sincronizar() -> dict:
         with _cache_lock:
             _cache["datos"] = registros
             _cache["meta"]  = resultado
+        _guardar_cache_disco(registros, resultado)
         log.info("[Preop] Sincronización OK: %d registros.", len(registros))
         return resultado
     except Exception as e:
@@ -192,8 +237,13 @@ def sincronizar() -> dict:
 
 
 def obtener_datos() -> tuple[list[dict], Optional[dict]]:
-    """Devuelve (registros, meta). Si el cache está vacío retorna listas vacías."""
+    """Devuelve (registros, meta). Lee de disco si el cache en memoria está vacío."""
     with _cache_lock:
+        if not _cache.get("datos"):
+            datos_disco, meta_disco = _cargar_cache_disco()
+            if datos_disco:
+                _cache["datos"] = datos_disco
+                _cache["meta"]  = meta_disco
         return _cache.get("datos", []), _cache.get("meta")
 
 
