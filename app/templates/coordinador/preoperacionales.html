@@ -1,4 +1,4 @@
-{% extends "coordinador/navbarcoor.html" %}
+{% extends "neo/navbNeo.html" if current_user.rol.lower() == "neo" else "coordinador/navbarcoor.html" %}
 {% block title %}Dashboard Preoperacionales{% endblock %}
 
 {% block head %}
