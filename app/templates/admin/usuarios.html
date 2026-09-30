@@ -213,9 +213,8 @@
             <i class="bi bi-shield-lock" style="color:#7c3aed;font-size:.85rem;"></i>
             <span style="font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:#475569;">Contraseña:</span>
             <span id="pwd-mask-{{ u.id }}" style="font-family:monospace;color:#94a3b8;font-size:.82rem;letter-spacing:.1em;">••••••••</span>
-            <span id="pwd-txt-{{ u.id }}"  style="font-family:monospace;font-size:.82rem;display:none;
-                {% if u.password_hash.startswith('pbkdf2:') or u.password_hash.startswith('scrypt:') %}color:#f59e0b;font-style:italic;{% else %}color:#c084fc;{% endif %}">
-                {% if u.password_hash.startswith('pbkdf2:') or u.password_hash.startswith('scrypt:') %}(contraseña hasheada — usar "Cambiar pwd"){% else %}{{ u.password_hash }}{% endif %}
+            <span id="pwd-txt-{{ u.id }}"  style="font-family:monospace;font-size:.85rem;display:none;color:#c084fc;font-weight:600;">
+                {{ u.contrasena or '(desconocida — use Cambiar pwd)' }}
             </span>
             <button onclick="togglePwdVer({{ u.id }})" id="btn-ver-pwd-{{ u.id }}"
                 style="margin-left:auto;background:none;border:none;cursor:pointer;color:#475569;font-size:.78rem;padding:2px 6px;border-radius:4px;transition:color .15s;"

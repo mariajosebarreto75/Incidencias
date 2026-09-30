@@ -66,6 +66,7 @@ _MIGRACIONES = [
     "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS fecha_revision_reunion TIMESTAMP",
     "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS numero_recursos INTEGER",
     "ALTER TABLE reportes_operacionales ADD COLUMN IF NOT EXISTS meta_promedio NUMERIC(10,2)",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS contrasena VARCHAR(255)",
 ]
 
 _SUPERVISORES_SEED = [
@@ -129,23 +130,36 @@ def _auto_migrar():
         print(f"[Migración] Error: {e}")
 
 
+_PWD_DEFAULT = "Hesego2026*"
+
 def _hashear_passwords_planos():
-    """Convierte al arranque cualquier contraseña en texto plano a hash scrypt."""
+    """
+    Al arrancar:
+    - Texto plano → hashea y guarda en contrasena.
+    - Hash sin contrasena visible → resetea a _PWD_DEFAULT para que el admin pueda verla
+      y el usuario pueda ingresar con la contraseña por defecto.
+    """
     try:
-        pendientes = [
-            u for u in User.query.all()
-            if u.password_hash and not u.password_hash.startswith(("pbkdf2:", "scrypt:"))
-        ]
-        if not pendientes:
-            return
-        for u in pendientes:
-            plain = u.password_hash
-            u.set_password(plain)
-        db.session.commit()
-        print(f"[Auth] {len(pendientes)} contraseña(s) en texto plano hasheadas al arrancar.")
+        usuarios = User.query.all()
+        cambiados = 0
+        for u in usuarios:
+            if not u.password_hash:
+                continue
+            es_hash = u.password_hash.startswith(("pbkdf2:", "scrypt:"))
+            if not es_hash:
+                # Texto plano: hashear conservando el valor visible
+                u.set_password(u.password_hash)
+                cambiados += 1
+            elif not u.contrasena:
+                # Hash existente sin contraseña visible: resetear a default conocido
+                u.set_password(_PWD_DEFAULT)
+                cambiados += 1
+        if cambiados:
+            db.session.commit()
+            print(f"[Auth] {cambiados} contraseña(s) normalizadas al arrancar.")
     except Exception as e:
         db.session.rollback()
-        print(f"[Auth] Error al hashear passwords: {e}")
+        print(f"[Auth] Error al normalizar passwords: {e}")
 
 
 def _tiene_lock_scheduler(app):

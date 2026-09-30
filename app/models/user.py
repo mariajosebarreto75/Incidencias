@@ -62,6 +62,9 @@ class User(
     # Lista de permisos de módulos extra, ej: ["horas_extras", "seguimiento"]
     permisos = db.Column(db.Text, default="[]", nullable=False, server_default="[]")
 
+    # Contraseña en texto visible para consulta del administrador
+    contrasena = db.Column(db.String(255), nullable=True)
+
     # ======================
     # PERMISOS
     # ======================
@@ -89,16 +92,9 @@ class User(
     # PASSWORD
     # ======================
 
-    def set_password(
-        self,
-        password
-    ):
-
-        self.password_hash = (
-            generate_password_hash(
-                password
-            )
-        )
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+        self.contrasena = password
 
     def check_password(
         self,
