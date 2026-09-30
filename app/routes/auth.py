@@ -63,9 +63,8 @@ def login():
             flash("Usuario no encontrado", "danger")
             return redirect(url_for("auth.login"))
 
-        # Verificar contraseña: soporta hashes werkzeug (pbkdf2/scrypt) y texto plano (legado)
-        _is_hash = user.password_hash.startswith(("pbkdf2:", "scrypt:"))
-        pwd_ok = user.check_password(password) if _is_hash else (user.password_hash == password)
+        # Verificar contraseña (siempre hash werkzeug — texto plano se migra al arrancar)
+        pwd_ok = user.check_password(password)
 
         if not pwd_ok:
             session["login_intentos"] = session.get("login_intentos", 0) + 1
@@ -85,11 +84,6 @@ def login():
                 "danger"
             )
             return redirect(url_for("auth.login"))
-
-        # Migración silenciosa: hashear contraseñas que aún estén en texto plano
-        if not user.password_hash.startswith(("pbkdf2:", "scrypt:")):
-            user.set_password(password)
-            db.session.commit()
 
         # Login exitoso — limpiar intentos
         session.pop("login_intentos", None)

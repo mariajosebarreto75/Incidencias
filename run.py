@@ -129,6 +129,25 @@ def _auto_migrar():
         print(f"[Migración] Error: {e}")
 
 
+def _hashear_passwords_planos():
+    """Convierte al arranque cualquier contraseña en texto plano a hash scrypt."""
+    try:
+        pendientes = [
+            u for u in User.query.all()
+            if u.password_hash and not u.password_hash.startswith(("pbkdf2:", "scrypt:"))
+        ]
+        if not pendientes:
+            return
+        for u in pendientes:
+            plain = u.password_hash
+            u.set_password(plain)
+        db.session.commit()
+        print(f"[Auth] {len(pendientes)} contraseña(s) en texto plano hasheadas al arrancar.")
+    except Exception as e:
+        db.session.rollback()
+        print(f"[Auth] Error al hashear passwords: {e}")
+
+
 def _tiene_lock_scheduler(app):
     global _scheduler_lock_conn
     try:
@@ -168,6 +187,7 @@ def create_app():
         db.create_all()
         _auto_migrar()
         _seed_supervisores()
+        _hashear_passwords_planos()
 
     # Scheduler — sincroniza alertas GPS cada 5 minutos
     import os
