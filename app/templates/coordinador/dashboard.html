@@ -257,6 +257,26 @@
         </div>
         {% endif %}
 
+        <!-- PREOPERACIONALES -->
+        {% if current_user.tiene_permiso('preoperacionales') %}
+        <div class="col-sm-6 col-lg-4">
+            <a href="{{ url_for('coordinador.preoperacionales') }}" class="text-decoration-none">
+                <div class="dash-card dash-card--sm">
+                    <div class="dash-card-icon dash-card-icon--sm" style="background:linear-gradient(135deg,#ccfbf1,#99f6e4);color:#0d9488;">
+                        <i class="bi bi-clipboard-check"></i>
+                    </div>
+                    <h4 class="dash-card-title">Preoperacionales</h4>
+                    <p class="dash-card-desc">
+                        Dashboard de cumplimiento, estados de vehículos y detalle de placas.
+                    </p>
+                    <span class="dash-card-btn" style="background:#0d9488;">
+                        <i class="bi bi-arrow-right-circle me-1"></i>Ver dashboard
+                    </span>
+                </div>
+            </a>
+        </div>
+        {% endif %}
+
         <!-- AGENDA DE COMPROMISOS -->
         {% if current_user.rol.lower() != 'supervisor' %}
         <div class="col-sm-6 col-lg-4">
