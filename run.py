@@ -256,6 +256,16 @@ def create_app():
                 from app.services.preoperacionales_service import sincronizar
                 sincronizar()
 
+        # Sincronización inicial al arrancar (no esperar el primer intervalo)
+        import threading as _threading
+        def _sync_inicial():
+            import time as _time
+            _time.sleep(5)  # esperar que la app termine de arrancar
+            with app.app_context():
+                from app.services.preoperacionales_service import sincronizar
+                sincronizar()
+        _threading.Thread(target=_sync_inicial, daemon=True).start()
+
         # Purga mensual: el día 1 de cada mes elimina alertas del mes anterior
         @scheduler.task("cron", id="purga_alertas_mes_anterior", day=1, hour=2, minute=0)
         def job_purga_alertas():

@@ -343,7 +343,9 @@ function sincronizar() {
       btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sincronizar ahora';
       if (d.ok) {
         alerta.className = 'alert-pc ok';
-        alerta.textContent = '✓ Sincronización exitosa — ' + d.registros + ' registros cargados. Recarga la página para ver los datos actualizados.';
+        alerta.textContent = '✓ Sincronización exitosa — ' + d.registros + ' registros cargados. Recargando…';
+        alerta.style.display = 'block';
+        setTimeout(() => location.reload(), 1200);
       } else {
         alerta.className = 'alert-pc err';
         alerta.textContent = '✗ Error: ' + (d.error || 'Error desconocido');
