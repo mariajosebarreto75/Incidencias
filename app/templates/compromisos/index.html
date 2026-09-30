@@ -1342,6 +1342,38 @@ mark.hl {
 
 <script>
 // ══════════════════════════════════════════════════
+//  PERSISTENCIA DE FILTROS URL
+//  Guarda la URL completa (con params de filtro GET)
+//  y la restaura al volver desde acciones (crear,
+//  editar, evidencia…) que redirigen sin parámetros.
+// ══════════════════════════════════════════════════
+(function () {
+    const _KEY = 'cmp_filter_url';
+    if (window.location.search) {
+        // Hay parámetros → guardar URL para restaurar después
+        sessionStorage.setItem(_KEY, window.location.href);
+    } else {
+        // Sin parámetros → restaurar si hay filtros guardados
+        const _guardada = sessionStorage.getItem(_KEY);
+        if (_guardada) {
+            try {
+                const _u = new URL(_guardada);
+                if (_u.search) { window.location.replace(_guardada); return; }
+            } catch (_e) {}
+        }
+    }
+    // Al limpiar filtros explícitamente (enlace sin params a la misma ruta), borrar URL guardada
+    document.querySelectorAll('a.btn-ghost[href]').forEach(function (a) {
+        try {
+            const _u = new URL(a.href);
+            if (_u.pathname === window.location.pathname && !_u.search) {
+                a.addEventListener('click', function () { sessionStorage.removeItem(_KEY); });
+            }
+        } catch (_e) {}
+    });
+})();
+
+// ══════════════════════════════════════════════════
 //  FILTROS TOGGLE (persistido en localStorage)
 // ══════════════════════════════════════════════════
 const filterBody    = document.getElementById('filterBody');
