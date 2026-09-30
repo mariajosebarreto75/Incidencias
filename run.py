@@ -194,6 +194,20 @@ def create_app():
 
     app.config.from_object(Config)
 
+    # Cargar overrides de configuración guardados desde el admin
+    import json as _json, os as _os
+    _cfg_override = _os.path.join(_os.path.dirname(__file__), "data", "preop_config.json")
+    if _os.path.exists(_cfg_override):
+        try:
+            with open(_cfg_override, encoding="utf-8") as _f:
+                _ov = _json.load(_f)
+            if _ov.get("PREOP_SHAREPOINT_URL") is not None:
+                app.config["PREOP_SHAREPOINT_URL"] = _ov["PREOP_SHAREPOINT_URL"]
+            if _ov.get("PREOP_REFRESH_MINUTES") is not None:
+                app.config["PREOP_REFRESH_MINUTES"] = int(_ov["PREOP_REFRESH_MINUTES"])
+        except Exception as _e:
+            print(f"[Config] No se pudo leer preop_config.json: {_e}")
+
     # Extensiones
     db.init_app(app)
     migrate.init_app(app, db)

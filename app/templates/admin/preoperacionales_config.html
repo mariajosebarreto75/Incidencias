@@ -165,30 +165,43 @@
         </div>
       </div>
 
-      <!-- Configuración -->
+      <!-- Configuración editable -->
       <div class="pc-card">
-        <div class="pc-card-title">Configuración (.env)</div>
+        <div class="pc-card-title">Configuración</div>
 
         {% set url_cfg = config.get('PREOP_SHAREPOINT_URL', '') %}
         {% set min_cfg = config.get('PREOP_REFRESH_MINUTES', 30) %}
 
+        <div class="alert-pc" id="alertaCfg"></div>
+
         <div style="margin-bottom:.9rem;">
-          <div class="cfg-label">PREOP_SHAREPOINT_URL</div>
-          {% if url_cfg %}
-            <div class="cfg-val">{{ url_cfg[:80] }}{% if url_cfg|length > 80 %}…{% endif %}</div>
-          {% else %}
-            <div class="cfg-val empty">⚠ No configurada — agrega PREOP_SHAREPOINT_URL al .env del servidor</div>
-          {% endif %}
+          <div class="cfg-label">Ruta del archivo Excel</div>
+          <div style="font-size:.75rem;color:#64748b;margin-bottom:.4rem;">
+            Ruta local en el servidor (p. ej. <code>/app/data/InformePreoperacional.xlsx</code>)
+            o URL HTTP.
+          </div>
+          <input id="cfgUrl" type="text" value="{{ url_cfg }}"
+                 placeholder="/app/data/InformePreoperacional.xlsx"
+                 style="width:100%;background:#1e293b;border:1px solid #334155;border-radius:6px;
+                        padding:.45rem .75rem;color:#f1f5f9;font-size:.84rem;font-family:'Courier New',monospace;
+                        box-sizing:border-box;">
         </div>
 
-        <div>
-          <div class="cfg-label">PREOP_REFRESH_MINUTES</div>
-          <div class="cfg-val">Cada {{ min_cfg }} minutos</div>
+        <div style="margin-bottom:1rem;">
+          <div class="cfg-label">Intervalo de actualización automática (minutos)</div>
+          <input id="cfgMin" type="number" min="1" value="{{ min_cfg }}"
+                 style="width:120px;background:#1e293b;border:1px solid #334155;border-radius:6px;
+                        padding:.45rem .75rem;color:#f1f5f9;font-size:.84rem;box-sizing:border-box;">
         </div>
 
-        <div class="estado-det" style="margin-top:1rem;">
-          Para cambiar la URL o el intervalo, edita el archivo <code>.env</code> en el servidor
-          y reinicia con <code>docker compose up --build -d</code>.
+        <button class="btn-sync-admin" id="btnGuardarCfg" onclick="guardarConfig()"
+                style="background:#1d4ed8;">
+          <i class="bi bi-floppy"></i> Guardar configuración
+        </button>
+
+        <div class="estado-det" style="margin-top:.9rem;">
+          Los cambios se aplican de inmediato y se mantienen tras reinicios del contenedor.
+          Si cambias la ruta, presiona <strong>Sincronizar ahora</strong> para cargar el nuevo archivo.
         </div>
       </div>
 
@@ -276,6 +289,38 @@ function subirArchivo(input) {
       alerta.style.display = 'block';
       input.value = '';
     });
+}
+
+function guardarConfig() {
+  const btn = document.getElementById('btnGuardarCfg');
+  const alerta = document.getElementById('alertaCfg');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando…';
+  alerta.style.display = 'none';
+
+  fetch('/admin/preoperacionales/guardar-config', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      url: document.getElementById('cfgUrl').value,
+      minutos: parseInt(document.getElementById('cfgMin').value) || 30
+    })
+  })
+  .then(r => r.json())
+  .then(d => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-floppy"></i> Guardar configuración';
+    alerta.className = d.ok ? 'alert-pc ok' : 'alert-pc err';
+    alerta.textContent = d.ok ? ('✓ ' + d.mensaje) : ('✗ ' + (d.error || 'Error desconocido'));
+    alerta.style.display = 'block';
+  })
+  .catch(e => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-floppy"></i> Guardar configuración';
+    alerta.className = 'alert-pc err';
+    alerta.textContent = '✗ Error de conexión: ' + e.message;
+    alerta.style.display = 'block';
+  });
 }
 
 function sincronizar() {

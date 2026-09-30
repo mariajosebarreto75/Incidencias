@@ -2374,3 +2374,33 @@ def preoperacionales_subir():
     resultado = sincronizar()
     resultado["mensaje"] = "Archivo subido y sincronizado correctamente."
     return jsonify(resultado), 200 if resultado["ok"] else 500
+
+
+@admin_bp.route("/preoperacionales/guardar-config", methods=["POST"])
+@admin_required
+def preoperacionales_guardar_config():
+    import json, os
+    data = request.get_json(silent=True) or {}
+    nueva_url = (data.get("url") or "").strip()
+    nuevos_min = data.get("minutos")
+
+    try:
+        nuevos_min = int(nuevos_min)
+        if nuevos_min < 1:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "Intervalo debe ser un número entero >= 1."}), 400
+
+    # Actualizar en memoria para que el servicio lo use de inmediato
+    current_app.config["PREOP_SHAREPOINT_URL"] = nueva_url
+    current_app.config["PREOP_REFRESH_MINUTES"] = nuevos_min
+
+    # Persistir en data/preop_config.json (volumen Docker)
+    data_dir = os.path.join(current_app.root_path, "..", "data")
+    os.makedirs(data_dir, exist_ok=True)
+    cfg_path = os.path.join(data_dir, "preop_config.json")
+    with open(cfg_path, "w", encoding="utf-8") as f:
+        json.dump({"PREOP_SHAREPOINT_URL": nueva_url,
+                   "PREOP_REFRESH_MINUTES": nuevos_min}, f)
+
+    return jsonify({"ok": True, "mensaje": "Configuración guardada correctamente."})
