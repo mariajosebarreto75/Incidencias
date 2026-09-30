@@ -172,6 +172,10 @@
          class="adm-nav-link {% if request.endpoint == 'esc_bp.lista' %}active{% endif %}">
         <i class="bi bi-arrow-up-right-circle" style="color:#f87171"></i> Escalamientos
       </a>
+      <a href="{{ url_for('admin_bp.preoperacionales_config') }}"
+         class="adm-nav-link {% if request.endpoint == 'admin_bp.preoperacionales_config' %}active{% endif %}">
+        <i class="bi bi-clipboard2-check" style="color:#34d399"></i> Preoperacionales
+      </a>
     </div>
 
     <div class="sb-sep"></div>

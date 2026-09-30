@@ -2326,3 +2326,26 @@ def descargar_evidencia_compromiso(comp_id):
         as_attachment=True,
         download_name=comp.evidencia_nombre or comp.evidencia_path,
     )
+
+
+# ============================================================
+# PREOPERACIONALES — Configuración
+# ============================================================
+
+@admin_bp.route("/admin/preoperacionales")
+@admin_required
+def preoperacionales_config():
+    from app.services.preoperacionales_service import obtener_datos, datos_dashboard
+    _, meta = obtener_datos()
+    d = datos_dashboard()
+    return render_template("admin/preoperacionales_config.html",
+                           meta=meta, resumen=d,
+                           config=current_app.config)
+
+
+@admin_bp.route("/admin/preoperacionales/sincronizar", methods=["POST"])
+@admin_required
+def preoperacionales_sincronizar():
+    from app.services.preoperacionales_service import sincronizar
+    resultado = sincronizar()
+    return jsonify(resultado), 200 if resultado["ok"] else 500

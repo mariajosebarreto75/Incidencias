@@ -1,0 +1,273 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Preoperacionales — Admin{% endblock %}
+
+{% block head %}
+<style>
+.pc-wrap { padding: 1.5rem 2rem; }
+.pc-title { font-size: 1.2rem; font-weight: 800; color: #f1f5f9; margin-bottom: .25rem; }
+.pc-sub   { font-size: .82rem; color: #64748b; margin-bottom: 1.75rem; }
+
+/* Tarjeta de estado */
+.pc-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.pc-card-title {
+  font-size: .72rem; font-weight: 700; color: #64748b;
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1rem;
+}
+
+/* Estado conexión */
+.estado-ok   { color: #34d399; }
+.estado-err  { color: #f87171; }
+.estado-icon { font-size: 1.4rem; margin-right: .4rem; }
+.estado-txt  { font-size: .9rem; font-weight: 600; color: #f1f5f9; }
+.estado-det  { font-size: .78rem; color: #94a3b8; margin-top: .3rem; }
+
+/* KPI mini */
+.mini-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; margin-top: 1rem; }
+.mini-kpi  { background: #1e293b; border-radius: 8px; padding: .75rem 1rem; }
+.mini-kpi-label { font-size: .68rem; color: #64748b; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .2rem; }
+.mini-kpi-val   { font-size: 1.4rem; font-weight: 800; color: #f1f5f9; font-variant-numeric: tabular-nums; }
+.mini-kpi-val.ok  { color: #34d399; }
+.mini-kpi-val.bad { color: #f87171; }
+.mini-kpi-val.warn{ color: #fbbf24; }
+
+/* Config */
+.cfg-row { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.cfg-label { font-size: .78rem; font-weight: 600; color: #94a3b8;
+             text-transform: uppercase; letter-spacing: .04em; margin-bottom: .3rem; }
+.cfg-val {
+  font-size: .85rem; color: #f1f5f9;
+  background: #1e293b; border: 1px solid #334155;
+  border-radius: 6px; padding: .4rem .75rem;
+  font-family: 'Courier New', monospace; word-break: break-all;
+}
+.cfg-val.empty { color: #ef4444; font-style: italic; font-family: inherit; }
+
+/* Botones */
+.btn-sync-admin {
+  padding: .55rem 1.2rem; background: #059669; color: #fff;
+  border: none; border-radius: 8px; font-size: .85rem; font-weight: 700;
+  cursor: pointer; display: inline-flex; align-items: center; gap: .4rem;
+  transition: opacity .2s;
+}
+.btn-sync-admin:hover { opacity: .88; }
+.btn-sync-admin:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Tabla últimos contratos con incumplimiento */
+.pc-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.pc-table th {
+  text-align: left; padding: .5rem .75rem;
+  border-bottom: 2px solid #1e293b; color: #64748b;
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .04em;
+}
+.pc-table td { padding: .5rem .75rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+.pc-table tr:last-child td { border-bottom: none; }
+.badge-n { background: #1e293b; color: #f87171; padding: .15rem .5rem;
+           border-radius: 4px; font-weight: 700; font-size: .78rem; }
+
+/* Alerta */
+.alert-pc {
+  background: #1e293b; border: 1px solid #374151;
+  border-radius: 8px; padding: .7rem 1rem;
+  font-size: .82rem; margin-bottom: 1rem; display: none;
+}
+.alert-pc.ok  { border-color: #059669; color: #34d399; }
+.alert-pc.err { border-color: #dc2626; color: #f87171; }
+
+/* Grid 2 col */
+.pc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+@media (max-width: 900px) { .pc-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pc-wrap">
+
+  <div class="pc-title"><i class="bi bi-clipboard2-check" style="color:#34d399"></i> Preoperacionales</div>
+  <div class="pc-sub">Configuración, estado de conexión y resumen de datos del informe SharePoint.</div>
+
+  <div class="alert-pc" id="alertaSync"></div>
+
+  <div class="pc-grid">
+
+    <!-- Columna izquierda: Estado + Configuración -->
+    <div>
+
+      <!-- Estado de la última sincronización -->
+      <div class="pc-card">
+        <div class="pc-card-title">Estado de conexión</div>
+
+        {% if meta %}
+          {% if meta.ok %}
+            <div>
+              <span class="estado-icon estado-ok">●</span>
+              <span class="estado-txt">Conexión activa</span>
+            </div>
+            <div class="estado-det">
+              Última sincronización: {{ meta.actualizado[:19].replace('T',' ') }} UTC<br>
+              {{ meta.registros | default(0) }} registros cargados en memoria
+            </div>
+          {% else %}
+            <div>
+              <span class="estado-icon estado-err">●</span>
+              <span class="estado-txt">Error de sincronización</span>
+            </div>
+            <div class="estado-det" style="color:#f87171;">
+              {{ meta.error or 'Error desconocido' }}
+            </div>
+          {% endif %}
+        {% else %}
+          <div>
+            <span class="estado-icon" style="color:#fbbf24;">●</span>
+            <span class="estado-txt" style="color:#fbbf24;">Sin datos — primer arranque</span>
+          </div>
+          <div class="estado-det">El sistema aún no ha sincronizado el archivo.</div>
+        {% endif %}
+
+        <!-- KPIs mini -->
+        {% if resumen and resumen.kpis and resumen.kpis.total > 0 %}
+        {% set k = resumen.kpis %}
+        <div class="mini-kpis">
+          <div class="mini-kpi">
+            <div class="mini-kpi-label">Registros</div>
+            <div class="mini-kpi-val">{{ k.total | default(0) }}</div>
+          </div>
+          <div class="mini-kpi">
+            <div class="mini-kpi-label">Cumplimiento</div>
+            <div class="mini-kpi-val ok">{{ k.pct_cumplimiento }}%</div>
+          </div>
+          <div class="mini-kpi">
+            <div class="mini-kpi-label">Incumplimiento</div>
+            <div class="mini-kpi-val bad">{{ k.pct_incumplimiento }}%</div>
+          </div>
+          <div class="mini-kpi">
+            <div class="mini-kpi-label">Sin movimiento</div>
+            <div class="mini-kpi-val warn">{{ k.sin_mov }}</div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div style="margin-top:1.25rem;">
+          <button class="btn-sync-admin" id="btnSync" onclick="sincronizar()">
+            <i class="bi bi-arrow-repeat"></i> Sincronizar ahora
+          </button>
+        </div>
+      </div>
+
+      <!-- Configuración -->
+      <div class="pc-card">
+        <div class="pc-card-title">Configuración (.env)</div>
+
+        {% set url_cfg = config.get('PREOP_SHAREPOINT_URL', '') %}
+        {% set min_cfg = config.get('PREOP_REFRESH_MINUTES', 30) %}
+
+        <div style="margin-bottom:.9rem;">
+          <div class="cfg-label">PREOP_SHAREPOINT_URL</div>
+          {% if url_cfg %}
+            <div class="cfg-val">{{ url_cfg[:80] }}{% if url_cfg|length > 80 %}…{% endif %}</div>
+          {% else %}
+            <div class="cfg-val empty">⚠ No configurada — agrega PREOP_SHAREPOINT_URL al .env del servidor</div>
+          {% endif %}
+        </div>
+
+        <div>
+          <div class="cfg-label">PREOP_REFRESH_MINUTES</div>
+          <div class="cfg-val">Cada {{ min_cfg }} minutos</div>
+        </div>
+
+        <div class="estado-det" style="margin-top:1rem;">
+          Para cambiar la URL o el intervalo, edita el archivo <code>.env</code> en el servidor
+          y reinicia con <code>docker compose up --build -d</code>.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Columna derecha: Top incumplimientos + Sedes -->
+    <div>
+
+      <div class="pc-card">
+        <div class="pc-card-title">Top contratos con incumplimiento</div>
+        {% if resumen and resumen.top_incumplimiento %}
+        <table class="pc-table">
+          <thead><tr><th>#</th><th>Contrato</th><th>Incumplimientos</th></tr></thead>
+          <tbody>
+            {% for row in resumen.top_incumplimiento %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ row.contrato or '(sin contrato)' }}</td>
+              <td><span class="badge-n">{{ row.incumple }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="estado-det">Sin datos disponibles.</div>
+        {% endif %}
+      </div>
+
+      <div class="pc-card">
+        <div class="pc-card-title">Cumplimiento por sede</div>
+        {% if resumen and resumen.sedes %}
+        <table class="pc-table">
+          <thead><tr><th>Sede</th><th>Total</th><th>Confirmados</th><th>% Cumple</th></tr></thead>
+          <tbody>
+            {% for s in resumen.sedes | sort(attribute='pct', reverse=True) %}
+            <tr>
+              <td>{{ s.sede }}</td>
+              <td>{{ s.total }}</td>
+              <td>{{ s.cumple }}</td>
+              <td style="color:{% if s.pct >= 80 %}#34d399{% elif s.pct >= 60 %}#fbbf24{% else %}#f87171{% endif %};font-weight:700;">
+                {{ s.pct }}%
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="estado-det">Sin datos disponibles.</div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function sincronizar() {
+  const btn = document.getElementById('btnSync');
+  const alerta = document.getElementById('alertaSync');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sincronizando…';
+  alerta.className = 'alert-pc';
+  alerta.style.display = 'none';
+
+  fetch('/admin/preoperacionales/sincronizar', { method: 'POST' })
+    .then(r => r.json())
+    .then(d => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sincronizar ahora';
+      if (d.ok) {
+        alerta.className = 'alert-pc ok';
+        alerta.textContent = '✓ Sincronización exitosa — ' + d.registros + ' registros cargados. Recarga la página para ver los datos actualizados.';
+      } else {
+        alerta.className = 'alert-pc err';
+        alerta.textContent = '✗ Error: ' + (d.error || 'Error desconocido');
+      }
+      alerta.style.display = 'block';
+    })
+    .catch(e => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Sincronizar ahora';
+      alerta.className = 'alert-pc err';
+      alerta.textContent = '✗ Error de conexión: ' + e.message;
+      alerta.style.display = 'block';
+    });
+}
+</script>
+{% endblock %}
