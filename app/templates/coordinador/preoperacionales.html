@@ -252,6 +252,8 @@
       <select class="fsel" id="pMes" onchange="updatePlacasDias();loadPlacas(1)"><option value="">Todos</option></select></div>
     <div class="fg"><label>Día</label>
       <select class="fsel" id="pDia" onchange="loadPlacas(1)"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Sede</label>
+      <select class="fsel" id="pSede" onchange="loadPlacas(1)"><option value="">Todas</option></select></div>
     <div class="fg"><label>Contrato</label>
       <select class="fsel" id="pContrato" onchange="loadPlacas(1)"><option value="">Todos</option></select></div>
     <div class="fg"><label>Estado</label>
@@ -296,6 +298,8 @@
       <select class="fsel" id="jMes" onchange="updateJustDias();renderJustFiltrada()"><option value="">Todos</option></select></div>
     <div class="fg"><label>Día</label>
       <select class="fsel" id="jDia" onchange="renderJustFiltrada()"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Sede</label>
+      <select class="fsel" id="jSede" onchange="renderJustFiltrada()"><option value="">Todas</option></select></div>
     <div class="fg"><label>Contrato</label>
       <select class="fsel" id="jContrato" onchange="renderJustFiltrada()"><option value="">Todos</option></select></div>
     <button class="btn btn-ghost btn-sm" onclick="resetJustFiltros()" style="align-self:flex-end">✕ Limpiar</button>
@@ -377,13 +381,62 @@ function loadLS(){
 // ══════════════════════════════════════════════════════
 // TABS
 // ══════════════════════════════════════════════════════
+// ── mapa de filtros compartidos: Dashboard → Placas → Just ──
+// Fuente de verdad: fAño,fMes,fFecha,fSede,fContrato
+function syncFilters(toTab){
+  const src={
+    año:      document.getElementById('fAño').value,
+    mes:      document.getElementById('fMes').value,
+    fecha:    document.getElementById('fFecha').value,
+    sede:     document.getElementById('fSede').value,
+    contrato: document.getElementById('fContrato').value,
+  };
+  if(toTab==='tPlacas'||toTab==='all'){
+    if(document.getElementById('pAño'))  document.getElementById('pAño').value  = src.año;
+    if(document.getElementById('pMes'))  document.getElementById('pMes').value  = src.mes;
+    if(document.getElementById('pDia'))  document.getElementById('pDia').value  = src.fecha;
+    if(document.getElementById('pSede')) document.getElementById('pSede').value = src.sede;
+    if(document.getElementById('pContrato')) document.getElementById('pContrato').value = src.contrato;
+  }
+  if(toTab==='tJust'||toTab==='all'){
+    if(document.getElementById('jAño'))  document.getElementById('jAño').value  = src.año;
+    if(document.getElementById('jMes'))  document.getElementById('jMes').value  = src.mes;
+    if(document.getElementById('jDia'))  document.getElementById('jDia').value  = src.fecha;
+    if(document.getElementById('jSede')) document.getElementById('jSede').value = src.sede;
+    if(document.getElementById('jContrato')) document.getElementById('jContrato').value = src.contrato;
+  }
+}
+// Sincroniza Placas/Just → Dashboard (cuando se limpian filtros en esos tabs)
+function syncFiltersToDash(from){
+  const get=id=>document.getElementById(id)?.value||'';
+  if(from==='tPlacas'){
+    document.getElementById('fAño').value     = get('pAño');
+    document.getElementById('fMes').value     = get('pMes');
+    document.getElementById('fFecha').value   = get('pDia');
+    document.getElementById('fSede').value    = get('pSede');
+    document.getElementById('fContrato').value= get('pContrato');
+  }
+  if(from==='tJust'){
+    document.getElementById('fAño').value     = get('jAño');
+    document.getElementById('fMes').value     = get('jMes');
+    document.getElementById('fFecha').value   = get('jDia');
+    document.getElementById('fSede').value    = get('jSede');
+    document.getElementById('fContrato').value= get('jContrato');
+  }
+}
+
 function showTab(id,btn){
+  // antes de cambiar, sincronizar filtros del tab activo → destino
+  const activeTab = document.querySelector('.ptp.active');
+  const activeId  = activeTab ? activeTab.id : 'tDash';
   document.querySelectorAll('.ptp').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.ptb').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   btn.classList.add('active');
-  if(id==='tJust'){renderCatalog();renderJustFiltrada();}
-  if(id==='tPlacas')loadPlacas(1);
+  // sincronizar: si venimos de dash, empujar hacia destino; si venimos de otro tab, jalar hacia dash primero
+  if(activeId!=='tDash') syncFiltersToDash(activeId);
+  if(id==='tPlacas'){syncFilters('tPlacas');updatePlacasDias();loadPlacas(1);}
+  if(id==='tJust'){syncFilters('tJust');updateJustDias();renderCatalog();renderJustFiltrada();}
 }
 
 // ══════════════════════════════════════════════════════
@@ -479,6 +532,7 @@ function populatePlacasFiltros(op){
   fillSel('pAño',op.años||[]);
   fillSel('pMes',op.meses||[]);
   updatePlacasDias();
+  fillSel('pSede',op.sedes||[]);
   fillSel('pContrato',op.contratos||[]);
   const selEst = document.getElementById('pEstado');
   const curVal = selEst.value;
@@ -714,17 +768,21 @@ function sortTbl(tbodyId,col,th){
 // ══════════════════════════════════════════════════════
 function getPlacasFiltros(){
   return{
-    año:      document.getElementById('pAño').value,
-    mes:      document.getElementById('pMes').value,
-    fecha:    document.getElementById('pDia').value,
-    contrato: document.getElementById('pContrato').value,
-    estado_num: document.getElementById('pEstado').value,
-    q:        document.getElementById('pQ').value,
+    año:       document.getElementById('pAño').value,
+    mes:       document.getElementById('pMes').value,
+    fecha:     document.getElementById('pDia').value,
+    sede:      document.getElementById('pSede').value,
+    contrato:  document.getElementById('pContrato').value,
+    estado_num:document.getElementById('pEstado').value,
+    q:         document.getElementById('pQ').value,
   };
 }
 function resetPlacasFiltros(){
-  ['pAño','pMes','pDia','pContrato','pEstado'].forEach(id=>document.getElementById(id).value='');
+  ['pAño','pMes','pDia','pSede','pContrato','pEstado'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('pQ').value='';
+  // propagar limpiar al dashboard
+  ['fAño','fMes','fFecha','fSede','fContrato'].forEach(id=>document.getElementById(id).value='');
+  applyFilters();
   loadPlacas(1);
 }
 
@@ -860,13 +918,20 @@ function saveJustRow(id){
 
 function getJustFiltros(){
   return{
-    año: document.getElementById('jAño').value,
-    mes: document.getElementById('jMes').value,
-    dia: document.getElementById('jDia').value,
+    año:      document.getElementById('jAño').value,
+    mes:      document.getElementById('jMes').value,
+    dia:      document.getElementById('jDia').value,
+    sede:     document.getElementById('jSede').value,
     contrato: document.getElementById('jContrato').value,
   };
 }
-function resetJustFiltros(){['jAño','jMes','jDia','jContrato'].forEach(id=>document.getElementById(id).value='');renderJustFiltrada();}
+function resetJustFiltros(){
+  ['jAño','jMes','jDia','jSede','jContrato'].forEach(id=>document.getElementById(id).value='');
+  // propagar limpiar al dashboard
+  ['fAño','fMes','fFecha','fSede','fContrato'].forEach(id=>document.getElementById(id).value='');
+  applyFilters();
+  renderJustFiltrada();
+}
 
 function renderJustFiltrada(){
   renderCatalog();
@@ -875,6 +940,7 @@ function renderJustFiltrada(){
   if(f.año) rows=rows.filter(j=>j.fecha.startsWith(f.año));
   if(f.mes) rows=rows.filter(j=>j.mes===f.mes||j.fecha.slice(0,7)===f.mes);
   if(f.dia) rows=rows.filter(j=>j.fecha===f.dia);
+  if(f.sede) rows=rows.filter(j=>j.sede===f.sede);
   if(f.contrato) rows=rows.filter(j=>j.contrato===f.contrato);
   rows=[...rows].sort((a,b)=>b.guardado.localeCompare(a.guardado));
 
@@ -885,6 +951,9 @@ function renderJustFiltrada(){
   const meses=[...new Set(G.justificaciones.map(j=>j.fecha.slice(0,7)))].sort();
   const curJM=document.getElementById('jMes').value;
   fillSel('jMes',meses,v=>{const[y,m]=v.split('-');return`${m}/${y}`;});if(curJM)document.getElementById('jMes').value=curJM;
+  const sedes=[...new Set(G.justificaciones.map(j=>j.sede||'').filter(Boolean))].sort();
+  const curJS=document.getElementById('jSede').value;
+  fillSel('jSede',sedes);if(curJS)document.getElementById('jSede').value=curJS;
   const contratos=[...new Set(G.justificaciones.map(j=>j.contrato||'').filter(Boolean))].sort();
   const curJC=document.getElementById('jContrato').value;
   fillSel('jContrato',contratos);if(curJC)document.getElementById('jContrato').value=curJC;
