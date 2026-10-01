@@ -1082,13 +1082,17 @@ def preoperacionales_placas():
     from app.services.preoperacionales_service import obtener_datos
     registros, _ = obtener_datos()
 
-    sede     = request.args.get("sede") or None
-    contrato = request.args.get("contrato") or None
-    fecha    = request.args.get("fecha") or None
-    tipo     = request.args.get("tipo") or None
-    estado   = request.args.get("estado") or None
-    q        = (request.args.get("q") or "").strip().lower()
+    sede         = request.args.get("sede") or None
+    contrato     = request.args.get("contrato") or None
+    fecha        = request.args.get("fecha") or None
+    tipo         = request.args.get("tipo") or None
+    estado       = request.args.get("estado") or None
+    estado_num   = request.args.get("estado_num") or None
+    q            = (request.args.get("q") or "").strip().lower()
     solo_sin_gps = request.args.get("sin_gps") == "1"
+    incumplimiento = request.args.get("incumplimiento") == "1"
+
+    _INCUMP_NUMS = {"3", "4", "6", "7"}
 
     resultado = registros
     if sede:     resultado = [r for r in resultado if r["sede"] == sede]
@@ -1098,6 +1102,16 @@ def preoperacionales_placas():
     if estado:   resultado = [r for r in resultado if r["estado"] == estado]
     if solo_sin_gps:
         resultado = [r for r in resultado if "sin gps" in r["estado"].lower()]
+    if incumplimiento:
+        import re as _re
+        resultado = [r for r in resultado if
+                     (_re.match(r"^(\d+)\.", r["estado"]) and
+                      _re.match(r"^(\d+)\.", r["estado"]).group(1) in _INCUMP_NUMS)]
+    if estado_num:
+        import re as _re2
+        resultado = [r for r in resultado if
+                     (_re2.match(r"^(\d+)\.", r["estado"]) and
+                      _re2.match(r"^(\d+)\.", r["estado"]).group(1) == estado_num)]
     if q:
         resultado = [r for r in resultado if q in r["placa"].lower()
                      or q in r["contrato"].lower() or q in r["sede"].lower()]

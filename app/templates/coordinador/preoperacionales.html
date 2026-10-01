@@ -1,709 +1,843 @@
 {% extends "neo/navbNeo.html" if current_user.rol.lower() == "neo" else "coordinador/navbarcoor.html" %}
-{% block title %}Dashboard Preoperacionales{% endblock %}
 
 {% block head %}
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-:root {
-  --ok:    #16a34a;
-  --warn:  #d97706;
-  --bad:   #dc2626;
-  --neu:   #64748b;
-  --gps:   #7c3aed;
-  --sky:   #0284c7;
-  --bg:    #f1f5f9;
-  --card:  #ffffff;
-  --bdr:   #e2e8f0;
-  --txt:   #0f172a;
-  --sub:   #64748b;
-  --teal:  #0d9488;
+/* ── TOKENS ─────────────────────────────────────────────────── */
+:root{
+  --brand:#1F4E79;--brand-mid:#2E75B6;--brand-light:#D6E4F0;
+  --accent:#0D9488;--accent-l:#CCFBF1;
+  --warn:#F59E0B;--warn-l:#FEF3C7;
+  --danger:#DC2626;--danger-l:#FEE2E2;
+  --ok:#16A34A;--ok-l:#DCFCE7;
+  --ink:#1E293B;--ink2:#475569;--ink3:#94A3B8;
+  --surface:#FFFFFF;--surface2:#F8FAFC;--surface3:#F1F5F9;
+  --border:#E2E8F0;--radius:10px;
+  --shadow:0 1px 4px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
 }
 
-.preop-wrap { padding: 1.25rem 1.5rem; background: var(--bg); min-height: 100vh; }
+/* ── BASE ────────────────────────────────────────────────────── */
+.preop-wrap{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--surface2);padding:20px 24px;min-height:80vh}
+.preop-wrap *{box-sizing:border-box}
 
-.preop-header {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: .75rem; margin-bottom: 1.25rem;
-}
-.preop-title { font-size: 1.2rem; font-weight: 800; color: var(--txt); }
-.preop-meta  { font-size: .75rem; color: var(--sub); }
+/* ── PAGE HEADER ─────────────────────────────────────────────── */
+.preop-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.preop-title{font-size:1.45rem;font-weight:800;color:var(--brand);margin:0}
+.preop-title span{color:var(--ink3);font-weight:400;font-size:.9rem;margin-left:8px}
+.preop-header-right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sync-chip{font-size:.72rem;background:var(--surface3);color:var(--ink3);border-radius:20px;padding:4px 10px;font-weight:600}
+.sync-chip.ok{background:var(--ok-l);color:var(--ok)}
+.sync-chip.err{background:var(--danger-l);color:var(--danger)}
 
-.filtros {
-  display: flex; flex-wrap: wrap; gap: .5rem;
-  background: var(--card); border: 1px solid var(--bdr);
-  border-radius: 10px; padding: .65rem .9rem;
-  margin-bottom: 1.25rem; align-items: center;
-}
-.filtros select {
-  padding: .35rem .6rem; border: 1.5px solid var(--bdr);
-  border-radius: 6px; font-size: .8rem; color: var(--txt);
-  background: #fff; outline: none; min-width: 160px;
-}
-.filtros select:focus { border-color: var(--teal); }
-.btn-aplicar {
-  padding: .38rem .9rem; background: var(--teal); color: #fff;
-  border: none; border-radius: 6px; font-size: .8rem;
-  font-weight: 600; cursor: pointer;
-}
-.btn-aplicar:hover { opacity: .88; }
-.btn-limpiar {
-  padding: .38rem .75rem; background: none;
-  border: 1.5px solid var(--bdr); border-radius: 6px;
-  font-size: .8rem; color: var(--sub); cursor: pointer;
-}
-.btn-limpiar:hover { border-color: var(--teal); color: var(--teal); }
-.btn-sync {
-  margin-left: auto; padding: .38rem .9rem;
-  background: none; border: 1.5px solid var(--bdr);
-  border-radius: 6px; font-size: .8rem; color: var(--sub); cursor: pointer;
-}
-.btn-sync:hover { border-color: var(--teal); color: var(--teal); }
-.btn-sync.loading { opacity: .5; pointer-events: none; }
+/* ── TABS ────────────────────────────────────────────────────── */
+.preop-tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px}
+.ptab{padding:10px 18px;font-size:.85rem;font-weight:600;border:none;background:none;color:var(--ink2);border-bottom:3px solid transparent;margin-bottom:-2px;cursor:pointer;transition:all .15s;font-family:inherit}
+.ptab:hover{color:var(--brand)}
+.ptab.active{color:var(--brand);border-bottom-color:var(--brand)}
+.ptab-panel{display:none}.ptab-panel.active{display:block}
 
-.alert-preop {
-  background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
-  border-radius: 8px; padding: .7rem 1rem; font-size: .83rem;
-  margin-bottom: 1rem; display: none;
-}
+/* ── FILTERS ─────────────────────────────────────────────────── */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3)}
+.fsel{border:1px solid var(--border);border-radius:6px;padding:6px 10px;background:var(--surface);color:var(--ink);font-size:.8rem;min-width:130px;font-family:inherit}
+.fsel:focus{outline:2px solid var(--brand);outline-offset:1px}
+.btn{border:none;border-radius:6px;padding:7px 14px;font-size:.8rem;font-weight:600;cursor:pointer;transition:background .15s;font-family:inherit}
+.btn-primary{background:var(--brand);color:#fff}.btn-primary:hover{background:var(--brand-mid)}
+.btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{filter:brightness(1.1)}
+.btn-ghost{background:var(--surface3);color:var(--ink2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--border)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:4px 10px;font-size:.75rem}
+.btn-reset{background:var(--surface);border:1px solid var(--border);color:var(--ink2);border-radius:6px;padding:7px 12px;font-size:.8rem;cursor:pointer;font-family:inherit}.btn-reset:hover{background:var(--surface3)}
 
-/* KPIs */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
-  gap: .75rem; margin-bottom: 1.25rem;
-}
-.kpi-card {
-  background: var(--card); border: 1px solid var(--bdr);
-  border-radius: 10px; padding: .9rem 1rem;
-  border-left: 4px solid var(--neu);
-}
-.kpi-card.ok   { border-left-color: var(--ok); }
-.kpi-card.warn { border-left-color: var(--warn); }
-.kpi-card.bad  { border-left-color: var(--bad); }
-.kpi-card.gps  { border-left-color: var(--gps); }
-.kpi-card.sky  { border-left-color: var(--sky); }
-.kpi-card.neu  { border-left-color: var(--neu); }
-.kpi-label { font-size: .7rem; color: var(--sub); text-transform: uppercase;
-             letter-spacing: .04em; margin-bottom: .25rem; }
-.kpi-value { font-size: 1.7rem; font-weight: 800; color: var(--txt);
-             font-variant-numeric: tabular-nums; line-height: 1; }
-.kpi-sub   { font-size: .72rem; color: var(--sub); margin-top: .18rem; }
+/* ── KPI GRID ────────────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);border-top:3px solid var(--border);position:relative}
+.kpi:hover .kpi-tip{display:block}
+.kpi-lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:4px}
+.kpi-val{font-size:1.7rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.kpi-sub{font-size:.7rem;color:var(--ink3);margin-top:4px}
+.kpi-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.72rem;padding:6px 10px;border-radius:6px;white-space:nowrap;z-index:50;pointer-events:none}
+.kpi-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink)}
+.kpi--brand{border-top-color:var(--brand)}.kpi--brand .kpi-val{color:var(--brand)}
+.kpi--ok{border-top-color:var(--ok)}.kpi--ok .kpi-val{color:var(--ok)}
+.kpi--danger{border-top-color:var(--danger)}.kpi--danger .kpi-val{color:var(--danger)}
+.kpi--warn{border-top-color:var(--warn)}.kpi--warn .kpi-val{color:var(--warn)}
+.kpi--accent{border-top-color:var(--accent)}.kpi--accent .kpi-val{color:var(--accent)}
+.kpi--ink{border-top-color:var(--ink3)}.kpi--ink .kpi-val{color:var(--ink)}
 
-/* Gráficas */
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: .75rem; margin-bottom: 1.25rem;
-}
-.chart-card {
-  background: var(--card); border: 1px solid var(--bdr);
-  border-radius: 10px; padding: 1rem 1.1rem;
-}
-.chart-card.wide { grid-column: span 2; }
-.chart-title {
-  font-size: .78rem; font-weight: 700; color: var(--txt);
-  margin-bottom: .75rem; text-transform: uppercase; letter-spacing: .04em;
-}
-.chart-wrap { position: relative; height: 210px; }
+/* ── CHARTS ──────────────────────────────────────────────────── */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+.chart-card{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.chart-card h4{font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em}
 
-/* Sección de tablas */
-.section-hdr {
-  font-size: .85rem; font-weight: 700; color: var(--txt);
-  text-transform: uppercase; letter-spacing: .04em;
-  margin: 1.4rem 0 .75rem;
-  display: flex; align-items: center; gap: .5rem;
-}
-.section-badge {
-  font-size: .72rem; font-weight: 700; padding: .15rem .5rem;
-  border-radius: 99px; background: #ede9fe; color: var(--gps);
-}
-.section-badge.bad { background: #fef2f2; color: var(--bad); }
+/* ── TABLES ──────────────────────────────────────────────────── */
+.tcard{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin-bottom:16px;overflow-x:auto}
+.tcard h4{font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em}
+.dtable{border-collapse:collapse;width:100%}
+.dtable th{background:var(--surface3);font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.dtable td{padding:7px 10px;border-bottom:1px solid var(--border);font-size:.82rem;font-variant-numeric:tabular-nums}
+.dtable tr:hover td{background:var(--surface3)}
+.dtable th.sortable{cursor:pointer;user-select:none}.dtable th.sortable:hover{color:var(--brand)}
+.dtable th.sa::after{content:' ↑'}.dtable th.sd::after{content:' ↓'}
+.dtable tr.clickable{cursor:pointer}
 
-/* Filtros de tabla */
-.tbl-filtros {
-  display: flex; flex-wrap: wrap; gap: .45rem;
-  background: #f8fafc; border: 1px solid var(--bdr);
-  border-radius: 8px; padding: .5rem .75rem;
-  margin-bottom: .75rem; align-items: center;
-}
-.tbl-filtros select, .tbl-filtros input {
-  padding: .3rem .55rem; border: 1.5px solid var(--bdr);
-  border-radius: 6px; font-size: .78rem; color: var(--txt);
-  background: #fff; outline: none;
-}
-.tbl-filtros select:focus, .tbl-filtros input:focus { border-color: var(--teal); }
-.tbl-filtros input { min-width: 160px; }
-.btn-tbl {
-  padding: .3rem .7rem; background: var(--teal); color: #fff;
-  border: none; border-radius: 6px; font-size: .78rem;
-  font-weight: 600; cursor: pointer;
-}
-.btn-tbl:hover { opacity: .88; }
-.btn-tbl-sec {
-  padding: .3rem .65rem; background: none;
-  border: 1.5px solid var(--bdr); border-radius: 6px;
-  font-size: .78rem; color: var(--sub); cursor: pointer;
-}
-.btn-tbl-sec:hover { border-color: var(--teal); color: var(--teal); }
+/* semáforo */
+.sg{background:var(--ok-l);color:var(--ok);font-weight:700}
+.sy{background:var(--warn-l);color:#92400E;font-weight:700}
+.sr{background:var(--danger-l);color:var(--danger);font-weight:700}
 
-/* Tabla de datos */
-.data-table-wrap { overflow-x: auto; }
-.data-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
-.data-table th {
-  text-align: left; padding: .4rem .6rem;
-  border-bottom: 2px solid var(--bdr); color: var(--sub);
-  font-size: .7rem; text-transform: uppercase; letter-spacing: .04em;
-  white-space: nowrap;
-}
-.data-table td {
-  padding: .4rem .6rem; border-bottom: 1px solid var(--bdr);
-  color: var(--txt); white-space: nowrap;
-}
-.data-table tr:last-child td { border-bottom: none; }
-.data-table tr:hover td { background: #f8fafc; }
+/* estado badges */
+.eb{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.7rem;font-weight:700;white-space:nowrap}
+.e1{background:#DCFCE7;color:#166534}.e2{background:#D1FAE5;color:#065F46}
+.e3{background:#FEE2E2;color:#991B1B}.e4{background:#FEF3C7;color:#92400E}
+.e5{background:#F1F5F9;color:#475569}.e6{background:#FEE2E2;color:#7F1D1D}
+.e7{background:#EDE9FE;color:#4C1D95}.e8{background:#CCFBF1;color:#134E4A}
 
-/* Badges de estado */
-.est-badge {
-  display: inline-block; padding: .15rem .5rem;
-  border-radius: 5px; font-size: .7rem; font-weight: 600;
-  white-space: nowrap;
-}
-.est-1 { background: #dcfce7; color: #15803d; }
-.est-2 { background: #ede9fe; color: #6d28d9; }
-.est-3 { background: #fef9c3; color: #854d0e; }
-.est-4 { background: #f3e8ff; color: #7c3aed; }
-.est-5 { background: #f1f5f9; color: #475569; }
-.est-6 { background: #fef2f2; color: #b91c1c; }
-.est-7 { background: #dbeafe; color: #1d4ed8; }
-.est-8 { background: #ecfdf5; color: #047857; }
+/* toolbar */
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.toolbar .spacer{flex:1}
+.srch{border:1px solid var(--border);border-radius:6px;padding:6px 10px;background:var(--surface);color:var(--ink);font-size:.82rem;width:220px;font-family:inherit}
+.srch:focus{outline:2px solid var(--brand);outline-offset:1px}
 
-/* Paginación */
-.paginacion {
-  display: flex; align-items: center; gap: .4rem;
-  margin-top: .75rem; font-size: .78rem; justify-content: flex-end;
-}
-.pag-btn {
-  padding: .25rem .6rem; border: 1.5px solid var(--bdr);
-  border-radius: 5px; cursor: pointer; background: #fff;
-  color: var(--txt); font-size: .78rem;
-}
-.pag-btn:hover { border-color: var(--teal); color: var(--teal); }
-.pag-btn:disabled { opacity: .4; cursor: default; }
-.pag-info { color: var(--sub); }
+/* pagination */
+.pag{display:flex;gap:4px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.pbtn{border:1px solid var(--border);background:var(--surface);color:var(--ink2);border-radius:4px;padding:4px 10px;font-size:.78rem;cursor:pointer;font-family:inherit}
+.pbtn:hover{background:var(--surface3)}.pbtn.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+.pbtn:disabled{opacity:.4;cursor:not-allowed}
+.pinfo{font-size:.78rem;color:var(--ink3);margin-left:8px}
 
-/* Top tabla */
-.top-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
-.top-table th {
-  text-align: left; padding: .45rem .6rem;
-  border-bottom: 2px solid var(--bdr); color: var(--sub);
-  font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
-}
-.top-table td { padding: .45rem .6rem; border-bottom: 1px solid var(--bdr); color: var(--txt); }
-.top-table tr:last-child td { border-bottom: none; }
-.badge-bad  { background: #fef2f2; color: var(--bad);  padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
-.badge-ok   { background: #f0fdf4; color: var(--ok);   padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
-.badge-warn { background: #fffbeb; color: var(--warn);  padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
-.badge-gps  { background: #ede9fe; color: var(--gps);  padding: .15rem .45rem; border-radius: 4px; font-weight: 600; }
+/* justificaciones */
+.just-grid{display:grid;grid-template-columns:1fr 300px;gap:16px}
+@media(max-width:860px){.just-grid{grid-template-columns:1fr}}
+.cat-card{background:var(--surface);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.cat-card h4{font-size:.75rem;font-weight:700;color:var(--ink2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em}
+.cat-item{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:6px;font-size:.82rem}
+.cat-item:hover{background:var(--surface3)}
+.add-row{display:flex;gap:6px;margin-top:10px}
+.add-inp{flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.82rem;background:var(--surface);color:var(--ink);font-family:inherit}
+.add-inp:focus{outline:2px solid var(--accent);outline-offset:1px}
+.just-table td input,.just-table td select{border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:.78rem;background:var(--surface);color:var(--ink);width:100%;font-family:inherit}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-row td{text-align:center;color:var(--ink3);padding:24px}
 
-/* Spinner */
-.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--bdr);
-           border-top-color: var(--teal); border-radius: 50%; animation: spin .7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-overlay {
-  position: fixed; inset: 0; background: rgba(255,255,255,.65);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 999;
-}
-.tbl-loading {
-  text-align: center; color: var(--sub); padding: 1.5rem;
-  font-size: .82rem;
-}
-
-@media (max-width: 768px) {
-  .charts-grid { grid-template-columns: 1fr; }
-  .chart-card.wide { grid-column: span 1; }
+@media print{
+  .preop-header-right,.preop-tabs,.filters,.toolbar,.pag,.btn,.btn-sm{display:none!important}
+  .ptab-panel{display:block!important}
+  .preop-wrap{background:#fff;padding:0}
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="loading-overlay" id="overlay" style="display:none"><div class="spinner"></div></div>
-
 <div class="preop-wrap">
 
-  <!-- Cabecera -->
-  <div class="preop-header">
-    <div>
-      <div class="preop-title">📋 Dashboard Preoperacionales</div>
-      <div class="preop-meta" id="metaInfo">Cargando datos…</div>
-    </div>
+<!-- HEADER -->
+<div class="preop-header">
+  <h2 class="preop-title">Preoperacionales <span id="hdrSub">Cargando…</span></h2>
+  <div class="preop-header-right">
+    <span class="sync-chip" id="syncChip">⏳ Cargando</span>
+    <button class="btn btn-ghost btn-sm" onclick="sincronizar()" id="btnSync">🔄 Sincronizar</button>
+    <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Imprimir</button>
   </div>
+</div>
 
-  <div class="alert-preop" id="alertaError"></div>
-
-  <!-- Filtros globales -->
-  <div class="filtros">
-    <select id="fSede"><option value="">Todas las sedes</option></select>
-    <select id="fContrato"><option value="">Todos los contratos</option></select>
-    <select id="fFecha"><option value="">Todas las fechas</option></select>
-    <select id="fTipo"><option value="">Todos los tipos</option></select>
-    <button class="btn-aplicar" onclick="cargar()">Aplicar</button>
-    <button class="btn-limpiar" onclick="limpiarFiltros()">Limpiar</button>
-    <button class="btn-sync" id="btnSync" onclick="sincronizar()">↻ Actualizar datos</button>
+<!-- FILTROS GLOBALES -->
+<div class="filters" id="globalFilters">
+  <div class="fg">
+    <label>Día</label>
+    <select class="fsel" id="fFecha" onchange="applyFilters()"><option value="">Todos</option></select>
   </div>
+  <div class="fg">
+    <label>Sede</label>
+    <select class="fsel" id="fSede" onchange="applyFilters()"><option value="">Todas</option></select>
+  </div>
+  <div class="fg">
+    <label>Contrato</label>
+    <select class="fsel" id="fContrato" onchange="applyFilters()"><option value="">Todos</option></select>
+  </div>
+  <div class="fg">
+    <label>Tipo Vehículo</label>
+    <select class="fsel" id="fTipo" onchange="applyFilters()"><option value="">Todos</option></select>
+  </div>
+  <button class="btn-reset" onclick="resetFilters()">✕ Limpiar</button>
+</div>
+
+<!-- TABS -->
+<div class="preop-tabs">
+  <button class="ptab active" onclick="showTab('tDashboard',this)">📊 Dashboard</button>
+  <button class="ptab" onclick="showTab('tPlacas',this)">🚗 Detalle Placas</button>
+  <button class="ptab" onclick="showTab('tJust',this)">📝 Justificación</button>
+</div>
+
+<!-- ══════════ TAB DASHBOARD ══════════ -->
+<div id="tDashboard" class="ptab-panel active">
 
   <!-- KPIs -->
-  <div class="kpi-grid">
-    <div class="kpi-card neu">
-      <div class="kpi-label">Total registros</div>
-      <div class="kpi-value" id="kTotal">—</div>
-      <div class="kpi-sub">vehículos en período</div>
-    </div>
-    <div class="kpi-card ok">
-      <div class="kpi-label">% Cumplimiento</div>
-      <div class="kpi-value" id="kPctCumple">—</div>
-      <div class="kpi-sub" id="kCumple">— confirmados</div>
-    </div>
-    <div class="kpi-card bad">
-      <div class="kpi-label">% Incumplimiento</div>
-      <div class="kpi-value" id="kPctIncumple">—</div>
-      <div class="kpi-sub" id="kIncumple">— sin preoperacional</div>
-    </div>
-    <div class="kpi-card warn">
-      <div class="kpi-label">Sin movimiento</div>
-      <div class="kpi-value" id="kSinMov">—</div>
-      <div class="kpi-sub">vehículos inactivos</div>
-    </div>
-    <div class="kpi-card gps">
-      <div class="kpi-label">Sin GPS</div>
-      <div class="kpi-value" id="kSinGps">—</div>
-      <div class="kpi-sub">estados 2 y 4</div>
-    </div>
-    <div class="kpi-card sky">
-      <div class="kpi-label">Con movimiento</div>
-      <div class="kpi-value" id="kConMov">—</div>
-      <div class="kpi-sub">debían tener preop.</div>
-    </div>
+  <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi kpi--brand"><div class="kpi-lbl">Total Registros</div><div class="kpi-val"><span class="spinner"></span></div></div>
+    <div class="kpi kpi--ok"><div class="kpi-lbl">% Cumplimiento</div><div class="kpi-val">—</div></div>
+    <div class="kpi kpi--danger"><div class="kpi-lbl">Incumplimiento</div><div class="kpi-val">—</div></div>
+    <div class="kpi kpi--ink"><div class="kpi-lbl">Sin Movimiento</div><div class="kpi-val">—</div></div>
+    <div class="kpi kpi--warn"><div class="kpi-lbl">Sin GPS activo</div><div class="kpi-val">—</div></div>
+    <div class="kpi kpi--accent"><div class="kpi-lbl">Justificados</div><div class="kpi-val">—</div></div>
   </div>
 
-  <!-- Gráficas -->
+  <!-- CHARTS -->
   <div class="charts-grid">
-
-    <div class="chart-card wide">
-      <div class="chart-title">Cumplimiento diario</div>
-      <div class="chart-wrap"><canvas id="chartSerie"></canvas></div>
-    </div>
-
     <div class="chart-card">
-      <div class="chart-title">Distribución por estado</div>
-      <div class="chart-wrap"><canvas id="chartEstados"></canvas></div>
+      <h4>Distribución por Estado</h4>
+      <div style="position:relative;height:240px"><canvas id="cDonut"></canvas></div>
     </div>
-
     <div class="chart-card">
-      <div class="chart-title">Cumplimiento por sede (%)</div>
-      <div class="chart-wrap"><canvas id="chartSedes"></canvas></div>
+      <h4>Cumplimiento por Sede</h4>
+      <div style="position:relative;height:240px;overflow-y:auto"><canvas id="cSedes"></canvas></div>
     </div>
-
-    <div class="chart-card wide">
-      <div class="chart-title">Top 10 contratos con incumplimiento</div>
-      <table class="top-table" id="tablaTop">
-        <thead><tr><th>#</th><th>Contrato</th><th>Incumplimientos</th></tr></thead>
-        <tbody></tbody>
-      </table>
+    <div class="chart-card">
+      <h4>Estado 6 — Incumplimiento por Contrato</h4>
+      <div style="position:relative;height:240px"><canvas id="cInc"></canvas></div>
     </div>
-
+    <div class="chart-card">
+      <h4>Tendencia Diaria de Cumplimiento</h4>
+      <div style="position:relative;height:240px"><canvas id="cLine"></canvas></div>
+    </div>
   </div>
 
-  <!-- Detalle de placas -->
-  <div class="section-hdr">
-    🚗 Detalle de placas
-    <span class="section-badge bad" id="badgePlacas">0</span>
-  </div>
-
-  <div class="tbl-filtros">
-    <select id="pEstado" onchange="cargarPlacas(1)">
-      <option value="">Todos los estados</option>
-    </select>
-    <input type="text" id="pBuscar" placeholder="Buscar placa, contrato…" oninput="cargarPlacas(1)">
-    <button class="btn-tbl-sec" onclick="limpiarPlacas()">Limpiar</button>
-  </div>
-
-  <div class="data-table-wrap">
-    <table class="data-table" id="tablaPlacas">
-      <thead>
-        <tr>
-          <th>Placa</th><th>Tipo</th><th>Sede</th><th>Contrato</th>
-          <th>Fecha</th><th>Preoperacional</th><th>Estado</th>
-        </tr>
-      </thead>
-      <tbody id="tbodyPlacas"><tr><td colspan="7" class="tbl-loading">Cargando…</td></tr></tbody>
+  <!-- SEDE TABLE -->
+  <div class="tcard">
+    <h4>Resumen por Sede <small style="font-weight:400;text-transform:none;font-size:.7rem;color:var(--ink3)">(clic en fila para filtrar)</small></h4>
+    <table class="dtable">
+      <thead><tr>
+        <th class="sortable" onclick="sortTbl('sedeBody',0,this)">Sede</th>
+        <th class="sortable" onclick="sortTbl('sedeBody',1,this)">Total</th>
+        <th class="sortable" onclick="sortTbl('sedeBody',2,this)">Cumple</th>
+        <th class="sortable" onclick="sortTbl('sedeBody',3,this)">Incumple</th>
+        <th class="sortable" onclick="sortTbl('sedeBody',4,this)">% Cumplimiento</th>
+      </tr></thead>
+      <tbody id="sedeBody"><tr class="empty-row"><td colspan="5">Cargando…</td></tr></tbody>
     </table>
   </div>
-  <div class="paginacion" id="pagPlacas"></div>
 
-  <!-- Vehículos sin GPS -->
-  <div class="section-hdr" style="margin-top:1.75rem">
-    📡 Vehículos sin GPS
-    <span class="section-badge" id="badgeGps">0</span>
-  </div>
-  <p style="font-size:.78rem;color:var(--sub);margin-bottom:.75rem">
-    Vehículos con estados <strong>2. Preoperacional Confirmado y sin GPS</strong>
-    o <strong>4. Enviado sin aprobación y sin GPS</strong>.
-  </p>
-
-  <div class="data-table-wrap">
-    <table class="data-table" id="tablaGps">
-      <thead>
-        <tr>
-          <th>Placa</th><th>Tipo</th><th>Sede</th><th>Contrato</th>
-          <th>Fecha</th><th>Preoperacional</th><th>Estado</th>
-        </tr>
-      </thead>
-      <tbody id="tbodyGps"><tr><td colspan="7" class="tbl-loading">Cargando…</td></tr></tbody>
+  <!-- ESTADOS TABLE -->
+  <div class="tcard">
+    <h4>Resumen por Estado</h4>
+    <table class="dtable">
+      <thead><tr><th>Estado</th><th>Cantidad</th><th>% del Total</th></tr></thead>
+      <tbody id="estadosBody"><tr class="empty-row"><td colspan="3">Cargando…</td></tr></tbody>
     </table>
   </div>
-  <div class="paginacion" id="pagGps"></div>
+
+</div><!-- /tDashboard -->
+
+<!-- ══════════ TAB PLACAS ══════════ -->
+<div id="tPlacas" class="ptab-panel">
+
+  <div style="background:var(--warn-l);color:#92400E;border-radius:6px;padding:8px 12px;font-size:.78rem;margin-bottom:12px;display:flex;gap:8px;align-items:center">
+    <span>⚠</span> Solo vehículos con estados 3, 4, 6 y 7 (incumplimiento / anomalías). Estado 8 = con justificación.
+  </div>
+
+  <div class="kpi-grid" id="placasKpiGrid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))"></div>
+
+  <div class="toolbar">
+    <input type="text" class="srch" id="placasQ" placeholder="Buscar placa, sede, contrato…" oninput="loadPlacas(1)">
+    <div class="fg" style="flex-direction:row;align-items:center;gap:6px">
+      <label class="fg" style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--ink3)">Estado:</label>
+      <select class="fsel" id="placasEst" onchange="loadPlacas(1)">
+        <option value="">Todos (3,4,6,7)</option>
+        <option value="3">3 · Sin preop</option>
+        <option value="4">4 · Sin GPS + movimiento</option>
+        <option value="6">6 · Con movimiento sin preop</option>
+        <option value="7">7 · Otro</option>
+      </select>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn btn-accent btn-sm" onclick="exportPlacasCSV()">⬇ CSV</button>
+  </div>
+
+  <div class="tcard" style="padding:0;overflow:hidden">
+    <table class="dtable just-table">
+      <thead><tr>
+        <th class="sortable" onclick="sortPlacaCol(0,this)">Placa</th>
+        <th class="sortable" onclick="sortPlacaCol(1,this)">Tipo</th>
+        <th class="sortable" onclick="sortPlacaCol(2,this)">Sede</th>
+        <th class="sortable" onclick="sortPlacaCol(3,this)">Contrato</th>
+        <th class="sortable" onclick="sortPlacaCol(4,this)">Fecha</th>
+        <th class="sortable" onclick="sortPlacaCol(5,this)">Estado</th>
+        <th>Justificado</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="placasBody"><tr class="empty-row"><td colspan="8">Cargue datos primero</td></tr></tbody>
+    </table>
+    <div class="pag" id="placasPag" style="padding:8px 12px"></div>
+  </div>
+</div><!-- /tPlacas -->
+
+<!-- ══════════ TAB JUSTIFICACIÓN ══════════ -->
+<div id="tJust" class="ptab-panel">
+  <div class="just-grid">
+
+    <!-- TABLA JUSTIFICACIONES -->
+    <div>
+      <div class="toolbar">
+        <strong style="font-size:.9rem">Justificaciones</strong>
+        <div class="spacer"></div>
+        <button class="btn btn-primary btn-sm" onclick="addJustRow()">+ Nueva</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportJust()">⬇ JSON</button>
+        <label class="btn btn-ghost btn-sm" style="cursor:pointer">⬆ Importar<input type="file" accept=".json" style="display:none" onchange="importJust(this)"></label>
+      </div>
+      <div class="tcard" style="padding:0;overflow:hidden">
+        <table class="dtable just-table">
+          <thead><tr><th>Placa</th><th>Fecha</th><th>Motivo</th><th>Observación</th><th></th></tr></thead>
+          <tbody id="justBody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:8px;font-size:.73rem;color:var(--ink3)">
+        Los registros justificados aparecen como <span class="eb e8">8 · Justificado</span> en el dashboard al recargar los datos.
+      </div>
+    </div>
+
+    <!-- CATÁLOGO -->
+    <div class="cat-card">
+      <h4>Catálogo de Motivos</h4>
+      <div id="catalogList"></div>
+      <div class="add-row">
+        <input type="text" class="add-inp" id="newMotivo" placeholder="Nuevo motivo…" maxlength="80">
+        <button class="btn btn-accent btn-sm" onclick="addMotivo()">+</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /tJust -->
 
 </div><!-- /preop-wrap -->
 
 <script>
-let _charts = {};
-let _pPlacas = 1, _pGps = 1;
+// ═══════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════
+const G = {
+  datos: null,          // respuesta de /datos
+  justificaciones: [],
+  catalogo: [],
+  charts: {},
+  placasSortCol: 4, placasSortDir: 1,
+  placasPage: 1,
+  placasCacheAll: [],   // todos los registros 3,4,6,7 del backend
+};
 
-function _fmtFecha(iso) {
-  if (!iso) return '—';
-  const p = iso.split('-');
-  if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
-  return iso;
+const ESTADOS_INCUMP = ['3','4','6','7'];
+
+function nEstado(texto) {
+  const m = String(texto).match(/^(\d+)\./);
+  return m ? m[1] : '0';
 }
-let _estadosDisponibles = [];
-let _filtrosGlobales = {};
-
-function _destruir(id) {
-  if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+function ebadge(texto) {
+  const n = nEstado(texto);
+  return `<span class="eb e${n}">${texto}</span>`;
 }
-function mostrarError(msg) {
-  const el = document.getElementById('alertaError');
-  el.textContent = '⚠️ ' + msg; el.style.display = 'block';
+function fmtN(n) { return n == null ? '—' : Number(n).toLocaleString('es-CO'); }
+function fmtP(n) { return n == null ? '—' : Number(n).toLocaleString('es-CO',{minimumFractionDigits:1,maximumFractionDigits:1})+'%'; }
+function fmtF(iso) { if (!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+
+// ═══════════════════════════════════════════════════════
+// PERSISTENCIA localStorage
+// ═══════════════════════════════════════════════════════
+function saveLS() {
+  try {
+    localStorage.setItem('preop_just', JSON.stringify(G.justificaciones));
+    localStorage.setItem('preop_cat',  JSON.stringify(G.catalogo));
+  } catch(e){}
 }
-function ocultarError() {
-  document.getElementById('alertaError').style.display = 'none';
+function loadLS() {
+  try {
+    const j = localStorage.getItem('preop_just');
+    const c = localStorage.getItem('preop_cat');
+    if (j) G.justificaciones = JSON.parse(j);
+    if (c) G.catalogo = JSON.parse(c);
+    else   G.catalogo = ['GPS sin señal','Vehículo en mantenimiento','Error plataforma','Festivo sin operación','Emergencia'];
+  } catch(e) { G.catalogo = ['GPS sin señal','Error plataforma','Festivo sin operación']; }
 }
 
-function cargar() {
-  const params = new URLSearchParams();
-  const sede     = document.getElementById('fSede').value;
-  const contrato = document.getElementById('fContrato').value;
-  const fecha    = document.getElementById('fFecha').value;
-  const tipo     = document.getElementById('fTipo').value;
-  if (sede)     params.set('sede', sede);
-  if (contrato) params.set('contrato', contrato);
-  if (fecha)    params.set('fecha', fecha);
-  if (tipo)     params.set('tipo', tipo);
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
+function showTab(id, btn) {
+  document.querySelectorAll('.ptab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'tJust')   renderJust();
+  if (id === 'tPlacas') loadPlacas(1);
+}
 
-  _filtrosGlobales = { sede, contrato, fecha, tipo };
+// ═══════════════════════════════════════════════════════
+// CARGA DATOS DASHBOARD
+// ═══════════════════════════════════════════════════════
+function getFilters() {
+  return {
+    fecha:    document.getElementById('fFecha').value,
+    sede:     document.getElementById('fSede').value,
+    contrato: document.getElementById('fContrato').value,
+    tipo:     document.getElementById('fTipo').value,
+  };
+}
 
-  document.getElementById('overlay').style.display = 'flex';
-  ocultarError();
+function applyFilters() { loadDashboard(); }
 
-  fetch('/coordinador/preoperacionales/datos?' + params.toString())
-    .then(r => r.json())
+function resetFilters() {
+  ['fFecha','fSede','fContrato','fTipo'].forEach(id => document.getElementById(id).value = '');
+  loadDashboard();
+}
+
+function loadDashboard() {
+  const f = getFilters();
+  const qs = new URLSearchParams(Object.fromEntries(Object.entries(f).filter(([,v])=>v)));
+  fetch(`/coordinador/preoperacionales/datos?${qs}`)
+    .then(r=>r.json())
     .then(data => {
-      document.getElementById('overlay').style.display = 'none';
-      if (data.meta && !data.meta.ok) {
-        mostrarError(data.meta.error || 'Error al cargar datos');
-        return;
-      }
-      renderizar(data);
-      _pPlacas = 1; _pGps = 1;
-      cargarPlacas(1);
-      cargarGps(1);
+      G.datos = data;
+      populateFilters(data.opciones);
+      renderKPIs(data.kpis, data.meta);
+      destroyCharts();
+      buildCharts(data);
+      renderSedeTable(data.sedes);
+      renderEstadosTable(data.estados, data.kpis.total);
+      updateHeader(data.meta);
     })
-    .catch(e => {
-      document.getElementById('overlay').style.display = 'none';
-      mostrarError('Error de conexión: ' + e.message);
-    });
+    .catch(e => console.error('[Preop]', e));
 }
 
-function limpiarFiltros() {
-  ['fSede','fContrato','fFecha','fTipo'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  cargar();
+function populateFilters(op) {
+  if (!op) return;
+  const cur = {
+    fFecha:    document.getElementById('fFecha').value,
+    fSede:     document.getElementById('fSede').value,
+    fContrato: document.getElementById('fContrato').value,
+    fTipo:     document.getElementById('fTipo').value,
+  };
+  fillSel('fFecha',    op.fechas    || [], v=>fmtF(v), cur.fFecha);
+  fillSel('fSede',     op.sedes     || [], null, cur.fSede);
+  fillSel('fContrato', op.contratos || [], null, cur.fContrato);
+  fillSel('fTipo',     op.tipos     || [], null, cur.fTipo);
 }
 
-function sincronizar() {
-  const btn = document.getElementById('btnSync');
-  btn.classList.add('loading');
-  btn.textContent = '↻ Actualizando…';
-  fetch('/coordinador/preoperacionales/sincronizar', { method: 'POST' })
-    .then(r => r.json())
-    .then(d => {
-      btn.classList.remove('loading');
-      btn.textContent = '↻ Actualizar datos';
-      if (d.ok) cargar();
-      else mostrarError(d.error || 'Error al sincronizar');
-    })
-    .catch(() => {
-      btn.classList.remove('loading');
-      btn.textContent = '↻ Actualizar datos';
-    });
-}
-
-function poblarSelect(id, opciones, actual) {
+function fillSel(id, vals, labelFn, curVal) {
   const sel = document.getElementById(id);
   const first = sel.options[0];
   sel.innerHTML = '';
   sel.appendChild(first);
-  opciones.forEach(o => {
-    const opt = document.createElement('option');
-    opt.value = o;
-    // Fechas ISO → mostrar dd/mm/yyyy, el value sigue siendo ISO para el backend
-    opt.textContent = (id === 'fFecha') ? _fmtFecha(o) : o;
-    if (o === actual) opt.selected = true;
-    sel.appendChild(opt);
+  vals.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = labelFn ? labelFn(v) : v;
+    sel.appendChild(o);
+  });
+  if (curVal) sel.value = curVal;
+}
+
+function updateHeader(meta) {
+  const chip = document.getElementById('syncChip');
+  if (!meta) { chip.textContent = 'Sin datos'; chip.className='sync-chip'; return; }
+  if (meta.ok) {
+    const ts = meta.actualizado ? new Date(meta.actualizado).toLocaleString('es-CO') : '';
+    chip.textContent = `✔ ${fmtN(meta.registros)} registros · ${ts}`;
+    chip.className = 'sync-chip ok';
+    document.getElementById('hdrSub').textContent = `${fmtN(G.datos?.kpis?.total)} registros`;
+  } else {
+    chip.textContent = '✖ Error: ' + (meta.error || 'desconocido');
+    chip.className = 'sync-chip err';
+  }
+}
+
+function sincronizar() {
+  const btn = document.getElementById('btnSync');
+  btn.disabled = true; btn.textContent = '⏳ Sincronizando…';
+  fetch('/coordinador/preoperacionales/sincronizar', {method:'POST'})
+    .then(r=>r.json())
+    .then(d => {
+      btn.disabled=false; btn.textContent='🔄 Sincronizar';
+      if (d.ok) { loadDashboard(); }
+      else alert('Error al sincronizar: ' + d.error);
+    })
+    .catch(e=>{ btn.disabled=false; btn.textContent='🔄 Sincronizar'; alert('Error de red'); });
+}
+
+// ═══════════════════════════════════════════════════════
+// KPIs
+// ═══════════════════════════════════════════════════════
+function renderKPIs(kpis, meta) {
+  const justSet = new Set(G.justificaciones.map(j=>`${j.placa}|${j.fecha}`));
+  const j8 = justSet.size;
+  const pct = kpis.pct_cumplimiento;
+  const cards = [
+    {lbl:'Total Registros',  val:fmtN(kpis.total),           sub:'Todos los estados',      cls:'kpi--brand', tip:'Total filas en el período filtrado'},
+    {lbl:'% Cumplimiento',   val:fmtP(pct),                  sub:`${fmtN(kpis.cumple)} / ${fmtN(kpis.con_movimiento)} con mov.`, cls:pct>=80?'kpi--ok':'kpi--danger', tip:'Estados 1 y 2 sobre vehículos con movimiento'},
+    {lbl:'Incumplimiento',   val:fmtN(kpis.incumple),        sub:'Estado 6',               cls:'kpi--danger', tip:'Con movimiento sin preoperacional'},
+    {lbl:'Sin Movimiento',   val:fmtN(kpis.sin_mov),         sub:'Estado 5',               cls:'kpi--ink',    tip:'Excluidos del denominador de cumplimiento'},
+    {lbl:'Sin GPS activo',   val:fmtN((kpis.sin_gps)||0),    sub:'Estados 2 + 4',          cls:'kpi--warn',   tip:'Confirmados sin GPS y vehículos sin GPS con movimiento'},
+    {lbl:'Justificados',     val:fmtN(j8),                   sub:'Estado 8 (local)',        cls:'kpi--accent', tip:'Registros con justificación manual guardada en este navegador'},
+  ];
+  document.getElementById('kpiGrid').innerHTML = cards.map(c=>`
+    <div class="kpi ${c.cls}">
+      <div class="kpi-lbl">${c.lbl}</div>
+      <div class="kpi-val">${c.val}</div>
+      <div class="kpi-sub">${c.sub}</div>
+      <div class="kpi-tip">${c.tip}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════
+const CEST = {'1':'#16A34A','2':'#22C55E','3':'#DC2626','4':'#F59E0B','5':'#94A3B8','6':'#991B1B','7':'#7C3AED','8':'#0D9488'};
+
+function destroyCharts() {
+  ['cDonut','cSedes','cInc','cLine'].forEach(id=>{
+    if (G.charts[id]) { G.charts[id].destroy(); delete G.charts[id]; }
   });
 }
 
-function _estadoBadge(estado) {
-  const n = parseInt(estado.charAt(0)) || 0;
-  const cls = n >= 1 && n <= 8 ? 'est-' + n : '';
-  return `<span class="est-badge ${cls}">${estado}</span>`;
-}
+function buildCharts(data) {
+  const inkColor = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#1E293B';
+  const ink2 = getComputedStyle(document.documentElement).getPropertyValue('--ink2').trim() || '#475569';
+  const surfColor = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fff';
 
-function renderizar(data) {
-  const k = data.kpis;
-  const fa = data.filtros_activos || {};
-
-  document.getElementById('kTotal').textContent       = k.total.toLocaleString();
-  document.getElementById('kPctCumple').textContent   = k.pct_cumplimiento + '%';
-  document.getElementById('kCumple').textContent      = k.cumple.toLocaleString() + ' confirmados';
-  document.getElementById('kPctIncumple').textContent = k.pct_incumplimiento + '%';
-  document.getElementById('kIncumple').textContent    = k.incumple.toLocaleString() + ' sin preop.';
-  document.getElementById('kSinMov').textContent      = k.sin_mov.toLocaleString();
-  document.getElementById('kConMov').textContent      = (k.con_movimiento || 0).toLocaleString();
-
-  // KPI sin GPS: contar de estados
+  // ── Donut estados ──
   const estados = data.estados || [];
-  const sinGps = estados
-    .filter(e => e.estado.toLowerCase().includes('sin gps'))
-    .reduce((s, e) => s + e.total, 0);
-  document.getElementById('kSinGps').textContent = sinGps.toLocaleString();
+  G.charts['cDonut'] = new Chart(document.getElementById('cDonut'), {
+    type:'doughnut',
+    data:{
+      labels: estados.map(e => e.estado.length>30?e.estado.slice(0,28)+'…':e.estado),
+      datasets:[{ data: estados.map(e=>e.total),
+        backgroundColor: estados.map(e=>CEST[nEstado(e.estado)]||'#64748B'),
+        borderWidth:2, borderColor:surfColor }]
+    },
+    options:{ plugins:{ legend:{ position:'right', labels:{ font:{size:10}, color:inkColor } } }, cutout:'60%' }
+  });
 
-  if (data.meta && data.meta.actualizado) {
-    const d = new Date(data.meta.actualizado + 'Z');
-    document.getElementById('metaInfo').textContent =
-      `Última actualización: ${d.toLocaleDateString('es-CO')} ${d.toLocaleTimeString('es-CO')}` +
-      ` · ${k.total.toLocaleString()} registros`;
-  }
+  // ── Sedes ──
+  const sedes = data.sedes || [];
+  const sedeH = Math.max(240, sedes.length * 26);
+  const cv = document.getElementById('cSedes');
+  cv.style.height = sedeH+'px'; cv.parentElement.style.height = sedeH+'px';
+  G.charts['cSedes'] = new Chart(cv, {
+    type:'bar',
+    data:{
+      labels: sedes.map(s=>s.sede),
+      datasets:[{ label:'% Cumplimiento', data: sedes.map(s=>s.pct),
+        backgroundColor: sedes.map(s=>s.pct>=80?'#16A34A':s.pct>=60?'#F59E0B':'#DC2626'),
+        borderRadius:4, borderSkipped:false }]
+    },
+    options:{ indexAxis:'y', plugins:{legend:{display:false}},
+      scales:{ x:{min:0,max:100,ticks:{callback:v=>v+'%',color:ink2}}, y:{ticks:{color:inkColor}} } }
+  });
 
-  const op = data.opciones || {};
-  poblarSelect('fSede',     op.sedes     || [], fa.sede);
-  poblarSelect('fContrato', op.contratos || [], fa.contrato);
-  poblarSelect('fFecha',    op.fechas    || [], fa.fecha);
-  poblarSelect('fTipo',     op.tipos     || [], fa.tipo);
+  // ── Top incumplimiento ──
+  const topInc = data.top_incumplimiento || [];
+  G.charts['cInc'] = new Chart(document.getElementById('cInc'), {
+    type:'bar',
+    data:{
+      labels: topInc.map(t=>t.contrato),
+      datasets:[{ label:'Incumplimientos', data: topInc.map(t=>t.incumple),
+        backgroundColor:'#DC2626', borderRadius:4, borderSkipped:false }]
+    },
+    options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{ y:{ticks:{color:inkColor}} } }
+  });
 
-  // Serie temporal
-  _destruir('chartSerie');
+  // ── Tendencia diaria ──
   const serie = data.serie_temporal || [];
-  _charts['chartSerie'] = new Chart(document.getElementById('chartSerie'), {
-    type: 'bar',
-    data: {
-      labels: serie.map(s => _fmtFecha(s.fecha)),
-      datasets: [
-        { label: 'Confirmados', data: serie.map(s => s.cumple),
-          backgroundColor: '#16a34a', stack: 'a' },
-        { label: 'Incumplimiento', data: serie.map(s => s.incumple),
-          backgroundColor: '#dc2626', stack: 'a' },
-        { label: 'Otros', data: serie.map(s => s.total - s.cumple - s.incumple),
-          backgroundColor: '#cbd5e1', stack: 'a' },
+  G.charts['cLine'] = new Chart(document.getElementById('cLine'), {
+    type:'line',
+    data:{
+      labels: serie.map(s=>fmtF(s.fecha)),
+      datasets:[
+        { label:'% Cumplimiento', data: serie.map(s=>{
+            const cm = s.total - (s.sin_mov||0);
+            return cm ? +(s.cumple/cm*100).toFixed(1) : 0;
+          }), borderColor:'#2E75B6', backgroundColor:'rgba(46,117,182,.15)', fill:true, tension:.3, pointRadius:3 },
+        { label:'Meta (80%)', data: serie.map(()=>80), borderColor:'#DC2626', borderDash:[6,4], pointRadius:0, fill:false }
       ]
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
-      scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
-        y: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
-      }
-    }
+    options:{ plugins:{legend:{labels:{color:inkColor,font:{size:11}}}},
+      scales:{ y:{min:0,max:100,ticks:{callback:v=>v+'%',color:ink2}}, x:{ticks:{color:ink2,maxRotation:45}} } }
   });
+}
 
-  // Donut estados
-  _destruir('chartEstados');
-  const coloresEstados = ['#16a34a','#7c3aed','#d97706','#6d28d9','#94a3b8','#dc2626','#3b82f6','#059669'];
-  _charts['chartEstados'] = new Chart(document.getElementById('chartEstados'), {
-    type: 'doughnut',
-    data: {
-      labels: estados.map(e => e.estado.replace(/^\d+\.\s*/, '')),
-      datasets: [{ data: estados.map(e => e.total),
-                   backgroundColor: coloresEstados,
-                   borderWidth: 2, borderColor: '#fff' }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
-      }
-    }
-  });
-
-  // Sedes horizontal
-  _destruir('chartSedes');
-  const sedes = (data.sedes || []).sort((a, b) => b.pct - a.pct);
-  _charts['chartSedes'] = new Chart(document.getElementById('chartSedes'), {
-    type: 'bar',
-    data: {
-      labels: sedes.map(s => s.sede),
-      datasets: [{ label: '% Cumplimiento', data: sedes.map(s => s.pct),
-                   backgroundColor: sedes.map(s => s.pct >= 80 ? '#16a34a' : s.pct >= 60 ? '#f59e0b' : '#dc2626'),
-                   borderRadius: 4 }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, callback: v => v + '%' } },
-        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
-      }
-    }
-  });
-
-  // Top incumplimiento
-  const tbody = document.querySelector('#tablaTop tbody');
-  tbody.innerHTML = '';
-  (data.top_incumplimiento || []).forEach((row, i) => {
-    tbody.innerHTML += `<tr>
-      <td>${i + 1}</td>
-      <td>${row.contrato}</td>
-      <td><span class="badge-bad">${row.incumple}</span></td>
-    </tr>`;
-  });
-
-  // Poblar select de estados para tabla placas
-  if (_estadosDisponibles.length === 0 && estados.length > 0) {
-    _estadosDisponibles = estados.map(e => e.estado);
-    const sel = document.getElementById('pEstado');
-    _estadosDisponibles.forEach(e => {
-      const opt = document.createElement('option');
-      opt.value = e; opt.textContent = e;
-      sel.appendChild(opt);
-    });
+// ═══════════════════════════════════════════════════════
+// TABLAS DASHBOARD
+// ═══════════════════════════════════════════════════════
+function renderSedeTable(sedes) {
+  if (!sedes || !sedes.length) {
+    document.getElementById('sedeBody').innerHTML = '<tr class="empty-row"><td colspan="5">Sin datos</td></tr>';
+    return;
   }
+  document.getElementById('sedeBody').innerHTML = sedes.map(s=>{
+    const cls = s.pct>=80?'sg':s.pct>=60?'sy':'sr';
+    return `<tr class="clickable" onclick="filterBySede('${s.sede.replace(/'/g,"\\'")}')">
+      <td>${s.sede}</td><td>${fmtN(s.total)}</td><td>${fmtN(s.cumple)}</td>
+      <td>${fmtN(s.total-s.cumple-(s.sin_mov||0))}</td>
+      <td class="${cls}">${fmtP(s.pct)}</td>
+    </tr>`;
+  }).join('');
 }
 
-// ─── Tabla placas ─────────────────────────────────────────────────────────────
-function _placasParams(page) {
-  const p = new URLSearchParams();
-  if (_filtrosGlobales.sede)     p.set('sede', _filtrosGlobales.sede);
-  if (_filtrosGlobales.contrato) p.set('contrato', _filtrosGlobales.contrato);
-  if (_filtrosGlobales.fecha)    p.set('fecha', _filtrosGlobales.fecha);
-  if (_filtrosGlobales.tipo)     p.set('tipo', _filtrosGlobales.tipo);
-  const estado = document.getElementById('pEstado').value;
-  const q      = document.getElementById('pBuscar').value.trim();
-  if (estado) p.set('estado', estado);
-  if (q)      p.set('q', q);
-  p.set('page', page);
-  return p;
+function filterBySede(sede) {
+  document.getElementById('fSede').value = sede;
+  applyFilters();
 }
 
-function cargarPlacas(page) {
-  _pPlacas = page;
-  const tbody = document.getElementById('tbodyPlacas');
-  tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading"><div class="spinner"></div></td></tr>';
+function renderEstadosTable(estados, total) {
+  if (!estados || !estados.length) {
+    document.getElementById('estadosBody').innerHTML = '<tr class="empty-row"><td colspan="3">Sin datos</td></tr>';
+    return;
+  }
+  document.getElementById('estadosBody').innerHTML = estados.map(e=>`
+    <tr>
+      <td>${ebadge(e.estado)}</td>
+      <td>${fmtN(e.total)}</td>
+      <td>${fmtP(total?e.total/total*100:0)}</td>
+    </tr>`).join('');
+}
 
-  fetch('/coordinador/preoperacionales/placas?' + _placasParams(page).toString())
-    .then(r => r.json())
+// ═══════════════════════════════════════════════════════
+// TAB PLACAS
+// ═══════════════════════════════════════════════════════
+function loadPlacas(page) {
+  G.placasPage = page || G.placasPage;
+  const f = getFilters();
+  const est = document.getElementById('placasEst').value;
+  const q   = document.getElementById('placasQ').value;
+
+  // construir filtro de estados 3,4,6,7 (+ el seleccionado si hay)
+  const estFiltro = est || '';
+
+  const qs = new URLSearchParams({
+    ...Object.fromEntries(Object.entries(f).filter(([,v])=>v)),
+    ...(estFiltro ? {estado_num: estFiltro} : {}),
+    ...(q ? {q} : {}),
+    page: G.placasPage,
+    incumplimiento: '1',
+  });
+
+  document.getElementById('placasBody').innerHTML = '<tr class="empty-row"><td colspan="8"><span class="spinner"></span></td></tr>';
+
+  fetch(`/coordinador/preoperacionales/placas?${qs}`)
+    .then(r=>r.json())
     .then(data => {
-      document.getElementById('badgePlacas').textContent = data.total.toLocaleString();
-      tbody.innerHTML = '';
-      if (!data.filas.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading">Sin resultados</td></tr>';
-        document.getElementById('pagPlacas').innerHTML = '';
-        return;
-      }
-      data.filas.forEach(r => {
-        tbody.innerHTML += `<tr>
-          <td><strong>${r.placa}</strong></td>
-          <td>${r.tipo}</td><td>${r.sede}</td><td>${r.contrato}</td>
-          <td>${_fmtFecha(r.fecha)}</td><td>${r.preop || '—'}</td>
-          <td>${_estadoBadge(r.estado)}</td>
-        </tr>`;
-      });
-      _renderPag('pagPlacas', page, data.pages, cargarPlacas);
+      G.placasCacheAll = data.filas || [];
+      renderPlacasTable(data);
+    })
+    .catch(e=>{ document.getElementById('placasBody').innerHTML='<tr class="empty-row"><td colspan="8">Error al cargar</td></tr>'; });
+}
 
-      // Poblar estados si aún no se hizo
-      if (_estadosDisponibles.length === 0 && data.estados) {
-        _estadosDisponibles = data.estados;
-        const sel = document.getElementById('pEstado');
-        data.estados.forEach(e => {
-          const opt = document.createElement('option');
-          opt.value = e; opt.textContent = e;
-          sel.appendChild(opt);
+function renderPlacasTable(data) {
+  const justSet = new Set(G.justificaciones.map(j=>`${j.placa}|${j.fecha}`));
+  const filas = data.filas || [];
+
+  // KPIs placas
+  const cnt = {3:0,4:0,6:0,7:0,8:0};
+  filas.forEach(r=>{
+    const n = parseInt(nEstado(r.estado));
+    if (justSet.has(`${r.placa}|${r.fecha}`)) cnt[8]=(cnt[8]||0)+1;
+    else if (cnt[n]!=null) cnt[n]++;
+  });
+  document.getElementById('placasKpiGrid').innerHTML = [
+    {l:'Estado 3',v:fmtN(cnt[3]),c:'kpi--danger'},{l:'Estado 4',v:fmtN(cnt[4]),c:'kpi--warn'},
+    {l:'Estado 6',v:fmtN(cnt[6]),c:'kpi--danger'},{l:'Estado 7',v:fmtN(cnt[7]),c:'kpi--accent'},
+    {l:'Justificados',v:fmtN(cnt[8]),c:'kpi--ok'},
+  ].map(c=>`<div class="kpi ${c.c}" style="padding:12px 14px"><div class="kpi-lbl">${c.l}</div><div class="kpi-val" style="font-size:1.4rem">${c.v}</div></div>`).join('');
+
+  if (!filas.length) {
+    document.getElementById('placasBody').innerHTML='<tr class="empty-row"><td colspan="8">Sin registros con estos filtros</td></tr>';
+    document.getElementById('placasPag').innerHTML='';
+    return;
+  }
+
+  document.getElementById('placasBody').innerHTML = filas.map(r=>{
+    const key=`${r.placa}|${r.fecha}`;
+    const isJ = justSet.has(key);
+    const estadoMostrar = isJ ? '8. Justificado' : r.estado;
+    return `<tr>
+      <td><strong>${r.placa}</strong></td>
+      <td>${r.tipo}</td><td>${r.sede}</td><td>${r.contrato}</td>
+      <td>${fmtF(r.fecha)}</td>
+      <td>${ebadge(estadoMostrar)}</td>
+      <td>${isJ?'<span class="eb e8">✔ Sí</span>':'<span style="color:var(--ink3)">No</span>'}</td>
+      <td><button class="btn btn-accent btn-sm" onclick='openJust("${r.placa}","${r.fecha}")'>Justificar</button></td>
+    </tr>`;
+  }).join('');
+
+  // paginación
+  const total=data.total, pages=data.pages, page=data.page;
+  let h=`<button class="pbtn" onclick="loadPlacas(${page-1})" ${page<=1?'disabled':''}>‹</button>`;
+  const s=Math.max(1,page-2), e2=Math.min(pages,page+2);
+  for(let i=s;i<=e2;i++) h+=`<button class="pbtn ${i===page?'active':''}" onclick="loadPlacas(${i})">${i}</button>`;
+  h+=`<button class="pbtn" onclick="loadPlacas(${page+1})" ${page>=pages?'disabled':''}>›</button>`;
+  h+=`<span class="pinfo">${fmtN((page-1)*50+1)}–${fmtN(Math.min(page*50,total))} de ${fmtN(total)}</span>`;
+  document.getElementById('placasPag').innerHTML = h;
+}
+
+function sortPlacaCol(col, th) {
+  if (G.placasSortCol===col) G.placasSortDir*=-1;
+  else { G.placasSortCol=col; G.placasSortDir=1; }
+  document.querySelectorAll('#tPlacas .dtable th').forEach(t=>t.classList.remove('sa','sd'));
+  th.classList.add(G.placasSortDir===1?'sa':'sd');
+  // re-sort en cliente sobre la página actual
+  const rows=[...document.querySelectorAll('#placasBody tr')];
+  rows.sort((a,b)=>{
+    const av=a.cells[col]?.textContent.trim()||'';
+    const bv=b.cells[col]?.textContent.trim()||'';
+    return G.placasSortDir*(av<bv?-1:av>bv?1:0);
+  });
+  const tbody=document.getElementById('placasBody');
+  rows.forEach(r=>tbody.appendChild(r));
+}
+
+function exportPlacasCSV() {
+  const rows=[...document.querySelectorAll('#placasBody tr')];
+  const headers=['Placa','Tipo','Sede','Contrato','Fecha','Estado','Justificado'];
+  const csv=[headers,...rows.map(r=>[...r.cells].slice(0,-1).map(c=>c.textContent.trim()))]
+    .map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='preoperacionales_placas.csv'; a.click();
+}
+
+// ═══════════════════════════════════════════════════════
+// JUSTIFICACIONES
+// ═══════════════════════════════════════════════════════
+function openJust(placa, fecha) {
+  showTab('tJust', document.querySelectorAll('.ptab')[2]);
+  setTimeout(()=>addJustRow(placa, fecha), 50);
+}
+
+function addJustRow(placa='', fecha='') {
+  const id = Date.now();
+  const catOpts = G.catalogo.map(m=>`<option value="${m}">${m}</option>`).join('');
+  const allPlacas = [...new Set((G.datos?.opciones?.placas||[]))].sort();
+  const tr = document.createElement('tr');
+  tr.dataset.id = id;
+  tr.innerHTML = `
+    <td><input list="dl_${id}" type="text" value="${placa}" placeholder="Placa…">
+      <datalist id="dl_${id}">${allPlacas.map(p=>`<option value="${p}">`).join('')}</datalist></td>
+    <td><input type="date" value="${fecha}"></td>
+    <td><select>${catOpts}<option value="__otro__">Otro…</option></select></td>
+    <td><input type="text" placeholder="Observación…"></td>
+    <td>
+      <button class="btn btn-accent btn-sm" onclick="saveJustRow(${id})">Guardar</button>
+      <button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="this.closest('tr').remove()">✕</button>
+    </td>`;
+  document.getElementById('justBody').prepend(tr);
+  tr.querySelector('input[type=text]').focus();
+}
+
+function saveJustRow(id) {
+  const tr=document.querySelector(`tr[data-id="${id}"]`);
+  const inp=tr.querySelectorAll('input,select');
+  const placa=inp[0].value.trim().toUpperCase();
+  const fecha=inp[1].value;
+  let motivo=inp[2].value;
+  const obs=inp[3].value.trim();
+  if (motivo==='__otro__') motivo=prompt('Ingrese el motivo:')||'';
+  if (!placa||!fecha||!motivo){alert('Placa, fecha y motivo son requeridos.');return;}
+  G.justificaciones=G.justificaciones.filter(j=>!(j.placa===placa&&j.fecha===fecha));
+  G.justificaciones.push({placa,fecha,motivo,obs,guardado:new Date().toISOString()});
+  saveLS(); renderJust();
+  if (G.datos) applyFilters();
+}
+
+function renderJust() {
+  renderCatalog();
+  if (!G.justificaciones.length) {
+    document.getElementById('justBody').innerHTML='<tr class="empty-row"><td colspan="5">Sin justificaciones guardadas</td></tr>';
+    return;
+  }
+  document.getElementById('justBody').innerHTML=G.justificaciones
+    .sort((a,b)=>b.guardado.localeCompare(a.guardado))
+    .map(j=>`<tr>
+      <td><strong>${j.placa}</strong></td>
+      <td>${fmtF(j.fecha)}</td>
+      <td><span class="eb e8">${j.motivo}</span></td>
+      <td style="color:var(--ink2)">${j.obs||'—'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="delJust('${j.placa}','${j.fecha}')">✕</button></td>
+    </tr>`).join('');
+}
+
+function delJust(placa,fecha) {
+  if(!confirm(`¿Eliminar justificación de ${placa} del ${fmtF(fecha)}?`))return;
+  G.justificaciones=G.justificaciones.filter(j=>!(j.placa===placa&&j.fecha===fecha));
+  saveLS(); renderJust(); if(G.datos) applyFilters();
+}
+
+function exportJust() {
+  const b=new Blob([JSON.stringify({justificaciones:G.justificaciones,catalogo:G.catalogo},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download='justificaciones_preop.json'; a.click();
+}
+
+function importJust(inp) {
+  const r=new FileReader();
+  r.onload=e=>{
+    try {
+      const d=JSON.parse(e.target.result);
+      if(d.justificaciones){
+        d.justificaciones.forEach(j=>{
+          G.justificaciones=G.justificaciones.filter(x=>!(x.placa===j.placa&&x.fecha===j.fecha));
+          G.justificaciones.push(j);
         });
       }
-    })
-    .catch(() => {
-      tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading">Error al cargar</td></tr>';
-    });
+      if(d.catalogo) G.catalogo=[...new Set([...G.catalogo,...d.catalogo])];
+      saveLS(); renderJust(); if(G.datos) applyFilters();
+      alert(`Importadas: ${d.justificaciones?.length||0} justificaciones.`);
+    } catch(err){alert('Archivo inválido: '+err.message);}
+  };
+  r.readAsText(inp.files[0]); inp.value='';
 }
 
-function limpiarPlacas() {
-  document.getElementById('pEstado').value = '';
-  document.getElementById('pBuscar').value = '';
-  cargarPlacas(1);
+// ═══════════════════════════════════════════════════════
+// CATÁLOGO
+// ═══════════════════════════════════════════════════════
+function renderCatalog() {
+  document.getElementById('catalogList').innerHTML=G.catalogo.map((m,i)=>`
+    <div class="cat-item"><span>${m}</span>
+      <button class="btn btn-danger btn-sm" onclick="delMotivo(${i})">✕</button>
+    </div>`).join('');
+}
+function addMotivo() {
+  const inp=document.getElementById('newMotivo');
+  const v=inp.value.trim(); if(!v)return;
+  if(!G.catalogo.includes(v)){G.catalogo.push(v);saveLS();renderCatalog();}
+  inp.value='';
+}
+function delMotivo(i){G.catalogo.splice(i,1);saveLS();renderCatalog();}
+
+// ═══════════════════════════════════════════════════════
+// SORT TABLA GENÉRICO
+// ═══════════════════════════════════════════════════════
+function sortTbl(tbodyId, col, th) {
+  const tbody=document.getElementById(tbodyId);
+  const rows=[...tbody.rows];
+  const asc=th.classList.contains('sa');
+  th.closest('table').querySelectorAll('th').forEach(t=>t.classList.remove('sa','sd'));
+  th.classList.add(asc?'sd':'sa');
+  rows.sort((a,b)=>{
+    const av=a.cells[col].textContent.trim();
+    const bv=b.cells[col].textContent.trim();
+    const an=parseFloat(av.replace(/\./g,'').replace(',','.'));
+    const bn=parseFloat(bv.replace(/\./g,'').replace(',','.'));
+    const cmp=isNaN(an)||isNaN(bn)?av.localeCompare(bv,'es'):an-bn;
+    return asc?-cmp:cmp;
+  });
+  rows.forEach(r=>tbody.appendChild(r));
 }
 
-// ─── Tabla sin GPS ─────────────────────────────────────────────────────────────
-function cargarGps(page) {
-  _pGps = page;
-  const tbody = document.getElementById('tbodyGps');
-  tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading"><div class="spinner"></div></td></tr>';
-
-  const p = new URLSearchParams();
-  if (_filtrosGlobales.sede)     p.set('sede', _filtrosGlobales.sede);
-  if (_filtrosGlobales.contrato) p.set('contrato', _filtrosGlobales.contrato);
-  if (_filtrosGlobales.fecha)    p.set('fecha', _filtrosGlobales.fecha);
-  if (_filtrosGlobales.tipo)     p.set('tipo', _filtrosGlobales.tipo);
-  p.set('sin_gps', '1');
-  p.set('page', page);
-
-  fetch('/coordinador/preoperacionales/placas?' + p.toString())
-    .then(r => r.json())
-    .then(data => {
-      document.getElementById('badgeGps').textContent = data.total.toLocaleString();
-      tbody.innerHTML = '';
-      if (!data.filas.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading">Sin vehículos sin GPS en el período</td></tr>';
-        document.getElementById('pagGps').innerHTML = '';
-        return;
-      }
-      data.filas.forEach(r => {
-        tbody.innerHTML += `<tr>
-          <td><strong>${r.placa}</strong></td>
-          <td>${r.tipo}</td><td>${r.sede}</td><td>${r.contrato}</td>
-          <td>${_fmtFecha(r.fecha)}</td><td>${r.preop || '—'}</td>
-          <td>${_estadoBadge(r.estado)}</td>
-        </tr>`;
-      });
-      _renderPag('pagGps', page, data.pages, cargarGps);
-    })
-    .catch(() => {
-      tbody.innerHTML = '<tr><td colspan="7" class="tbl-loading">Error al cargar</td></tr>';
-    });
-}
-
-function _renderPag(elId, page, pages, fn) {
-  const el = document.getElementById(elId);
-  if (pages <= 1) { el.innerHTML = ''; return; }
-  el.innerHTML = `
-    <button class="pag-btn" onclick="${fn.name}(${page - 1})" ${page <= 1 ? 'disabled' : ''}>← Ant.</button>
-    <span class="pag-info">Página ${page} de ${pages}</span>
-    <button class="pag-btn" onclick="${fn.name}(${page + 1})" ${page >= pages ? 'disabled' : ''}>Sig. →</button>`;
-}
-
-// Carga inicial
-cargar();
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+loadLS();
+renderJust();
+loadDashboard();
 </script>
 {% endblock %}

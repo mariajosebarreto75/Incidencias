@@ -262,11 +262,17 @@ def _kpis(registros: list[dict], filtros: dict) -> dict:
     pct_cumplimiento    = round(cumple / con_mov * 100, 1) if con_mov else 0
     pct_incumplimiento  = round(incumple / con_mov * 100, 1) if con_mov else 0
 
+    sin_gps = sum(1 for r in registros if r["estado"] in {
+        "2. Preoperacional Confirmado y sin GPS",
+        "4. Vehículo con movimiento, Sin GPS",
+    })
+
     return {
         "total":              total,
         "cumple":             cumple,
         "incumple":           incumple,
         "sin_mov":            sin_mov,
+        "sin_gps":            sin_gps,
         "con_movimiento":     con_mov,
         "pct_cumplimiento":   pct_cumplimiento,
         "pct_incumplimiento": pct_incumplimiento,

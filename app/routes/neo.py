@@ -8,7 +8,9 @@ from flask import (
     jsonify,
     send_from_directory,
     current_app,
-    abort
+    abort,
+    redirect,
+    url_for,
 )
 
 from flask_login import (
@@ -1645,3 +1647,12 @@ def alertas_datos():
         "pendientes":       pendientes,
         "codigos_contrato": todos_contratos,
     })
+
+
+# ── Preoperacionales (alias para usuarios NEO) ─────────────────
+@neo.route("/neo/preoperacionales")
+@login_required
+def preoperacionales_neo():
+    if not current_user.tiene_permiso("preoperacionales"):
+        return redirect(url_for("neo.home"))
+    return render_template("coordinador/preoperacionales.html")
