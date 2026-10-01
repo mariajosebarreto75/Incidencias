@@ -381,7 +381,7 @@ mark.hl{background:rgba(15,118,110,.16);color:var(--teal);border-radius:2px;padd
             <button type="submit" class="btn btn-teal btn-sm">
               <i class="bi bi-funnel"></i>Aplicar
             </button>
-            <a href="{{ url_for('compromisos.index') }}" class="btn btn-ghost btn-sm" style="text-decoration:none;">
+            <a href="{{ url_for('compromisos.lista') }}" class="btn btn-ghost btn-sm" style="text-decoration:none;">
               Limpiar
             </a>
           </div>
@@ -881,7 +881,7 @@ mark.hl{background:rgba(15,118,110,.16);color:var(--teal);border-radius:2px;padd
   if(window.location.search){sessionStorage.setItem(K,window.location.href);}
   else{
     const s=sessionStorage.getItem(K);
-    if(s){try{const u=new URL(s);if(u.search){window.location.replace(s);return;}}catch(e){}}
+    if(s){try{const u=new URL(s);if(u.search&&u.pathname===window.location.pathname){window.location.replace(s);return;}}catch(e){}}
   }
   document.querySelectorAll('a.btn-ghost[href]').forEach(a=>{
     try{const u=new URL(a.href);if(u.pathname===window.location.pathname&&!u.search)
