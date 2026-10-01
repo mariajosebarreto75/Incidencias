@@ -8,12 +8,12 @@ class ParqueaderoRegistro(db.Model):
     id           = db.Column(db.Integer, primary_key=True)
     placa        = db.Column(db.String(10), nullable=False, index=True)
     tipo         = db.Column(db.String(10), nullable=False)   # 'carro' | 'moto'
-    hora_ingreso = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    hora_ingreso = db.Column(db.DateTime, nullable=False, default=datetime.now)
     hora_salida  = db.Column(db.DateTime, nullable=True)
     cascos       = db.Column(db.Integer, default=0, nullable=False)
     valor_total  = db.Column(db.Float, nullable=True)
     estado       = db.Column(db.String(15), nullable=False, default="activo")  # activo | finalizado
-    fecha        = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    fecha        = db.Column(db.Date, nullable=False, default=datetime.now)
 
     def to_dict(self):
         return {

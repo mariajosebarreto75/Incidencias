@@ -69,7 +69,7 @@ def sincronizar():
             item_duration_min = a.get("item_duration_min"),
 
             estado_local   = "pendiente",
-            fecha_recibida = datetime.utcnow(),
+            fecha_recibida = datetime.now(),
         )
         db.session.add(nueva)
         ids_existentes.add(a["id"])  # evita duplicados dentro del mismo lote

@@ -138,7 +138,7 @@ def iniciar_escalamiento(reporte) -> EscalamientoIncidencia | None:
     esc = EscalamientoIncidencia(
         reporte_id   = reporte.id,
         estado       = "supervisor_notificado",
-        notificado_at = datetime.utcnow(),
+        notificado_at = datetime.now(),
     )
     db.session.add(esc)
 
@@ -173,7 +173,7 @@ def iniciar_escalamiento(reporte) -> EscalamientoIncidencia | None:
 def _preguntar_neo(esc: EscalamientoIncidencia, reporte, nuevo_estado: str):
     """Envía mensaje en app a NEO preguntando si la incidencia sigue activa."""
     esc.estado = nuevo_estado
-    esc.notificado_at = datetime.utcnow()
+    esc.notificado_at = datetime.now()
     esc.respuesta_neo = None
 
     neo_users = _usuarios_rol_contrato("neo", reporte.contrato)
@@ -195,7 +195,7 @@ def _preguntar_neo(esc: EscalamientoIncidencia, reporte, nuevo_estado: str):
 
 def _escalar_a_coordinador(esc: EscalamientoIncidencia, reporte, motivo: str = ""):
     esc.estado = "coordinador_notificado"
-    esc.notificado_at = datetime.utcnow()
+    esc.notificado_at = datetime.now()
 
     coordinadores = _usuarios_rol_contrato("coordinador", reporte.contrato)
     info = _texto_incidencia(reporte)
@@ -218,7 +218,7 @@ def _escalar_a_coordinador(esc: EscalamientoIncidencia, reporte, motivo: str = "
 
 def _escalar_a_director(esc: EscalamientoIncidencia, reporte, motivo: str = ""):
     esc.estado = "director_notificado"
-    esc.notificado_at = datetime.utcnow()
+    esc.notificado_at = datetime.now()
 
     directores = _usuarios_rol_global("director")
     info = _texto_incidencia(reporte)
@@ -236,7 +236,7 @@ def _escalar_a_director(esc: EscalamientoIncidencia, reporte, motivo: str = ""):
 
 def _escalar_a_gerencia(esc: EscalamientoIncidencia, reporte):
     esc.estado = "gerencia_notificada"
-    esc.notificado_at = datetime.utcnow()
+    esc.notificado_at = datetime.now()
 
     gerentes = _usuarios_rol_global("gerente") + _usuarios_rol_global("subgerente")
     info = _texto_incidencia(reporte)
@@ -272,7 +272,7 @@ def registrar_respuesta_neo(esc_id: int, sigue_activa: bool, username: str) -> d
         return {"ok": False, "mensaje": "Este escalamiento no está esperando respuesta de NEO"}
 
     esc.respuesta_neo    = sigue_activa
-    esc.respuesta_neo_at = datetime.utcnow()
+    esc.respuesta_neo_at = datetime.now()
     reporte = esc.reporte
 
     if sigue_activa:
@@ -325,7 +325,7 @@ def gestionar_escalamiento(esc_id: int, usuario: User, notas: str = "") -> dict:
 
     esc.estado         = "cerrado_gestionado"
     esc.gestionado_por = usuario.username
-    esc.gestionado_at  = datetime.utcnow()
+    esc.gestionado_at  = datetime.now()
     esc.notas_gestion  = notas
     db.session.commit()
     return {"ok": True, "mensaje": "Escalamiento cerrado exitosamente"}
@@ -340,7 +340,7 @@ def verificar_timeouts():
     Corre cada 2 minutos. Revisa escalamientos activos y escala
     si el timeout de 10 minutos se cumplió sin respuesta.
     """
-    limite = datetime.utcnow() - timedelta(minutes=TIMEOUT_MINUTOS)
+    limite = datetime.now() - timedelta(minutes=TIMEOUT_MINUTOS)
 
     activos = EscalamientoIncidencia.query.filter(
         EscalamientoIncidencia.estado.in_([

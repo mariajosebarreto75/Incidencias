@@ -45,7 +45,7 @@ def _audit(operacion, registro, estado_antes=None, estado_desp=None, datos_antes
                 usuario_nom  = current_user.nombre_completo if current_user else None,
                 usuario_rol  = current_user.rol if current_user else None,
                 ip           = ip,
-                fecha        = datetime.utcnow(),
+                fecha        = datetime.now(),
             )
         )
     except Exception:
@@ -277,7 +277,7 @@ def api_he_guardar():
     todos_contratos  = {c.contrato.strip().lower(): c.id for c in _contratos_lista}
     contratos_nombre = {c.id: c.contrato for c in _contratos_lista}
     todos_cortes     = HeCorte.query.all()
-    ahora            = datetime.utcnow()
+    ahora            = datetime.now()
     uid              = current_user.id
 
     def _cid(f):
@@ -738,7 +738,7 @@ def api_he_bulk_delete():
                 usuario_nom  = current_user.nombre_completo,
                 usuario_rol  = current_user.rol,
                 ip           = ip,
-                fecha        = datetime.utcnow(),
+                fecha        = datetime.now(),
             ))
         db.session.commit()
     except Exception:
@@ -890,7 +890,7 @@ def api_he_validar(id):
     he.obs_neo           = obs
     he.estado            = autorizacion
     he.validado_por_id   = current_user.id
-    he.fecha_validacion  = datetime.utcnow()
+    he.fecha_validacion  = datetime.now()
     db.session.commit()
     return jsonify({
         "ok": True,
@@ -1360,7 +1360,7 @@ def api_he_cortes_cerrar(corte_id):
     d = request.get_json(silent=True) or {}
     corte.estado         = "CERRADO"
     corte.cerrado_por_id = current_user.id
-    corte.fecha_cierre   = datetime.utcnow()
+    corte.fecha_cierre   = datetime.now()
     corte.observacion    = d.get("observacion", corte.observacion)
     db.session.commit()
     return jsonify({"ok": True, "corte": corte.to_dict()})

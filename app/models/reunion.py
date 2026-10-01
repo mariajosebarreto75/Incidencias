@@ -15,7 +15,7 @@ class Reunion(db.Model):
     contrato_id  = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=True)
     recurrente   = db.Column(db.Boolean, default=False, nullable=False)
     creado_por   = db.Column(db.String(150))
-    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at   = db.Column(db.DateTime, default=datetime.now)
 
     contrato = db.relationship("Contrato", backref="reuniones", lazy=True)
 

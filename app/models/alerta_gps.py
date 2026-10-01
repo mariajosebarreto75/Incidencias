@@ -46,7 +46,7 @@ class AlertaGPS(db.Model):
     fecha_atencion= db.Column(db.DateTime)
 
     # ── Cuándo la recibimos nosotros ──────────────────────────
-    fecha_recibida = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    fecha_recibida = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     def __repr__(self):
         return f"<AlertaGPS {self.alert_id_gps} {self.alert_type} {self.vehicle_plate}>"

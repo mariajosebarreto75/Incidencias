@@ -1077,7 +1077,7 @@ def guardar_reporte():
                     pass  # No bloquear si GPS Monitor falla
                 alerta_obj.estado_local   = "resuelta"
                 alerta_obj.atendida_por   = current_user.username
-                alerta_obj.fecha_atencion = datetime.utcnow()
+                alerta_obj.fecha_atencion = datetime.now()
                 db.session.commit()
 
         return jsonify({
@@ -1176,7 +1176,7 @@ def api_actualizar_cuadrilla():
 def _auto_limpiar_alertas_antiguas():
     """Elimina alertas GPS con más de 1 día de antigüedad (solo quedan hoy y ayer)."""
     from datetime import timedelta
-    ayer = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     try:
         AlertaGPS.query.filter(AlertaGPS.triggered_at < ayer).delete(synchronize_session=False)
         db.session.commit()
@@ -1204,7 +1204,7 @@ def alertas_gps():
 
     # Solo alertas de hoy y ayer (triggered_at es varchar ISO, compara lexicográficamente)
     from datetime import timedelta
-    hoy  = datetime.utcnow()
+    hoy  = datetime.now()
     ayer = (hoy - timedelta(days=1)).strftime("%Y-%m-%d")
     q = q.filter(AlertaGPS.triggered_at >= ayer)
 
@@ -1318,7 +1318,7 @@ def responder_alerta_gps(id):
         if resultado and resultado[0]["ok"]:
             alerta.estado_local   = "resuelta" if accion == "resolver" else "liberada"
             alerta.atendida_por   = current_user.username
-            alerta.fecha_atencion = datetime.utcnow()
+            alerta.fecha_atencion = datetime.now()
             db.session.commit()
             return jsonify({"ok": True})
         else:
@@ -1332,7 +1332,7 @@ def responder_alerta_gps(id):
 @login_required
 def badge_alertas():
     from datetime import timedelta
-    ayer = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%d")
+    ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     count = AlertaGPS.query.filter(
         AlertaGPS.estado_local == "pendiente",
         AlertaGPS.triggered_at >= ayer,

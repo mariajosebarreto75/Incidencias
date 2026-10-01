@@ -61,7 +61,7 @@ class HoraExtra(db.Model):
 
     # Metadatos
     reportado_por_id    = db.Column(db.Integer, db.ForeignKey("users.id"))
-    fecha_reporte       = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_reporte       = db.Column(db.DateTime, default=datetime.now)
     validado_por_id     = db.Column(db.Integer, db.ForeignKey("users.id"))
     fecha_validacion    = db.Column(db.DateTime)
 

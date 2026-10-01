@@ -13,7 +13,7 @@ class HeCorte(db.Model):
     contrato_id     = db.Column(db.Integer, db.ForeignKey("contratos.id"))
     creado_por_id   = db.Column(db.Integer, db.ForeignKey("users.id"))
     cerrado_por_id  = db.Column(db.Integer, db.ForeignKey("users.id"))
-    fecha_creacion  = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_creacion  = db.Column(db.DateTime, default=datetime.now)
     fecha_cierre    = db.Column(db.DateTime)
     observacion     = db.Column(db.Text)
 

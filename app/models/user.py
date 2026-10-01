@@ -104,12 +104,12 @@ class User(
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
         self.contrasena = password
-        self.password_changed_at = datetime.utcnow()
+        self.password_changed_at = datetime.now()
 
     def password_expirada(self) -> bool:
         if not self.password_changed_at:
             return True
-        return datetime.utcnow() > self.password_changed_at + timedelta(days=_MESES_VIGENCIA * 30)
+        return datetime.now() > self.password_changed_at + timedelta(days=_MESES_VIGENCIA * 30)
 
     def check_password(
         self,

@@ -18,7 +18,7 @@ def _requiere_parqueadero():
 
 
 def _calcular_valor(tipo, hora_ingreso, cascos, hora_salida=None):
-    fin = hora_salida or datetime.utcnow()
+    fin = hora_salida or datetime.now()
     minutos = max(1, int((fin - hora_ingreso).total_seconds() / 60))
     if tipo == "moto":
         return TARIFA_MOTO + cascos * TARIFA_CASCO
@@ -54,7 +54,7 @@ def admin():
 def api_activos():
     _requiere_parqueadero()
     registros = ParqueaderoRegistro.query.filter_by(estado="activo").order_by(ParqueaderoRegistro.hora_ingreso).all()
-    ahora = datetime.utcnow()
+    ahora = datetime.now()
     resultado = []
     for r in registros:
         d = r.to_dict()
@@ -93,7 +93,7 @@ def api_ingresar():
     if existente:
         return jsonify({"ok": False, "msg": "La placa ya tiene un ingreso activo"}), 409
 
-    ahora = datetime.utcnow()
+    ahora = datetime.now()
     r = ParqueaderoRegistro(
         placa=placa, tipo=tipo, hora_ingreso=ahora,
         cascos=cascos if tipo == "moto" else 0,
@@ -115,7 +115,7 @@ def api_salir(id):
     data   = request.get_json(silent=True) or {}
     cascos = int(data.get("cascos", r.cascos))
 
-    ahora = datetime.utcnow()
+    ahora = datetime.now()
     r.hora_salida = ahora
     r.cascos      = cascos
     r.valor_total = _calcular_valor(r.tipo, r.hora_ingreso, cascos, ahora)

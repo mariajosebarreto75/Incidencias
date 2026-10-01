@@ -24,6 +24,6 @@ class HeAuditLog(db.Model):
     usuario_nom  = db.Column(db.String(200))
     usuario_rol  = db.Column(db.String(50))
     ip           = db.Column(db.String(60))
-    fecha        = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    fecha        = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     usuario = db.relationship("User", foreign_keys=[usuario_id])

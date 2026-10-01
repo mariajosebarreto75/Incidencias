@@ -845,7 +845,7 @@ def marcar_revision_reunion(id):
     r.revisado_reunion = not r.revisado_reunion
     if r.revisado_reunion:
         r.revisado_reunion_por = current_user.username
-        r.fecha_revision_reunion = datetime.utcnow()
+        r.fecha_revision_reunion = datetime.now()
     else:
         r.revisado_reunion_por = None
         r.fecha_revision_reunion = None

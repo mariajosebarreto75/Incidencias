@@ -213,7 +213,7 @@ def sincronizar() -> dict:
         resultado = {
             "ok": True,
             "registros": len(registros),
-            "actualizado": datetime.utcnow().isoformat(),
+            "actualizado": datetime.now().isoformat(),
             "error": None,
         }
         with _cache_lock:
@@ -227,7 +227,7 @@ def sincronizar() -> dict:
         resultado = {
             "ok": False,
             "registros": 0,
-            "actualizado": datetime.utcnow().isoformat(),
+            "actualizado": datetime.now().isoformat(),
             "error": str(e),
         }
         with _cache_lock:

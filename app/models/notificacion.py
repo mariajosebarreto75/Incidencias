@@ -18,7 +18,7 @@ class Notificacion(db.Model):
     tipo_incidencia  = db.Column(db.String(200))
 
     gestionada       = db.Column(db.Boolean, default=False, nullable=False)
-    fecha_creacion   = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    fecha_creacion   = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     def __repr__(self):
         return f"<Notificacion {self.tipo} → {self.usuario_destino} reporte={self.reporte_id}>"

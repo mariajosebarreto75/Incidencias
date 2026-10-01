@@ -56,7 +56,7 @@ class EscalamientoIncidencia(db.Model):
     estado = db.Column(db.String(40), nullable=False, default="supervisor_notificado")
 
     # Cuándo se envió la notificación del estado actual (para calcular el timeout)
-    notificado_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    notificado_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
     # Respuesta de NEO a la pregunta "¿sigue presentándose?"
     # None = no ha respondido, True = sí sigue, False = ya no
@@ -68,7 +68,7 @@ class EscalamientoIncidencia(db.Model):
     gestionado_at = db.Column(db.DateTime, nullable=True)
     notas_gestion = db.Column(db.Text, nullable=True)
 
-    creado_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    creado_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
 
     def __repr__(self):
         return f"<Escalamiento reporte={self.reporte_id} estado={self.estado}>"

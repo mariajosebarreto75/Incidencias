@@ -14,7 +14,7 @@ class PwdChangeCode(db.Model):
     id         = db.Column(db.Integer, primary_key=True)
     user_id    = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     code_hash  = db.Column(db.String(64), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     used       = db.Column(db.Boolean, default=False, nullable=False)
     attempts   = db.Column(db.Integer, default=0, nullable=False)
@@ -36,7 +36,7 @@ class PwdChangeCode(db.Model):
         nuevo = cls(
             user_id    = user_id,
             code_hash  = cls._hash(code),
-            expires_at = datetime.utcnow() + timedelta(minutes=EXPIRY_MINUTES),
+            expires_at = datetime.now() + timedelta(minutes=EXPIRY_MINUTES),
             reenvios   = reenvios_actuales,
         )
         db.session.add(nuevo)
@@ -56,7 +56,7 @@ class PwdChangeCode(db.Model):
         nuevo = cls(
             user_id    = user_id,
             code_hash  = cls._hash(code),
-            expires_at = datetime.utcnow() + timedelta(minutes=EXPIRY_MINUTES),
+            expires_at = datetime.now() + timedelta(minutes=EXPIRY_MINUTES),
             reenvios   = reenvios,
         )
         db.session.add(nuevo)
@@ -79,7 +79,7 @@ class PwdChangeCode(db.Model):
         if registro.used:
             raise ValueError("El código ya fue utilizado.")
 
-        if datetime.utcnow() > registro.expires_at:
+        if datetime.now() > registro.expires_at:
             raise ValueError("El código ha expirado. Solicita uno nuevo.")
 
         registro.attempts += 1
