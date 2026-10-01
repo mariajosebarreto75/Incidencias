@@ -1,0 +1,164 @@
+{% extends base_template %}
+{% block title %}Compromisos{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+:root{
+  --bg:#f0f4f8;--surf:#ffffff;--surf2:#f8fafc;
+  --teal:#0d7c6e;--teal-light:#e6f4f2;--teal-dark:#095f54;
+  --amber:#d97706;--amber-light:#fef3c7;
+  --red:#dc2626;--red-light:#fee2e2;
+  --blue:#2563eb;--blue-light:#dbeafe;
+  --green:#16a34a;--green-light:#dcfce7;
+  --ink:#1e293b;--ink2:#475569;--ink3:#94a3b8;
+  --border:#e2e8f0;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f172a;--surf:#1e293b;--surf2:#263348;
+  --teal:#14b8a6;--teal-light:#134e4a;--teal-dark:#5eead4;
+  --amber:#fbbf24;--amber-light:#451a03;
+  --red:#f87171;--red-light:#450a0a;
+  --blue:#60a5fa;--blue-light:#1e3a5f;
+  --green:#4ade80;--green-light:#052e16;
+  --ink:#f1f5f9;--ink2:#94a3b8;--ink3:#64748b;
+  --border:#334155;--shadow:0 1px 3px rgba(0,0,0,.4);
+}}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
+.hub{max-width:1100px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+
+/* Header */
+.hub-header{margin-bottom:2rem;}
+.hub-header h1{font-size:1.75rem;font-weight:700;color:var(--ink);}
+.hub-header p{color:var(--ink2);margin-top:.25rem;font-size:.95rem;}
+
+/* KPI strip */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2.5rem;}
+@media(max-width:700px){.kpi-strip{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:380px){.kpi-strip{grid-template-columns:1fr;}}
+.kpi-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
+  padding:1rem 1.25rem;box-shadow:var(--shadow);}
+.kpi-card .label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:.35rem;}
+.kpi-card .value{font-size:1.9rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;}
+.kpi-card.warn .value{color:var(--amber);}
+.kpi-card.danger .value{color:var(--red);}
+.kpi-card.ok .value{color:var(--teal);}
+.kpi-card.info .value{color:var(--blue);}
+
+/* Próxima reunión */
+.proxima-card{background:var(--teal-light);border:1px solid var(--teal);border-radius:var(--radius);
+  padding:1rem 1.25rem;margin-bottom:2.5rem;display:flex;align-items:center;gap:1rem;}
+.proxima-card .icon{font-size:2rem;flex-shrink:0;}
+.proxima-card .info .subtitle{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--teal-dark);margin-bottom:.2rem;}
+.proxima-card .info .title{font-size:1rem;font-weight:600;color:var(--ink);}
+.proxima-card .info .meta{font-size:.82rem;color:var(--ink2);margin-top:.15rem;}
+
+/* Module cards */
+.modules{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:2.5rem;}
+@media(max-width:720px){.modules{grid-template-columns:1fr;}}
+.mod-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);text-decoration:none;color:inherit;display:flex;flex-direction:column;
+  transition:transform .15s,box-shadow .15s;}
+.mod-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.12);}
+.mod-card-top{padding:1.5rem 1.5rem 1rem;display:flex;align-items:flex-start;gap:1rem;}
+.mod-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
+.mod-icon.teal{background:var(--teal-light);color:var(--teal-dark);}
+.mod-icon.amber{background:var(--amber-light);color:var(--amber);}
+.mod-icon.blue{background:var(--blue-light);color:var(--blue);}
+.mod-card-top .text h3{font-size:1rem;font-weight:600;margin-bottom:.25rem;}
+.mod-card-top .text p{font-size:.82rem;color:var(--ink2);line-height:1.5;}
+.mod-card-footer{padding:.75rem 1.5rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;margin-top:auto;}
+.mod-card-footer .cta{font-size:.82rem;font-weight:600;color:var(--teal);}
+.mod-card-footer .arrow{color:var(--ink3);font-size:.9rem;}
+</style>
+
+<div class="hub">
+  <div class="hub-header">
+    <h1>Gestión de Compromisos</h1>
+    <p>Panel central — reuniones, seguimiento y compromisos de obra</p>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-strip">
+    <div class="kpi-card info">
+      <div class="label">Compromisos totales</div>
+      <div class="value">{{ kpi.total }}</div>
+    </div>
+    <div class="kpi-card warn">
+      <div class="label">Pendientes</div>
+      <div class="value">{{ kpi.pendientes }}</div>
+    </div>
+    <div class="kpi-card danger">
+      <div class="label">Atrasados</div>
+      <div class="value">{{ kpi.atrasados }}</div>
+    </div>
+    <div class="kpi-card ok">
+      <div class="label">Reuniones hoy</div>
+      <div class="value">{{ kpi.reuniones_hoy }}</div>
+    </div>
+  </div>
+
+  <!-- Próxima reunión -->
+  {% if proxima %}
+  <div class="proxima-card">
+    <div class="icon">📅</div>
+    <div class="info">
+      <div class="subtitle">Próxima reunión</div>
+      <div class="title">{{ proxima.titulo }}</div>
+      <div class="meta">
+        {{ proxima.fecha.strftime('%A %d de %B') }} · {{ proxima.hora_inicio }} – {{ proxima.hora_fin }}
+        {% if proxima.contrato %} · {{ proxima.contrato.contrato }}{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Módulos -->
+  <div class="modules">
+    <a class="mod-card" href="{{ url_for('compromisos.reuniones') }}">
+      <div class="mod-card-top">
+        <div class="mod-icon teal">📆</div>
+        <div class="text">
+          <h3>Programación de Reuniones</h3>
+          <p>Calendariza reuniones semanales lunes a sábado, 7 am – 5 pm. Crea, edita y elimina eventos.</p>
+        </div>
+      </div>
+      <div class="mod-card-footer">
+        <span class="cta">Abrir calendario</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+    <a class="mod-card" href="{{ url_for('compromisos.checklist') }}">
+      <div class="mod-card-top">
+        <div class="mod-icon amber">✅</div>
+        <div class="text">
+          <h3>Checklist de Reuniones</h3>
+          <p>24 puntos de agenda agrupados: Seguimiento, SST, Indicadores y Gestión.</p>
+        </div>
+      </div>
+      <div class="mod-card-footer">
+        <span class="cta">Abrir checklist</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+
+    <a class="mod-card" href="{{ url_for('compromisos.lista') }}">
+      <div class="mod-card-top">
+        <div class="mod-icon blue">📋</div>
+        <div class="text">
+          <h3>Agenda de Compromisos</h3>
+          <p>Registro, seguimiento y cierre de compromisos con evidencias y reprogramaciones.</p>
+        </div>
+      </div>
+      <div class="mod-card-footer">
+        <span class="cta">Abrir agenda</span>
+        <span class="arrow">→</span>
+      </div>
+    </a>
+  </div>
+</div>
+{% endblock %}

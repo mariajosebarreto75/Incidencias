@@ -1,0 +1,416 @@
+{% extends base_template %}
+{% block title %}Programación de Reuniones{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+:root{
+  --bg:#f0f4f8;--surf:#fff;--surf2:#f8fafc;
+  --teal:#0d7c6e;--teal-light:#e6f4f2;--teal-dark:#095f54;
+  --ink:#1e293b;--ink2:#475569;--ink3:#94a3b8;
+  --border:#e2e8f0;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08);
+  --hour-h:52px;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f172a;--surf:#1e293b;--surf2:#263348;
+  --teal:#14b8a6;--teal-light:#134e4a;--teal-dark:#5eead4;
+  --ink:#f1f5f9;--ink2:#94a3b8;--ink3:#64748b;
+  --border:#334155;--shadow:0 1px 3px rgba(0,0,0,.4);
+}}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
+.pg{max-width:1200px;margin:0 auto;padding:1.5rem 1.25rem 4rem;}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem;}
+.topbar h1{font-size:1.35rem;font-weight:700;flex:1 1 auto;}
+.btn{border:none;cursor:pointer;border-radius:8px;font-family:inherit;font-size:.85rem;
+  font-weight:500;padding:.5rem .9rem;transition:opacity .15s;}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-teal:hover{opacity:.88;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--ink2);}
+.btn-ghost:hover{background:var(--surf2);}
+.btn-sm{padding:.3rem .65rem;font-size:.78rem;}
+.btn-danger{background:#dc2626;color:#fff;}
+.nav-week{display:flex;align-items:center;gap:.5rem;}
+.nav-week button{width:32px;height:32px;border:1px solid var(--border);border-radius:6px;
+  background:var(--surf);color:var(--ink2);cursor:pointer;font-size:1rem;display:flex;
+  align-items:center;justify-content:center;}
+.nav-week button:hover{background:var(--teal-light);}
+.week-label{font-size:.88rem;font-weight:600;color:var(--ink2);min-width:190px;text-align:center;}
+
+/* Calendar grid */
+.cal-wrap{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:auto;}
+.cal-grid{display:grid;grid-template-columns:56px repeat(6,1fr);min-width:700px;}
+
+/* Day headers */
+.cal-head{display:contents;}
+.cal-head-cell{padding:.6rem .4rem;text-align:center;font-size:.75rem;font-weight:600;
+  border-bottom:2px solid var(--border);border-right:1px solid var(--border);
+  color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;
+  background:var(--surf);z-index:2;}
+.cal-head-cell:first-child{border-right:2px solid var(--border);}
+.cal-head-cell.today{color:var(--teal);background:var(--teal-light);}
+.day-num{font-size:1.1rem;font-weight:700;display:block;color:var(--ink);}
+.cal-head-cell.today .day-num{color:var(--teal-dark);}
+
+/* Time rows */
+.cal-body{display:contents;}
+.time-col{font-size:.7rem;color:var(--ink3);text-align:right;padding:.15rem .5rem 0 0;
+  height:var(--hour-h);border-right:2px solid var(--border);line-height:1;padding-top:3px;}
+.day-col{position:relative;border-right:1px solid var(--border);height:var(--hour-h);
+  cursor:pointer;}
+.day-col:last-child{border-right:none;}
+.day-col:hover{background:var(--teal-light);}
+.half-line{position:absolute;top:50%;left:0;right:0;border-top:1px dashed var(--border);
+  pointer-events:none;}
+
+/* Events */
+.event{position:absolute;left:3px;right:3px;background:var(--teal);color:#fff;
+  border-radius:5px;padding:3px 6px;font-size:.72rem;cursor:pointer;overflow:hidden;
+  z-index:1;transition:opacity .12s;}
+.event:hover{opacity:.88;}
+.event .ev-title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.event .ev-time{opacity:.85;font-size:.66rem;}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;
+  align-items:center;justify-content:center;z-index:100;padding:1rem;}
+.modal-bg.hidden{display:none;}
+.modal{background:var(--surf);border-radius:var(--radius);width:100%;max-width:480px;
+  box-shadow:0 20px 50px rgba(0,0,0,.25);}
+.modal-header{padding:1.1rem 1.25rem .8rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;}
+.modal-header h3{font-size:1rem;font-weight:600;}
+.modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--ink3);line-height:1;}
+.modal-body{padding:1.25rem;}
+.form-row{margin-bottom:1rem;}
+.form-row label{display:block;font-size:.8rem;font-weight:600;color:var(--ink2);margin-bottom:.35rem;}
+.form-row input,.form-row textarea,.form-row select{width:100%;border:1px solid var(--border);
+  border-radius:6px;padding:.55rem .75rem;font-family:inherit;font-size:.88rem;
+  background:var(--surf2);color:var(--ink);}
+.form-row textarea{resize:vertical;min-height:70px;}
+.time-pair{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.modal-footer{padding:.9rem 1.25rem;border-top:1px solid var(--border);display:flex;
+  gap:.6rem;justify-content:flex-end;}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <a href="{{ url_for('compromisos.index') }}" class="btn btn-ghost btn-sm">← Volver</a>
+    <h1>Programación de Reuniones</h1>
+    <div class="nav-week">
+      <button id="prevWeek" title="Semana anterior">‹</button>
+      <span class="week-label" id="weekLabel"></span>
+      <button id="nextWeek" title="Semana siguiente">›</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="todayBtn">Hoy</button>
+    <button class="btn btn-teal" id="btnNueva">+ Nueva reunión</button>
+  </div>
+
+  <div class="cal-wrap">
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
+
+<!-- Modal crear/editar -->
+<div class="modal-bg hidden" id="modalBg">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Nueva reunión</h3>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fId">
+      <div class="form-row">
+        <label>Título *</label>
+        <input type="text" id="fTitulo" placeholder="Nombre de la reunión">
+      </div>
+      <div class="form-row">
+        <label>Fecha *</label>
+        <input type="date" id="fFecha">
+      </div>
+      <div class="form-row time-pair">
+        <div>
+          <label>Hora inicio *</label>
+          <input type="time" id="fInicio" min="07:00" max="17:00" step="900">
+        </div>
+        <div>
+          <label>Hora fin *</label>
+          <input type="time" id="fFin" min="07:00" max="17:00" step="900">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Contrato</label>
+        <select id="fContrato">
+          <option value="">— Sin contrato —</option>
+          {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Participantes</label>
+        <input type="text" id="fPartic" placeholder="Ej: Coordinador, Residente, Cliente">
+      </div>
+      <div class="form-row">
+        <label>Descripción / Agenda</label>
+        <textarea id="fDesc" placeholder="Temas a tratar…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm hidden" id="btnElim">Eliminar</button>
+      <button class="btn btn-ghost" id="btnCancelar">Cancelar</button>
+      <button class="btn btn-teal" id="btnGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail popup -->
+<div class="modal-bg hidden" id="detailBg">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="detTitle"></h3>
+      <button class="modal-close" id="detClose">×</button>
+    </div>
+    <div class="modal-body" id="detBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="detCancelar">Cerrar</button>
+      <button class="btn btn-teal" id="detEditar">Editar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb'];
+const HOURS_START = 7, HOURS_END = 17;
+const HOURS = Array.from({length: HOURS_END - HOURS_START}, (_,i) => HOURS_START + i);
+
+let weekOffset = 0;
+let allEvents = {};   // fecha -> [reunion, ...]
+let detailRid = null;
+
+function getMondayOf(offset) {
+  const d = new Date();
+  const day = d.getDay() || 7;
+  d.setDate(d.getDate() - day + 1 + offset * 7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function isoDate(d) {
+  return d.toISOString().slice(0,10);
+}
+
+function addDays(d, n) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function fmtDay(d) {
+  return d.toLocaleDateString('es-CO', {weekday:'short', day:'numeric', month:'short'});
+}
+
+function todayStr() { return isoDate(new Date()); }
+
+async function loadWeek() {
+  const mon = getMondayOf(weekOffset);
+  const sat = addDays(mon, 5);
+  const desdeStr = isoDate(mon);
+  const hastaStr = isoDate(sat);
+
+  document.getElementById('weekLabel').textContent =
+    mon.toLocaleDateString('es-CO',{day:'numeric',month:'short'}) + ' – ' +
+    sat.toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'});
+
+  const res = await fetch(`{{ url_for('compromisos.reuniones_semana') }}?desde=${desdeStr}&hasta=${hastaStr}`);
+  const data = await res.json();
+  allEvents = {};
+  if(data.ok) {
+    for(const r of data.reuniones) {
+      if(!allEvents[r.fecha]) allEvents[r.fecha] = [];
+      allEvents[r.fecha].push(r);
+    }
+  }
+  renderCalendar(mon);
+}
+
+function timeToFrac(hhmm) {
+  const [h,m] = hhmm.split(':').map(Number);
+  return h - HOURS_START + m/60;
+}
+
+function renderCalendar(mon) {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const today = todayStr();
+
+  // Header row
+  const cornerHead = document.createElement('div');
+  cornerHead.className = 'cal-head-cell';
+  cornerHead.style.cssText = 'font-size:.65rem;color:var(--ink3);display:flex;align-items:flex-end;justify-content:flex-end;padding-bottom:.4rem;';
+  cornerHead.textContent = 'hora';
+  grid.appendChild(cornerHead);
+
+  const dayDates = [];
+  for(let i=0;i<6;i++) {
+    const d = addDays(mon, i);
+    dayDates.push(d);
+    const cell = document.createElement('div');
+    cell.className = 'cal-head-cell' + (isoDate(d)===today?' today':'');
+    cell.innerHTML = `<span style="font-size:.72rem;">${DAYS[i]}</span><span class="day-num">${d.getDate()}</span>`;
+    grid.appendChild(cell);
+  }
+
+  // Hour rows
+  for(const h of HOURS) {
+    // time label
+    const tl = document.createElement('div');
+    tl.className = 'time-col';
+    tl.textContent = `${h}:00`;
+    grid.appendChild(tl);
+
+    for(let di=0;di<6;di++) {
+      const d = dayDates[di];
+      const dateStr = isoDate(d);
+      const cell = document.createElement('div');
+      cell.className = 'day-col';
+      const hl = document.createElement('div');
+      hl.className = 'half-line';
+      cell.appendChild(hl);
+
+      // click to create
+      cell.addEventListener('click', (e) => {
+        if(e.target.closest('.event')) return;
+        openCreateModal(dateStr, `${String(h).padStart(2,'0')}:00`, `${String(h+1).padStart(2,'0')}:00`);
+      });
+
+      // Events for this cell (hour h, day di)
+      const dayEvs = allEvents[dateStr] || [];
+      for(const ev of dayEvs) {
+        const eStart = timeToFrac(ev.hora_inicio);
+        const eEnd   = timeToFrac(ev.hora_fin);
+        if(eStart >= h-HOURS_START+1 || eEnd <= h-HOURS_START) continue;
+        // only render in the starting hour
+        const evHour = parseInt(ev.hora_inicio.split(':')[0]);
+        if(evHour !== h) continue;
+
+        const duration = eEnd - eStart;
+        const topPct   = ((eStart - (h - HOURS_START)) / 1) * 100;
+        const heightPct = (duration / 1) * 100;
+
+        const evEl = document.createElement('div');
+        evEl.className = 'event';
+        evEl.style.cssText = `top:${topPct}%;height:${Math.min(heightPct,100*(HOURS_END-HOURS_START - eStart))}%;`;
+        evEl.innerHTML = `<div class="ev-title">${ev.titulo}</div><div class="ev-time">${ev.hora_inicio}–${ev.hora_fin}</div>`;
+        evEl.addEventListener('click', (e) => { e.stopPropagation(); openDetail(ev); });
+        cell.appendChild(evEl);
+      }
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function openCreateModal(fecha='', inicio='08:00', fin='09:00') {
+  document.getElementById('fId').value = '';
+  document.getElementById('fTitulo').value = '';
+  document.getElementById('fFecha').value = fecha;
+  document.getElementById('fInicio').value = inicio;
+  document.getElementById('fFin').value = fin;
+  document.getElementById('fContrato').value = '';
+  document.getElementById('fPartic').value = '';
+  document.getElementById('fDesc').value = '';
+  document.getElementById('modalTitle').textContent = 'Nueva reunión';
+  document.getElementById('btnElim').classList.add('hidden');
+  document.getElementById('modalBg').classList.remove('hidden');
+  document.getElementById('fTitulo').focus();
+}
+
+function openEditModal(ev) {
+  document.getElementById('fId').value = ev.id;
+  document.getElementById('fTitulo').value = ev.titulo;
+  document.getElementById('fFecha').value = ev.fecha;
+  document.getElementById('fInicio').value = ev.hora_inicio;
+  document.getElementById('fFin').value = ev.hora_fin;
+  document.getElementById('fContrato').value = ev.contrato_id || '';
+  document.getElementById('fPartic').value = ev.participantes;
+  document.getElementById('fDesc').value = ev.descripcion;
+  document.getElementById('modalTitle').textContent = 'Editar reunión';
+  document.getElementById('btnElim').classList.remove('hidden');
+  document.getElementById('detailBg').classList.add('hidden');
+  document.getElementById('modalBg').classList.remove('hidden');
+}
+
+function openDetail(ev) {
+  detailRid = ev.id;
+  document.getElementById('detTitle').textContent = ev.titulo;
+  document.getElementById('detBody').innerHTML = `
+    <p style="font-size:.85rem;color:var(--ink2);margin-bottom:.75rem;">
+      📅 ${ev.fecha} · ${ev.hora_inicio} – ${ev.hora_fin}
+    </p>
+    ${ev.contrato ? `<p style="font-size:.83rem;margin-bottom:.5rem;"><strong>Contrato:</strong> ${ev.contrato}</p>` : ''}
+    ${ev.participantes ? `<p style="font-size:.83rem;margin-bottom:.5rem;"><strong>Participantes:</strong> ${ev.participantes}</p>` : ''}
+    ${ev.descripcion ? `<p style="font-size:.83rem;white-space:pre-wrap;">${ev.descripcion}</p>` : ''}
+  `;
+  document.getElementById('detEditar').onclick = () => openEditModal(ev);
+  document.getElementById('detailBg').classList.remove('hidden');
+}
+
+async function saveReunion() {
+  const id = document.getElementById('fId').value;
+  const body = {
+    titulo: document.getElementById('fTitulo').value.trim(),
+    fecha:  document.getElementById('fFecha').value,
+    hora_inicio: document.getElementById('fInicio').value,
+    hora_fin:    document.getElementById('fFin').value,
+    contrato_id: document.getElementById('fContrato').value || null,
+    participantes: document.getElementById('fPartic').value.trim(),
+    descripcion:   document.getElementById('fDesc').value.trim(),
+  };
+  if(!body.titulo){ alert('El título es obligatorio'); return; }
+  if(!body.fecha)  { alert('La fecha es obligatoria'); return; }
+  if(!body.hora_inicio || !body.hora_fin){ alert('El horario es obligatorio'); return; }
+
+  const url = id
+    ? `{{ url_for('compromisos.editar_reunion', rid=0) }}`.replace('/0/', `/${id}/`)
+    : `{{ url_for('compromisos.nueva_reunion') }}`;
+  const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const data = await res.json();
+  if(data.ok) {
+    document.getElementById('modalBg').classList.add('hidden');
+    await loadWeek();
+  } else {
+    alert(data.error || 'Error al guardar');
+  }
+}
+
+async function eliminarReunion() {
+  const id = document.getElementById('fId').value;
+  if(!id || !confirm('¿Eliminar esta reunión?')) return;
+  const url = `{{ url_for('compromisos.eliminar_reunion', rid=0) }}`.replace('/0/', `/${id}/`);
+  const res = await fetch(url, {method:'POST'});
+  const data = await res.json();
+  if(data.ok) {
+    document.getElementById('modalBg').classList.add('hidden');
+    await loadWeek();
+  }
+}
+
+document.getElementById('prevWeek').addEventListener('click', () => { weekOffset--; loadWeek(); });
+document.getElementById('nextWeek').addEventListener('click', () => { weekOffset++; loadWeek(); });
+document.getElementById('todayBtn').addEventListener('click', () => { weekOffset=0; loadWeek(); });
+document.getElementById('btnNueva').addEventListener('click', () => openCreateModal(todayStr()));
+document.getElementById('modalClose').addEventListener('click', () => document.getElementById('modalBg').classList.add('hidden'));
+document.getElementById('btnCancelar').addEventListener('click', () => document.getElementById('modalBg').classList.add('hidden'));
+document.getElementById('btnGuardar').addEventListener('click', saveReunion);
+document.getElementById('btnElim').addEventListener('click', eliminarReunion);
+document.getElementById('detClose').addEventListener('click', () => document.getElementById('detailBg').classList.add('hidden'));
+document.getElementById('detCancelar').addEventListener('click', () => document.getElementById('detailBg').classList.add('hidden'));
+document.getElementById('modalBg').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.classList.add('hidden'); });
+document.getElementById('detailBg').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.classList.add('hidden'); });
+
+loadWeek();
+</script>
+{% endblock %}

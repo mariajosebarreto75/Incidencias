@@ -11,6 +11,7 @@ from app.extensions import db
 from app.models.compromiso import Compromiso, HistorialReprogramacion
 from app.models.contrato import Contrato
 from app.models.user_contrato import UserContrato
+from app.models.reunion import Reunion
 
 compromisos_bp = Blueprint("compromisos", __name__, url_prefix="/compromisos")
 
@@ -52,11 +53,48 @@ def _puede_ver_contrato(contrato_id):
     return any(c.id == contrato_id for c in contratos)
 
 
-# ── LISTADO ──────────────────────────────────────────────────────────────────
+# ── HUB ──────────────────────────────────────────────────────────────────────
 
 @compromisos_bp.route("/")
 @login_required
 def index():
+    """Hub / página de inicio del módulo compromisos."""
+    today = date.today()
+    hoy_str = today.isoformat()
+
+    # KPIs rápidos para el hub
+    contratos = _contratos_usuario()
+    ids_contratos = [c.id for c in contratos]
+
+    total_comp   = Compromiso.query.filter(Compromiso.contrato_id.in_(ids_contratos)).count()
+    pendientes   = Compromiso.query.filter(Compromiso.contrato_id.in_(ids_contratos),
+                                           Compromiso.estado == "Pendiente").count()
+    atrasados_q  = [c for c in Compromiso.query.filter(
+                       Compromiso.contrato_id.in_(ids_contratos),
+                       Compromiso.estado.in_(["Pendiente", "Reprogramado"])).all()
+                    if c.atrasado]
+    atrasados    = len(atrasados_q)
+
+    reuniones_hoy = Reunion.query.filter_by(fecha=today).count()
+    proxima = (Reunion.query.filter(Reunion.fecha >= today)
+               .order_by(Reunion.fecha.asc(), Reunion.hora_inicio.asc()).first())
+
+    return render_template(
+        "compromisos/hub.html",
+        es_neo=_es_neo(),
+        base_template="neo/navbNeo.html" if _es_neo() else "coordinador/navbarcoor.html",
+        kpi=dict(total=total_comp, pendientes=pendientes, atrasados=atrasados,
+                 reuniones_hoy=reuniones_hoy),
+        proxima=proxima,
+        hoy=hoy_str,
+    )
+
+
+# ── LISTADO COMPROMISOS ───────────────────────────────────────────────────────
+
+@compromisos_bp.route("/lista/")
+@login_required
+def lista():
     contratos = _contratos_usuario()
     contrato_id   = request.args.get("contrato_id", type=int)
     atrasado_filtro = request.args.get("atrasado", "")
@@ -111,7 +149,7 @@ def index():
     pendientes   = sum(1 for c in compromisos if c.estado == "Pendiente")
     reprogramados = sum(1 for c in compromisos if c.estado == "Reprogramado")
     cerrados     = sum(1 for c in compromisos if c.estado == "Cerrado")
-    atrasados    = sum(1 for c in compromisos if c.atrasado)
+    atrasados_n  = sum(1 for c in compromisos if c.atrasado)
 
     return render_template(
         "compromisos/index.html",
@@ -128,7 +166,7 @@ def index():
         es_neo=_es_neo(),
         base_template="neo/navbNeo.html" if _es_neo() else "coordinador/navbarcoor.html",
         kpi=dict(total=total, pendientes=pendientes,
-                 reprogramados=reprogramados, cerrados=cerrados, atrasados=atrasados),
+                 reprogramados=reprogramados, cerrados=cerrados, atrasados=atrasados_n),
     )
 
 
@@ -182,7 +220,7 @@ def nuevo():
         db.session.add(comp)
         db.session.commit()
         flash("Compromiso creado.", "success")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
 
     return render_template("compromisos/form.html", contratos=contratos, form={})
 
@@ -200,14 +238,14 @@ def reprogramar(comp_id):
         abort(403)
     if comp.estado == "Cerrado":
         flash("No se puede reprogramar un compromiso cerrado.", "warning")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
 
     nueva_str = request.form.get("nueva_fecha", "")
     try:
         nueva = date.fromisoformat(nueva_str)
     except ValueError:
         flash("Fecha inválida.", "danger")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
 
     hist = HistorialReprogramacion(
         compromiso_id=comp.id,
@@ -220,7 +258,7 @@ def reprogramar(comp_id):
     comp.cantidad_reprogramaciones += 1
     db.session.commit()
     flash("Compromiso reprogramado.", "success")
-    return redirect(url_for("compromisos.index"))
+    return redirect(url_for("compromisos.lista"))
 
 
 # ── EDITAR ────────────────────────────────────────────────────────────────────
@@ -240,14 +278,14 @@ def editar(comp_id):
 
     if not responsable or not compromiso:
         flash("Responsable y compromiso son obligatorios.", "danger")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
 
     comp.responsable         = responsable
     comp.compromiso          = compromiso
     comp.observacion_general = obs or None
     db.session.commit()
     flash("Compromiso actualizado.", "success")
-    return redirect(url_for("compromisos.index"))
+    return redirect(url_for("compromisos.lista"))
 
 
 # ── CERRAR ────────────────────────────────────────────────────────────────────
@@ -262,7 +300,7 @@ def cerrar(comp_id):
         abort(403)
     if comp.estado == "Cerrado":
         flash("El compromiso ya está cerrado.", "warning")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
 
     fecha_real_str = request.form.get("fecha_entrega_real", "")
     obs_cierre = request.form.get("obs_cierre", "").strip()
@@ -271,7 +309,7 @@ def cerrar(comp_id):
         fecha_real = date.fromisoformat(fecha_real_str)
     except ValueError:
         flash("Fecha de cierre inválida.", "danger")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
 
     # Evidencia obligatoria para cerrar
     archivo = request.files.get("evidencia")
@@ -287,7 +325,7 @@ def cerrar(comp_id):
 
     if not tiene_evidencia:
         flash("Para cerrar el compromiso primero debes subir una evidencia.", "warning")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
 
     if obs_cierre:
         sello = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -299,7 +337,7 @@ def cerrar(comp_id):
     comp.estado = "Cerrado"
     db.session.commit()
     flash("Compromiso cerrado.", "success")
-    return redirect(url_for("compromisos.index"))
+    return redirect(url_for("compromisos.lista"))
 
 
 # ── SUBIR EVIDENCIA (standalone) ───────────────────────────────────────────────
@@ -313,10 +351,10 @@ def subir_evidencia(comp_id):
     archivo = request.files.get("evidencia")
     if not archivo or not archivo.filename:
         flash("No se recibió archivo.", "danger")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
     if not _allowed(archivo.filename):
         flash("Tipo de archivo no permitido (jpg, png, webp, pdf).", "danger")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
 
     # Borrar evidencia anterior si existe
     if comp.evidencia_path:
@@ -331,7 +369,7 @@ def subir_evidencia(comp_id):
     comp.evidencia_nombre = secure_filename(archivo.filename)
     db.session.commit()
     flash("Evidencia guardada.", "success")
-    return redirect(url_for("compromisos.index"))
+    return redirect(url_for("compromisos.lista"))
 
 
 # ── VER EVIDENCIA ──────────────────────────────────────────────────────────────
@@ -364,7 +402,7 @@ def eliminar_evidencia(comp_id):
         comp.evidencia_nombre = None
         db.session.commit()
     flash("Evidencia eliminada.", "success")
-    return redirect(url_for("compromisos.index"))
+    return redirect(url_for("compromisos.lista"))
 
 
 # ── ELIMINAR COMPROMISO ────────────────────────────────────────────────────────
@@ -384,7 +422,7 @@ def eliminar(comp_id):
     db.session.delete(comp)
     db.session.commit()
     flash("Compromiso eliminado.", "success")
-    return redirect(url_for("compromisos.index"))
+    return redirect(url_for("compromisos.lista"))
 
 
 # ── OBSERVACIÓN (AJAX) ─────────────────────────────────────────────────────────
@@ -456,7 +494,7 @@ def eliminar_masivo():
 
     db.session.commit()
     flash(f"{eliminados} compromiso(s) eliminado(s).", "success")
-    return redirect(url_for("compromisos.index"))
+    return redirect(url_for("compromisos.lista"))
 
 
 # ── EXPORTAR EXCEL ─────────────────────────────────────────────────────────────
@@ -483,6 +521,7 @@ def exportar_excel():
         q = q.filter(Compromiso.contrato_id == contrato_id)
     compromisos = q.order_by(Compromiso.fecha_entrega.asc()).all()
 
+    # noinspection DuplicatedCode
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Compromisos"
@@ -650,3 +689,117 @@ def importar_excel():
         "insertados": insertados,
         "errores": errores,
     })
+
+
+# ── REUNIONES ─────────────────────────────────────────────────────────────────
+
+@compromisos_bp.route("/reuniones/")
+@login_required
+def reuniones():
+    return render_template(
+        "compromisos/reuniones.html",
+        es_neo=_es_neo(),
+        base_template="neo/navbNeo.html" if _es_neo() else "coordinador/navbarcoor.html",
+        contratos=_contratos_usuario(),
+    )
+
+
+@compromisos_bp.route("/reuniones/semana")
+@login_required
+def reuniones_semana():
+    """Devuelve reuniones en un rango de fechas: ?desde=YYYY-MM-DD&hasta=YYYY-MM-DD"""
+    desde_str = request.args.get("desde", "")
+    hasta_str = request.args.get("hasta", "")
+    try:
+        desde = date.fromisoformat(desde_str)
+        hasta = date.fromisoformat(hasta_str)
+    except ValueError:
+        return jsonify(ok=False, error="Fechas inválidas"), 400
+    reuniones_q = (Reunion.query
+                   .filter(Reunion.fecha >= desde, Reunion.fecha <= hasta)
+                   .order_by(Reunion.fecha.asc(), Reunion.hora_inicio.asc())
+                   .all())
+    return jsonify(ok=True, reuniones=[r.to_dict() for r in reuniones_q])
+
+
+@compromisos_bp.route("/reuniones/nueva", methods=["POST"])
+@login_required
+def nueva_reunion():
+    data = request.get_json(force=True)
+    try:
+        fecha = date.fromisoformat(data["fecha"])
+    except (KeyError, ValueError):
+        return jsonify(ok=False, error="Fecha inválida"), 400
+
+    titulo = (data.get("titulo") or "").strip()
+    if not titulo:
+        return jsonify(ok=False, error="El título es obligatorio"), 400
+
+    hora_inicio = (data.get("hora_inicio") or "").strip()
+    hora_fin    = (data.get("hora_fin") or "").strip()
+    if not hora_inicio or not hora_fin:
+        return jsonify(ok=False, error="Horario obligatorio"), 400
+
+    r = Reunion(
+        titulo=titulo,
+        descripcion=(data.get("descripcion") or "").strip() or None,
+        participantes=(data.get("participantes") or "").strip() or None,
+        fecha=fecha,
+        hora_inicio=hora_inicio,
+        hora_fin=hora_fin,
+        contrato_id=data.get("contrato_id") or None,
+        creado_por=current_user.username if hasattr(current_user, "username") else str(current_user.id),
+    )
+    db.session.add(r)
+    db.session.commit()
+    return jsonify(ok=True, reunion=r.to_dict())
+
+
+@compromisos_bp.route("/reuniones/<int:rid>/editar", methods=["POST"])
+@login_required
+def editar_reunion(rid):
+    r = Reunion.query.get_or_404(rid)
+    data = request.get_json(force=True)
+
+    titulo = (data.get("titulo") or "").strip()
+    if titulo:
+        r.titulo = titulo
+    if data.get("descripcion") is not None:
+        r.descripcion = (data["descripcion"] or "").strip() or None
+    if data.get("participantes") is not None:
+        r.participantes = (data["participantes"] or "").strip() or None
+    if data.get("hora_inicio"):
+        r.hora_inicio = data["hora_inicio"].strip()
+    if data.get("hora_fin"):
+        r.hora_fin = data["hora_fin"].strip()
+    if data.get("fecha"):
+        try:
+            r.fecha = date.fromisoformat(data["fecha"])
+        except ValueError:
+            return jsonify(ok=False, error="Fecha inválida"), 400
+    if data.get("contrato_id") is not None:
+        r.contrato_id = data["contrato_id"] or None
+
+    db.session.commit()
+    return jsonify(ok=True, reunion=r.to_dict())
+
+
+@compromisos_bp.route("/reuniones/<int:rid>/eliminar", methods=["POST"])
+@login_required
+def eliminar_reunion(rid):
+    r = Reunion.query.get_or_404(rid)
+    db.session.delete(r)
+    db.session.commit()
+    return jsonify(ok=True)
+
+
+# ── CHECKLIST ─────────────────────────────────────────────────────────────────
+
+@compromisos_bp.route("/checklist/")
+@login_required
+def checklist():
+    return render_template(
+        "compromisos/checklist.html",
+        es_neo=_es_neo(),
+        base_template="neo/navbNeo.html" if _es_neo() else "coordinador/navbarcoor.html",
+    )

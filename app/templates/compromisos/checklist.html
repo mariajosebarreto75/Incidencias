@@ -1,0 +1,311 @@
+{% extends base_template %}
+{% block title %}Checklist de Reuniones{% endblock %}
+
+{% block content %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+:root{
+  --bg:#f0f4f8;--surf:#fff;--surf2:#f8fafc;
+  --teal:#0d7c6e;--teal-light:#e6f4f2;--teal-dark:#095f54;
+  --amber:#d97706;--amber-light:#fef3c7;
+  --red:#dc2626;--red-light:#fee2e2;
+  --blue:#2563eb;--blue-light:#dbeafe;
+  --green:#16a34a;--green-light:#dcfce7;
+  --ink:#1e293b;--ink2:#475569;--ink3:#94a3b8;
+  --border:#e2e8f0;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08);
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f172a;--surf:#1e293b;--surf2:#263348;
+  --teal:#14b8a6;--teal-light:#134e4a;--teal-dark:#5eead4;
+  --amber:#fbbf24;--amber-light:#451a03;
+  --red:#f87171;--red-light:#450a0a;
+  --blue:#60a5fa;--blue-light:#1e3a5f;
+  --green:#4ade80;--green-light:#052e16;
+  --ink:#f1f5f9;--ink2:#94a3b8;--ink3:#64748b;
+  --border:#334155;
+}}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
+.pg{max-width:900px;margin:0 auto;padding:1.5rem 1.25rem 4rem;}
+
+/* Topbar */
+.topbar{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.topbar h1{font-size:1.35rem;font-weight:700;flex:1 1 auto;}
+.btn{border:none;cursor:pointer;border-radius:8px;font-family:inherit;font-size:.85rem;
+  font-weight:500;padding:.5rem .9rem;transition:opacity .15s;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--ink2);}
+.btn-ghost:hover{background:var(--surf2);}
+.btn-sm{padding:.3rem .65rem;font-size:.78rem;}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-teal:hover{opacity:.88;}
+.btn-danger{background:#dc2626;color:#fff;}
+.btn-danger:hover{opacity:.88;}
+
+/* Session bar */
+.session-bar{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
+  padding:.85rem 1.1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;
+  box-shadow:var(--shadow);}
+.session-bar label{font-size:.8rem;font-weight:600;color:var(--ink2);}
+.session-bar input{border:1px solid var(--border);border-radius:6px;padding:.4rem .7rem;
+  font-family:inherit;font-size:.85rem;background:var(--surf2);color:var(--ink);}
+.session-bar input[type=text]{width:200px;}
+.session-bar input[type=date]{width:155px;}
+
+/* Progress */
+.progress-wrap{margin-bottom:1.5rem;}
+.progress-bar-bg{height:8px;background:var(--border);border-radius:999px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:var(--teal);border-radius:999px;transition:width .3s;}
+.progress-label{font-size:.78rem;color:var(--ink3);margin-top:.4rem;}
+
+/* Groups */
+.group{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);margin-bottom:1rem;overflow:hidden;}
+.group-header{padding:.8rem 1.1rem;display:flex;align-items:center;gap:.75rem;
+  cursor:pointer;user-select:none;border-bottom:1px solid var(--border);}
+.group-icon{font-size:1.1rem;}
+.group-title{font-size:.92rem;font-weight:600;flex:1;}
+.group-badge{font-size:.72rem;font-weight:700;padding:.2rem .55rem;border-radius:999px;}
+.badge-teal{background:var(--teal-light);color:var(--teal-dark);}
+.badge-amber{background:var(--amber-light);color:var(--amber);}
+.badge-blue{background:var(--blue-light);color:var(--blue);}
+.badge-green{background:var(--green-light);color:var(--green);}
+.group-chevron{color:var(--ink3);transition:transform .2s;font-size:.85rem;}
+.group.collapsed .group-chevron{transform:rotate(-90deg);}
+.group-items{display:block;}
+.group.collapsed .group-items{display:none;}
+
+/* Items */
+.item{display:flex;align-items:flex-start;gap:.85rem;padding:.75rem 1.1rem;
+  border-bottom:1px solid var(--border);transition:background .1s;}
+.item:last-child{border-bottom:none;}
+.item:hover{background:var(--surf2);}
+.item.checked{opacity:.7;}
+.item-check{width:20px;height:20px;border:2px solid var(--border);border-radius:5px;
+  flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;margin-top:1px;transition:background .12s,border-color .12s;}
+.item.checked .item-check{background:var(--teal);border-color:var(--teal);color:#fff;}
+.item-num{font-size:.72rem;font-weight:700;color:var(--ink3);min-width:18px;margin-top:2px;}
+.item-text{flex:1;}
+.item-text .main{font-size:.88rem;font-weight:500;line-height:1.45;}
+.item-text .note{font-size:.76rem;color:var(--ink3);margin-top:.2rem;}
+.item-obs{font-size:.78rem;border:1px solid var(--border);border-radius:5px;padding:.35rem .6rem;
+  background:var(--surf2);color:var(--ink);font-family:inherit;width:180px;flex-shrink:0;}
+@media(max-width:600px){.item-obs{display:none;}}
+
+/* Actions */
+.actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.5rem;}
+</style>
+
+<div class="pg">
+  <div class="topbar">
+    <a href="{{ url_for('compromisos.index') }}" class="btn btn-ghost btn-sm">← Volver</a>
+    <h1>Checklist de Reuniones</h1>
+  </div>
+
+  <!-- Session -->
+  <div class="session-bar">
+    <div>
+      <label>Reunión / referencia</label><br>
+      <input type="text" id="sesNombre" placeholder="Ej: Reunión semanal obra X">
+    </div>
+    <div>
+      <label>Fecha</label><br>
+      <input type="date" id="sesFecha">
+    </div>
+    <div style="margin-left:auto;display:flex;gap:.5rem;align-items:center;">
+      <span id="sesState" style="font-size:.78rem;color:var(--ink3);">Sin sesión activa</span>
+      <button class="btn btn-teal btn-sm" id="btnNuevaSes">Nueva sesión</button>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progBar" style="width:0%"></div></div>
+    <div class="progress-label" id="progLabel">0 de 24 ítems completados</div>
+  </div>
+
+  <!-- Groups -->
+  <div id="checklistWrap"></div>
+
+  <div class="actions">
+    <button class="btn btn-ghost" id="btnMarcarTodos">Marcar todos</button>
+    <button class="btn btn-ghost" id="btnDesmarcarTodos">Desmarcar todos</button>
+    <button class="btn btn-danger btn-sm" id="btnReset" style="margin-left:auto;">Limpiar sesión</button>
+  </div>
+</div>
+
+<script>
+const GROUPS = [
+  {
+    id:'seguimiento', icon:'🔄', label:'Seguimiento de compromisos', badge:'badge-teal',
+    items:[
+      {id:'s1', main:'Revisión de compromisos pendientes de la reunión anterior'},
+      {id:'s2', main:'Estado de compromisos cerrados en el período'},
+      {id:'s3', main:'Compromisos atrasados y acciones correctivas'},
+      {id:'s4', main:'Nuevos compromisos identificados en reunión'},
+      {id:'s5', main:'Designación de responsables y fechas compromiso'},
+      {id:'s6', main:'Evidencias y cierres de compromisos anteriores'},
+    ]
+  },
+  {
+    id:'sst', icon:'⛑️', label:'SST y Seguridad', badge:'badge-amber',
+    items:[
+      {id:'sst1', main:'Revisión de incidentes / accidentes del período'},
+      {id:'sst2', main:'Indicadores de accidentalidad: IAFR, IATR, IFAS'},
+      {id:'sst3', main:'Estado de investigaciones de incidentes abiertos'},
+      {id:'sst4', main:'Inspecciones de seguridad realizadas'},
+      {id:'sst5', main:'Cumplimiento de planes de acción SST'},
+      {id:'sst6', main:'Capacitaciones y entrenamientos ejecutados'},
+    ]
+  },
+  {
+    id:'indicadores', icon:'📊', label:'Indicadores internos', badge:'badge-blue',
+    items:[
+      {id:'i1', main:'Cumplimiento de preoperacionales del período'},
+      {id:'i2', main:'Horas trabajadas vs. horas programadas'},
+      {id:'i3', main:'Disponibilidad de flota / equipos críticos'},
+      {id:'i4', main:'Indicadores de gestión de activos (mantenimientos)'},
+      {id:'i5', main:'Cumplimiento de entregas / hitos de contrato'},
+      {id:'i6', main:'Novedades de personal: permisos, ausencias, rotación'},
+    ]
+  },
+  {
+    id:'gestion', icon:'🗂️', label:'Gestión', badge:'badge-green',
+    items:[
+      {id:'g1', main:'Revisión presupuestal / ejecución de costos'},
+      {id:'g2', main:'Estado de subcontratos y proveedores críticos'},
+      {id:'g3', main:'Comunicaciones con el cliente: solicitudes, quejas, reconocimientos'},
+      {id:'g4', main:'Riesgos identificados y estado de mitigación'},
+      {id:'g5', main:'Cambios en el alcance y órdenes de trabajo adicionales'},
+      {id:'g6', main:'Próximos hitos, entregables y reuniones programadas'},
+    ]
+  },
+];
+
+const TOTAL = GROUPS.reduce((a,g) => a + g.items.length, 0);
+
+let state = {nombre:'', fecha:'', checks:{}, notes:{}};
+
+function storageKey() { return `checklist_session_${state.nombre || 'default'}_${state.fecha || ''}`; }
+
+function loadState() {
+  const k = storageKey();
+  try {
+    const raw = localStorage.getItem(k);
+    if(raw) {
+      const s = JSON.parse(raw);
+      state.checks = s.checks || {};
+      state.notes  = s.notes  || {};
+    } else {
+      state.checks = {};
+      state.notes  = {};
+    }
+  } catch(e) {
+    state.checks = {};
+    state.notes  = {};
+  }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(storageKey(), JSON.stringify({checks: state.checks, notes: state.notes}));
+  } catch(e){}
+}
+
+function render() {
+  const wrap = document.getElementById('checklistWrap');
+  wrap.innerHTML = '';
+  for(const g of GROUPS) {
+    const div = document.createElement('div');
+    div.className = 'group';
+    div.id = 'grp_'+g.id;
+
+    const doneCount = g.items.filter(it => state.checks[it.id]).length;
+    div.innerHTML = `
+      <div class="group-header" onclick="toggleGroup('${g.id}')">
+        <span class="group-icon">${g.icon}</span>
+        <span class="group-title">${g.label}</span>
+        <span class="group-badge ${g.badge}">${doneCount}/${g.items.length}</span>
+        <span class="group-chevron">▾</span>
+      </div>
+      <div class="group-items"></div>
+    `;
+
+    const itemsDiv = div.querySelector('.group-items');
+    let num = 1;
+    for(const it of g.items) {
+      const checked = !!state.checks[it.id];
+      const note    = state.notes[it.id] || '';
+      const row = document.createElement('div');
+      row.className = 'item' + (checked ? ' checked' : '');
+      row.id = 'item_'+it.id;
+      row.innerHTML = `
+        <div class="item-check" onclick="toggleItem('${it.id}')">${checked ? '✓' : ''}</div>
+        <span class="item-num">${num++}</span>
+        <div class="item-text">
+          <div class="main">${it.main}</div>
+          ${it.note ? `<div class="note">${it.note}</div>` : ''}
+        </div>
+        <input class="item-obs" type="text" placeholder="Observación…" value="${note.replace(/"/g,'&quot;')}"
+          onchange="setNote('${it.id}', this.value)" onclick="event.stopPropagation()">
+      `;
+      itemsDiv.appendChild(row);
+    }
+    wrap.appendChild(div);
+  }
+  updateProgress();
+}
+
+function toggleGroup(gid) {
+  document.getElementById('grp_'+gid).classList.toggle('collapsed');
+}
+
+function toggleItem(id) {
+  state.checks[id] = !state.checks[id];
+  saveState();
+  render();
+}
+
+function setNote(id, val) {
+  state.notes[id] = val;
+  saveState();
+}
+
+function updateProgress() {
+  const done = Object.values(state.checks).filter(Boolean).length;
+  const pct  = Math.round(done/TOTAL*100);
+  document.getElementById('progBar').style.width = pct+'%';
+  document.getElementById('progLabel').textContent = `${done} de ${TOTAL} ítems completados (${pct}%)`;
+}
+
+function applySession() {
+  state.nombre = document.getElementById('sesNombre').value.trim();
+  state.fecha  = document.getElementById('sesFecha').value;
+  loadState();
+  render();
+  const label = (state.nombre||'Sin nombre') + (state.fecha ? ' · '+state.fecha : '');
+  document.getElementById('sesState').textContent = label;
+}
+
+document.getElementById('btnNuevaSes').addEventListener('click', applySession);
+
+document.getElementById('btnMarcarTodos').addEventListener('click', () => {
+  for(const g of GROUPS) for(const it of g.items) state.checks[it.id] = true;
+  saveState(); render();
+});
+document.getElementById('btnDesmarcarTodos').addEventListener('click', () => {
+  state.checks = {}; saveState(); render();
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  if(!confirm('¿Limpiar todos los checks y notas de esta sesión?')) return;
+  state.checks = {}; state.notes = {}; saveState(); render();
+});
+
+// Init
+const today = new Date().toISOString().slice(0,10);
+document.getElementById('sesFecha').value = today;
+render();
+</script>
+{% endblock %}
