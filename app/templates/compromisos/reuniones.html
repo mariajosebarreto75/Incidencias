@@ -8,109 +8,157 @@
 <style>
 :root{
   --bg:#f0f4f8;--surf:#fff;--surf2:#f8fafc;
-  --teal:#0d7c6e;--teal-light:#e6f4f2;--teal-dark:#095f54;
+  --teal:#0d7c6e;--teal-dark:#095f54;--teal-light:#e6f4f2;
   --ink:#1e293b;--ink2:#475569;--ink3:#94a3b8;
-  --border:#e2e8f0;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08);
-  --hour-h:52px;
+  --border:#e2e8f0;--radius:8px;
+  --slot:28px; /* altura por cada slot de 30 min */
 }
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f172a;--surf:#1e293b;--surf2:#263348;
-  --teal:#14b8a6;--teal-light:#134e4a;--teal-dark:#5eead4;
-  --ink:#f1f5f9;--ink2:#94a3b8;--ink3:#64748b;
-  --border:#334155;--shadow:0 1px 3px rgba(0,0,0,.4);
-}}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
-.pg{max-width:1200px;margin:0 auto;padding:1.5rem 1.25rem 4rem;}
+.pg{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
-/* Top bar */
-.topbar{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem;}
-.topbar h1{font-size:1.35rem;font-weight:700;flex:1 1 auto;}
-.btn{border:none;cursor:pointer;border-radius:8px;font-family:inherit;font-size:.85rem;
-  font-weight:500;padding:.5rem .9rem;transition:opacity .15s;}
+/* ── HEADER ── */
+.hdr{background:var(--teal);color:#fff;padding:.6rem 1.2rem;display:flex;align-items:center;gap:1rem;flex-shrink:0;}
+.hdr h1{font-size:1.1rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;flex:1;}
+.hdr-clock{font-size:1.6rem;font-weight:700;letter-spacing:.1em;font-variant-numeric:tabular-nums;}
+.hdr-dur{font-size:1.4rem;font-weight:600;opacity:.9;}
+.btn{border:none;cursor:pointer;border-radius:6px;font-family:inherit;font-size:.82rem;
+  font-weight:600;padding:.45rem .85rem;transition:opacity .15s;}
+.btn-white{background:#fff;color:var(--teal);}
+.btn-white:hover{opacity:.88;}
+.btn-ghost-w{background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;}
+.btn-ghost-w:hover{background:rgba(255,255,255,.15);}
+.btn-sm{padding:.3rem .6rem;font-size:.76rem;}
 .btn-teal{background:var(--teal);color:#fff;}
 .btn-teal:hover{opacity:.88;}
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--ink2);}
 .btn-ghost:hover{background:var(--surf2);}
-.btn-sm{padding:.3rem .65rem;font-size:.78rem;}
 .btn-danger{background:#dc2626;color:#fff;}
-.nav-week{display:flex;align-items:center;gap:.5rem;}
-.nav-week button{width:32px;height:32px;border:1px solid var(--border);border-radius:6px;
-  background:var(--surf);color:var(--ink2);cursor:pointer;font-size:1rem;display:flex;
-  align-items:center;justify-content:center;}
-.nav-week button:hover{background:var(--teal-light);}
-.week-label{font-size:.88rem;font-weight:600;color:var(--ink2);min-width:190px;text-align:center;}
 
-/* Calendar grid */
-.cal-wrap{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius);
-  box-shadow:var(--shadow);overflow:auto;}
-.cal-grid{display:grid;grid-template-columns:56px repeat(6,1fr);min-width:700px;}
+/* ── SUBBAR ── */
+.subbar{background:var(--surf);border-bottom:1px solid var(--border);
+  padding:.45rem 1rem;display:flex;align-items:center;gap:.6rem;flex-shrink:0;}
+.subbar .hint{font-size:.78rem;color:var(--ink3);flex:1;font-style:italic;}
+.nav-week{display:flex;align-items:center;gap:.4rem;}
+.nav-week button{width:28px;height:28px;border:1px solid var(--border);border-radius:5px;
+  background:var(--surf);color:var(--ink2);cursor:pointer;font-size:.9rem;
+  display:flex;align-items:center;justify-content:center;}
+.nav-week button:hover{background:var(--teal-light);}
+.week-label{font-size:.82rem;font-weight:600;color:var(--ink2);min-width:180px;text-align:center;}
+.btn-today{background:var(--teal-light);color:var(--teal-dark);border:1px solid var(--teal);
+  border-radius:5px;font-size:.76rem;font-weight:600;padding:.3rem .6rem;cursor:pointer;}
+
+/* ── CALENDAR ── */
+.cal-wrap{flex:1;overflow:auto;position:relative;}
+.cal-grid{display:grid;grid-template-columns:52px repeat(6,1fr);min-width:720px;}
 
 /* Day headers */
-.cal-head{display:contents;}
-.cal-head-cell{padding:.6rem .4rem;text-align:center;font-size:.75rem;font-weight:600;
-  border-bottom:2px solid var(--border);border-right:1px solid var(--border);
-  color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0;
-  background:var(--surf);z-index:2;}
-.cal-head-cell:first-child{border-right:2px solid var(--border);}
-.cal-head-cell.today{color:var(--teal);background:var(--teal-light);}
-.day-num{font-size:1.1rem;font-weight:700;display:block;color:var(--ink);}
-.cal-head-cell.today .day-num{color:var(--teal-dark);}
+.cal-head-cell{
+  position:sticky;top:0;z-index:5;
+  background:var(--teal);color:#fff;
+  padding:.45rem .3rem;text-align:center;
+  border-right:1px solid rgba(255,255,255,.2);
+  border-bottom:2px solid rgba(255,255,255,.3);
+  font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+}
+.cal-head-cell:first-child{background:var(--teal-dark);border-right:2px solid rgba(255,255,255,.3);}
+.cal-head-cell.today{background:#fff;color:var(--teal-dark);}
+.day-num{font-size:1.05rem;font-weight:700;display:block;}
+.cal-head-cell.today .day-num{color:var(--teal);}
 
-/* Time rows */
-.cal-body{display:contents;}
-.time-col{font-size:.7rem;color:var(--ink3);text-align:right;padding:.15rem .5rem 0 0;
-  height:var(--hour-h);border-right:2px solid var(--border);line-height:1;padding-top:3px;}
-.day-col{position:relative;border-right:1px solid var(--border);height:var(--hour-h);
-  cursor:pointer;}
-.day-col:last-child{border-right:none;}
-.day-col:hover{background:var(--teal-light);}
-.half-line{position:absolute;top:50%;left:0;right:0;border-top:1px dashed var(--border);
-  pointer-events:none;}
+/* Slots */
+.time-col{
+  font-size:.66rem;color:var(--ink3);text-align:right;
+  padding:0 .35rem 0 0;height:var(--slot);
+  border-right:2px solid var(--border);
+  display:flex;align-items:flex-start;padding-top:3px;
+  background:var(--surf);position:sticky;left:0;z-index:2;
+}
+.day-col{
+  position:relative;border-right:1px solid var(--border);
+  height:var(--slot);background:var(--surf);cursor:pointer;
+}
+.day-col.half{border-bottom:1px dashed #e9eff5;}
+.day-col.hour{border-bottom:1px solid var(--border);}
+.day-col.today-col{background:#f0faf9;}
+.day-col:hover{background:#f0faf9;}
 
 /* Events */
-.event{position:absolute;left:3px;right:3px;background:var(--teal);color:#fff;
-  border-radius:5px;padding:3px 6px;font-size:.72rem;cursor:pointer;overflow:hidden;
-  z-index:1;transition:opacity .12s;}
-.event:hover{opacity:.88;}
-.event .ev-title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.event .ev-time{opacity:.85;font-size:.66rem;}
+.event{
+  position:absolute;left:2px;right:2px;
+  border-radius:4px;padding:3px 5px;
+  font-size:.7rem;cursor:pointer;overflow:hidden;z-index:1;
+  transition:opacity .12s,filter .12s;
+  border-left:3px solid rgba(0,0,0,.2);
+}
+.event:hover{filter:brightness(.92);}
+.event .ev-title{font-weight:600;line-height:1.3;word-break:break-word;}
+.event .ev-meta{font-size:.63rem;opacity:.85;margin-top:1px;}
+.event .ev-rec{font-size:.6rem;opacity:.75;}
+
+/* Paleta de colores por índice (asignado por título hash) */
+.ec0{background:#fbbf24;color:#78350f;}
+.ec1{background:#60a5fa;color:#1e3a5f;}
+.ec2{background:#a78bfa;color:#2e1065;}
+.ec3{background:#6b7280;color:#f9fafb;}
+.ec4{background:#34d399;color:#064e3b;}
+.ec5{background:#f87171;color:#450a0a;}
+.ec6{background:#fb923c;color:#431407;}
+.ec7{background:#2dd4bf;color:#134e4a;}
 
 /* Modal */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;
   align-items:center;justify-content:center;z-index:100;padding:1rem;}
 .modal-bg.hidden{display:none;}
-.modal{background:var(--surf);border-radius:var(--radius);width:100%;max-width:480px;
-  box-shadow:0 20px 50px rgba(0,0,0,.25);}
-.modal-header{padding:1.1rem 1.25rem .8rem;border-bottom:1px solid var(--border);
+.modal{background:var(--surf);border-radius:10px;width:100%;max-width:460px;
+  box-shadow:0 20px 50px rgba(0,0,0,.22);}
+.modal-header{padding:1rem 1.15rem .8rem;border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;}
-.modal-header h3{font-size:1rem;font-weight:600;}
-.modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--ink3);line-height:1;}
-.modal-body{padding:1.25rem;}
-.form-row{margin-bottom:1rem;}
-.form-row label{display:block;font-size:.8rem;font-weight:600;color:var(--ink2);margin-bottom:.35rem;}
+.modal-header h3{font-size:.95rem;font-weight:600;}
+.modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--ink3);}
+.modal-body{padding:1.1rem;}
+.form-row{margin-bottom:.85rem;}
+.form-row label{display:block;font-size:.76rem;font-weight:600;color:var(--ink2);margin-bottom:.3rem;}
 .form-row input,.form-row textarea,.form-row select{width:100%;border:1px solid var(--border);
-  border-radius:6px;padding:.55rem .75rem;font-family:inherit;font-size:.88rem;
+  border-radius:6px;padding:.5rem .7rem;font-family:inherit;font-size:.85rem;
   background:var(--surf2);color:var(--ink);}
-.form-row textarea{resize:vertical;min-height:70px;}
-.time-pair{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
-.modal-footer{padding:.9rem 1.25rem;border-top:1px solid var(--border);display:flex;
-  gap:.6rem;justify-content:flex-end;}
+.form-row textarea{resize:vertical;min-height:60px;}
+.time-pair{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.rec-row{display:flex;align-items:center;gap:.5rem;}
+.rec-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--teal);}
+.rec-row label{font-size:.82rem;color:var(--ink2);margin:0;}
+.modal-footer{padding:.8rem 1.15rem;border-top:1px solid var(--border);display:flex;gap:.5rem;justify-content:flex-end;}
+
+/* Detail */
+.det-field{margin-bottom:.6rem;}
+.det-field .lbl{font-size:.72rem;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.15rem;}
+.det-field .val{font-size:.86rem;color:var(--ink);}
+.rec-badge{display:inline-block;background:var(--teal-light);color:var(--teal-dark);
+  font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:999px;margin-bottom:.75rem;}
 </style>
 
 <div class="pg">
-  <div class="topbar">
-    <a href="{{ url_for('compromisos.index') }}" class="btn btn-ghost btn-sm">← Volver</a>
-    <h1>Programación de Reuniones</h1>
-    <div class="nav-week">
-      <button id="prevWeek" title="Semana anterior">‹</button>
-      <span class="week-label" id="weekLabel"></span>
-      <button id="nextWeek" title="Semana siguiente">›</button>
-    </div>
-    <button class="btn btn-ghost btn-sm" id="todayBtn">Hoy</button>
-    <button class="btn btn-teal" id="btnNueva">+ Nueva reunión</button>
+  <!-- HEADER -->
+  <div class="hdr">
+    <a href="{{ url_for('compromisos.index') }}" class="btn btn-ghost-w btn-sm">← Hub</a>
+    <h1>Programación Reuniones</h1>
+    <div class="hdr-clock" id="hdrClock">--:--</div>
+    <div class="hdr-dur" id="hdrDur"></div>
+    <button class="btn btn-white" id="btnNueva">+ Nueva reunión</button>
   </div>
 
+  <!-- SUBBAR -->
+  <div class="subbar">
+    <span class="hint">Haz clic en una celda vacía para agregar una reunión</span>
+    <div class="nav-week">
+      <button id="prevWeek">‹</button>
+      <span class="week-label" id="weekLabel"></span>
+      <button id="nextWeek">›</button>
+    </div>
+    <button class="btn-today" id="todayBtn">Hoy</button>
+  </div>
+
+  <!-- CALENDAR -->
   <div class="cal-wrap">
     <div class="cal-grid" id="calGrid"></div>
   </div>
@@ -134,13 +182,13 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
         <input type="date" id="fFecha">
       </div>
       <div class="form-row time-pair">
-        <div>
-          <label>Hora inicio *</label>
-          <input type="time" id="fInicio" min="07:00" max="17:00" step="900">
-        </div>
-        <div>
-          <label>Hora fin *</label>
-          <input type="time" id="fFin" min="07:00" max="17:00" step="900">
+        <div><label>Hora inicio *</label><input type="time" id="fInicio" min="07:00" max="17:00" step="900"></div>
+        <div><label>Hora fin *</label><input type="time" id="fFin" min="07:00" max="17:00" step="900"></div>
+      </div>
+      <div class="form-row">
+        <div class="rec-row">
+          <input type="checkbox" id="fRec">
+          <label for="fRec">🔁 Repetir semanalmente (todos los <span id="fRecDay">—</span>)</label>
         </div>
       </div>
       <div class="form-row">
@@ -152,7 +200,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
       </div>
       <div class="form-row">
         <label>Participantes</label>
-        <input type="text" id="fPartic" placeholder="Ej: Coordinador, Residente, Cliente">
+        <input type="text" id="fPartic" placeholder="Ej: Coordinador, Residente">
       </div>
       <div class="form-row">
         <label>Descripción / Agenda</label>
@@ -171,7 +219,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
 <div class="modal-bg hidden" id="detailBg">
   <div class="modal">
     <div class="modal-header">
-      <h3 id="detTitle"></h3>
+      <h3 id="detTitle" style="max-width:340px;word-break:break-word;"></h3>
       <button class="modal-close" id="detClose">×</button>
     </div>
     <div class="modal-body" id="detBody"></div>
@@ -183,13 +231,21 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
 </div>
 
 <script>
-const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DAYS_LONG = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DAYS_SHORT = ['LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+const SLOT_MINS = 30;
 const HOURS_START = 7, HOURS_END = 17;
-const HOURS = Array.from({length: HOURS_END - HOURS_START}, (_,i) => HOURS_START + i);
+const TOTAL_SLOTS = (HOURS_END - HOURS_START) * 2;  // 20 slots de 30min
+
+// Colores por hash del titulo (estables)
+function evColor(titulo) {
+  let h = 0;
+  for(let i=0;i<titulo.length;i++) h = (h*31 + titulo.charCodeAt(i)) & 0xffff;
+  return 'ec' + (h % 8);
+}
 
 let weekOffset = 0;
-let allEvents = {};   // fecha -> [reunion, ...]
-let detailRid = null;
+let allEvents = {};
 
 function getMondayOf(offset) {
   const d = new Date();
@@ -198,22 +254,20 @@ function getMondayOf(offset) {
   d.setHours(0,0,0,0);
   return d;
 }
-
-function isoDate(d) {
-  return d.toISOString().slice(0,10);
-}
-
-function addDays(d, n) {
-  const r = new Date(d);
-  r.setDate(r.getDate() + n);
-  return r;
-}
-
-function fmtDay(d) {
-  return d.toLocaleDateString('es-CO', {weekday:'short', day:'numeric', month:'short'});
-}
-
+function isoDate(d) { return d.toISOString().slice(0,10); }
+function addDays(d, n) { const r=new Date(d); r.setDate(r.getDate()+n); return r; }
 function todayStr() { return isoDate(new Date()); }
+
+function slotToFrac(hhmm) {
+  const [h,m] = hhmm.split(':').map(Number);
+  return (h - HOURS_START) * 2 + m / 30;  // slot index (0-based)
+}
+
+function slotLabel(slotIdx) {
+  const h = HOURS_START + Math.floor(slotIdx / 2);
+  const m = (slotIdx % 2) * 30;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
 
 async function loadWeek() {
   const mon = getMondayOf(weekOffset);
@@ -237,80 +291,85 @@ async function loadWeek() {
   renderCalendar(mon);
 }
 
-function timeToFrac(hhmm) {
-  const [h,m] = hhmm.split(':').map(Number);
-  return h - HOURS_START + m/60;
-}
-
 function renderCalendar(mon) {
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
   const today = todayStr();
 
-  // Header row
-  const cornerHead = document.createElement('div');
-  cornerHead.className = 'cal-head-cell';
-  cornerHead.style.cssText = 'font-size:.65rem;color:var(--ink3);display:flex;align-items:flex-end;justify-content:flex-end;padding-bottom:.4rem;';
-  cornerHead.textContent = 'hora';
-  grid.appendChild(cornerHead);
+  // Corner
+  const corner = document.createElement('div');
+  corner.className = 'cal-head-cell';
+  corner.style.cssText = 'font-size:.6rem;display:flex;align-items:flex-end;justify-content:center;padding-bottom:.35rem;';
+  corner.textContent = 'HORA';
+  grid.appendChild(corner);
 
   const dayDates = [];
-  for(let i=0;i<6;i++) {
+  for(let i=0;i<6;i++){
     const d = addDays(mon, i);
     dayDates.push(d);
     const cell = document.createElement('div');
-    cell.className = 'cal-head-cell' + (isoDate(d)===today?' today':'');
-    cell.innerHTML = `<span style="font-size:.72rem;">${DAYS[i]}</span><span class="day-num">${d.getDate()}</span>`;
+    const ds = isoDate(d);
+    cell.className = 'cal-head-cell' + (ds===today?' today':'');
+    cell.innerHTML = `<span style="font-size:.68rem;">${DAYS_SHORT[i]}</span><span class="day-num">${d.getDate()}</span>`;
     grid.appendChild(cell);
   }
 
-  // Hour rows
-  for(const h of HOURS) {
-    // time label
+  // Slots
+  for(let si=0;si<TOTAL_SLOTS;si++){
+    // time label — solo en horas exactas
     const tl = document.createElement('div');
     tl.className = 'time-col';
-    tl.textContent = `${h}:00`;
+    tl.textContent = si % 2 === 0 ? slotLabel(si) : '';
     grid.appendChild(tl);
 
-    for(let di=0;di<6;di++) {
+    for(let di=0;di<6;di++){
       const d = dayDates[di];
       const dateStr = isoDate(d);
       const cell = document.createElement('div');
-      cell.className = 'day-col';
-      const hl = document.createElement('div');
-      hl.className = 'half-line';
-      cell.appendChild(hl);
+      cell.className = 'day-col' + (si%2===0?' hour':' half') + (dateStr===today?' today-col':'');
 
-      // click to create
+      // Click para crear
       cell.addEventListener('click', (e) => {
         if(e.target.closest('.event')) return;
-        openCreateModal(dateStr, `${String(h).padStart(2,'0')}:00`, `${String(h+1).padStart(2,'0')}:00`);
+        const h = HOURS_START + Math.floor(si/2);
+        const m = (si%2)*30;
+        const hi = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        const hf_m = m + 30 < 60 ? `${String(h).padStart(2,'0')}:${String(m+30).padStart(2,'0')}` : `${String(h+1).padStart(2,'0')}:00`;
+        openCreateModal(dateStr, hi, hf_m);
       });
 
-      // Events for this cell (hour h, day di)
+      // Eventos que COMIENZAN en este slot
       const dayEvs = allEvents[dateStr] || [];
       for(const ev of dayEvs) {
-        const eStart = timeToFrac(ev.hora_inicio);
-        const eEnd   = timeToFrac(ev.hora_fin);
-        if(eStart >= h-HOURS_START+1 || eEnd <= h-HOURS_START) continue;
-        // only render in the starting hour
-        const evHour = parseInt(ev.hora_inicio.split(':')[0]);
-        if(evHour !== h) continue;
+        const startSlot = slotToFrac(ev.hora_inicio);
+        if(Math.round(startSlot) !== si) continue;
 
-        const duration = eEnd - eStart;
-        const topPct   = ((eStart - (h - HOURS_START)) / 1) * 100;
-        const heightPct = (duration / 1) * 100;
+        const endSlot = slotToFrac(ev.hora_fin);
+        const durationSlots = Math.max(endSlot - startSlot, 0.5);
 
         const evEl = document.createElement('div');
-        evEl.className = 'event';
-        evEl.style.cssText = `top:${topPct}%;height:${Math.min(heightPct,100*(HOURS_END-HOURS_START - eStart))}%;`;
-        evEl.innerHTML = `<div class="ev-title">${ev.titulo}</div><div class="ev-time">${ev.hora_inicio}–${ev.hora_fin}</div>`;
-        evEl.addEventListener('click', (e) => { e.stopPropagation(); openDetail(ev); });
+        evEl.className = 'event ' + evColor(ev.titulo);
+        // Top: 0 (starts at this slot), height covers durationSlots
+        const slotH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--slot').trim()) || 28;
+        evEl.style.cssText = `top:1px;height:${Math.round(durationSlots * slotH - 2)}px;`;
+        evEl.innerHTML = `
+          <div class="ev-title">${ev.titulo}</div>
+          <div class="ev-meta">${ev.hora_inicio}–${ev.hora_fin}</div>
+          ${ev.recurrente ? '<div class="ev-rec">🔁 recurrente</div>' : ''}
+        `;
+        evEl.addEventListener('click', e => { e.stopPropagation(); openDetail(ev); });
         cell.appendChild(evEl);
       }
       grid.appendChild(cell);
     }
   }
+}
+
+function updateRecDay() {
+  const f = document.getElementById('fFecha').value;
+  if(!f) { document.getElementById('fRecDay').textContent='—'; return; }
+  const d = new Date(f + 'T12:00:00');
+  document.getElementById('fRecDay').textContent = DAYS_LONG[d.getDay()===0?6:d.getDay()-1] || '—';
 }
 
 function openCreateModal(fecha='', inicio='08:00', fin='09:00') {
@@ -319,11 +378,13 @@ function openCreateModal(fecha='', inicio='08:00', fin='09:00') {
   document.getElementById('fFecha').value = fecha;
   document.getElementById('fInicio').value = inicio;
   document.getElementById('fFin').value = fin;
+  document.getElementById('fRec').checked = false;
   document.getElementById('fContrato').value = '';
   document.getElementById('fPartic').value = '';
   document.getElementById('fDesc').value = '';
   document.getElementById('modalTitle').textContent = 'Nueva reunión';
   document.getElementById('btnElim').classList.add('hidden');
+  updateRecDay();
   document.getElementById('modalBg').classList.remove('hidden');
   document.getElementById('fTitulo').focus();
 }
@@ -331,28 +392,29 @@ function openCreateModal(fecha='', inicio='08:00', fin='09:00') {
 function openEditModal(ev) {
   document.getElementById('fId').value = ev.id;
   document.getElementById('fTitulo').value = ev.titulo;
-  document.getElementById('fFecha').value = ev.fecha;
+  document.getElementById('fFecha').value = ev.recurrente ? ev.fecha : ev.fecha;
   document.getElementById('fInicio').value = ev.hora_inicio;
   document.getElementById('fFin').value = ev.hora_fin;
+  document.getElementById('fRec').checked = !!ev.recurrente;
   document.getElementById('fContrato').value = ev.contrato_id || '';
   document.getElementById('fPartic').value = ev.participantes;
   document.getElementById('fDesc').value = ev.descripcion;
   document.getElementById('modalTitle').textContent = 'Editar reunión';
   document.getElementById('btnElim').classList.remove('hidden');
+  updateRecDay();
   document.getElementById('detailBg').classList.add('hidden');
   document.getElementById('modalBg').classList.remove('hidden');
 }
 
 function openDetail(ev) {
-  detailRid = ev.id;
   document.getElementById('detTitle').textContent = ev.titulo;
   document.getElementById('detBody').innerHTML = `
-    <p style="font-size:.85rem;color:var(--ink2);margin-bottom:.75rem;">
-      📅 ${ev.fecha} · ${ev.hora_inicio} – ${ev.hora_fin}
-    </p>
-    ${ev.contrato ? `<p style="font-size:.83rem;margin-bottom:.5rem;"><strong>Contrato:</strong> ${ev.contrato}</p>` : ''}
-    ${ev.participantes ? `<p style="font-size:.83rem;margin-bottom:.5rem;"><strong>Participantes:</strong> ${ev.participantes}</p>` : ''}
-    ${ev.descripcion ? `<p style="font-size:.83rem;white-space:pre-wrap;">${ev.descripcion}</p>` : ''}
+    ${ev.recurrente ? '<span class="rec-badge">🔁 Repite cada semana</span>' : ''}
+    <div class="det-field"><div class="lbl">Fecha y hora</div>
+      <div class="val">📅 ${ev.fecha} · ${ev.hora_inicio} – ${ev.hora_fin}</div></div>
+    ${ev.contrato ? `<div class="det-field"><div class="lbl">Contrato</div><div class="val">${ev.contrato}</div></div>` : ''}
+    ${ev.participantes ? `<div class="det-field"><div class="lbl">Participantes</div><div class="val">${ev.participantes}</div></div>` : ''}
+    ${ev.descripcion ? `<div class="det-field"><div class="lbl">Descripción</div><div class="val" style="white-space:pre-wrap;">${ev.descripcion}</div></div>` : ''}
   `;
   document.getElementById('detEditar').onclick = () => openEditModal(ev);
   document.getElementById('detailBg').classList.remove('hidden');
@@ -361,10 +423,11 @@ function openDetail(ev) {
 async function saveReunion() {
   const id = document.getElementById('fId').value;
   const body = {
-    titulo: document.getElementById('fTitulo').value.trim(),
-    fecha:  document.getElementById('fFecha').value,
+    titulo:      document.getElementById('fTitulo').value.trim(),
+    fecha:       document.getElementById('fFecha').value,
     hora_inicio: document.getElementById('fInicio').value,
     hora_fin:    document.getElementById('fFin').value,
+    recurrente:  document.getElementById('fRec').checked,
     contrato_id: document.getElementById('fContrato').value || null,
     participantes: document.getElementById('fPartic').value.trim(),
     descripcion:   document.getElementById('fDesc').value.trim(),
@@ -378,12 +441,8 @@ async function saveReunion() {
     : `{{ url_for('compromisos.nueva_reunion') }}`;
   const res = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const data = await res.json();
-  if(data.ok) {
-    document.getElementById('modalBg').classList.add('hidden');
-    await loadWeek();
-  } else {
-    alert(data.error || 'Error al guardar');
-  }
+  if(data.ok) { document.getElementById('modalBg').classList.add('hidden'); await loadWeek(); }
+  else alert(data.error || 'Error al guardar');
 }
 
 async function eliminarReunion() {
@@ -392,12 +451,32 @@ async function eliminarReunion() {
   const url = `{{ url_for('compromisos.eliminar_reunion', rid=0) }}`.replace('/0/', `/${id}/`);
   const res = await fetch(url, {method:'POST'});
   const data = await res.json();
-  if(data.ok) {
-    document.getElementById('modalBg').classList.add('hidden');
-    await loadWeek();
+  if(data.ok) { document.getElementById('modalBg').classList.add('hidden'); await loadWeek(); }
+}
+
+// Reloj
+function updateClock(){
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('hdrClock').textContent = `${hh}:${mm}`;
+  // Próxima reunión hoy
+  const todayEvs = allEvents[todayStr()] || [];
+  const nowMins = now.getHours()*60 + now.getMinutes();
+  const prox = todayEvs.find(e => {
+    const [h,m] = e.hora_inicio.split(':').map(Number);
+    return h*60+m > nowMins;
+  });
+  if(prox){
+    const [h,m] = prox.hora_inicio.split(':').map(Number);
+    const diff = h*60+m - nowMins;
+    document.getElementById('hdrDur').textContent = diff < 60 ? `${diff} MIN` : `${Math.floor(diff/60)}H ${diff%60}m`;
+  } else {
+    document.getElementById('hdrDur').textContent = '';
   }
 }
 
+document.getElementById('fFecha').addEventListener('input', updateRecDay);
 document.getElementById('prevWeek').addEventListener('click', () => { weekOffset--; loadWeek(); });
 document.getElementById('nextWeek').addEventListener('click', () => { weekOffset++; loadWeek(); });
 document.getElementById('todayBtn').addEventListener('click', () => { weekOffset=0; loadWeek(); });
@@ -412,5 +491,7 @@ document.getElementById('modalBg').addEventListener('click', e => { if(e.target=
 document.getElementById('detailBg').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.classList.add('hidden'); });
 
 loadWeek();
+setInterval(updateClock, 30000);
+updateClock();
 </script>
 {% endblock %}

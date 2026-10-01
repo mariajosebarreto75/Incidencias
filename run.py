@@ -71,6 +71,7 @@ _MIGRACIONES = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP",
     # Admin nunca necesita cambio obligatorio
     "UPDATE users SET must_change_password = FALSE WHERE rol = 'admin'",
+    "ALTER TABLE reuniones ADD COLUMN IF NOT EXISTS recurrente BOOLEAN NOT NULL DEFAULT FALSE",
 ]
 
 _SUPERVISORES_SEED = [
@@ -110,6 +111,52 @@ _SUPERVISORES_SEED = [
     "PICON AGUILAR JOHANA MARCELA", "PEREZ VASQUEZ JARED DAVID",
     "CASTRO LUIS FERNANDO",
 ]
+
+
+_REUNIONES_RECURRENTES_SEED = [
+    # (titulo, dia_semana 0=lun…5=sab, hora_inicio, hora_fin)
+    ("Reunión Seguimiento - Norte de Santander (CW356942) - Pérdidas - Cúcuta", 0, "08:30", "09:30"),
+    ("Valle Norte Integral (2876) - LYR - Zarzal - Tuluá",                      1, "08:00", "08:30"),
+    ("Valle Norte Integral (2876) - OYMM - Zarzal",                             1, "08:30", "09:30"),
+    ("Valle Norte Integral (2876) - OYMM - Buga - Tuluá",                       1, "15:00", "15:30"),
+    ("Valle Norte Integral (2876) - LYR - Buga",                                1, "15:30", "16:30"),
+    ("Reunión Seguimiento Valle Sur (1983) - OYMM - Jamundí - Palmira",         2, "08:30", "10:00"),
+    ("Reunión Seguimiento Valle Sur (1983) - LYR - Jamundí",                    2, "10:00", "11:00"),
+    ("Reunión Seguimiento Tolima (021) - OYMM - Chaparral - Espinal",           3, "08:30", "09:30"),
+    ("Reunión Seguimiento Tolima (021) - LYR - Chaparral - Espinal",            3, "09:30", "10:30"),
+    ("Reunión Seguimiento - CW368183 - Bucaramanga",                            3, "14:00", "15:00"),
+    ("Reunión de Seguimiento - CW369121 - Barrancabeja",                        3, "15:00", "15:30"),
+    ("Reunión Seguimiento Nodo de Eficiencia Operacional",                      3, "15:30", "17:00"),
+    ("Tolima Mantenimiento (2258) - MTTO - Chaparral",                          4, "08:00", "09:00"),
+    ("Tolima Mantenimiento (2258) - MTTO - Espinal",                            4, "09:00", "10:00"),
+    ("VALIDACIÓN CONTRATO FOTOVOLTAICO",                                        4, "14:30", "15:30"),
+]
+
+# Fecha de referencia: semana del 2026-09-28 (lunes)
+_REF_WEEK_START = __import__('datetime').date(2026, 9, 28)
+
+
+def _seed_reuniones_recurrentes():
+    from datetime import date as _date
+    try:
+        if Reunion.query.filter_by(recurrente=True).count() == 0:
+            ref = _date(2026, 9, 28)  # lunes
+            for titulo, dia, hi, hf in _REUNIONES_RECURRENTES_SEED:
+                from datetime import timedelta
+                fecha = ref + timedelta(days=dia)
+                db.session.add(Reunion(
+                    titulo=titulo,
+                    fecha=fecha,
+                    hora_inicio=hi,
+                    hora_fin=hf,
+                    recurrente=True,
+                    creado_por="sistema",
+                ))
+            db.session.commit()
+            print(f"[Seed] {len(_REUNIONES_RECURRENTES_SEED)} reuniones recurrentes insertadas")
+    except Exception as e:
+        db.session.rollback()
+        print(f"[Seed reuniones] Error: {e}")
 
 
 def _seed_supervisores():
@@ -219,6 +266,7 @@ def create_app():
         db.create_all()
         _auto_migrar()
         _seed_supervisores()
+        _seed_reuniones_recurrentes()
         _hashear_passwords_planos()
 
     # Scheduler — sincroniza alertas GPS cada 5 minutos

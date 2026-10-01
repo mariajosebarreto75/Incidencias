@@ -13,21 +13,23 @@ class Reunion(db.Model):
     hora_inicio  = db.Column(db.String(5), nullable=False)   # "HH:MM"
     hora_fin     = db.Column(db.String(5), nullable=False)
     contrato_id  = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=True)
+    recurrente   = db.Column(db.Boolean, default=False, nullable=False)
     creado_por   = db.Column(db.String(150))
     created_at   = db.Column(db.DateTime, default=datetime.utcnow)
 
     contrato = db.relationship("Contrato", backref="reuniones", lazy=True)
 
-    def to_dict(self):
+    def to_dict(self, fecha_override=None):
         return {
             "id":           self.id,
             "titulo":       self.titulo,
             "descripcion":  self.descripcion or "",
             "participantes":self.participantes or "",
-            "fecha":        self.fecha.isoformat(),
+            "fecha":        (fecha_override or self.fecha).isoformat(),
             "hora_inicio":  self.hora_inicio,
             "hora_fin":     self.hora_fin,
             "contrato_id":  self.contrato_id,
             "contrato":     self.contrato.contrato if self.contrato else "",
             "creado_por":   self.creado_por or "",
+            "recurrente":   self.recurrente,
         }

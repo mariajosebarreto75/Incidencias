@@ -715,11 +715,26 @@ def reuniones_semana():
         hasta = date.fromisoformat(hasta_str)
     except ValueError:
         return jsonify(ok=False, error="Fechas inválidas"), 400
-    reuniones_q = (Reunion.query
-                   .filter(Reunion.fecha >= desde, Reunion.fecha <= hasta)
-                   .order_by(Reunion.fecha.asc(), Reunion.hora_inicio.asc())
-                   .all())
-    return jsonify(ok=True, reuniones=[r.to_dict() for r in reuniones_q])
+
+    # Reuniones puntuales en el rango
+    puntuales = (Reunion.query
+                 .filter(Reunion.fecha >= desde, Reunion.fecha <= hasta,
+                         Reunion.recurrente == False)
+                 .order_by(Reunion.fecha.asc(), Reunion.hora_inicio.asc())
+                 .all())
+
+    # Reuniones recurrentes: expandir para cada día del rango que coincida con el weekday
+    recurrentes = Reunion.query.filter(Reunion.recurrente == True).all()
+    resultado = [r.to_dict() for r in puntuales]
+    delta = (hasta - desde).days + 1
+    for i in range(delta):
+        dia = desde + __import__('datetime').timedelta(days=i)
+        for r in recurrentes:
+            if r.fecha.weekday() == dia.weekday():
+                resultado.append(r.to_dict(fecha_override=dia))
+
+    resultado.sort(key=lambda x: (x["fecha"], x["hora_inicio"]))
+    return jsonify(ok=True, reuniones=resultado)
 
 
 @compromisos_bp.route("/reuniones/nueva", methods=["POST"])
@@ -748,6 +763,7 @@ def nueva_reunion():
         hora_inicio=hora_inicio,
         hora_fin=hora_fin,
         contrato_id=data.get("contrato_id") or None,
+        recurrente=bool(data.get("recurrente")),
         creado_por=current_user.username if hasattr(current_user, "username") else str(current_user.id),
     )
     db.session.add(r)
@@ -779,6 +795,8 @@ def editar_reunion(rid):
             return jsonify(ok=False, error="Fecha inválida"), 400
     if data.get("contrato_id") is not None:
         r.contrato_id = data["contrato_id"] or None
+    if "recurrente" in data:
+        r.recurrente = bool(data["recurrente"])
 
     db.session.commit()
     return jsonify(ok=True, reunion=r.to_dict())
