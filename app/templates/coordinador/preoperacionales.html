@@ -207,7 +207,7 @@
           <button class="btn-tog" id="togMes" onclick="setTrendMode('mes')">Por Mes</button>
         </div>
       </h4>
-      <div style="position:relative;height:420px"><canvas id="cLine"></canvas></div>
+      <div style="position:relative;width:100%;height:420px"><canvas id="cLine"></canvas></div>
     </div>
 
   </div>
@@ -449,11 +449,19 @@ function populateFilters(op){
 function updateDiasSel(keepVal){
   const año = document.getElementById('fAño').value;
   const mes  = document.getElementById('fMes').value;
-  let fechas = G._todasFechas||[];
-  // filtrar por año y/o mes seleccionados
-  if(año) fechas = fechas.filter(f=>f.startsWith(año));
-  if(mes)  fechas = fechas.filter(f=>f.slice(5,7)===mes.padStart(2,'0') || f.slice(0,7)===mes);
-  fillSel('fFecha', fechas, v=>fF(v), keepVal||'');
+  // si no hay filtro de tiempo, mostrar todas
+  if(!año && !mes){
+    fillSel('fFecha', G._todasFechas||[], v=>fF(v), keepVal||'');
+    return;
+  }
+  // pedir al servidor las fechas disponibles para ese año/mes
+  const qs=new URLSearchParams(Object.fromEntries(Object.entries({año,mes}).filter(([,v])=>v)));
+  fetch(`/coordinador/preoperacionales/datos?${qs}`)
+    .then(r=>r.json())
+    .then(data=>{
+      fillSel('fFecha', data.opciones?.fechas||[], v=>fF(v), keepVal||'');
+    })
+    .catch(()=>{});
 }
 
 function fillSel(id,vals,labelFn,curVal){
@@ -597,8 +605,16 @@ function buildTrendChart(serie,mode){
       {label:'% Cumplimiento',data:pcts,borderColor:'#2E75B6',backgroundColor:'rgba(46,117,182,.15)',fill:true,tension:.3,pointRadius:4,pointHoverRadius:6},
       {label:'Meta (80%)',data:labels.map(()=>80),borderColor:'#DC2626',borderDash:[6,4],pointRadius:0,fill:false,tension:0}
     ]},
-    options:{plugins:{legend:{labels:{color:ink,font:{size:11}}}},
-      scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%',color:ink2}},x:{ticks:{color:ink2,maxRotation:45,minRotation:30}}}}
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      layout:{padding:{bottom:10}},
+      plugins:{legend:{labels:{color:ink,font:{size:12}}}},
+      scales:{
+        y:{min:0,max:100,ticks:{callback:v=>v+'%',color:ink2,font:{size:11}},grid:{color:'rgba(0,0,0,.05)'}},
+        x:{ticks:{color:ink2,font:{size:11},maxRotation:45,minRotation:30,autoSkip:true,maxTicksLimit:mode==='mes'?12:30}}
+      }
+    }
   });
 }
 
