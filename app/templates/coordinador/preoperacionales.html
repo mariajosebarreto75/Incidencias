@@ -255,7 +255,7 @@
     <div class="fg"><label>Contrato</label>
       <select class="fsel" id="pContrato" onchange="loadPlacas(1)"><option value="">Todos</option></select></div>
     <div class="fg"><label>Estado</label>
-      <select class="fsel" id="pEstado" onchange="loadPlacas(1)"><option value="">Todos (3,4,6,7)</option></select></div>
+      <select class="fsel" id="pEstado" onchange="loadPlacas(1)"><option value="">Todos</option></select></div>
     <button class="btn btn-ghost btn-sm" onclick="resetPlacasFiltros()" style="align-self:flex-end">✕ Limpiar</button>
   </div>
 
@@ -480,12 +480,10 @@ function populatePlacasFiltros(op){
   fillSel('pMes',op.meses||[]);
   updatePlacasDias();
   fillSel('pContrato',op.contratos||[]);
-  // estados reales filtrados a 3,4,6,7,8
-  const estIncump = (op.estados||[]).filter(e=>{const n=nEst(e);return['3','4','6','7','8'].includes(n);});
   const selEst = document.getElementById('pEstado');
   const curVal = selEst.value;
-  selEst.innerHTML = '<option value="">Todos (3,4,6,7)</option>';
-  estIncump.forEach(e=>{const o=document.createElement('option');o.value=nEst(e);o.textContent=e;selEst.appendChild(o);});
+  selEst.innerHTML = '<option value="">Todos</option>';
+  (op.estados||[]).forEach(e=>{const o=document.createElement('option');o.value=nEst(e);o.textContent=e;selEst.appendChild(o);});
   if(curVal) selEst.value=curVal;
 }
 
