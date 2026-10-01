@@ -4,891 +4,433 @@
 {% block head %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-/* ── tokens ── */
 :root {
-  --bg:        #F1F5F9;
-  --surface:   #FFFFFF;
-  --surface-2: #F8FAFC;
-  --border:    #E2E8F0;
-  --border-2:  #CBD5E1;
-  --ink:       #0F172A;
-  --ink-2:     #475569;
-  --ink-3:     #94A3B8;
-
-  --teal:      #0F766E;
-  --teal-2:    #0D9488;
-  --teal-bg:   #F0FDF9;
-
-  --amber:     #D97706;
-  --amber-bg:  #FFFBEB;
-  --amber-bd:  #FDE68A;
-
-  --blue:      #2563EB;
-  --blue-bg:   #EFF6FF;
-  --blue-bd:   #BFDBFE;
-
-  --green:     #16A34A;
-  --green-bg:  #F0FDF4;
-  --green-bd:  #BBF7D0;
-
-  --red:       #DC2626;
-  --red-bg:    #FEF2F2;
-  --red-bd:    #FECACA;
-
-  --shadow-sm: 0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
-  --shadow-md: 0 4px 12px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.04);
-  --radius:    10px;
-  --radius-sm: 6px;
+  --bg:       #F0F4F8;
+  --surf:     #FFFFFF;
+  --surf2:    #F8FAFC;
+  --bd:       #E2E8F0;
+  --bd2:      #CBD5E1;
+  --ink:      #0F172A;
+  --ink2:     #475569;
+  --ink3:     #94A3B8;
+  --teal:     #0F766E;
+  --teal2:    #0D9488;
+  --teal-bg:  #F0FDF9;
+  --amber:    #D97706;
+  --amber-bg: #FFFBEB;
+  --amber-bd: #FDE68A;
+  --blue:     #2563EB;
+  --blue-bg:  #EFF6FF;
+  --blue-bd:  #BFDBFE;
+  --green:    #16A34A;
+  --green-bg: #F0FDF4;
+  --green-bd: #BBF7D0;
+  --red:      #DC2626;
+  --red-bg:   #FEF2F2;
+  --red-bd:   #FECACA;
+  --r:        10px;
+  --r-sm:     6px;
+  --sh:       0 1px 3px rgba(15,23,42,.07),0 1px 2px rgba(15,23,42,.04);
+  --sh-md:    0 4px 16px rgba(15,23,42,.10),0 2px 4px rgba(15,23,42,.04);
 }
 
-/* ── reset / base ── */
-*, *::before, *::after { box-sizing: border-box; }
+*,*::before,*::after{box-sizing:border-box;}
+body{background:var(--bg);font-family:'Inter',system-ui,sans-serif;color:var(--ink);font-size:14px;line-height:1.55;margin:0;}
 
-body {
-  background: var(--bg);
-  font-family: 'DM Sans', system-ui, sans-serif;
-  color: var(--ink);
-  font-size: 14px;
-  line-height: 1.55;
-}
+/* ─── page shell ─── */
+.ag{max-width:1600px;margin:0 auto;padding:1.25rem 1rem 3rem;}
 
-/* ── page shell ── */
-.ag-page {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 1.5rem 1.5rem 3rem;
-}
+/* ─── header ─── */
+.ag-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap;}
+.ag-hdr-left h1{font-size:1.25rem;font-weight:700;letter-spacing:-.025em;margin:0 0 .1rem;color:var(--ink);}
+.ag-hdr-left p{font-size:.78rem;color:var(--ink3);margin:0;}
+.ag-hdr-right{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;}
 
-/* ── page header ── */
-.ag-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-.ag-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: -.02em;
-  color: var(--ink);
-  text-wrap: balance;
-  margin: 0;
-}
-.ag-subtitle {
-  font-size: .82rem;
-  color: var(--ink-3);
-  margin: .15rem 0 0;
-}
+/* ─── KPI strip – horizontal scroll on mobile ─── */
+.kpi-wrap{overflow-x:auto;margin-bottom:1rem;-webkit-overflow-scrolling:touch;}
+.kpi-wrap::-webkit-scrollbar{height:3px;}
+.kpi-wrap::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px;}
+.kpi-strip{display:flex;gap:.65rem;min-width:max-content;padding-bottom:4px;}
+.kpi{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:.9rem 1.1rem .8rem;display:flex;align-items:center;gap:.8rem;box-shadow:var(--sh);min-width:140px;position:relative;overflow:hidden;transition:box-shadow .15s;}
+.kpi:hover{box-shadow:var(--sh-md);}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
+.kpi-tot::before{background:var(--ink2);}
+.kpi-pen::before{background:var(--amber);}
+.kpi-rep::before{background:var(--blue);}
+.kpi-cer::before{background:var(--green);}
+.kpi-atr::before{background:var(--red);}
+.kpi-ico{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.kpi-tot .kpi-ico{background:#F1F5F9;color:var(--ink2);}
+.kpi-pen .kpi-ico{background:var(--amber-bg);color:var(--amber);}
+.kpi-rep .kpi-ico{background:var(--blue-bg);color:var(--blue);}
+.kpi-cer .kpi-ico{background:var(--green-bg);color:var(--green);}
+.kpi-atr .kpi-ico{background:var(--red-bg);color:var(--red);}
+.kpi-num{font-size:1.55rem;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1;}
+.kpi-tot .kpi-num{color:var(--ink);}
+.kpi-pen .kpi-num{color:var(--amber);}
+.kpi-rep .kpi-num{color:var(--blue);}
+.kpi-cer .kpi-num{color:var(--green);}
+.kpi-atr .kpi-num{color:var(--red);}
+.kpi-lbl{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-top:.12rem;}
 
-/* ── KPI strip ── */
-.kpi-strip {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: .75rem;
-  margin-bottom: 1.25rem;
-}
-.kpi-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1rem 1.1rem .9rem;
-  display: flex;
-  align-items: center;
-  gap: .85rem;
-  box-shadow: var(--shadow-sm);
-  position: relative;
-  overflow: hidden;
-  transition: box-shadow .15s;
-}
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 4px;
-  border-radius: 4px 0 0 4px;
-}
-.kpi-card:hover { box-shadow: var(--shadow-md); }
-.kpi-card--total::before  { background: var(--ink-2); }
-.kpi-card--pend::before   { background: var(--amber); }
-.kpi-card--rep::before    { background: var(--blue); }
-.kpi-card--cerr::before   { background: var(--green); }
-.kpi-card--atr::before    { background: var(--red); }
+/* ─── filter panel ─── */
+.fp{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:1rem;overflow:hidden;}
+.fp-hdr{display:flex;align-items:center;justify-content:space-between;padding:.65rem 1rem;cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:border-color .15s;}
+.fp-hdr.open{border-bottom-color:var(--bd);}
+.fp-hdr-l{display:flex;align-items:center;gap:.45rem;font-weight:600;font-size:.82rem;color:var(--ink2);}
+.fp-badge{background:var(--teal);color:#fff;font-size:.62rem;font-weight:700;padding:.08rem .4rem;border-radius:999px;}
+.fp-body{padding:.85rem 1rem 1rem;}
+.fp-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+@media(min-width:700px){.fp-grid{grid-template-columns:minmax(160px,1.5fr) minmax(200px,auto) minmax(120px,1fr) minmax(110px,.8fr) minmax(120px,.8fr) minmax(120px,.8fr) auto;}}
+.ff label{display:block;font-size:.67rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:.3rem;}
+.ff .fc{border:1px solid var(--bd2);border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:.83rem;color:var(--ink);background:var(--surf);padding:.38rem .6rem;width:100%;transition:border-color .15s,box-shadow .15s;}
+.ff .fc:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.12);outline:none;}
+.cpill-group{display:flex;gap:.4rem;flex-wrap:wrap;padding-bottom:.05rem;}
+.cpill{display:flex;align-items:center;gap:.28rem;padding:.24rem .6rem;border-radius:999px;border:1.5px solid var(--bd2);font-size:.76rem;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none;}
+.cpill input{display:none;}
+.cpill-pen{color:var(--amber);border-color:var(--amber-bd);background:var(--amber-bg);}
+.cpill-rep{color:var(--blue);border-color:var(--blue-bd);background:var(--blue-bg);}
+.cpill-cer{color:var(--green);border-color:var(--green-bd);background:var(--green-bg);}
+.cpill:has(input:not(:checked)){color:var(--ink3);border-color:var(--bd);background:var(--surf2);opacity:.6;}
+.fp-actions{display:flex;gap:.4rem;align-self:end;flex-wrap:wrap;}
 
-.kpi-icon-wrap {
-  width: 38px; height: 38px;
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  font-size: 1.1rem;
-}
-.kpi-card--total  .kpi-icon-wrap { background:#F1F5F9; color:var(--ink-2); }
-.kpi-card--pend   .kpi-icon-wrap { background:var(--amber-bg); color:var(--amber); }
-.kpi-card--rep    .kpi-icon-wrap { background:var(--blue-bg); color:var(--blue); }
-.kpi-card--cerr   .kpi-icon-wrap { background:var(--green-bg); color:var(--green); }
-.kpi-card--atr    .kpi-icon-wrap { background:var(--red-bg); color:var(--red); }
+/* ─── action bar ─── */
+.abar{display:flex;align-items:center;gap:.45rem;margin-bottom:.85rem;flex-wrap:wrap;}
+.cnt{margin-left:auto;font-size:.77rem;color:var(--ink3);font-weight:500;white-space:nowrap;}
 
-.kpi-body {}
-.kpi-num {
-  font-size: 1.7rem;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -.03em;
-  font-variant-numeric: tabular-nums;
-}
-.kpi-card--total  .kpi-num { color: var(--ink); }
-.kpi-card--pend   .kpi-num { color: var(--amber); }
-.kpi-card--rep    .kpi-num { color: var(--blue); }
-.kpi-card--cerr   .kpi-num { color: var(--green); }
-.kpi-card--atr    .kpi-num { color: var(--red); }
+/* ─── buttons ─── */
+.btn{display:inline-flex;align-items:center;gap:.3rem;padding:.42rem .9rem;border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:.81rem;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none;border:none;white-space:nowrap;}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-teal:hover{background:var(--teal2);color:#fff;box-shadow:0 2px 8px rgba(15,118,110,.3);}
+.btn-ghost{background:var(--surf);color:var(--ink2);border:1px solid var(--bd2);}
+.btn-ghost:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-bg);}
+.btn-red{background:var(--surf);color:var(--red);border:1px solid var(--red-bd);}
+.btn-red:hover:not(:disabled){background:var(--red-bg);border-color:var(--red);}
+.btn-red:disabled{opacity:.4;cursor:not-allowed;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-green:hover{background:#15803D;color:#fff;}
+.btn-amber{background:var(--amber);color:#fff;}
+.btn-amber:hover{background:#B45309;color:#fff;}
+.btn-neutral{background:var(--surf);color:var(--ink2);border:1px solid var(--bd2);}
+.btn-neutral:hover{border-color:var(--ink2);}
+.btn-sm{padding:.28rem .65rem;font-size:.76rem;}
 
-.kpi-label {
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--ink-3);
-  margin-top: .15rem;
-}
+/* ─── search ─── */
+.srch{display:flex;align-items:center;gap:.45rem;background:var(--surf);border:1px solid var(--bd2);border-radius:var(--r-sm);padding:.35rem .65rem;flex:1;min-width:180px;max-width:300px;transition:border-color .15s,box-shadow .15s;}
+.srch:focus-within{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.12);}
+.srch i{color:var(--ink3);font-size:.82rem;flex-shrink:0;}
+.srch input{border:none;outline:none;background:none;font-family:'Inter',sans-serif;font-size:.82rem;color:var(--ink);width:100%;}
+.srch input::placeholder{color:var(--ink3);}
+.srch-clear{background:none;border:none;color:var(--ink3);cursor:pointer;padding:0;font-size:.72rem;display:none;}
+.srch-clear:hover{color:var(--red);}
 
-/* ── filter panel ── */
-.filter-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 1rem;
-  overflow: hidden;
+/* ─── table card ─── */
+.tw{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
+.tw-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.ag-tbl{width:100%;border-collapse:collapse;font-size:.82rem;}
+.ag-tbl thead th{background:var(--surf2);color:var(--ink3);font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:.6rem .85rem;border-bottom:1px solid var(--bd);white-space:nowrap;vertical-align:middle;}
+.ag-tbl thead th.sortable{cursor:pointer;user-select:none;position:relative;padding-right:1.3rem;}
+.ag-tbl thead th.sortable::after{content:'\F282';font-family:'bootstrap-icons';position:absolute;right:.45rem;top:50%;transform:translateY(-50%);font-size:.62rem;color:var(--bd2);font-style:normal;}
+.ag-tbl thead th.sortable:hover{background:#EFF6FF;color:var(--ink2);}
+.ag-tbl thead th.sort-asc::after{content:'\F235';color:var(--teal)!important;}
+.ag-tbl thead th.sort-desc::after{content:'\F229';color:var(--teal)!important;}
+.ag-tbl tbody tr{border-bottom:1px solid var(--bd);transition:background .1s;}
+.ag-tbl tbody tr:last-child{border-bottom:none;}
+.ag-tbl tbody tr:hover{background:var(--surf2);}
+.ag-tbl tbody tr.row-atr{border-left:3px solid var(--red);}
+.ag-tbl tbody tr.row-atr:hover{background:var(--red-bg);}
+.ag-tbl td{padding:.68rem .85rem;vertical-align:middle;}
+.ag-tbl tbody tr.row-hidden{display:none;}
+.no-res td{padding:3rem 1rem;text-align:center;color:var(--ink3);}
+
+/* ─── cell styles ─── */
+.chip-cont{display:inline-block;font-size:.7rem;font-weight:600;color:var(--teal);background:var(--teal-bg);border:1px solid rgba(15,118,110,.15);border-radius:5px;padding:.15rem .48rem;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cell-resp{font-weight:500;white-space:nowrap;}
+.cell-comp{max-width:300px;line-height:1.4;color:var(--ink2);word-break:break-word;}
+.cell-date{font-size:.79rem;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink2);}
+.cell-date.late{color:var(--red);font-weight:600;}
+.badge{display:inline-flex;align-items:center;gap:.28rem;font-size:.7rem;font-weight:600;padding:.2rem .58rem;border-radius:999px;white-space:nowrap;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.b-pen{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd);}
+.b-pen::before{background:var(--amber);}
+.b-rep{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-bd);}
+.b-rep::before{background:var(--blue);}
+.b-cer{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);}
+.b-cer::before{background:var(--green);}
+.atr-y{color:var(--red);font-size:.77rem;font-weight:600;}
+.atr-n{color:var(--ink3);font-size:.77rem;}
+.ev-link{display:inline-flex;align-items:center;gap:.22rem;font-size:.73rem;font-weight:600;color:var(--green);background:var(--green-bg);border:1px solid var(--green-bd);border-radius:var(--r-sm);padding:.17rem .45rem;text-decoration:none;}
+.ev-link:hover{background:#DCFCE7;color:var(--green);}
+.obs-snip{font-size:.73rem;color:var(--ink3);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.obs-snip:hover{color:var(--teal);}
+
+/* ─── row actions ─── */
+.ra{display:flex;gap:.25rem;align-items:center;}
+.ra-btn{width:27px;height:27px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);border:1px solid var(--bd);background:var(--surf);color:var(--ink2);cursor:pointer;font-size:.78rem;transition:all .12s;flex-shrink:0;}
+.ra-btn:hover{background:var(--teal-bg);border-color:var(--teal);color:var(--teal);}
+.ra-btn.d:hover{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+.ra-btn.s:hover{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+.ra-btn.w:hover{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);}
+.ra-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* ─── empty ─── */
+.empty{padding:3.5rem 1rem;text-align:center;color:var(--ink3);}
+.empty-ico{width:60px;height:60px;margin:0 auto 1rem;background:var(--surf2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;border:2px dashed var(--bd2);}
+.empty p{font-size:.9rem;margin:.5rem 0 1.25rem;}
+
+/* ─── modales ─── */
+.modal-content{border:none;border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(15,23,42,.18);font-family:'Inter',sans-serif;}
+.mh{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.15rem;background:var(--teal);}
+.mh h5{color:#fff;margin:0;font-size:.95rem;font-weight:600;display:flex;align-items:center;gap:.45rem;}
+.mh-g{background:var(--green)!important;}
+.mh .xbtn{background:none;border:none;color:rgba(255,255,255,.75);font-size:1.05rem;cursor:pointer;padding:0;line-height:1;}
+.mh .xbtn:hover{color:#fff;}
+.mb{padding:1.15rem;}
+.mf{padding:.8rem 1.15rem;display:flex;justify-content:flex-end;gap:.45rem;border-top:1px solid var(--bd);background:var(--surf2);}
+.ag-lbl{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:.32rem;display:block;}
+.ag-inp{width:100%;border:1px solid var(--bd2);border-radius:var(--r-sm);font-family:'Inter',sans-serif;font-size:.87rem;color:var(--ink);padding:.42rem .68rem;background:var(--surf);transition:border-color .15s,box-shadow .15s;}
+.ag-inp:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.12);outline:none;}
+.ag-ta{min-height:88px;resize:vertical;}
+.qrow{display:flex;gap:.4rem;align-items:center;margin-top:.45rem;}
+.qrow input{flex:1;font-size:.83rem;border:1px solid var(--bd2);border-radius:var(--r-sm);padding:.36rem .62rem;font-family:'Inter',sans-serif;color:var(--ink);}
+.qrow input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.1);outline:none;}
+mark.hl{background:rgba(15,118,110,.16);color:var(--teal);border-radius:2px;padding:0 1px;font-weight:600;}
+
+/* ─── MOBILE CARD VIEW ─── */
+@media(max-width:680px){
+  /* ocultar tabla, mostrar cards */
+  .desktop-tbl{display:none!important;}
+  .mobile-cards{display:block;}
 }
-.filter-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: .7rem 1rem;
-  cursor: pointer;
-  user-select: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color .15s;
-}
-.filter-header.open { border-bottom-color: var(--border); }
-.filter-header-left {
-  display: flex; align-items: center; gap: .5rem;
-  font-weight: 600; font-size: .82rem; color: var(--ink-2);
-}
-.filter-body {
-  padding: .9rem 1rem 1rem;
-  display: grid;
-  grid-template-columns: minmax(160px,1fr) minmax(220px,auto) minmax(120px,.8fr) minmax(120px,.6fr) minmax(130px,.6fr) minmax(130px,.6fr) auto;
-  gap: .75rem;
-  align-items: end;
-}
-.filter-field label {
-  display: block;
-  font-size: .7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  color: var(--ink-3);
-  margin-bottom: .35rem;
-}
-.filter-field .form-control,
-.filter-field .form-select {
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .84rem;
-  color: var(--ink);
-  background: var(--surface);
-  padding: .38rem .65rem;
-  transition: border-color .15s, box-shadow .15s;
-}
-.filter-field .form-control:focus,
-.filter-field .form-select:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(15,118,110,.12);
-  outline: none;
-}
-.check-group {
-  display: flex; gap: .5rem; align-items: center; padding-bottom: .1rem;
-  flex-wrap: nowrap;
-}
-.check-pill {
-  display: flex; align-items: center; gap: .3rem;
-  padding: .28rem .65rem;
-  border-radius: 999px;
-  border: 1.5px solid var(--border-2);
-  font-size: .78rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all .15s;
-  white-space: nowrap;
-}
-.check-pill input { display: none; }
-.check-pill.pill-pend  { color: var(--amber); border-color: var(--amber-bd); background: var(--amber-bg); }
-.check-pill.pill-rep   { color: var(--blue);  border-color: var(--blue-bd);  background: var(--blue-bg); }
-.check-pill.pill-cerr  { color: var(--green); border-color: var(--green-bd); background: var(--green-bg); }
-.check-pill:has(input:not(:checked)) {
-  color: var(--ink-3); border-color: var(--border); background: var(--surface-2); opacity: .65;
+@media(min-width:681px){
+  .mobile-cards{display:none!important;}
 }
 
-/* ── search bar ── */
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  background: var(--surface);
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-sm);
-  padding: .35rem .65rem;
-  flex: 1;
-  min-width: 200px;
-  max-width: 320px;
-  transition: border-color .15s, box-shadow .15s;
-}
-.search-bar:focus-within {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(15,118,110,.12);
-}
-.search-bar i { color: var(--ink-3); font-size: .85rem; flex-shrink: 0; }
-.search-bar input {
-  border: none; outline: none; background: none;
-  font-family: 'DM Sans', sans-serif;
-  font-size: .83rem; color: var(--ink);
-  width: 100%;
-}
-.search-bar input::placeholder { color: var(--ink-3); }
-.search-clear {
-  background: none; border: none; color: var(--ink-3);
-  cursor: pointer; padding: 0; font-size: .75rem; line-height: 1;
-  display: none;
-}
-.search-clear:hover { color: var(--red); }
+.mobile-cards{display:none;}
+.mc{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:.75rem;overflow:hidden;position:relative;}
+.mc.mc-atr{border-left:3px solid var(--red);}
+.mc-top{padding:.75rem .9rem .6rem;display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;}
+.mc-top-l{flex:1;min-width:0;}
+.mc-cont{font-size:.7rem;font-weight:600;color:var(--teal);background:var(--teal-bg);border:1px solid rgba(15,118,110,.15);border-radius:4px;padding:.13rem .4rem;display:inline-block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.35rem;}
+.mc-resp{font-weight:600;font-size:.88rem;color:var(--ink);margin-bottom:.2rem;}
+.mc-text{font-size:.82rem;color:var(--ink2);line-height:1.4;margin:0;}
+.mc-badges{display:flex;gap:.3rem;align-items:center;flex-wrap:wrap;}
+.mc-body{padding:0 .9rem .65rem;display:grid;grid-template-columns:1fr 1fr;gap:.4rem .6rem;}
+.mc-row{display:flex;flex-direction:column;}
+.mc-row-lbl{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);}
+.mc-row-val{font-size:.8rem;color:var(--ink2);font-variant-numeric:tabular-nums;}
+.mc-row-val.late{color:var(--red);font-weight:600;}
+.mc-obs{padding:.5rem .9rem;border-top:1px solid var(--bd);font-size:.76rem;color:var(--ink3);line-height:1.4;cursor:pointer;}
+.mc-obs:hover{color:var(--teal);}
+.mc-actions{padding:.55rem .9rem;border-top:1px solid var(--bd);background:var(--surf2);display:flex;gap:.35rem;flex-wrap:wrap;}
+.mc-chk{padding:.35rem .9rem .1rem;display:flex;align-items:center;gap:.4rem;font-size:.78rem;color:var(--ink3);}
 
-/* ── action bar ── */
-.action-bar {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  margin-bottom: .85rem;
-  flex-wrap: wrap;
+/* ─── misc responsive ─── */
+@media(max-width:680px){
+  .ag{padding:.9rem .8rem 2.5rem;}
+  .abar{gap:.35rem;}
+  .srch{max-width:none;flex:1;}
+  .cnt{width:100%;text-align:right;}
+  .ag-hdr-right .btn{padding:.38rem .7rem;font-size:.78rem;}
 }
-.btn-primary-ag {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .45rem 1rem;
-  background: var(--teal);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .83rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .15s, box-shadow .15s;
-  text-decoration: none;
-}
-.btn-primary-ag:hover { background: var(--teal-2); color: #fff; box-shadow: 0 2px 8px rgba(15,118,110,.3); }
-
-.btn-ghost {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .42rem .85rem;
-  background: var(--surface);
-  color: var(--ink-2);
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .82rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all .15s;
-  text-decoration: none;
-}
-.btn-ghost:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-bg); }
-
-.btn-danger-ghost {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .42rem .85rem;
-  background: var(--surface);
-  color: var(--red);
-  border: 1px solid var(--red-bd);
-  border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .82rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all .15s;
-}
-.btn-danger-ghost:hover:not(:disabled) { background: var(--red-bg); border-color: var(--red); }
-.btn-danger-ghost:disabled { opacity: .4; cursor: not-allowed; }
-
-.select-all-label {
-  display: flex; align-items: center; gap: .4rem;
-  font-size: .82rem; color: var(--ink-2); cursor: pointer;
-  margin-left: .25rem;
-}
-.ag-count {
-  margin-left: auto;
-  font-size: .78rem;
-  color: var(--ink-3);
-  font-weight: 500;
+@media(max-width:480px){
+  .kpi-num{font-size:1.35rem;}
+  .kpi{min-width:120px;padding:.75rem .9rem .65rem;}
+  .fp-grid{grid-template-columns:1fr;}
 }
 
-/* ── table ── */
-.table-wrap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-}
-.ag-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: .83rem;
-}
-.ag-table thead th {
-  background: #F8FAFC;
-  color: var(--ink-3);
-  font-size: .68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  padding: .65rem .85rem;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-  vertical-align: middle;
-}
-.ag-table tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background .1s;
-}
-.ag-table tbody tr:last-child { border-bottom: none; }
-.ag-table tbody tr:hover { background: #F8FAFC; }
-.ag-table tbody tr.row-atr {
-  border-left: 3px solid var(--red);
-}
-.ag-table tbody tr.row-atr:hover { background: var(--red-bg); }
-.ag-table td {
-  padding: .7rem .85rem;
-  vertical-align: middle;
-  color: var(--ink);
-}
-
-/* ── celda contrato ── */
-.contrato-chip {
-  display: inline-block;
-  font-size: .72rem;
-  font-weight: 600;
-  color: var(--teal);
-  background: var(--teal-bg);
-  border: 1px solid rgba(15,118,110,.15);
-  border-radius: 5px;
-  padding: .18rem .5rem;
-  max-width: 150px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ── responsable ── */
-.responsable-cell {
-  font-weight: 500;
-  color: var(--ink);
-  white-space: nowrap;
-}
-
-/* ── compromiso texto ── */
-.comp-texto {
-  max-width: 360px;
-  line-height: 1.45;
-  color: var(--ink-2);
-  word-break: break-word;
-}
-
-/* ── fechas ── */
-.fecha-cell {
-  font-size: .8rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  color: var(--ink-2);
-}
-.fecha-atr { color: var(--red); font-weight: 600; }
-
-/* ── badges estado ── */
-.badge-estado {
-  display: inline-flex; align-items: center; gap: .3rem;
-  font-size: .72rem; font-weight: 600;
-  padding: .22rem .6rem;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.badge-estado::before {
-  content: '';
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.badge-pend  { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-bd); }
-.badge-pend::before  { background: var(--amber); }
-.badge-rep   { background: var(--blue-bg);  color: var(--blue);  border: 1px solid var(--blue-bd); }
-.badge-rep::before   { background: var(--blue); }
-.badge-cerr  { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-bd); }
-.badge-cerr::before  { background: var(--green); }
-
-/* ── atrasado badge ── */
-.atr-si  { color: var(--red);   font-weight: 600; font-size: .78rem; }
-.atr-no  { color: var(--ink-3); font-size: .78rem; }
-
-/* ── reprog count ── */
-.reprog-btn {
-  background: none; border: none; padding: 0;
-  color: var(--blue); font-weight: 600; font-size: .8rem;
-  cursor: pointer; text-decoration: underline dotted;
-  font-family: 'DM Sans', sans-serif;
-}
-.reprog-none { color: var(--ink-3); font-size: .78rem; }
-
-/* ── obs cell ── */
-.obs-snippet {
-  font-size: .75rem;
-  color: var(--ink-3);
-  max-width: 160px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-}
-.obs-snippet:hover { color: var(--teal); }
-
-/* ── evidencia ── */
-.ev-link {
-  display: inline-flex; align-items: center; gap: .25rem;
-  font-size: .75rem; font-weight: 600;
-  color: var(--green);
-  text-decoration: none;
-  background: var(--green-bg);
-  border: 1px solid var(--green-bd);
-  border-radius: var(--radius-sm);
-  padding: .2rem .5rem;
-}
-.ev-link:hover { background: #DCFCE7; color: var(--green); }
-.ev-none { font-size: .75rem; color: var(--ink-3); }
-
-/* ── acciones (aparecen en hover de fila) ── */
-.row-actions {
-  display: flex; gap: .3rem; align-items: center;
-  opacity: 0;
-  transition: opacity .15s;
-}
-.ag-table tbody tr:hover .row-actions { opacity: 1; }
-
-.act-btn {
-  width: 28px; height: 28px;
-  display: inline-flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--ink-2);
-  cursor: pointer;
-  font-size: .8rem;
-  transition: all .12s;
-  flex-shrink: 0;
-}
-.act-btn:hover { background: var(--teal-bg); border-color: var(--teal); color: var(--teal); }
-.act-btn.danger:hover { background: var(--red-bg); border-color: var(--red); color: var(--red); }
-.act-btn.success:hover { background: var(--green-bg); border-color: var(--green); color: var(--green); }
-.act-btn.warn:hover { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
-
-/* ── empty state ── */
-.empty-state {
-  padding: 4rem 1rem;
-  text-align: center;
-  color: var(--ink-3);
-}
-.empty-state .empty-icon {
-  width: 64px; height: 64px;
-  margin: 0 auto 1rem;
-  background: var(--surface-2);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.6rem;
-  border: 2px dashed var(--border-2);
-}
-.empty-state p { font-size: .9rem; margin: .5rem 0 1.25rem; }
-
-/* ── modales ── */
-.modal-content {
-  border: none;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(15,23,42,.18);
-  font-family: 'DM Sans', sans-serif;
-}
-.modal-header-ag {
-  background: var(--teal);
-  padding: 1rem 1.25rem;
-  display: flex; align-items: center; justify-content: space-between;
-}
-.modal-header-ag h5 {
-  color: #fff; margin: 0; font-size: 1rem; font-weight: 600;
-  display: flex; align-items: center; gap: .5rem;
-}
-.modal-header-ag .btn-close-ag {
-  background: none; border: none; color: rgba(255,255,255,.7);
-  font-size: 1.1rem; cursor: pointer; padding: 0; line-height: 1;
-  transition: color .1s;
-}
-.modal-header-ag .btn-close-ag:hover { color: #fff; }
-.modal-body-ag { padding: 1.25rem; }
-.modal-foot-ag {
-  padding: .85rem 1.25rem;
-  display: flex; justify-content: flex-end; gap: .5rem;
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
-}
-
-.ag-label {
-  font-size: .72rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .07em;
-  color: var(--ink-3); margin-bottom: .35rem; display: block;
-}
-.ag-input {
-  width: 100%;
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif;
-  font-size: .88rem; color: var(--ink);
-  padding: .45rem .7rem;
-  background: var(--surface);
-  transition: border-color .15s, box-shadow .15s;
-}
-.ag-input:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(15,118,110,.12);
-  outline: none;
-}
-.ag-textarea { min-height: 90px; resize: vertical; }
-
-.btn-teal {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .45rem 1rem;
-  background: var(--teal); color: #fff;
-  border: none; border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: .83rem; font-weight: 600;
-  cursor: pointer; transition: background .15s;
-}
-.btn-teal:hover { background: var(--teal-2); }
-
-.btn-neutral {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .42rem .85rem;
-  background: var(--surface); color: var(--ink-2);
-  border: 1px solid var(--border-2); border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: .83rem; font-weight: 500;
-  cursor: pointer; transition: all .15s;
-}
-.btn-neutral:hover { border-color: var(--ink-2); }
-
-.btn-green {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .45rem 1rem;
-  background: var(--green); color: #fff;
-  border: none; border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: .83rem; font-weight: 600;
-  cursor: pointer; transition: background .15s;
-}
-.btn-green:hover { background: #15803D; }
-
-.btn-amber {
-  display: inline-flex; align-items: center; gap: .35rem;
-  padding: .45rem 1rem;
-  background: var(--amber); color: #fff;
-  border: none; border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: .83rem; font-weight: 600;
-  cursor: pointer; transition: background .15s;
-}
-.btn-amber:hover { background: #B45309; }
-
-/* ── contrato quick create (en modal) ── */
-.quick-create-row {
-  display: flex; gap: .4rem; align-items: center; margin-top: .5rem;
-}
-.quick-create-row input {
-  flex: 1; font-size: .84rem;
-  border: 1px solid var(--border-2); border-radius: var(--radius-sm);
-  padding: .38rem .65rem; font-family: 'DM Sans', sans-serif;
-  color: var(--ink);
-}
-.quick-create-row input:focus {
-  border-color: var(--teal);
-  box-shadow: 0 0 0 3px rgba(15,118,110,.1);
-  outline: none;
-}
-
-/* ── highlight búsqueda ── */
-mark.hl {
-  background: rgba(15,118,110,.18);
-  color: var(--teal);
-  border-radius: 2px;
-  padding: 0 1px;
-  font-weight: 600;
-}
-
-/* ── sort headers ── */
-.ag-table thead th.sortable {
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-  padding-right: 1.4rem;
-}
-.ag-table thead th.sortable::after {
-  content: '\F282';
-  font-family: 'bootstrap-icons';
-  position: absolute;
-  right: .5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: .65rem;
-  color: var(--border-2);
-  font-style: normal;
-  transition: color .1s;
-}
-.ag-table thead th.sortable:hover::after { color: var(--ink-3); }
-.ag-table thead th.sort-asc::after  { content: '\F235'; color: var(--teal) !important; }
-.ag-table thead th.sort-desc::after { content: '\F229'; color: var(--teal) !important; }
-.ag-table thead th.sortable:hover   { background: #EFF6FF; color: var(--ink-2); }
-
-/* ── fila oculta por filtro client-side ── */
-.ag-table tbody tr.row-hidden { display: none; }
-
-/* ── no-results message ── */
-.no-results-row td {
-  padding: 3rem 1rem;
-  text-align: center;
-  color: var(--ink-3);
-  font-size: .9rem;
-}
-
-/* ── responsive ── */
-@media (max-width: 900px) {
-  .kpi-strip { grid-template-columns: repeat(3, 1fr); }
-  .filter-body { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 600px) {
-  .kpi-strip { grid-template-columns: 1fr 1fr; }
-  .filter-body { grid-template-columns: 1fr; }
-  .ag-page { padding: 1rem; }
-  .row-actions { opacity: 1; }
-}
+/* select all row */
+.sa-row{display:flex;align-items:center;gap:.4rem;font-size:.81rem;color:var(--ink2);cursor:pointer;}
+.info-row{background:var(--blue-bg);border:1px solid var(--blue-bd);border-radius:var(--r-sm);padding:.45rem .75rem;font-size:.78rem;color:var(--blue);display:flex;align-items:center;gap:.35rem;margin-bottom:.5rem;}
+.warn-row{background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:var(--r-sm);padding:.45rem .75rem;font-size:.78rem;color:var(--amber);display:flex;align-items:center;gap:.35rem;margin-bottom:.5rem;}
+.ok-row{background:var(--green-bg);border:1px solid var(--green-bd);border-radius:var(--r-sm);padding:.45rem .75rem;font-size:.78rem;color:var(--green);display:flex;align-items:center;gap:.35rem;margin-bottom:.5rem;}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="ag-page">
+<div class="ag">
 
-  <!-- ── ENCABEZADO ── -->
-  <div class="ag-header">
-    <div>
-      <h1 class="ag-title"><i class="bi bi-calendar-check me-2" style="color:var(--teal);"></i>Agenda de Compromisos</h1>
-      <p class="ag-subtitle">Seguimiento y gestión de compromisos por contrato</p>
+  <!-- ── HEADER ── -->
+  <div class="ag-hdr">
+    <div class="ag-hdr-left">
+      <h1><i class="bi bi-calendar-check me-2" style="color:var(--teal)"></i>Agenda de Compromisos</h1>
+      <p>Seguimiento y gestión de compromisos por contrato</p>
+    </div>
+    <div class="ag-hdr-right">
+      {% if es_neo %}
+      <button class="btn btn-teal" data-bs-toggle="modal" data-bs-target="#modalCrear">
+        <i class="bi bi-plus-lg"></i>Nuevo
+      </button>
+      {% endif %}
+      <a href="{{ url_for('compromisos.exportar_excel') }}?{{ request.query_string.decode() }}"
+         class="btn btn-ghost" style="text-decoration:none;">
+        <i class="bi bi-file-earmark-excel"></i>Excel
+      </a>
+      {% if es_neo %}
+      <label class="btn btn-ghost" style="cursor:pointer;margin:0;">
+        <i class="bi bi-upload"></i>Importar
+        <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="importarCompromisos(this)">
+      </label>
+      {% endif %}
     </div>
   </div>
 
-  <!-- ── KPI STRIP ── -->
-  <div class="kpi-strip">
-    <div class="kpi-card kpi-card--total">
-      <div class="kpi-icon-wrap"><i class="bi bi-list-check"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-num">{{ kpi.total }}</div>
-        <div class="kpi-label">Total</div>
+  <!-- ── KPIs ── -->
+  <div class="kpi-wrap">
+    <div class="kpi-strip">
+      <div class="kpi kpi-tot">
+        <div class="kpi-ico"><i class="bi bi-list-check"></i></div>
+        <div><div class="kpi-num">{{ kpi.total }}</div><div class="kpi-lbl">Total</div></div>
       </div>
-    </div>
-    <div class="kpi-card kpi-card--pend">
-      <div class="kpi-icon-wrap"><i class="bi bi-hourglass-split"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-num">{{ kpi.pendientes }}</div>
-        <div class="kpi-label">Pendientes</div>
+      <div class="kpi kpi-pen">
+        <div class="kpi-ico"><i class="bi bi-hourglass-split"></i></div>
+        <div><div class="kpi-num">{{ kpi.pendientes }}</div><div class="kpi-lbl">Pendientes</div></div>
       </div>
-    </div>
-    <div class="kpi-card kpi-card--rep">
-      <div class="kpi-icon-wrap"><i class="bi bi-arrow-clockwise"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-num">{{ kpi.reprogramados }}</div>
-        <div class="kpi-label">Reprogramados</div>
+      <div class="kpi kpi-rep">
+        <div class="kpi-ico"><i class="bi bi-arrow-clockwise"></i></div>
+        <div><div class="kpi-num">{{ kpi.reprogramados }}</div><div class="kpi-lbl">Reprogramados</div></div>
       </div>
-    </div>
-    <div class="kpi-card kpi-card--cerr">
-      <div class="kpi-icon-wrap"><i class="bi bi-check-circle"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-num">{{ kpi.cerrados }}</div>
-        <div class="kpi-label">Cerrados</div>
+      <div class="kpi kpi-cer">
+        <div class="kpi-ico"><i class="bi bi-check-circle"></i></div>
+        <div><div class="kpi-num">{{ kpi.cerrados }}</div><div class="kpi-lbl">Cerrados</div></div>
       </div>
-    </div>
-    <div class="kpi-card kpi-card--atr">
-      <div class="kpi-icon-wrap"><i class="bi bi-exclamation-triangle"></i></div>
-      <div class="kpi-body">
-        <div class="kpi-num">{{ kpi.atrasados }}</div>
-        <div class="kpi-label">Atrasados</div>
+      <div class="kpi kpi-atr">
+        <div class="kpi-ico"><i class="bi bi-exclamation-triangle"></i></div>
+        <div><div class="kpi-num">{{ kpi.atrasados }}</div><div class="kpi-lbl">Atrasados</div></div>
       </div>
     </div>
   </div>
 
   <!-- ── FILTROS ── -->
-  <div class="filter-panel">
-    <div class="filter-header" onclick="toggleFiltros()" id="filterToggle">
-      <div class="filter-header-left">
-        <i class="bi bi-funnel"></i>
-        <span>Filtros</span>
-        {% set active = [] %}
-        {% if contrato_id_sel %}{% set _ = active.append(1) %}{% endif %}
-        {% if q_resp_sel %}{% set _ = active.append(1) %}{% endif %}
-        {% if atrasado_sel %}{% set _ = active.append(1) %}{% endif %}
-        {% if fecha_desde_sel or fecha_hasta_sel %}{% set _ = active.append(1) %}{% endif %}
-        {% if active|length > 0 %}
-        <span style="background:var(--teal);color:#fff;font-size:.65rem;font-weight:700;
-               padding:.1rem .45rem;border-radius:999px;">{{ active|length }}</span>
-        {% endif %}
+  <div class="fp">
+    <div class="fp-hdr" onclick="toggleFp()" id="fpHdr">
+      <div class="fp-hdr-l">
+        <i class="bi bi-funnel"></i><span>Filtros</span>
+        {% set nact = [] %}
+        {% if contrato_id_sel %}{% set _ = nact.append(1) %}{% endif %}
+        {% if q_resp_sel %}{% set _ = nact.append(1) %}{% endif %}
+        {% if atrasado_sel %}{% set _ = nact.append(1) %}{% endif %}
+        {% if fecha_desde_sel or fecha_hasta_sel %}{% set _ = nact.append(1) %}{% endif %}
+        {% if nact|length > 0 %}<span class="fp-badge">{{ nact|length }}</span>{% endif %}
       </div>
-      <i class="bi bi-chevron-down" id="filterChevron" style="color:var(--ink-3);transition:transform .2s;"></i>
+      <i class="bi bi-chevron-down" id="fpChev" style="color:var(--ink3);transition:transform .2s;"></i>
     </div>
+    <div id="fpBody" style="display:none;">
+      <form method="get" class="mb" style="margin:0;padding:.85rem 1rem 1rem;">
+        <div class="fp-grid">
 
-    <div id="filterBody" style="display:none;">
-      <form method="get" class="filter-body">
-
-        <div class="filter-field">
-          <label>Contrato</label>
-          <select name="contrato_id" class="form-select">
-            <option value="">Todos los contratos</option>
-            {% for c in contratos %}
-            <option value="{{ c.id }}" {% if c.id == contrato_id_sel %}selected{% endif %}>{{ c.contrato }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="filter-field">
-          <label>Estado</label>
-          <div class="check-group">
-            <label class="check-pill pill-pend">
-              <input type="checkbox" name="est_pend" value="1"
-                     {% if not est_pend_sel is defined or est_pend_sel or not request.args %}checked{% endif %}
-                     onchange="this.closest('.check-pill').classList.toggle('active')">
-              Pendiente
-            </label>
-            <label class="check-pill pill-rep">
-              <input type="checkbox" name="est_rep" value="1"
-                     {% if not est_rep_sel is defined or est_rep_sel or not request.args %}checked{% endif %}>
-              Reprog.
-            </label>
-            <label class="check-pill pill-cerr">
-              <input type="checkbox" name="est_cerr" value="1"
-                     {% if not est_cerr_sel is defined or est_cerr_sel or not request.args %}checked{% endif %}>
-              Cerrado
-            </label>
+          <div class="ff">
+            <label>Contrato</label>
+            <select name="contrato_id" class="fc">
+              <option value="">Todos los contratos</option>
+              {% for c in contratos %}
+              <option value="{{ c.id }}" {% if c.id == contrato_id_sel %}selected{% endif %}>{{ c.contrato }}</option>
+              {% endfor %}
+            </select>
           </div>
-        </div>
 
-        <div class="filter-field">
-          <label>Responsable</label>
-          <input type="text" name="q_resp" class="form-control"
-                 placeholder="Buscar..." value="{{ q_resp_sel or '' }}">
-        </div>
+          <div class="ff">
+            <label>Estado</label>
+            <div class="cpill-group">
+              <label class="cpill cpill-pen">
+                <input type="checkbox" name="est_pend" value="1"
+                       {% if not est_pend_sel is defined or est_pend_sel or not request.args %}checked{% endif %}>
+                <i class="bi bi-hourglass-split"></i>Pendiente
+              </label>
+              <label class="cpill cpill-rep">
+                <input type="checkbox" name="est_rep" value="1"
+                       {% if not est_rep_sel is defined or est_rep_sel or not request.args %}checked{% endif %}>
+                <i class="bi bi-arrow-clockwise"></i>Reprog.
+              </label>
+              <label class="cpill cpill-cer">
+                <input type="checkbox" name="est_cerr" value="1"
+                       {% if not est_cerr_sel is defined or est_cerr_sel or not request.args %}checked{% endif %}>
+                <i class="bi bi-check-circle"></i>Cerrado
+              </label>
+            </div>
+          </div>
 
-        <div class="filter-field">
-          <label>Atraso</label>
-          <select name="atrasado" class="form-select">
-            <option value="">Todos</option>
-            <option value="1" {% if atrasado_sel=='1' %}selected{% endif %}>Solo atrasados</option>
-            <option value="0" {% if atrasado_sel=='0' %}selected{% endif %}>Al día</option>
-          </select>
-        </div>
+          <div class="ff">
+            <label>Responsable</label>
+            <input type="text" name="q_resp" class="fc" placeholder="Buscar nombre…" value="{{ q_resp_sel or '' }}">
+          </div>
 
-        <div class="filter-field">
-          <label>Entrega desde</label>
-          <input type="date" name="fecha_desde" class="form-control"
-                 value="{{ fecha_desde_sel or '' }}">
-        </div>
+          <div class="ff">
+            <label>Atraso</label>
+            <select name="atrasado" class="fc">
+              <option value="">Todos</option>
+              <option value="1" {% if atrasado_sel=='1' %}selected{% endif %}>Solo atrasados</option>
+              <option value="0" {% if atrasado_sel=='0' %}selected{% endif %}>Al día</option>
+            </select>
+          </div>
 
-        <div class="filter-field">
-          <label>Hasta</label>
-          <input type="date" name="fecha_hasta" class="form-control"
-                 value="{{ fecha_hasta_sel or '' }}">
-        </div>
+          <div class="ff">
+            <label>Entrega desde</label>
+            <input type="date" name="fecha_desde" class="fc" value="{{ fecha_desde_sel or '' }}">
+          </div>
 
-        <div class="filter-field" style="display:flex;gap:.4rem;align-self:end;">
-          <button type="submit" class="btn-primary-ag">
-            <i class="bi bi-funnel"></i>Aplicar
-          </button>
-          <a href="{{ url_for('compromisos.index') }}" class="btn-ghost" style="text-decoration:none;">
-            Limpiar
-          </a>
-        </div>
+          <div class="ff">
+            <label>Hasta</label>
+            <input type="date" name="fecha_hasta" class="fc" value="{{ fecha_hasta_sel or '' }}">
+          </div>
 
+          <div class="ff fp-actions">
+            <button type="submit" class="btn btn-teal btn-sm">
+              <i class="bi bi-funnel"></i>Aplicar
+            </button>
+            <a href="{{ url_for('compromisos.index') }}" class="btn btn-ghost btn-sm" style="text-decoration:none;">
+              Limpiar
+            </a>
+          </div>
+
+        </div>
       </form>
     </div>
   </div>
 
   <!-- ── ACTION BAR ── -->
-  <div class="action-bar">
-    {% if es_neo %}
-    <button class="btn-primary-ag" data-bs-toggle="modal" data-bs-target="#modalCrear">
-      <i class="bi bi-plus-lg"></i>Crear compromiso
-    </button>
-    {% endif %}
-
-    <!-- Búsqueda en tiempo real -->
-    <div class="search-bar">
+  <div class="abar">
+    <div class="srch">
       <i class="bi bi-search"></i>
-      <input type="text" id="searchInput" placeholder="Buscar por compromiso, responsable, contrato…"
+      <input type="text" id="searchInput" placeholder="Buscar compromiso, responsable, contrato…"
              oninput="buscarTabla(this.value)" autocomplete="off">
-      <button class="search-clear" id="searchClear" onclick="limpiarBusqueda()" title="Limpiar búsqueda">
-        <i class="bi bi-x-lg"></i>
-      </button>
+      <button class="srch-clear" id="searchClear" onclick="limpiarBusqueda()"><i class="bi bi-x-lg"></i></button>
     </div>
-
-    <a href="{{ url_for('compromisos.exportar_excel') }}?{{ request.query_string.decode() }}"
-       class="btn-ghost" style="text-decoration:none;">
-      <i class="bi bi-file-earmark-excel"></i>Excel
-    </a>
     {% if es_neo %}
-    <label class="btn-ghost" style="cursor:pointer;margin:0;">
-      <i class="bi bi-upload"></i>Importar
-      <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="importarCompromisos(this)">
-    </label>
-    {% endif %}
-    {% if es_neo %}
-    <button class="btn-danger-ghost" id="btnElimMasivo" disabled onclick="eliminarSeleccionados()">
+    <button class="btn btn-red btn-sm" id="btnElim" disabled onclick="eliminarSel()">
       <i class="bi bi-trash"></i>Eliminar
     </button>
-    <label class="select-all-label">
+    <label class="sa-row">
       <input type="checkbox" id="chkTodo" onchange="toggleTodo(this)"
-             style="width:15px;height:15px;accent-color:var(--teal);cursor:pointer;">
+             style="width:14px;height:14px;accent-color:var(--teal);cursor:pointer;">
       Seleccionar todo
     </label>
     {% endif %}
-    <span class="ag-count" id="agCount">{{ compromisos|length }} registro(s)</span>
+    <span class="cnt" id="agCnt">{{ compromisos|length }} registro(s)</span>
   </div>
 
-  <!-- ── TABLA ── -->
   {% if compromisos %}
-  <div class="table-wrap">
-    <div style="overflow-x:auto;">
-    <table class="ag-table">
+
+  <!-- ── TABLA (desktop) ── -->
+  <div class="tw desktop-tbl">
+    <div class="tw-scroll">
+    <table class="ag-tbl">
       <thead>
         <tr>
-          {% if es_neo %}<th style="width:36px;"></th>{% endif %}
+          {% if es_neo %}<th style="width:34px"></th>{% endif %}
           <th class="sortable" data-col="contrato">Contrato</th>
           <th class="sortable" data-col="responsable">Responsable</th>
           <th>Compromiso</th>
           <th class="sortable" data-col="creacion">Creación</th>
           <th class="sortable" data-col="entrega">Entrega</th>
           <th class="sortable" data-col="estado">Estado</th>
-          <th class="sortable" data-col="reprog" style="text-align:center;">Reprog.</th>
+          <th class="sortable" data-col="reprog" style="text-align:center">Reprog.</th>
           <th class="sortable" data-col="cierre">Cierre</th>
           <th>Atrasado</th>
-          <th>Obs.</th>
+          <th>Observación</th>
           <th>Evidencia</th>
           <th>Acciones</th>
         </tr>
@@ -896,126 +438,98 @@ mark.hl {
       <tbody>
         {% for c in compromisos %}
         <tr class="{% if c.atrasado %}row-atr{% endif %}"
-            data-search="{{ (c.contrato.contrato ~ ' ' ~ c.responsable ~ ' ' ~ c.compromiso)|lower }}"
+            data-search="{{ (c.contrato.contrato~' '~c.responsable~' '~c.compromiso)|lower }}"
             data-contrato="{{ c.contrato.contrato|lower }}"
             data-responsable="{{ c.responsable|lower }}"
             data-estado="{{ c.estado|lower }}"
             data-entrega="{{ c.fecha_entrega.strftime('%Y-%m-%d') }}"
             data-creacion="{{ c.fecha_creacion.strftime('%Y-%m-%d') }}"
             data-cierre="{{ c.fecha_entrega_real.strftime('%Y-%m-%d') if c.fecha_entrega_real else '' }}"
-            data-reprog="{{ c.cantidad_reprogramaciones }}"
-            data-atrasado="{{ '1' if c.atrasado else '0' }}">
+            data-reprog="{{ c.cantidad_reprogramaciones }}">
 
           {% if es_neo %}
-          <td>
-            <input type="checkbox" class="chk-comp" value="{{ c.id }}"
-                   onchange="actualizarBtnElim()"
-                   style="width:15px;height:15px;accent-color:var(--teal);cursor:pointer;">
+          <td data-label="">
+            <input type="checkbox" class="chk-comp" value="{{ c.id }}" onchange="actualizarBtnElim()"
+                   style="width:14px;height:14px;accent-color:var(--teal);cursor:pointer;">
           </td>
           {% endif %}
 
-          <td><span class="contrato-chip" title="{{ c.contrato.contrato }}">{{ c.contrato.contrato }}</span></td>
-          <td><span class="responsable-cell">{{ c.responsable }}</span></td>
-          <td>
-            <span class="comp-texto" title="{{ c.compromiso }}">{{ c.compromiso }}</span>
-          </td>
-          <td><span class="fecha-cell">{{ c.fecha_creacion.strftime('%d/%m/%Y') }}</span></td>
-          <td>
-            <span class="fecha-cell {% if c.atrasado %}fecha-atr{% endif %}">
+          <td data-label="Contrato"><span class="chip-cont" title="{{ c.contrato.contrato }}">{{ c.contrato.contrato }}</span></td>
+          <td data-label="Responsable"><span class="cell-resp">{{ c.responsable }}</span></td>
+          <td data-label="Compromiso"><span class="cell-comp" title="{{ c.compromiso }}">{{ c.compromiso }}</span></td>
+          <td data-label="Creación"><span class="cell-date">{{ c.fecha_creacion.strftime('%d/%m/%Y') }}</span></td>
+          <td data-label="Entrega">
+            <span class="cell-date {% if c.atrasado %}late{% endif %}">
               {{ c.fecha_entrega.strftime('%d/%m/%Y') }}
               {% if c.atrasado %}<i class="bi bi-exclamation-circle ms-1"></i>{% endif %}
             </span>
           </td>
-          <td>
-            {% if c.estado == 'Pendiente' %}
-              <span class="badge-estado badge-pend">Pendiente</span>
-            {% elif c.estado == 'Reprogramado' %}
-              <span class="badge-estado badge-rep">Reprogramado</span>
-            {% else %}
-              <span class="badge-estado badge-cerr">Cerrado</span>
-            {% endif %}
+          <td data-label="Estado">
+            {% if c.estado=='Pendiente' %}<span class="badge b-pen">Pendiente</span>
+            {% elif c.estado=='Reprogramado' %}<span class="badge b-rep">Reprogramado</span>
+            {% else %}<span class="badge b-cer">Cerrado</span>{% endif %}
           </td>
-          <td style="text-align:center;">
+          <td data-label="Reprog." style="text-align:center">
             {% if c.cantidad_reprogramaciones > 0 %}
-              <span class="reprog-none">{{ c.cantidad_reprogramaciones }}×</span>
-            {% else %}<span class="reprog-none">—</span>{% endif %}
+              <button class="ra-btn" style="opacity:.85;" data-bs-toggle="modal"
+                      data-bs-target="#modalHist{{ c.id }}" title="Ver historial">
+                {{ c.cantidad_reprogramaciones }}×
+              </button>
+            {% else %}<span style="color:var(--ink3);font-size:.77rem;">—</span>{% endif %}
           </td>
-          <td>
-            <span class="fecha-cell">{{ c.fecha_entrega_real.strftime('%d/%m/%Y') if c.fecha_entrega_real else '—' }}</span>
+          <td data-label="Cierre">
+            <span class="cell-date">{{ c.fecha_entrega_real.strftime('%d/%m/%Y') if c.fecha_entrega_real else '—' }}</span>
           </td>
-          <td>
-            {% if c.atrasado %}
-              <span class="atr-si"><i class="bi bi-exclamation-circle me-1"></i>Sí</span>
-            {% else %}
-              <span class="atr-no">No</span>
-            {% endif %}
+          <td data-label="Atrasado">
+            {% if c.atrasado %}<span class="atr-y"><i class="bi bi-exclamation-circle me-1"></i>Sí</span>
+            {% else %}<span class="atr-n">No</span>{% endif %}
           </td>
-          <td>
+          <td data-label="Observación">
             {% if c.observacion_general %}
-            <span class="obs-snippet"
-                  data-bs-toggle="modal" data-bs-target="#modalObs{{ c.id }}"
-                  title="Ver observación">
-              {{ c.observacion_general[:50] }}{% if c.observacion_general|length > 50 %}…{% endif %}
+            <span class="obs-snip" data-bs-toggle="modal" data-bs-target="#modalObs{{ c.id }}">
+              {{ c.observacion_general[:55] }}{% if c.observacion_general|length > 55 %}…{% endif %}
             </span>
-            {% else %}<span class="atr-no">—</span>{% endif %}
+            {% else %}<span class="atr-n">—</span>{% endif %}
           </td>
-          <td>
+          <td data-label="Evidencia">
             {% if c.evidencia_path %}
             <a href="{{ url_for('compromisos.ver_evidencia', comp_id=c.id) }}"
-               class="ev-link" target="_blank" title="Ver evidencia">
-              <i class="bi bi-file-earmark-check"></i> Ver
-            </a>
-            {% else %}<span class="ev-none">Sin evidencia</span>{% endif %}
+               class="ev-link" target="_blank"><i class="bi bi-file-earmark-check"></i>Ver</a>
+            {% else %}<span class="atr-n" style="font-size:.73rem;">Sin archivo</span>{% endif %}
           </td>
-          <td>
-            <div class="row-actions">
+          <td data-label="Acciones">
+            <div class="ra">
               {% if es_neo %}
-              <button class="act-btn" data-bs-toggle="modal"
-                      data-bs-target="#modalEditar{{ c.id }}" title="Editar compromiso">
+              <button class="ra-btn" data-bs-toggle="modal" data-bs-target="#modalEditar{{ c.id }}" title="Editar">
                 <i class="bi bi-pencil"></i>
               </button>
               {% endif %}
               {% if es_neo and c.estado != 'Cerrado' %}
-              <button class="act-btn" data-bs-toggle="modal"
-                      data-bs-target="#modalReprog{{ c.id }}" title="Reprogramar">
+              <button class="ra-btn w" data-bs-toggle="modal" data-bs-target="#modalReprog{{ c.id }}" title="Reprogramar">
                 <i class="bi bi-calendar-plus"></i>
               </button>
-              {% if c.evidencia_path %}
-              <button class="act-btn success" data-bs-toggle="modal"
-                      data-bs-target="#modalCerrar{{ c.id }}" title="Cerrar compromiso">
-                <i class="bi bi-check-lg"></i>
-              </button>
-              {% else %}
-              <button class="act-btn" disabled
-                      title="Sube una evidencia antes de cerrar"
-                      style="opacity:.35;cursor:not-allowed;">
-                <i class="bi bi-check-lg"></i>
-              </button>
               {% endif %}
-              {% endif %}
-              {% if c.estado != 'Cerrado' %}
-              <button class="act-btn warn" data-bs-toggle="modal"
-                      data-bs-target="#modalEvidencia{{ c.id }}" title="Subir evidencia">
+              <button class="ra-btn w" data-bs-toggle="modal" data-bs-target="#modalEv{{ c.id }}" title="Subir evidencia">
                 <i class="bi bi-upload"></i>
               </button>
+              {% if es_neo and c.estado != 'Cerrado' %}
+                {% if c.evidencia_path %}
+                <button class="ra-btn s" data-bs-toggle="modal" data-bs-target="#modalCerrar{{ c.id }}" title="Cerrar compromiso">
+                  <i class="bi bi-check-lg"></i>
+                </button>
+                {% else %}
+                <button class="ra-btn s" disabled title="Sube evidencia para poder cerrar">
+                  <i class="bi bi-check-lg"></i>
+                </button>
+                {% endif %}
               {% endif %}
-              {% if c.cantidad_reprogramaciones > 0 %}
-              <button class="act-btn" data-bs-toggle="modal"
-                      data-bs-target="#modalHist{{ c.id }}" title="Ver historial de reprogramaciones">
-                <i class="bi bi-clock-history"></i>
-              </button>
-              {% endif %}
-              <button class="act-btn" data-bs-toggle="modal"
-                      data-bs-target="#modalAddObs{{ c.id }}" title="Observación">
+              <button class="ra-btn" data-bs-toggle="modal" data-bs-target="#modalAddObs{{ c.id }}" title="Observación">
                 <i class="bi bi-chat-left-text"></i>
               </button>
               {% if es_neo %}
-              <form action="{{ url_for('compromisos.eliminar', comp_id=c.id) }}"
-                    method="post" style="display:inline;"
-                    onsubmit="return confirm('¿Eliminar este compromiso?')">
-                <button type="submit" class="act-btn danger" title="Eliminar">
-                  <i class="bi bi-trash"></i>
-                </button>
+              <form action="{{ url_for('compromisos.eliminar', comp_id=c.id) }}" method="post" style="display:inline;"
+                    onsubmit="return confirm('¿Eliminar este compromiso? No se puede deshacer.')">
+                <button type="submit" class="ra-btn d" title="Eliminar"><i class="bi bi-trash"></i></button>
               </form>
               {% endif %}
             </div>
@@ -1027,39 +541,120 @@ mark.hl {
     </div>
   </div>
 
-  <!-- ══ MODALES (fuera del tbody para evitar renderizado como filas) ══ -->
+  <!-- ── CARDS (mobile) ── -->
+  <div class="mobile-cards">
+    {% for c in compromisos %}
+    <div class="mc {% if c.atrasado %}mc-atr{% endif %}"
+         data-search="{{ (c.contrato.contrato~' '~c.responsable~' '~c.compromiso)|lower }}"
+         data-estado="{{ c.estado|lower }}">
+      {% if es_neo %}
+      <div class="mc-chk">
+        <input type="checkbox" class="chk-comp" value="{{ c.id }}" onchange="actualizarBtnElim()"
+               style="width:14px;height:14px;accent-color:var(--teal);cursor:pointer;">
+        <span>Seleccionar</span>
+      </div>
+      {% endif %}
+      <div class="mc-top">
+        <div class="mc-top-l">
+          <div class="mc-cont" title="{{ c.contrato.contrato }}">{{ c.contrato.contrato }}</div>
+          <div class="mc-resp">{{ c.responsable }}</div>
+          <p class="mc-text">{{ c.compromiso }}</p>
+        </div>
+        <div class="mc-badges">
+          {% if c.estado=='Pendiente' %}<span class="badge b-pen">Pendiente</span>
+          {% elif c.estado=='Reprogramado' %}<span class="badge b-rep">Reprogramado</span>
+          {% else %}<span class="badge b-cer">Cerrado</span>{% endif %}
+          {% if c.atrasado %}<span class="badge" style="background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd);"><i class="bi bi-exclamation-circle"></i>Atrasado</span>{% endif %}
+        </div>
+      </div>
+      <div class="mc-body">
+        <div class="mc-row">
+          <span class="mc-row-lbl">Creación</span>
+          <span class="mc-row-val">{{ c.fecha_creacion.strftime('%d/%m/%Y') }}</span>
+        </div>
+        <div class="mc-row">
+          <span class="mc-row-lbl">Entrega</span>
+          <span class="mc-row-val {% if c.atrasado %}late{% endif %}">{{ c.fecha_entrega.strftime('%d/%m/%Y') }}</span>
+        </div>
+        <div class="mc-row">
+          <span class="mc-row-lbl">Reprogramaciones</span>
+          <span class="mc-row-val">{{ c.cantidad_reprogramaciones }}× {% if c.cantidad_reprogramaciones > 0 %}<button class="ra-btn btn-sm" style="display:inline-flex;width:auto;height:auto;padding:.1rem .35rem;font-size:.7rem;" data-bs-toggle="modal" data-bs-target="#modalHist{{ c.id }}">Ver</button>{% endif %}</span>
+        </div>
+        <div class="mc-row">
+          <span class="mc-row-lbl">Cierre real</span>
+          <span class="mc-row-val">{{ c.fecha_entrega_real.strftime('%d/%m/%Y') if c.fecha_entrega_real else '—' }}</span>
+        </div>
+        <div class="mc-row">
+          <span class="mc-row-lbl">Evidencia</span>
+          <span class="mc-row-val">
+            {% if c.evidencia_path %}
+            <a href="{{ url_for('compromisos.ver_evidencia', comp_id=c.id) }}" class="ev-link" target="_blank">
+              <i class="bi bi-file-earmark-check"></i>Ver
+            </a>
+            {% else %}<span style="color:var(--ink3);font-size:.77rem;">Sin archivo</span>{% endif %}
+          </span>
+        </div>
+      </div>
+      {% if c.observacion_general %}
+      <div class="mc-obs" data-bs-toggle="modal" data-bs-target="#modalObs{{ c.id }}">
+        <i class="bi bi-chat-left-text me-1"></i>{{ c.observacion_general[:80] }}{% if c.observacion_general|length > 80 %}…{% endif %}
+      </div>
+      {% endif %}
+      <div class="mc-actions">
+        {% if es_neo %}
+        <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditar{{ c.id }}">
+          <i class="bi bi-pencil"></i>Editar
+        </button>
+        {% endif %}
+        {% if es_neo and c.estado != 'Cerrado' %}
+        <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modalReprog{{ c.id }}">
+          <i class="bi bi-calendar-plus"></i>Reprog.
+        </button>
+        {% endif %}
+        <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modalEv{{ c.id }}">
+          <i class="bi bi-upload"></i>Evidencia
+        </button>
+        {% if es_neo and c.estado != 'Cerrado' %}
+          {% if c.evidencia_path %}
+          <button class="btn btn-green btn-sm" data-bs-toggle="modal" data-bs-target="#modalCerrar{{ c.id }}">
+            <i class="bi bi-check-lg"></i>Cerrar
+          </button>
+          {% endif %}
+        {% endif %}
+        <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddObs{{ c.id }}">
+          <i class="bi bi-chat-left-text"></i>Obs.
+        </button>
+        {% if es_neo %}
+        <form action="{{ url_for('compromisos.eliminar', comp_id=c.id) }}" method="post" style="display:inline;"
+              onsubmit="return confirm('¿Eliminar?')">
+          <button type="submit" class="btn btn-red btn-sm"><i class="bi bi-trash"></i></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ══ MODALES ══ -->
   {% for c in compromisos %}
 
   {% if es_neo %}
   <div class="modal fade" id="modalEditar{{ c.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header-ag">
-          <h5><i class="bi bi-pencil"></i>Editar Compromiso</h5>
-          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-        </div>
+        <div class="mh"><h5><i class="bi bi-pencil"></i>Editar Compromiso</h5>
+          <button class="xbtn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
         <form action="{{ url_for('compromisos.editar', comp_id=c.id) }}" method="post">
-          <div class="modal-body-ag">
-            <div style="margin-bottom:1rem;">
-              <label class="ag-label">Responsable *</label>
-              <input type="text" name="responsable" class="ag-input"
-                     value="{{ c.responsable }}" required>
-            </div>
-            <div style="margin-bottom:1rem;">
-              <label class="ag-label">Compromiso *</label>
-              <textarea name="compromiso" class="ag-input ag-textarea"
-                        rows="4" required>{{ c.compromiso }}</textarea>
-            </div>
-            <div>
-              <label class="ag-label">Observación general</label>
-              <textarea name="observacion_general" class="ag-input ag-textarea"
-                        rows="3" placeholder="(opcional)">{{ c.observacion_general or '' }}</textarea>
-            </div>
+          <div class="mb">
+            <div style="margin-bottom:.9rem"><label class="ag-lbl">Responsable *</label>
+              <input type="text" name="responsable" class="ag-inp" value="{{ c.responsable }}" required></div>
+            <div style="margin-bottom:.9rem"><label class="ag-lbl">Compromiso *</label>
+              <textarea name="compromiso" class="ag-inp ag-ta" rows="4" required>{{ c.compromiso }}</textarea></div>
+            <div><label class="ag-lbl">Observación general</label>
+              <textarea name="observacion_general" class="ag-inp ag-ta" rows="3" placeholder="(opcional)">{{ c.observacion_general or '' }}</textarea></div>
           </div>
-          <div class="modal-foot-ag">
-            <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn-teal"><i class="bi bi-floppy"></i>Guardar cambios</button>
-          </div>
+          <div class="mf"><button type="button" class="btn btn-neutral btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-teal btn-sm"><i class="bi bi-floppy"></i>Guardar</button></div>
         </form>
       </div>
     </div>
@@ -1070,16 +665,12 @@ mark.hl {
   <div class="modal fade" id="modalObs{{ c.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header-ag">
-          <h5><i class="bi bi-chat-text"></i>Observación</h5>
-          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <div class="modal-body-ag">
-          <p style="font-size:.78rem;color:var(--ink-3);margin-bottom:.75rem;">{{ c.responsable }} · {{ c.contrato.contrato }}</p>
-          <pre style="white-space:pre-wrap;font-family:'DM Sans',sans-serif;font-size:.88rem;
-                      background:var(--surface-2);border-radius:var(--radius-sm);
-                      padding:.85rem;border:1px solid var(--border);margin:0;
-                      color:var(--ink-2);">{{ c.observacion_general }}</pre>
+        <div class="mh"><h5><i class="bi bi-chat-text"></i>Observación</h5>
+          <button class="xbtn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
+        <div class="mb">
+          <p style="font-size:.77rem;color:var(--ink3);margin-bottom:.7rem;">{{ c.responsable }} · {{ c.contrato.contrato }}</p>
+          <pre style="white-space:pre-wrap;font-family:'Inter',sans-serif;font-size:.86rem;background:var(--surf2);
+                      border-radius:var(--r-sm);padding:.8rem;border:1px solid var(--bd);margin:0;color:var(--ink2);">{{ c.observacion_general }}</pre>
         </div>
       </div>
     </div>
@@ -1090,27 +681,23 @@ mark.hl {
   <div class="modal fade" id="modalHist{{ c.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header-ag">
-          <h5><i class="bi bi-clock-history"></i>Historial · {{ c.cantidad_reprogramaciones }} reprogramación(es)</h5>
-          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <div class="modal-body-ag" style="padding:0;">
-          <table style="width:100%;border-collapse:collapse;font-size:.83rem;">
-            <thead>
-              <tr style="background:var(--surface-2);border-bottom:1px solid var(--border);">
-                <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">#</th>
-                <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Fecha anterior</th>
-                <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Nueva fecha</th>
-                <th style="padding:.55rem .85rem;color:var(--ink-3);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Registrado</th>
-              </tr>
-            </thead>
+        <div class="mh"><h5><i class="bi bi-clock-history"></i>Historial · {{ c.cantidad_reprogramaciones }} reprogramación(es)</h5>
+          <button class="xbtn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
+        <div class="mb" style="padding:0;overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+            <thead><tr style="background:var(--surf2);border-bottom:1px solid var(--bd);">
+              <th style="padding:.5rem .8rem;color:var(--ink3);font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">#</th>
+              <th style="padding:.5rem .8rem;color:var(--ink3);font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Anterior</th>
+              <th style="padding:.5rem .8rem;color:var(--ink3);font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Nueva</th>
+              <th style="padding:.5rem .8rem;color:var(--ink3);font-size:.67rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Registrado</th>
+            </tr></thead>
             <tbody>
               {% for h in c.historial %}
-              <tr style="border-bottom:1px solid var(--border);">
-                <td style="padding:.55rem .85rem;color:var(--ink-3);">{{ loop.index }}</td>
-                <td style="padding:.55rem .85rem;font-variant-numeric:tabular-nums;">{{ h.fecha_anterior.strftime('%d/%m/%Y') }}</td>
-                <td style="padding:.55rem .85rem;font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue);">{{ h.nueva_fecha.strftime('%d/%m/%Y') }}</td>
-                <td style="padding:.55rem .85rem;font-size:.78rem;color:var(--ink-3);">{{ h.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</td>
+              <tr style="border-bottom:1px solid var(--bd);">
+                <td style="padding:.5rem .8rem;color:var(--ink3);">{{ loop.index }}</td>
+                <td style="padding:.5rem .8rem;font-variant-numeric:tabular-nums;">{{ h.fecha_anterior.strftime('%d/%m/%Y') }}</td>
+                <td style="padding:.5rem .8rem;font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue);">{{ h.nueva_fecha.strftime('%d/%m/%Y') }}</td>
+                <td style="padding:.5rem .8rem;font-size:.77rem;color:var(--ink3);">{{ h.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -1121,60 +708,46 @@ mark.hl {
   </div>
   {% endif %}
 
-  {% if c.estado != 'Cerrado' %}
-  <div class="modal fade" id="modalEvidencia{{ c.id }}" tabindex="-1">
+  <div class="modal fade" id="modalEv{{ c.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header-ag">
-          <h5><i class="bi bi-upload"></i>Subir Evidencia</h5>
-          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-        </div>
+        <div class="mh"><h5><i class="bi bi-upload"></i>{% if c.evidencia_nombre %}Reemplazar{% else %}Subir{% endif %} Evidencia</h5>
+          <button class="xbtn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
         <form action="{{ url_for('compromisos.subir_evidencia', comp_id=c.id) }}" method="post" enctype="multipart/form-data">
-          <div class="modal-body-ag">
-            <p style="font-size:.82rem;color:var(--ink-2);margin-bottom:1rem;line-height:1.5;">{{ c.compromiso[:100] }}{% if c.compromiso|length > 100 %}…{% endif %}</p>
+          <div class="mb">
+            <p style="font-size:.82rem;color:var(--ink2);margin-bottom:.85rem;line-height:1.5;">{{ c.compromiso[:120] }}{% if c.compromiso|length > 120 %}…{% endif %}</p>
             {% if c.evidencia_nombre %}
-            <div style="background:var(--amber-bg);border:1px solid var(--amber-bd);border-radius:var(--radius-sm);padding:.5rem .75rem;margin-bottom:.85rem;font-size:.78rem;color:var(--amber);">
-              <i class="bi bi-info-circle me-1"></i>Evidencia actual: <strong>{{ c.evidencia_nombre }}</strong> — se reemplazará
-            </div>
+            <div class="warn-row"><i class="bi bi-info-circle"></i>Evidencia actual: <strong>{{ c.evidencia_nombre }}</strong> — se reemplazará</div>
             {% endif %}
-            <label class="ag-label">Archivo (JPG, PNG, WEBP, PDF)</label>
-            <input type="file" name="evidencia" class="ag-input" accept=".jpg,.jpeg,.png,.webp,.pdf" required>
-            <p style="font-size:.72rem;color:var(--ink-3);margin-top:.4rem;">Máximo 10 MB</p>
+            <label class="ag-lbl">Archivo (JPG, PNG, WEBP, PDF)</label>
+            <input type="file" name="evidencia" class="ag-inp" accept=".jpg,.jpeg,.png,.webp,.pdf" required>
+            <p style="font-size:.7rem;color:var(--ink3);margin-top:.35rem;">Máximo 10 MB</p>
           </div>
-          <div class="modal-foot-ag">
-            <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn-amber"><i class="bi bi-upload"></i>Subir</button>
-          </div>
+          <div class="mf"><button type="button" class="btn btn-neutral btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-amber btn-sm"><i class="bi bi-upload"></i>Subir</button></div>
         </form>
       </div>
     </div>
   </div>
-  {% endif %}
 
   {% if es_neo and c.estado != 'Cerrado' %}
   <div class="modal fade" id="modalReprog{{ c.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header-ag">
-          <h5><i class="bi bi-calendar-plus"></i>Reprogramar</h5>
-          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-        </div>
+        <div class="mh"><h5><i class="bi bi-calendar-plus"></i>Reprogramar</h5>
+          <button class="xbtn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
         <form action="{{ url_for('compromisos.reprogramar', comp_id=c.id) }}" method="post">
-          <div class="modal-body-ag">
-            <p style="font-size:.82rem;color:var(--ink-2);margin-bottom:.5rem;line-height:1.5;">{{ c.compromiso[:100] }}{% if c.compromiso|length > 100 %}…{% endif %}</p>
-            <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:.5rem .75rem;margin-bottom:1rem;font-size:.82rem;color:var(--ink-2);border:1px solid var(--border);">
-              Fecha actual: <strong style="color:var(--ink);">{{ c.fecha_entrega.strftime('%d/%m/%Y') }}</strong>
-              {% if c.cantidad_reprogramaciones > 0 %}
-              · <span style="color:var(--amber);">{{ c.cantidad_reprogramaciones }} reprogramación(es) prev.</span>
-              {% endif %}
+          <div class="mb">
+            <p style="font-size:.82rem;color:var(--ink2);margin-bottom:.5rem;line-height:1.5;">{{ c.compromiso[:120] }}{% if c.compromiso|length > 120 %}…{% endif %}</p>
+            <div style="background:var(--surf2);border-radius:var(--r-sm);padding:.45rem .7rem;margin-bottom:.9rem;font-size:.82rem;color:var(--ink2);border:1px solid var(--bd);">
+              Fecha actual: <strong style="color:var(--ink)">{{ c.fecha_entrega.strftime('%d/%m/%Y') }}</strong>
+              {% if c.cantidad_reprogramaciones > 0 %} · <span style="color:var(--amber)">{{ c.cantidad_reprogramaciones }} reprog. previas</span>{% endif %}
             </div>
-            <label class="ag-label">Nueva fecha de entrega</label>
-            <input type="date" name="nueva_fecha" class="ag-input" required>
+            <label class="ag-lbl">Nueva fecha de entrega</label>
+            <input type="date" name="nueva_fecha" class="ag-inp" required>
           </div>
-          <div class="modal-foot-ag">
-            <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn-teal"><i class="bi bi-check-lg"></i>Reprogramar</button>
-          </div>
+          <div class="mf"><button type="button" class="btn btn-neutral btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-teal btn-sm"><i class="bi bi-check-lg"></i>Reprogramar</button></div>
         </form>
       </div>
     </div>
@@ -1184,32 +757,18 @@ mark.hl {
   <div class="modal fade" id="modalCerrar{{ c.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header-ag" style="background:var(--green);">
-          <h5><i class="bi bi-check-circle"></i>Cerrar Compromiso</h5>
-          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-        </div>
+        <div class="mh mh-g"><h5><i class="bi bi-check-circle"></i>Cerrar Compromiso</h5>
+          <button class="xbtn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
         <form action="{{ url_for('compromisos.cerrar', comp_id=c.id) }}" method="post" enctype="multipart/form-data">
-          <div class="modal-body-ag">
-            <div style="background:var(--green-bg);border:1px solid var(--green-bd);border-radius:var(--radius-sm);
-                        padding:.5rem .75rem;margin-bottom:1rem;font-size:.78rem;color:var(--green);
-                        display:flex;align-items:center;gap:.4rem;">
-              <i class="bi bi-file-earmark-check-fill"></i>
-              Evidencia cargada: <strong>{{ c.evidencia_nombre }}</strong>
-            </div>
-            <div style="margin-bottom:1rem;">
-              <label class="ag-label">Fecha real de entrega *</label>
-              <input type="date" name="fecha_entrega_real" class="ag-input" required>
-            </div>
-            <div>
-              <label class="ag-label">Observación de cierre (opcional)</label>
-              <textarea name="obs_cierre" class="ag-input ag-textarea"
-                        placeholder="Describe cómo se cumplió el compromiso..."></textarea>
-            </div>
+          <div class="mb">
+            <div class="ok-row"><i class="bi bi-file-earmark-check-fill"></i>Evidencia: <strong>{{ c.evidencia_nombre }}</strong></div>
+            <div style="margin-bottom:.9rem"><label class="ag-lbl">Fecha real de entrega *</label>
+              <input type="date" name="fecha_entrega_real" class="ag-inp" required></div>
+            <div><label class="ag-lbl">Observación de cierre (opcional)</label>
+              <textarea name="obs_cierre" class="ag-inp ag-ta" placeholder="Describe cómo se cumplió el compromiso…"></textarea></div>
           </div>
-          <div class="modal-foot-ag">
-            <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn-green"><i class="bi bi-check-circle"></i>Cerrar compromiso</button>
-          </div>
+          <div class="mf"><button type="button" class="btn btn-neutral btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-green btn-sm"><i class="bi bi-check-circle"></i>Cerrar compromiso</button></div>
         </form>
       </div>
     </div>
@@ -1220,28 +779,24 @@ mark.hl {
   <div class="modal fade" id="modalAddObs{{ c.id }}" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header-ag">
-          <h5><i class="bi bi-chat-left-text"></i>Observación</h5>
-          <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <div class="modal-body-ag">
+        <div class="mh"><h5><i class="bi bi-chat-left-text"></i>Observación · {{ c.responsable }}</h5>
+          <button class="xbtn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
+        <div class="mb">
           {% if c.observacion_general %}
-          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);
-                      padding:.75rem;margin-bottom:1rem;font-size:.8rem;color:var(--ink-2);
-                      white-space:pre-wrap;max-height:110px;overflow-y:auto;line-height:1.5;">{{ c.observacion_general }}</div>
+          <div style="background:var(--surf2);border:1px solid var(--bd);border-radius:var(--r-sm);padding:.7rem;
+                      margin-bottom:.9rem;font-size:.79rem;color:var(--ink2);white-space:pre-wrap;
+                      max-height:100px;overflow-y:auto;line-height:1.5;">{{ c.observacion_general }}</div>
           {% endif %}
-          <label class="ag-label">Nueva anotación</label>
-          <textarea class="ag-input ag-textarea" id="obsTexto{{ c.id }}"
-                    placeholder="Escribe tu observación..."></textarea>
-          <label style="display:flex;align-items:center;gap:.4rem;margin-top:.65rem;cursor:pointer;font-size:.8rem;color:var(--red);">
-            <input type="checkbox" id="obsReemp{{ c.id }}"
-                   style="accent-color:var(--red);width:14px;height:14px;">
+          <label class="ag-lbl">Nueva anotación</label>
+          <textarea class="ag-inp ag-ta" id="obsTexto{{ c.id }}" placeholder="Escribe tu observación…"></textarea>
+          <label style="display:flex;align-items:center;gap:.4rem;margin-top:.6rem;cursor:pointer;font-size:.79rem;color:var(--red);">
+            <input type="checkbox" id="obsReemp{{ c.id }}" style="accent-color:var(--red);width:13px;height:13px;">
             Reemplazar observación existente
           </label>
         </div>
-        <div class="modal-foot-ag">
-          <button class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-          <button class="btn-teal" onclick="guardarObs({{ c.id }})">
+        <div class="mf">
+          <button class="btn btn-neutral btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-teal btn-sm" onclick="guardarObs({{ c.id }})">
             <i class="bi bi-floppy"></i>Guardar
           </button>
         </div>
@@ -1252,13 +807,12 @@ mark.hl {
   {% endfor %}
 
   {% else %}
-  <!-- ── EMPTY STATE ── -->
-  <div class="table-wrap">
-    <div class="empty-state">
-      <div class="empty-icon"><i class="bi bi-calendar-x"></i></div>
+  <div class="tw">
+    <div class="empty">
+      <div class="empty-ico"><i class="bi bi-calendar-x"></i></div>
       <p>No hay compromisos con los filtros seleccionados.</p>
       {% if es_neo %}
-      <button class="btn-primary-ag" data-bs-toggle="modal" data-bs-target="#modalCrear">
+      <button class="btn btn-teal" data-bs-toggle="modal" data-bs-target="#modalCrear">
         <i class="bi bi-plus-lg"></i>Crear primer compromiso
       </button>
       {% endif %}
@@ -1266,74 +820,54 @@ mark.hl {
   </div>
   {% endif %}
 
-</div><!-- /ag-page -->
+</div><!-- /ag -->
 
 <!-- ── FORM eliminación masiva ── -->
-<form id="formElimMasivo" action="{{ url_for('compromisos.eliminar_masivo') }}" method="post">
-  <input type="hidden" name="ids" id="inputIdsMasivo">
+<form id="formElim" action="{{ url_for('compromisos.eliminar_masivo') }}" method="post">
+  <input type="hidden" name="ids" id="inputIds">
 </form>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODAL: CREAR COMPROMISO
-     ══════════════════════════════════════════════════════════ -->
+<!-- ── MODAL CREAR ── -->
 {% if es_neo %}
 <div class="modal fade" id="modalCrear" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header-ag">
-        <h5><i class="bi bi-plus-circle"></i>Nuevo compromiso</h5>
-        <button class="btn-close-ag" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
-      </div>
+      <div class="mh"><h5><i class="bi bi-plus-circle"></i>Nuevo compromiso</h5>
+        <button class="xbtn" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button></div>
       <form action="{{ url_for('compromisos.nuevo') }}" method="post">
-        <div class="modal-body-ag">
-
-          <div style="display:grid;grid-template-columns:1fr auto auto;gap:.75rem;margin-bottom:1rem;">
+        <div class="mb">
+          <div style="display:grid;grid-template-columns:1fr;gap:.75rem;margin-bottom:.85rem;">
             <div>
-              <label class="ag-label">Contrato</label>
-              <select name="contrato_id" id="selectContrato" class="ag-input"
-                      style="padding:.42rem .65rem;" required onchange="onContratoChange(this)">
+              <label class="ag-lbl">Contrato *</label>
+              <select name="contrato_id" id="selectContrato" class="ag-inp" style="padding:.42rem .65rem;" required onchange="onContratoChange(this)">
                 <option value="">— Selecciona un contrato —</option>
                 {% for c in contratos %}
                 <option value="{{ c.id }}">{{ c.contrato }}</option>
                 {% endfor %}
-                <option value="__nuevo__" style="color:var(--teal);font-weight:600;">
-                  + Crear nuevo contrato...
-                </option>
+                <option value="__nuevo__" style="color:var(--teal);font-weight:600;">+ Crear nuevo contrato…</option>
               </select>
-              <div id="rowNuevoContrato" class="quick-create-row" style="display:none;">
-                <input type="text" id="inputNuevoContrato" placeholder="Nombre del nuevo contrato...">
-                <button type="button" class="btn-teal" onclick="crearContratoRapido()">Crear</button>
-                <button type="button" class="btn-neutral" onclick="cancelarNuevoContrato()"><i class="bi bi-x"></i></button>
+              <div id="rowNuevoContrato" class="qrow" style="display:none;">
+                <input type="text" id="inputNuevoContrato" placeholder="Nombre del nuevo contrato…">
+                <button type="button" class="btn btn-teal btn-sm" onclick="crearContratoRapido()">Crear</button>
+                <button type="button" class="btn btn-neutral btn-sm" onclick="cancelarNuevoContrato()"><i class="bi bi-x"></i></button>
               </div>
             </div>
-            <div>
-              <label class="ag-label">Responsable</label>
-              <input type="text" name="responsable" class="ag-input" placeholder="Nombre completo" required>
-            </div>
-            <div>
-              <label class="ag-label">Fecha entrega acordada</label>
-              <input type="date" name="fecha_entrega" class="ag-input" required>
-            </div>
           </div>
-
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.85rem;">
+            <div><label class="ag-lbl">Responsable *</label>
+              <input type="text" name="responsable" class="ag-inp" placeholder="Nombre completo" required></div>
+            <div><label class="ag-lbl">Fecha entrega acordada *</label>
+              <input type="date" name="fecha_entrega" class="ag-inp" required></div>
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
-            <div>
-              <label class="ag-label">Compromiso *</label>
-              <textarea name="compromiso" class="ag-input ag-textarea" rows="5"
-                        placeholder="Describe el compromiso con detalle..." required></textarea>
-            </div>
-            <div>
-              <label class="ag-label">Observación inicial (opcional)</label>
-              <textarea name="observacion_general" class="ag-input ag-textarea" rows="5"
-                        placeholder="Notas, contexto o seguimiento..."></textarea>
-            </div>
+            <div><label class="ag-lbl">Compromiso *</label>
+              <textarea name="compromiso" class="ag-inp ag-ta" rows="5" placeholder="Describe el compromiso con detalle…" required></textarea></div>
+            <div><label class="ag-lbl">Observación inicial (opcional)</label>
+              <textarea name="observacion_general" class="ag-inp ag-ta" rows="5" placeholder="Notas, contexto o seguimiento…"></textarea></div>
           </div>
-
         </div>
-        <div class="modal-foot-ag">
-          <button type="button" class="btn-neutral" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-teal"><i class="bi bi-floppy"></i>Guardar</button>
-        </div>
+        <div class="mf"><button type="button" class="btn btn-neutral btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-teal btn-sm"><i class="bi bi-floppy"></i>Guardar</button></div>
       </form>
     </div>
   </div>
@@ -1341,300 +875,149 @@ mark.hl {
 {% endif %}
 
 <script>
-// ══════════════════════════════════════════════════
-//  PERSISTENCIA DE FILTROS URL
-//  Guarda la URL completa (con params de filtro GET)
-//  y la restaura al volver desde acciones (crear,
-//  editar, evidencia…) que redirigen sin parámetros.
-// ══════════════════════════════════════════════════
-(function () {
-    const _KEY = 'cmp_filter_url';
-    if (window.location.search) {
-        // Hay parámetros → guardar URL para restaurar después
-        sessionStorage.setItem(_KEY, window.location.href);
-    } else {
-        // Sin parámetros → restaurar si hay filtros guardados
-        const _guardada = sessionStorage.getItem(_KEY);
-        if (_guardada) {
-            try {
-                const _u = new URL(_guardada);
-                if (_u.search) { window.location.replace(_guardada); return; }
-            } catch (_e) {}
-        }
-    }
-    // Al limpiar filtros explícitamente (enlace sin params a la misma ruta), borrar URL guardada
-    document.querySelectorAll('a.btn-ghost[href]').forEach(function (a) {
-        try {
-            const _u = new URL(a.href);
-            if (_u.pathname === window.location.pathname && !_u.search) {
-                a.addEventListener('click', function () { sessionStorage.removeItem(_KEY); });
-            }
-        } catch (_e) {}
-    });
+// ── persistencia URL filtros ──
+(function(){
+  const K='cmp_furl';
+  if(window.location.search){sessionStorage.setItem(K,window.location.href);}
+  else{
+    const s=sessionStorage.getItem(K);
+    if(s){try{const u=new URL(s);if(u.search){window.location.replace(s);return;}}catch(e){}}
+  }
+  document.querySelectorAll('a.btn-ghost[href]').forEach(a=>{
+    try{const u=new URL(a.href);if(u.pathname===window.location.pathname&&!u.search)
+      a.addEventListener('click',()=>sessionStorage.removeItem(K));}catch(e){}
+  });
 })();
 
-// ══════════════════════════════════════════════════
-//  FILTROS TOGGLE (persistido en localStorage)
-// ══════════════════════════════════════════════════
-const filterBody    = document.getElementById('filterBody');
-const filterChevron = document.getElementById('filterChevron');
-const filterToggle  = document.getElementById('filterToggle');
-
-let _saved = false;
-try { _saved = localStorage.getItem('compromisos_filtros_cerrado') === '1'; } catch(e) {}
-let filtersOpen = !_saved;
-
-{% if contrato_id_sel or q_resp_sel or atrasado_sel or fecha_desde_sel or fecha_hasta_sel %}
-filtersOpen = true;
-{% endif %}
-
-if (filtersOpen) {
-  filterBody.style.display = 'block';
-  filterChevron.style.transform = 'rotate(180deg)';
-  filterToggle.classList.add('open');
+// ── filtros panel ──
+const fpBody=document.getElementById('fpBody');
+const fpChev=document.getElementById('fpChev');
+const fpHdr=document.getElementById('fpHdr');
+let fpOpen=false;
+try{fpOpen=localStorage.getItem('cmp_fp')!=='0';}catch(e){}
+{% if contrato_id_sel or q_resp_sel or atrasado_sel or fecha_desde_sel or fecha_hasta_sel %}fpOpen=true;{% endif %}
+if(fpOpen){fpBody.style.display='block';fpChev.style.transform='rotate(180deg)';fpHdr.classList.add('open');}
+function toggleFp(){
+  fpOpen=!fpOpen;
+  fpBody.style.display=fpOpen?'block':'none';
+  fpChev.style.transform=fpOpen?'rotate(180deg)':'';
+  fpHdr.classList.toggle('open',fpOpen);
+  try{localStorage.setItem('cmp_fp',fpOpen?'1':'0');}catch(e){}
 }
 
-function toggleFiltros() {
-  filtersOpen = !filtersOpen;
-  filterBody.style.display = filtersOpen ? 'block' : 'none';
-  filterChevron.style.transform = filtersOpen ? 'rotate(180deg)' : '';
-  filterToggle.classList.toggle('open', filtersOpen);
-  try { localStorage.setItem('compromisos_filtros_cerrado', filtersOpen ? '0' : '1'); } catch(e) {}
+// ── búsqueda tiempo real ──
+const allRows=[...document.querySelectorAll('.ag-tbl tbody tr[data-search]')];
+const allCards=[...document.querySelectorAll('.mobile-cards .mc[data-search]')];
+const cntEl=document.getElementById('agCnt');
+let noResRow=null,searchTimer=null;
+function buscarTabla(q){
+  clearTimeout(searchTimer);searchTimer=setTimeout(()=>_buscar(q.trim().toLowerCase()),80);
+  const cl=document.getElementById('searchClear');if(cl)cl.style.display=q?'block':'none';
 }
-
-// ══════════════════════════════════════════════════
-//  BÚSQUEDA EN TIEMPO REAL (client-side)
-// ══════════════════════════════════════════════════
-const _allRows    = Array.from(document.querySelectorAll('.ag-table tbody tr[data-search]'));
-const _countEl    = document.getElementById('agCount');
-let   _noResRow   = null;
-let   _searchTimer = null;
-
-function buscarTabla(q) {
-  clearTimeout(_searchTimer);
-  _searchTimer = setTimeout(() => _aplicarBusqueda(q.trim().toLowerCase()), 80);
-  const clearBtn = document.getElementById('searchClear');
-  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+function _buscar(q){
+  let vis=0;
+  allRows.forEach(r=>{const ok=!q||r.dataset.search.includes(q);r.classList.toggle('row-hidden',!ok);if(ok){vis++;_hl(r,q);}});
+  allCards.forEach(mc=>{const ok=!q||mc.dataset.search.includes(q);mc.style.display=ok?'':'none';});
+  _cnt(vis);_noRes(vis);
 }
-
-function _aplicarBusqueda(q) {
-  let visible = 0;
-  _allRows.forEach(row => {
-    const hay = !q || row.dataset.search.includes(q);
-    row.classList.toggle('row-hidden', !hay);
-    if (hay) {
-      visible++;
-      // highlight
-      _highlightRow(row, q);
-    }
-  });
-  _actualizarContador(visible);
-  _manejarNoResults(visible);
-}
-
-function _highlightRow(row, q) {
-  // Sólo celdas de texto: responsable, compromiso, contrato
-  row.querySelectorAll('.responsable-cell, .comp-texto, .contrato-chip').forEach(el => {
-    const original = el.dataset.original || el.textContent;
-    el.dataset.original = original;
-    if (!q) { el.innerHTML = original; return; }
-    const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
-    el.innerHTML = original.replace(re, '<mark class="hl">$1</mark>');
+function _hl(row,q){
+  row.querySelectorAll('.cell-resp,.cell-comp,.chip-cont').forEach(el=>{
+    const orig=el.dataset.orig||el.textContent;el.dataset.orig=orig;
+    if(!q){el.innerHTML=orig;return;}
+    el.innerHTML=orig.replace(new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<mark class="hl">$1</mark>');
   });
 }
-
-function limpiarBusqueda() {
-  const inp = document.getElementById('searchInput');
-  inp.value = '';
-  buscarTabla('');
-  inp.focus();
+function limpiarBusqueda(){const i=document.getElementById('searchInput');i.value='';buscarTabla('');i.focus();}
+function _cnt(n){if(!cntEl)return;const t=allRows.length;cntEl.textContent=n===t?`${t} registro(s)`:`${n} de ${t} registro(s)`;}
+function _noRes(vis){
+  const tbody=document.querySelector('.ag-tbl tbody');if(!tbody)return;
+  if(!noResRow){noResRow=document.createElement('tr');noResRow.className='no-res';noResRow.innerHTML='<td colspan="20"><i class="bi bi-search me-2"></i>Sin resultados.</td>';}
+  if(vis===0){if(!noResRow.parentElement)tbody.appendChild(noResRow);}else noResRow.remove();
 }
 
-function _actualizarContador(n) {
-  if (!_countEl) return;
-  const total = _allRows.length;
-  _countEl.textContent = n === total ? `${total} registro(s)` : `${n} de ${total} registro(s)`;
-}
-
-function _manejarNoResults(visible) {
-  const tbody = document.querySelector('.ag-table tbody');
-  if (!tbody) return;
-  if (!_noResRow) {
-    _noResRow = document.createElement('tr');
-    _noResRow.className = 'no-results-row';
-    _noResRow.innerHTML = `<td colspan="20"><i class="bi bi-search me-2"></i>Sin resultados para esta búsqueda.</td>`;
-  }
-  if (visible === 0) {
-    if (!_noResRow.parentElement) tbody.appendChild(_noResRow);
-  } else {
-    _noResRow.remove();
-  }
-}
-
-// ══════════════════════════════════════════════════
-//  ORDENAMIENTO DE COLUMNAS
-// ══════════════════════════════════════════════════
-let _sortCol = null, _sortDir = 1;
-
-document.querySelectorAll('.ag-table thead th.sortable').forEach(th => {
-  th.addEventListener('click', () => {
-    const col = th.dataset.col;
-    if (_sortCol === col) {
-      _sortDir *= -1;
-    } else {
-      _sortCol = col; _sortDir = 1;
-    }
-    document.querySelectorAll('.ag-table thead th').forEach(h => {
-      h.classList.remove('sort-asc', 'sort-desc');
-    });
-    th.classList.add(_sortDir === 1 ? 'sort-asc' : 'sort-desc');
-    _sortTabla(col, _sortDir);
+// ── ordenamiento ──
+let sCol=null,sDir=1;
+document.querySelectorAll('.ag-tbl thead th.sortable').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const col=th.dataset.col;
+    if(sCol===col)sDir*=-1;else{sCol=col;sDir=1;}
+    document.querySelectorAll('.ag-tbl thead th').forEach(h=>h.classList.remove('sort-asc','sort-desc'));
+    th.classList.add(sDir===1?'sort-asc':'sort-desc');
+    const tbody=document.querySelector('.ag-tbl tbody');
+    if(!tbody)return;
+    [...tbody.querySelectorAll('tr[data-search]')].sort((a,b)=>{
+      let va=a.dataset[col]||'',vb=b.dataset[col]||'';
+      if(/^\d{4}-\d{2}-\d{2}$/.test(va)||/^\d+$/.test(va))return(va<vb?-1:va>vb?1:0)*sDir;
+      return va.localeCompare(vb,'es')*sDir;
+    }).forEach(r=>tbody.appendChild(r));
+    if(noResRow&&noResRow.parentElement)tbody.appendChild(noResRow);
   });
 });
 
-function _sortTabla(col, dir) {
-  const tbody = document.querySelector('.ag-table tbody');
-  if (!tbody) return;
-  const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
-  rows.sort((a, b) => {
-    let va = a.dataset[col] || '', vb = b.dataset[col] || '';
-    // fechas y números: comparación directa
-    if (/^\d{4}-\d{2}-\d{2}$/.test(va) || /^\d+$/.test(va)) {
-      return (va < vb ? -1 : va > vb ? 1 : 0) * dir;
-    }
-    return va.localeCompare(vb, 'es') * dir;
-  });
-  rows.forEach(r => tbody.appendChild(r));
-  if (_noResRow && _noResRow.parentElement) tbody.appendChild(_noResRow);
+// ── selección masiva ──
+function toggleTodo(chk){document.querySelectorAll('.chk-comp').forEach(c=>c.checked=chk.checked);actualizarBtnElim();}
+function actualizarBtnElim(){
+  const n=document.querySelectorAll('.chk-comp:checked').length;
+  const b=document.getElementById('btnElim');if(b)b.disabled=n===0;
+  const ct=document.getElementById('chkTodo');
+  if(ct){const t=document.querySelectorAll('.chk-comp').length;ct.indeterminate=n>0&&n<t;ct.checked=n===t&&t>0;}
+}
+function eliminarSel(){
+  const ids=[...document.querySelectorAll('.chk-comp:checked')].map(c=>c.value);
+  if(!ids.length)return;
+  if(!confirm(`¿Eliminar ${ids.length} compromiso(s)? No se puede deshacer.`))return;
+  document.getElementById('inputIds').value=ids.join(',');
+  document.getElementById('formElim').submit();
 }
 
-// ══════════════════════════════════════════════════
-//  SELECCIÓN MASIVA
-// ══════════════════════════════════════════════════
-function toggleTodo(chk) {
-  document.querySelectorAll('.chk-comp').forEach(c => c.checked = chk.checked);
-  actualizarBtnElim();
-}
-function actualizarBtnElim() {
-  const n = document.querySelectorAll('.chk-comp:checked').length;
-  document.getElementById('btnElimMasivo').disabled = n === 0;
-  const chkTodo = document.getElementById('chkTodo');
-  if (chkTodo) {
-    const total = document.querySelectorAll('.chk-comp').length;
-    chkTodo.indeterminate = n > 0 && n < total;
-    chkTodo.checked = n === total && total > 0;
-  }
-}
-function eliminarSeleccionados() {
-  const ids = [...document.querySelectorAll('.chk-comp:checked')].map(c => c.value);
-  if (!ids.length) return;
-  if (!confirm(`¿Eliminar ${ids.length} compromiso(s)? Esta acción no se puede deshacer.`)) return;
-  document.getElementById('inputIdsMasivo').value = ids.join(',');
-  document.getElementById('formElimMasivo').submit();
+// ── observación AJAX ──
+function guardarObs(id){
+  const texto=document.getElementById('obsTexto'+id).value.trim();
+  if(!texto){alert('Escribe una observación antes de guardar.');return;}
+  const modo=document.getElementById('obsReemp'+id).checked?'replace':'append';
+  const fd=new FormData();fd.append('texto',texto);fd.append('modo',modo);
+  fetch('/compromisos/'+id+'/observacion',{method:'POST',body:fd})
+    .then(r=>r.json()).then(d=>{
+      if(d.ok){const m=document.getElementById('modalAddObs'+id);if(typeof bootstrap!=='undefined')bootstrap.Modal.getInstance(m)?.hide();location.reload();}
+      else alert(d.error||'Error al guardar.');
+    }).catch(()=>alert('Error de red.'));
 }
 
-// ══════════════════════════════════════════════════
-//  OBSERVACIÓN AJAX
-// ══════════════════════════════════════════════════
-function guardarObs(id) {
-  const texto = document.getElementById('obsTexto' + id).value.trim();
-  if (!texto) { alert('Escribe una observación antes de guardar.'); return; }
-  const modo = document.getElementById('obsReemp' + id).checked ? 'replace' : 'append';
-  const fd = new FormData();
-  fd.append('texto', texto);
-  fd.append('modo', modo);
-  fetch('/compromisos/' + id + '/observacion', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok) {
-        const modalEl = document.getElementById('modalAddObs' + id);
-        if (typeof bootstrap !== 'undefined') bootstrap.Modal.getInstance(modalEl)?.hide();
-        location.reload();
-      } else { alert(data.error || 'Error al guardar.'); }
-    })
-    .catch(() => alert('Error de red.'));
+// ── contrato rápido ──
+function onContratoChange(sel){
+  if(sel.value==='__nuevo__'){document.getElementById('rowNuevoContrato').style.display='flex';sel.value='';document.getElementById('inputNuevoContrato').focus();}
+}
+function cancelarNuevoContrato(){document.getElementById('rowNuevoContrato').style.display='none';document.getElementById('inputNuevoContrato').value='';document.getElementById('selectContrato').value='';}
+function crearContratoRapido(){
+  const nombre=document.getElementById('inputNuevoContrato').value.trim();
+  if(!nombre){alert('Escribe el nombre del contrato.');return;}
+  const fd=new FormData();fd.append('nombre',nombre);
+  fetch('{{ url_for("compromisos.crear_contrato_rapido") }}',{method:'POST',body:fd})
+    .then(r=>r.json()).then(d=>{
+      if(!d.ok){alert(d.error||'Error al crear contrato.');return;}
+      const sel=document.getElementById('selectContrato');
+      const opt=document.createElement('option');opt.value=d.id;opt.text=d.nombre;
+      sel.insertBefore(opt,sel.lastElementChild);sel.value=d.id;
+      document.getElementById('rowNuevoContrato').style.display='none';
+      document.getElementById('inputNuevoContrato').value='';
+    }).catch(()=>alert('Error de red.'));
 }
 
-// ══════════════════════════════════════════════════
-//  CONTRATO RÁPIDO (en modal crear)
-// ══════════════════════════════════════════════════
-function onContratoChange(sel) {
-  if (sel.value === '__nuevo__') {
-    document.getElementById('rowNuevoContrato').style.display = 'flex';
-    sel.value = '';
-    document.getElementById('inputNuevoContrato').focus();
-  }
-}
-function cancelarNuevoContrato() {
-  document.getElementById('rowNuevoContrato').style.display = 'none';
-  document.getElementById('inputNuevoContrato').value = '';
-  document.getElementById('selectContrato').value = '';
-}
-function crearContratoRapido() {
-  const nombre = document.getElementById('inputNuevoContrato').value.trim();
-  if (!nombre) { alert('Escribe el nombre del contrato.'); return; }
-  const fd = new FormData();
-  fd.append('nombre', nombre);
-  fetch('{{ url_for("compromisos.crear_contrato_rapido") }}', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(data => {
-      if (!data.ok) { alert(data.error || 'Error al crear contrato.'); return; }
-      const sel = document.getElementById('selectContrato');
-      const opt = document.createElement('option');
-      opt.value = data.id;
-      opt.text  = data.nombre;
-      sel.insertBefore(opt, sel.lastElementChild);
-      sel.value = data.id;
-      document.getElementById('rowNuevoContrato').style.display = 'none';
-      document.getElementById('inputNuevoContrato').value = '';
-    })
-    .catch(() => alert('Error de red.'));
-}
-
-// ══════════════════════════════════════════════════
-//  TOOLTIPS
-// ══════════════════════════════════════════════════
-document.addEventListener('DOMContentLoaded', function() {
-  if (typeof bootstrap === 'undefined') return;
-  document.querySelectorAll('[title]').forEach(el => {
-    if (!el.dataset.bsToggle) el.setAttribute('data-bs-toggle', 'tooltip');
-  });
-  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el =>
-    new bootstrap.Tooltip(el, { trigger: 'hover' })
-  );
-});
-
-// ══════════════════════════════════════════════════
-//  IMPORTAR EXCEL
-// ══════════════════════════════════════════════════
-async function importarCompromisos(input) {
-  const archivo = input.files[0];
-  if (!archivo) return;
-  input.value = "";
-  const fd = new FormData();
-  fd.append("archivo", archivo);
-  const btn = input.closest("label");
-  const textoOriginal = btn.innerHTML;
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importando…';
-  btn.style.pointerEvents = "none";
-  try {
-    const resp = await fetch("{{ url_for('compromisos.importar_excel') }}", { method: "POST", body: fd });
-    const data = await resp.json();
-    if (data.ok) {
-      let msg = `✅ ${data.insertados} compromiso(s) importado(s) correctamente.`;
-      if (data.errores && data.errores.length)
-        msg += `\n\n⚠️ ${data.errores.length} fila(s) con error:\n` + data.errores.join("\n");
-      alert(msg);
-      if (data.insertados > 0) location.reload();
-    } else {
-      alert("❌ Error: " + data.error);
-    }
-  } catch (e) {
-    alert("❌ Error de conexión al importar.");
-  } finally {
-    btn.innerHTML = textoOriginal;
-    btn.style.pointerEvents = "";
-  }
+// ── importar excel ──
+async function importarCompromisos(input){
+  const archivo=input.files[0];if(!archivo)return;input.value='';
+  const fd=new FormData();fd.append('archivo',archivo);
+  const lbl=input.closest('label');const orig=lbl.innerHTML;
+  lbl.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Importando…';lbl.style.pointerEvents='none';
+  try{
+    const r=await fetch('{{ url_for("compromisos.importar_excel") }}',{method:'POST',body:fd});
+    const d=await r.json();
+    if(d.ok){let msg=`✅ ${d.insertados} compromiso(s) importado(s).`;
+      if(d.errores&&d.errores.length)msg+=`\n\n⚠️ ${d.errores.length} fila(s) con error:\n`+d.errores.join('\n');
+      alert(msg);if(d.insertados>0)location.reload();}
+    else alert('❌ Error: '+d.error);
+  }catch(e){alert('❌ Error de conexión.');}
+  finally{lbl.innerHTML=orig;lbl.style.pointerEvents='';}
 }
 </script>
 {% endblock %}
