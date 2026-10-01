@@ -157,9 +157,9 @@
   <!-- FILTROS DASHBOARD -->
   <div class="filters">
     <div class="fg"><label>Año</label>
-      <select class="fsel" id="fAño" onchange="applyFilters()"><option value="">Todos</option></select></div>
+      <select class="fsel" id="fAño" onchange="updateDiasSel();applyFilters()"><option value="">Todos</option></select></div>
     <div class="fg"><label>Mes</label>
-      <select class="fsel" id="fMes" onchange="applyFilters()"><option value="">Todos</option></select></div>
+      <select class="fsel" id="fMes" onchange="updateDiasSel();applyFilters()"><option value="">Todos</option></select></div>
     <div class="fg"><label>Día</label>
       <select class="fsel" id="fFecha" onchange="applyFilters()"><option value="">Todos</option></select></div>
     <div class="fg"><label>Sede</label>
@@ -207,7 +207,7 @@
           <button class="btn-tog" id="togMes" onclick="setTrendMode('mes')">Por Mes</button>
         </div>
       </h4>
-      <div style="position:relative;height:320px"><canvas id="cLine"></canvas></div>
+      <div style="position:relative;height:420px"><canvas id="cLine"></canvas></div>
     </div>
 
   </div>
@@ -349,6 +349,7 @@ const G={
   trendMode:'dia',
   pSortCol:4, pSortDir:1,
   pPage:1,
+  _todasFechas:[],
 };
 
 const INCUMP_NUMS=new Set(['3','4','6','7']);
@@ -430,17 +431,29 @@ function loadDashboard(){
 
 function populateFilters(op){
   if(!op)return;
+  // guardar todas las fechas para filtrado dinámico
+  G._todasFechas = op.fechas||[];
   const cur={fAño:document.getElementById('fAño').value,fMes:document.getElementById('fMes').value,
     fFecha:document.getElementById('fFecha').value,fSede:document.getElementById('fSede').value,
     fContrato:document.getElementById('fContrato').value,fTipo:document.getElementById('fTipo').value,
     fEstado:document.getElementById('fEstado').value};
   fillSel('fAño',op.años||[],null,cur.fAño);
   fillSel('fMes',op.meses||[],null,cur.fMes);
-  fillSel('fFecha',op.fechas||[],v=>fF(v),cur.fFecha);
+  updateDiasSel(cur.fFecha);
   fillSel('fSede',op.sedes||[],null,cur.fSede);
   fillSel('fContrato',op.contratos||[],null,cur.fContrato);
   fillSel('fTipo',op.tipos||[],null,cur.fTipo);
   fillSel('fEstado',op.estados||[],null,cur.fEstado);
+}
+
+function updateDiasSel(keepVal){
+  const año = document.getElementById('fAño').value;
+  const mes  = document.getElementById('fMes').value;
+  let fechas = G._todasFechas||[];
+  // filtrar por año y/o mes seleccionados
+  if(año) fechas = fechas.filter(f=>f.startsWith(año));
+  if(mes)  fechas = fechas.filter(f=>f.slice(5,7)===mes.padStart(2,'0') || f.slice(0,7)===mes);
+  fillSel('fFecha', fechas, v=>fF(v), keepVal||'');
 }
 
 function fillSel(id,vals,labelFn,curVal){
