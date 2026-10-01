@@ -8,12 +8,15 @@ services:
     volumes:
       - uploads_data:/app/uploads
       - ./nginx/neohesego.com:/etc/nginx/vhost.d/neohesego.com:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     networks:
       - backend-net
       - nginx-proxy
     environment:
       - VIRTUAL_HOST=neohesego.com
       - VIRTUAL_PORT=5000
+      - TZ=America/Bogota
 
 networks:
   backend-net:
