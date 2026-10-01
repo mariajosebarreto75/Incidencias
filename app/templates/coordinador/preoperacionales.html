@@ -339,6 +339,9 @@
 </div><!-- /pw -->
 
 <script>
+// Registrar plugin datalabels globalmente
+Chart.register(ChartDataLabels);
+
 // ══════════════════════════════════════════════════════
 // ESTADO GLOBAL
 // ══════════════════════════════════════════════════════
@@ -555,7 +558,7 @@ function buildCharts(data){
     type:'doughnut',
     data:{labels:estados.map(e=>e.estado.length>32?e.estado.slice(0,30)+'…':e.estado),
       datasets:[{data:estados.map(e=>e.total),backgroundColor:estados.map(e=>CEST[nEst(e.estado)]||'#64748B'),borderWidth:2,borderColor:surf}]},
-    options:{plugins:{legend:{position:'right',labels:{font:{size:10},color:ink}}},cutout:'60%'}
+    options:{plugins:{legend:{position:'right',labels:{font:{size:10},color:ink}},datalabels:{display:false}},cutout:'60%'}
   });
 
   // ── Sedes ──
@@ -568,7 +571,7 @@ function buildCharts(data){
     data:{labels:sedes.map(s=>s.sede),
       datasets:[{label:'% Cumplimiento',data:sedes.map(s=>s.pct),
         backgroundColor:sedes.map(s=>s.pct>=80?'#16A34A':s.pct>=60?'#F59E0B':'#DC2626'),borderRadius:4,borderSkipped:false}]},
-    options:{indexAxis:'y',plugins:{legend:{display:false}},
+    options:{indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:false}},
       scales:{x:{min:0,max:100,ticks:{callback:v=>v+'%',color:ink2}},y:{ticks:{color:ink}}}}
   });
 
@@ -600,35 +603,36 @@ function buildTrendChart(serie,mode){
     pcts=serie.map(s=>{const cm=s.total-(s.sin_mov||0);return cm?+(s.cumple/cm*100).toFixed(1):0;});
   }
 
+  const esMes = (mode === 'mes');
   G.charts['cLine']=new Chart(document.getElementById('cLine'),{
     type:'line',
     data:{labels,datasets:[
-      {label:'% Cumplimiento',data:pcts,borderColor:'#2E75B6',backgroundColor:'rgba(46,117,182,.15)',fill:true,tension:.3,pointRadius:4,pointHoverRadius:6},
-      {label:'Meta (80%)',data:labels.map(()=>80),borderColor:'#DC2626',borderDash:[6,4],pointRadius:0,fill:false,tension:0}
+      {label:'% Cumplimiento',data:pcts,borderColor:'#2E75B6',backgroundColor:'rgba(46,117,182,.15)',
+       fill:true,tension:.3,pointRadius:5,pointHoverRadius:7,
+       datalabels:{
+         display: (ctx) => esMes ? true : (ctx.dataIndex % 2 === 0),
+         color:'#1F4E79',
+         font:{size:esMes?11:9,weight:'700'},
+         anchor:'end', align:'top', offset:3,
+         formatter: v => (v!=null && v!==undefined) ? v.toFixed(1)+'%' : '',
+       }
+      },
+      {label:'Meta (80%)',data:labels.map(()=>80),borderColor:'#DC2626',borderDash:[6,4],
+       pointRadius:0,fill:false,tension:0,
+       datalabels:{display:false}
+      }
     ]},
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      layout:{padding:{top:20,bottom:10}},
+      layout:{padding:{top:24,bottom:10}},
       plugins:{
         legend:{labels:{color:ink,font:{size:12}}},
-        datalabels:{
-          display: (ctx) => {
-            // en modo mes mostrar todos; en modo día mostrar solo cada 2 puntos para no saturar
-            if(mode==='mes') return true;
-            return ctx.dataIndex % 2 === 0;
-          },
-          color: (ctx) => ctx.datasetIndex===0 ? '#1F4E79' : 'transparent',
-          font:{size:10,weight:'700'},
-          anchor:'end',
-          align:'top',
-          offset:2,
-          formatter: v => v ? v.toFixed(1)+'%' : '',
-        }
+        datalabels:{display:false},  // default off; cada dataset lo activa individualmente
       },
       scales:{
         y:{min:0,max:100,ticks:{callback:v=>v+'%',color:ink2,font:{size:11}},grid:{color:'rgba(0,0,0,.05)'}},
-        x:{ticks:{color:ink2,font:{size:11},maxRotation:45,minRotation:30,autoSkip:true,maxTicksLimit:mode==='mes'?12:30}}
+        x:{ticks:{color:ink2,font:{size:11},maxRotation:45,minRotation:30,autoSkip:true,maxTicksLimit:esMes?12:30}}
       }
     }
   });

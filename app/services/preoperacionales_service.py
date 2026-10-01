@@ -354,10 +354,12 @@ def datos_dashboard(filtros: dict | None = None) -> dict:
                              "cumple": d["cumple"], "pct": pct})
 
     # Opciones de filtros
+    # fechas viene de filtrados para que respete el mes/año seleccionado
+    # el resto de dimensiones viene de registros para que siempre aparezcan todas las opciones
     opciones = {
         "sedes":     sorted({r["sede"]     for r in registros if r["sede"]}),
         "contratos": sorted({r["contrato"] for r in registros if r["contrato"]}),
-        "fechas":    sorted({r["fecha_str"] for r in registros if r["fecha_str"]}),
+        "fechas":    sorted({r["fecha_str"] for r in filtrados  if r["fecha_str"]}),
         "tipos":     sorted({r["tipo"]     for r in registros if r["tipo"]}),
         "años":      sorted({str(r["fecha"].year) for r in registros if r["fecha"]}, reverse=True),
         "meses":     sorted({r["mes"]      for r in registros if r["mes"]}),
