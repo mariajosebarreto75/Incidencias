@@ -87,11 +87,13 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
 .event{
   position:absolute;left:2px;right:2px;
   border-radius:4px;padding:3px 5px;
-  font-size:.7rem;cursor:pointer;overflow:hidden;z-index:1;
+  font-size:.7rem;cursor:pointer;overflow:hidden;z-index:20;
   transition:opacity .12s,filter .12s;
   border-left:3px solid rgba(0,0,0,.2);
+  pointer-events:all;
 }
 .event:hover{filter:brightness(.92);}
+.day-col{pointer-events:all;}
 .event .ev-title{font-weight:600;line-height:1.3;word-break:break-word;}
 .event .ev-meta{font-size:.63rem;opacity:.85;margin-top:1px;}
 .event .ev-rec{font-size:.6rem;opacity:.75;}
@@ -246,6 +248,7 @@ function evColor(titulo) {
 
 let weekOffset = 0;
 let allEvents = {};
+const evMap = {};  // "fecha_id" -> ev object
 
 function getMondayOf(offset) {
   const d = new Date();
@@ -282,6 +285,7 @@ async function loadWeek() {
   const res = await fetch(`{{ url_for('compromisos.reuniones_semana') }}?desde=${desdeStr}&hasta=${hastaStr}`);
   const data = await res.json();
   allEvents = {};
+  Object.keys(evMap).forEach(k => delete evMap[k]);
   if(data.ok) {
     for(const r of data.reuniones) {
       if(!allEvents[r.fecha]) allEvents[r.fecha] = [];
@@ -344,20 +348,21 @@ function renderCalendar(mon) {
         const startSlot = slotToFrac(ev.hora_inicio);
         if(Math.round(startSlot) !== si) continue;
 
-        const endSlot = slotToFrac(ev.hora_fin);
-        const durationSlots = Math.max(endSlot - startSlot, 0.5);
+        const endSlot   = slotToFrac(ev.hora_fin);
+        const durSlots  = Math.max(endSlot - startSlot, 0.5);
+        const SLOT_H    = 28;  // px por slot (debe coincidir con --slot)
+        const evKey     = `${dateStr}_${ev.id}`;
+        evMap[evKey]    = ev;
 
         const evEl = document.createElement('div');
         evEl.className = 'event ' + evColor(ev.titulo);
-        // Top: 0 (starts at this slot), height covers durationSlots
-        const slotH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--slot').trim()) || 28;
-        evEl.style.cssText = `top:1px;height:${Math.round(durationSlots * slotH - 2)}px;`;
+        evEl.dataset.evkey = evKey;
+        evEl.style.cssText = `top:1px;height:${Math.round(durSlots * SLOT_H - 2)}px;`;
         evEl.innerHTML = `
           <div class="ev-title">${ev.titulo}</div>
           <div class="ev-meta">${ev.hora_inicio}–${ev.hora_fin}</div>
-          ${ev.recurrente ? '<div class="ev-rec">🔁 recurrente</div>' : ''}
+          ${ev.recurrente ? '<div class="ev-rec">🔁</div>' : ''}
         `;
-        evEl.addEventListener('click', e => { e.stopPropagation(); openDetail(ev); });
         cell.appendChild(evEl);
       }
       grid.appendChild(cell);
@@ -489,6 +494,14 @@ document.getElementById('detClose').addEventListener('click', () => document.get
 document.getElementById('detCancelar').addEventListener('click', () => document.getElementById('detailBg').classList.add('hidden'));
 document.getElementById('modalBg').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.classList.add('hidden'); });
 document.getElementById('detailBg').addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.classList.add('hidden'); });
+
+// Delegated click handler for calendar events
+document.getElementById('calGrid').addEventListener('click', e => {
+  const el = e.target.closest('.event');
+  if(el && el.dataset.evkey && evMap[el.dataset.evkey]) {
+    openDetail(evMap[el.dataset.evkey]);
+  }
+});
 
 loadWeek();
 setInterval(updateClock, 30000);
