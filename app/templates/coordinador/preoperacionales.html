@@ -247,21 +247,15 @@
   <!-- FILTROS PLACAS -->
   <div class="filters">
     <div class="fg"><label>Año</label>
-      <select class="fsel" id="pAño" onchange="loadPlacas(1)"><option value="">Todos</option></select></div>
+      <select class="fsel" id="pAño" onchange="updatePlacasDias();loadPlacas(1)"><option value="">Todos</option></select></div>
     <div class="fg"><label>Mes</label>
-      <select class="fsel" id="pMes" onchange="loadPlacas(1)"><option value="">Todos</option></select></div>
+      <select class="fsel" id="pMes" onchange="updatePlacasDias();loadPlacas(1)"><option value="">Todos</option></select></div>
     <div class="fg"><label>Día</label>
       <select class="fsel" id="pDia" onchange="loadPlacas(1)"><option value="">Todos</option></select></div>
     <div class="fg"><label>Contrato</label>
       <select class="fsel" id="pContrato" onchange="loadPlacas(1)"><option value="">Todos</option></select></div>
     <div class="fg"><label>Estado</label>
-      <select class="fsel" id="pEstado" onchange="loadPlacas(1)">
-        <option value="">Todos (3,4,6,7)</option>
-        <option value="3">3 · Sin preop</option>
-        <option value="4">4 · Sin GPS + movimiento</option>
-        <option value="6">6 · Con movimiento sin preop</option>
-        <option value="7">7 · Otro</option>
-      </select></div>
+      <select class="fsel" id="pEstado" onchange="loadPlacas(1)"><option value="">Todos (3,4,6,7)</option></select></div>
     <button class="btn btn-ghost btn-sm" onclick="resetPlacasFiltros()" style="align-self:flex-end">✕ Limpiar</button>
   </div>
 
@@ -297,9 +291,11 @@
   <!-- FILTROS JUST -->
   <div class="filters">
     <div class="fg"><label>Año</label>
-      <select class="fsel" id="jAño" onchange="renderJustFiltrada()"><option value="">Todos</option></select></div>
+      <select class="fsel" id="jAño" onchange="updateJustDias();renderJustFiltrada()"><option value="">Todos</option></select></div>
     <div class="fg"><label>Mes</label>
-      <select class="fsel" id="jMes" onchange="renderJustFiltrada()"><option value="">Todos</option></select></div>
+      <select class="fsel" id="jMes" onchange="updateJustDias();renderJustFiltrada()"><option value="">Todos</option></select></div>
+    <div class="fg"><label>Día</label>
+      <select class="fsel" id="jDia" onchange="renderJustFiltrada()"><option value="">Todos</option></select></div>
     <div class="fg"><label>Contrato</label>
       <select class="fsel" id="jContrato" onchange="renderJustFiltrada()"><option value="">Todos</option></select></div>
     <button class="btn btn-ghost btn-sm" onclick="resetJustFiltros()" style="align-self:flex-end">✕ Limpiar</button>
@@ -479,10 +475,43 @@ function fillSel(id,vals,labelFn,curVal){
 
 function populatePlacasFiltros(op){
   if(!op)return;
+  G._placasFechas = op.fechas||[];
   fillSel('pAño',op.años||[]);
   fillSel('pMes',op.meses||[]);
-  fillSel('pDia',op.fechas||[],v=>fF(v));
+  updatePlacasDias();
   fillSel('pContrato',op.contratos||[]);
+  // estados reales filtrados a 3,4,6,7,8
+  const estIncump = (op.estados||[]).filter(e=>{const n=nEst(e);return['3','4','6','7','8'].includes(n);});
+  const selEst = document.getElementById('pEstado');
+  const curVal = selEst.value;
+  selEst.innerHTML = '<option value="">Todos (3,4,6,7)</option>';
+  estIncump.forEach(e=>{const o=document.createElement('option');o.value=nEst(e);o.textContent=e;selEst.appendChild(o);});
+  if(curVal) selEst.value=curVal;
+}
+
+function updatePlacasDias(keepVal){
+  const año = document.getElementById('pAño').value;
+  const mes  = document.getElementById('pMes').value;
+  if(!año && !mes){
+    fillSel('pDia', G._placasFechas||[], v=>fF(v), keepVal||'');
+    return;
+  }
+  const qs=new URLSearchParams(Object.fromEntries(Object.entries({año,mes,incumplimiento:'1'}).filter(([,v])=>v)));
+  fetch(`/coordinador/preoperacionales/datos?${qs}`)
+    .then(r=>r.json())
+    .then(data=>{ fillSel('pDia', data.opciones?.fechas||[], v=>fF(v), keepVal||''); })
+    .catch(()=>{});
+}
+
+function updateJustDias(){
+  const año = document.getElementById('jAño').value;
+  const mes  = document.getElementById('jMes').value;
+  // filtrar fechas disponibles de justificaciones en localStorage
+  let fechas = [...new Set(G.justificaciones.map(j=>j.fecha))].sort();
+  if(año) fechas = fechas.filter(f=>f.startsWith(año));
+  if(mes)  fechas = fechas.filter(f=>f.slice(0,7)===mes);
+  const curVal = document.getElementById('jDia').value;
+  fillSel('jDia', fechas, v=>fF(v), curVal);
 }
 
 function populateJustFiltros(op){
@@ -835,10 +864,11 @@ function getJustFiltros(){
   return{
     año: document.getElementById('jAño').value,
     mes: document.getElementById('jMes').value,
+    dia: document.getElementById('jDia').value,
     contrato: document.getElementById('jContrato').value,
   };
 }
-function resetJustFiltros(){['jAño','jMes','jContrato'].forEach(id=>document.getElementById(id).value='');renderJustFiltrada();}
+function resetJustFiltros(){['jAño','jMes','jDia','jContrato'].forEach(id=>document.getElementById(id).value='');renderJustFiltrada();}
 
 function renderJustFiltrada(){
   renderCatalog();
@@ -846,6 +876,7 @@ function renderJustFiltrada(){
   let rows=G.justificaciones;
   if(f.año) rows=rows.filter(j=>j.fecha.startsWith(f.año));
   if(f.mes) rows=rows.filter(j=>j.mes===f.mes||j.fecha.slice(0,7)===f.mes);
+  if(f.dia) rows=rows.filter(j=>j.fecha===f.dia);
   if(f.contrato) rows=rows.filter(j=>j.contrato===f.contrato);
   rows=[...rows].sort((a,b)=>b.guardado.localeCompare(a.guardado));
 
