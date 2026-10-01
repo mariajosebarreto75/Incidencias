@@ -28,6 +28,11 @@
 }}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
+.btn-nuevo{display:inline-flex;align-items:center;gap:.4rem;
+  background:var(--teal);color:#fff;font-size:.85rem;font-weight:600;
+  padding:.5rem 1rem;border-radius:8px;text-decoration:none;white-space:nowrap;
+  transition:background .15s;}
+.btn-nuevo:hover{background:var(--teal-dark);color:#fff;}
 .hub{max-width:1100px;margin:0 auto;padding:2rem 1.25rem 4rem;}
 
 /* Header */
@@ -76,9 +81,16 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
 </style>
 
 <div class="hub">
-  <div class="hub-header">
-    <h1>Gestión de Compromisos</h1>
-    <p>Panel central — reuniones, seguimiento y compromisos de obra</p>
+  <div class="hub-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+    <div>
+      <h1>Gestión de Compromisos</h1>
+      <p>Panel central — reuniones, seguimiento y compromisos de obra</p>
+    </div>
+    {% if es_neo %}
+    <a href="{{ url_for('compromisos.lista') }}" class="btn-nuevo">
+      <span style="font-size:1.1rem;line-height:1;">+</span> Nuevo compromiso
+    </a>
+    {% endif %}
   </div>
 
   <!-- KPIs -->

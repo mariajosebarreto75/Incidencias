@@ -363,6 +363,8 @@ function renderCalendar(mon) {
           <div class="ev-meta">${ev.hora_inicio}–${ev.hora_fin}</div>
           ${ev.recurrente ? '<div class="ev-rec">🔁</div>' : ''}
         `;
+        // Listener directo (belt+suspenders por si el delegado no llega)
+        evEl.addEventListener('click', e => { e.stopPropagation(); openDetail(ev); });
         cell.appendChild(evEl);
       }
       grid.appendChild(cell);
