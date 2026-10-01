@@ -284,6 +284,9 @@ def _filtrar(registros: list[dict], filtros: dict) -> list[dict]:
     contrato = filtros.get("contrato")
     fecha    = filtros.get("fecha")
     tipo     = filtros.get("tipo")
+    año      = filtros.get("año")
+    mes      = filtros.get("mes")
+    estado   = filtros.get("estado")
 
     resultado = registros
     if sede:
@@ -294,6 +297,12 @@ def _filtrar(registros: list[dict], filtros: dict) -> list[dict]:
         resultado = [r for r in resultado if r["fecha_str"] == fecha]
     if tipo:
         resultado = [r for r in resultado if r["tipo"] == tipo]
+    if año:
+        resultado = [r for r in resultado if r["fecha"] and str(r["fecha"].year) == año]
+    if mes:
+        resultado = [r for r in resultado if r["mes"] == mes]
+    if estado:
+        resultado = [r for r in resultado if r["estado"] == estado]
     return resultado
 
 
@@ -350,6 +359,9 @@ def datos_dashboard(filtros: dict | None = None) -> dict:
         "contratos": sorted({r["contrato"] for r in registros if r["contrato"]}),
         "fechas":    sorted({r["fecha_str"] for r in registros if r["fecha_str"]}),
         "tipos":     sorted({r["tipo"]     for r in registros if r["tipo"]}),
+        "años":      sorted({str(r["fecha"].year) for r in registros if r["fecha"]}, reverse=True),
+        "meses":     sorted({r["mes"]      for r in registros if r["mes"]}),
+        "estados":   sorted({r["estado"]   for r in registros if r["estado"]}),
     }
 
     return {
