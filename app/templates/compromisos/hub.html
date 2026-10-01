@@ -109,7 +109,7 @@ body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
       <div class="subtitle">Próxima reunión</div>
       <div class="title">{{ proxima.titulo }}</div>
       <div class="meta">
-        {{ proxima.fecha.strftime('%A %d de %B') }} · {{ proxima.hora_inicio }} – {{ proxima.hora_fin }}
+        {{ proxima_fecha_str }} · {{ proxima.hora_inicio }} – {{ proxima.hora_fin }}
         {% if proxima.contrato %} · {{ proxima.contrato.contrato }}{% endif %}
       </div>
     </div>

@@ -59,8 +59,10 @@ def _puede_ver_contrato(contrato_id):
 @login_required
 def index():
     """Hub / página de inicio del módulo compromisos."""
-    today = date.today()
-    hoy_str = today.isoformat()
+    from datetime import datetime as _dt, timedelta as _td
+    now       = _dt.now()
+    today     = now.date()
+    now_hhmm  = now.strftime("%H:%M")
 
     # KPIs rápidos para el hub
     contratos = _contratos_usuario()
@@ -75,9 +77,51 @@ def index():
                     if c.atrasado]
     atrasados    = len(atrasados_q)
 
-    reuniones_hoy = Reunion.query.filter_by(fecha=today).count()
-    proxima = (Reunion.query.filter(Reunion.fecha >= today)
-               .order_by(Reunion.fecha.asc(), Reunion.hora_inicio.asc()).first())
+    # Reuniones hoy: puntuales hoy + recurrentes cuyo weekday coincide con hoy
+    today_wd = today.weekday()
+    reuniones_hoy_punt = Reunion.query.filter(Reunion.fecha == today,
+                                              Reunion.recurrente == False).count()
+    reuniones_hoy_rec  = sum(1 for r in Reunion.query.filter(Reunion.recurrente == True).all()
+                             if r.fecha.weekday() == today_wd)
+    reuniones_hoy = reuniones_hoy_punt + reuniones_hoy_rec
+
+    # Próxima reunión: la que aún no ha comenzado (considerando hora actual)
+    candidatos = []  # (fecha, hora_inicio, reunion, fecha_display)
+
+    # 1. Puntuales futuras o de hoy que no han empezado
+    for r in (Reunion.query
+              .filter(Reunion.recurrente == False, Reunion.fecha >= today)
+              .order_by(Reunion.fecha.asc(), Reunion.hora_inicio.asc()).all()):
+        if r.fecha > today or r.hora_inicio > now_hhmm:
+            candidatos.append((r.fecha, r.hora_inicio, r, r.fecha))
+
+    # 2. Recurrentes: calcular próxima ocurrencia >= hoy
+    for r in Reunion.query.filter(Reunion.recurrente == True).all():
+        ref_wd  = r.fecha.weekday()
+        days_ah = (ref_wd - today_wd) % 7
+        if days_ah == 0:
+            # Hoy — solo si no empezó aún
+            if r.hora_inicio > now_hhmm:
+                candidatos.append((today, r.hora_inicio, r, today))
+            else:
+                next_d = today + _td(days=7)
+                candidatos.append((next_d, r.hora_inicio, r, next_d))
+        else:
+            next_d = today + _td(days=days_ah)
+            candidatos.append((next_d, r.hora_inicio, r, next_d))
+
+    candidatos.sort(key=lambda x: (x[0], x[1]))
+    proxima        = candidatos[0][2] if candidatos else None
+    proxima_fecha  = candidatos[0][3] if candidatos else None
+
+    # Formatear fecha en español para el template
+    MESES = ['enero','febrero','marzo','abril','mayo','junio',
+             'julio','agosto','septiembre','octubre','noviembre','diciembre']
+    DIAS_ES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
+    proxima_fecha_str = ""
+    if proxima_fecha:
+        proxima_fecha_str = (f"{DIAS_ES[proxima_fecha.weekday()]} "
+                             f"{proxima_fecha.day} de {MESES[proxima_fecha.month-1]}")
 
     return render_template(
         "compromisos/hub.html",
@@ -86,7 +130,7 @@ def index():
         kpi=dict(total=total_comp, pendientes=pendientes, atrasados=atrasados,
                  reuniones_hoy=reuniones_hoy),
         proxima=proxima,
-        hoy=hoy_str,
+        proxima_fecha_str=proxima_fecha_str,
     )
 
 
