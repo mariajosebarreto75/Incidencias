@@ -686,6 +686,24 @@ let alertaActiva  = null;
 let modoSeleccion = false;
 let seleccionadas = new Set();
 
+// Las horas se guardan/envían en UTC (data-utc); convertir a hora de Colombia para mostrar.
+// No se reutiliza fmtHoraAD (navbNeo.html) porque ese script carga después de este bloque.
+function _fmtHoraLocalAG(utcStr) {
+    if (!utcStr) return "—";
+    const s = utcStr.endsWith("Z") ? utcStr : utcStr + "Z";
+    const d = new Date(s);
+    if (isNaN(d)) return utcStr.slice(0, 16).replace("T", " ");
+    return d.toLocaleString("es-CO", {
+        timeZone: "America/Bogota",
+        month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", hour12: false
+    }).replace(",", "");
+}
+document.querySelectorAll(".ag-hora-col[data-utc]").forEach(function (el) {
+    const utc = el.getAttribute("data-utc");
+    if (utc) el.textContent = _fmtHoraLocalAG(utc);
+});
+
 // ── Modo selección ────────────────────────────────────────
 function toggleModoSeleccion() {
     modoSeleccion = !modoSeleccion;
