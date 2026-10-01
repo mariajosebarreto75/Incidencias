@@ -3,6 +3,7 @@
 {% block head %}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
 :root{
   --brand:#1F4E79;--brand-mid:#2E75B6;--brand-light:#D6E4F0;
@@ -608,8 +609,23 @@ function buildTrendChart(serie,mode){
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      layout:{padding:{bottom:10}},
-      plugins:{legend:{labels:{color:ink,font:{size:12}}}},
+      layout:{padding:{top:20,bottom:10}},
+      plugins:{
+        legend:{labels:{color:ink,font:{size:12}}},
+        datalabels:{
+          display: (ctx) => {
+            // en modo mes mostrar todos; en modo día mostrar solo cada 2 puntos para no saturar
+            if(mode==='mes') return true;
+            return ctx.dataIndex % 2 === 0;
+          },
+          color: (ctx) => ctx.datasetIndex===0 ? '#1F4E79' : 'transparent',
+          font:{size:10,weight:'700'},
+          anchor:'end',
+          align:'top',
+          offset:2,
+          formatter: v => v ? v.toFixed(1)+'%' : '',
+        }
+      },
       scales:{
         y:{min:0,max:100,ticks:{callback:v=>v+'%',color:ink2,font:{size:11}},grid:{color:'rgba(0,0,0,.05)'}},
         x:{ticks:{color:ink2,font:{size:11},maxRotation:45,minRotation:30,autoSkip:true,maxTicksLimit:mode==='mes'?12:30}}
