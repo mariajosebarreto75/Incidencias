@@ -261,10 +261,8 @@
         <!-- AGENDA DE COMPROMISOS -->
         {% if current_user.rol.lower() != 'supervisor' %}
         <div class="col-sm-6 col-lg-4">
-            <a href="https://agendacompromisos.pages.dev/Compromisos"
-               target="_blank" class="text-decoration-none">
+            <a href="{{ url_for('compromisos.index') }}" class="text-decoration-none">
                 <div class="dash-card dash-card--agenda dash-card--sm">
-                    <span class="dash-ext-badge"><i class="bi bi-box-arrow-up-right me-1"></i>Enlace externo</span>
                     <div class="dash-card-icon dash-card-icon--agenda dash-card-icon--sm">
                         <i class="bi bi-calendar-check-fill"></i>
                     </div>
@@ -273,7 +271,7 @@
                         Consulte y gestione los compromisos pendientes del equipo.
                     </p>
                     <span class="dash-card-btn dash-card-btn--agenda">
-                        <i class="bi bi-box-arrow-up-right me-1"></i>Abrir
+                        <i class="bi bi-arrow-right me-1"></i>Abrir
                     </span>
                 </div>
             </a>

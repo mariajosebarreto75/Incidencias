@@ -244,7 +244,7 @@ def usuarios():
             UserContrato.query.filter_by(user_id=u.id).all()
         }
 
-    roles = ["coordinador", "director", "gerente", "parqueadero", "admin_parqueadero"]
+    roles = ["coordinador", "director", "gerente"]
     return render_template("admin/usuarios.html",
                            usuarios=lista, contratos=contratos,
                            asignados_por_usuario=asignados_por_usuario,
@@ -274,14 +274,6 @@ def neo_usuarios():
         asignados_por_usuario=asignados_por_usuario
     )
 
-
-@admin_bp.route("/parqueadero-usuarios")
-@admin_required
-def parqueadero_usuarios():
-    lista = User.query.filter(
-        User.rol.in_(["parqueadero", "admin_parqueadero"])
-    ).order_by(User.rol, User.nombre_completo).all()
-    return render_template("admin/parqueadero_usuarios.html", usuarios=lista)
 
 
 @admin_bp.route("/coordinador-usuarios")
