@@ -1187,6 +1187,8 @@ def _auto_limpiar_alertas_antiguas():
 @neo.route("/neo/alertas")
 @login_required
 def alertas_gps():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        abort(403)
     _auto_limpiar_alertas_antiguas()
 
     codigos_contrato = _codigos_contrato_usuario()
@@ -1305,6 +1307,8 @@ def alertas_gps():
 @neo.route("/neo/alertas/<int:id>/responder", methods=["POST"])
 @login_required
 def responder_alerta_gps(id):
+    if current_user.rol.lower() not in ("neo", "admin"):
+        abort(403)
     alerta = AlertaGPS.query.get_or_404(id)
     datos  = request.get_json() or {}
     accion = datos.get("accion")
@@ -1331,6 +1335,9 @@ def responder_alerta_gps(id):
 @neo.route("/neo/alertas/badge")
 @login_required
 def badge_alertas():
+    # Solo NEO y admin pueden consultar el badge de alertas GPS
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"pendientes": 0})
     from datetime import timedelta
     ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     count = AlertaGPS.query.filter(
@@ -1343,6 +1350,8 @@ def badge_alertas():
 @neo.route("/neo/alertas/depurar", methods=["POST"])
 @login_required
 def depurar_alertas():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        abort(403)
     """Elimina definitivamente una o varias alertas GPS (depuración de falsas positivas)."""
     d   = request.get_json(silent=True) or {}
     ids = d.get("ids", [])
@@ -1531,6 +1540,8 @@ def neo_distribucion_importar_excel():
 @login_required
 def alertas_datos():
     """Devuelve las alertas como JSON para el drawer del panel de reportes."""
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"alertas": [], "total": 0, "pendientes": 0})
     _auto_limpiar_alertas_antiguas()
     import json as _json
     from datetime import date as _date, datetime as _dt

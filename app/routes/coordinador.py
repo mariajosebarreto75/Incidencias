@@ -128,15 +128,19 @@ def formatear_coordenada(valor, posicion_coma):
 # DASHBOARD COORDINADOR
 # =====================================
 
-@coordinador.route(
-    "/coordinador"
-)
+@coordinador.route("/coordinador")
 @login_required
 def dashboard_coordinador():
+    return render_template("coordinador/dashboard.html")
 
-    return render_template(
-        "coordinador/dashboard.html"
-    )
+
+@coordinador.route("/supervisor")
+@login_required
+def dashboard_supervisor():
+    """Panel de inicio para usuarios con rol supervisor."""
+    if current_user.rol.lower() not in ("supervisor", "admin"):
+        abort(403)
+    return render_template("supervisor/home.html")
 
 
 # =====================================
