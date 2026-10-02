@@ -2,15 +2,14 @@ from flask import (
     Blueprint,
     render_template,
     url_for,
-    redirect
+    redirect,
+    abort,
 )
 
 from flask_login import (
     login_required,
     current_user
 )
-
-from app.extensions import db
 
 
 dashboard = Blueprint(
