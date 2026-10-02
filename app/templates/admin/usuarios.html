@@ -260,12 +260,6 @@
                        {% if 'dashboard_he' in perms %}checked{% endif %} onchange="togglePermiso(this)">
                 <span><i class="bi bi-bar-chart-steps me-1" style="color:#38bdf8;"></i>Dashboard HE <small style="color:#64748b;font-size:.68rem;">(indicadores horas extras)</small></span>
             </label>
-            <label class="nu-check-label" style="border-color:{% if u.acceso_dashboard or 'dashboard_gerencial' in perms %}#0d9488{% else %}#1e293b{% endif %};"
-                   title="Dashboard Gerencial — vista consolidada de indicadores de reportes operacionales NEO (conformidad, no conformidad, tiempos de respuesta)">
-                <input type="checkbox" class="perm-ck" data-uid="{{ u.id }}" data-permiso="dashboard_gerencial"
-                       {% if u.acceso_dashboard or 'dashboard_gerencial' in perms %}checked{% endif %} onchange="togglePermiso(this)">
-                <span><i class="bi bi-graph-up-arrow me-1" style="color:#2dd4bf;"></i>Dashboard Gerencial <small style="color:#64748b;font-size:.68rem;">(indicadores de reportes)</small></span>
-            </label>
             <label class="nu-check-label" style="border-color:{% if 'bi_seguimiento' in perms %}#f97316{% else %}#1e293b{% endif %};"
                    title="Acceso al informe Power BI de Archivo de Seguimiento">
                 <input type="checkbox" class="perm-ck" data-uid="{{ u.id }}" data-permiso="bi_seguimiento"
@@ -444,13 +438,10 @@ async function togglePermiso(cb) {
     const uid     = cb.dataset.uid;
     const permiso = cb.dataset.permiso;
     const valor   = cb.checked;
-    // Para dashboard_gerencial también sincronizamos acceso_dashboard
-    const payload = permiso === 'dashboard_gerencial'
-        ? { permiso, valor, acceso_dashboard: valor }
-        : { permiso, valor };
+    const payload = { permiso, valor };
     const r = await apiFetch("/admin/api/usuarios/" + uid, "PUT", payload);
     if (r.success) {
-        const colorMap = { neo_reportes:'#0284c7', horas_extras:'#7c3aed', dashboard_he:'#0369a1', dashboard_gerencial:'#0d9488', bi_seguimiento:'#f97316', bi_inspecciones:'#7c3aed' };
+        const colorMap = { neo_reportes:'#0284c7', horas_extras:'#7c3aed', dashboard_he:'#0369a1', bi_seguimiento:'#f97316', bi_inspecciones:'#7c3aed' };
         cb.parentElement.style.borderColor = valor ? (colorMap[permiso] || '#0ea5e9') : '#1e293b';
         mostrarAlerta("alerta", (valor ? "✓ Permiso activado" : "✓ Permiso desactivado") + ": " + permiso, "success");
     } else {
@@ -459,13 +450,6 @@ async function togglePermiso(cb) {
     }
 }
 
-async function toggleDashboard(btn, dar) {
-    const nombre = btn.dataset.nombre;
-    if (!confirm((dar ? "¿Dar acceso al Dashboard gerencial a" : "¿Quitar el acceso al Dashboard gerencial a") + " «" + nombre + "»?")) return;
-    const r = await apiFetch("/admin/api/usuarios/" + btn.dataset.id, "PUT", { acceso_dashboard: dar });
-    if (r.success) location.reload();
-    else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
-}
 
 async function eliminarUsuario(btn) {
     if (!confirm("¿Eliminar permanentemente al usuario «" + btn.dataset.nombre + "»?")) return;

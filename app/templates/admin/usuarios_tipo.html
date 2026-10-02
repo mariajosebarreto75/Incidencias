@@ -223,14 +223,6 @@
                            onchange="togglePermiso(this)">
                     <span><i class="bi bi-broadcast-pin me-1" style="color:#38bdf8;"></i>NEO Reportes</span>
                 </label>
-                <label class="nu-check-label" style="border-color:{% if 'dashboard_gerencial' in perms %}#0d9488{% else %}#1e293b{% endif %};"
-                       title="Dashboard Gerencial de indicadores">
-                    <input type="checkbox" class="perm-ck"
-                           data-uid="{{ u.id }}" data-permiso="dashboard_gerencial"
-                           {% if 'dashboard_gerencial' in perms %}checked{% endif %}
-                           onchange="togglePermiso(this)">
-                    <span><i class="bi bi-bar-chart-line me-1" style="color:#2dd4bf;"></i>Dashboard Gerencial</span>
-                </label>
                 <label class="nu-check-label" style="border-color:{% if 'semaforo' in perms %}#f59e0b{% else %}#1e293b{% endif %};"
                        title="Ver el Semáforo de Actividades">
                     <input type="checkbox" class="perm-ck"
@@ -437,7 +429,7 @@ async function togglePermiso(cb) {
     const valor   = cb.checked;
     const r = await apiFetch('/admin/api/usuarios/' + uid, 'PUT', { permiso, valor });
     if (r.success) {
-        const colores = { horas_extras: '#7c3aed', neo_reportes: '#0284c7', dashboard_gerencial: '#0d9488', semaforo: '#f59e0b', bi_seguimiento: '#f97316', bi_inspecciones: '#7c3aed', preoperacionales: '#0d9488' };
+        const colores = { horas_extras: '#7c3aed', neo_reportes: '#0284c7', semaforo: '#f59e0b', bi_seguimiento: '#f97316', bi_inspecciones: '#7c3aed', preoperacionales: '#0d9488' };
         cb.parentElement.style.borderColor = valor ? (colores[permiso] || '#7c3aed') : '#1e293b';
         mostrarAlerta('alerta',
             valor ? '✓ Permiso «' + permiso + '» otorgado' : 'Permiso «' + permiso + '» removido',

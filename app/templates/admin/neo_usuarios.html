@@ -271,19 +271,6 @@
                 <i class="bi bi-check-circle me-1"></i>Activar
             </button>
             {% endif %}
-            {% if u.acceso_dashboard %}
-            <button class="nu-btn-dash-on"
-                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
-                onclick="toggleDashboard(this, false)" title="Quitar acceso al Dashboard gerencial">
-                <i class="bi bi-graph-up-arrow me-1"></i>Dashboard: Sí
-            </button>
-            {% else %}
-            <button class="nu-btn-dash-off"
-                data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
-                onclick="toggleDashboard(this, true)" title="Dar acceso al Dashboard gerencial">
-                <i class="bi bi-graph-up me-1"></i>Dashboard: No
-            </button>
-            {% endif %}
             <button class="nu-btn-del"
                 data-id="{{ u.id }}" data-nombre="{{ u.nombre_completo | e }}"
                 onclick="eliminarUsuario(this)" title="Eliminar usuario">
@@ -350,16 +337,6 @@
                            {% if 'neo_reportes' in perms %}checked{% endif %}
                            onchange="togglePermiso(this)">
                     <span><i class="bi bi-broadcast-pin me-1" style="color:#38bdf8;"></i>NEO Reportes</span>
-                </label>
-                <label class="nu-check-label" style="border-color:{% if 'dashboard_gerencial' in perms %}#0d9488{% else %}#1e293b{% endif %};"
-                       title="Dashboard Gerencial de indicadores de reportes NEO">
-                    <input type="checkbox"
-                           class="perm-ck"
-                           data-uid="{{ u.id }}"
-                           data-permiso="dashboard_gerencial"
-                           {% if 'dashboard_gerencial' in perms %}checked{% endif %}
-                           onchange="togglePermiso(this)">
-                    <span><i class="bi bi-bar-chart-line me-1" style="color:#2dd4bf;"></i>Dashboard Gerencial</span>
                 </label>
                 <label class="nu-check-label" style="border-color:{% if 'bi_seguimiento' in perms %}#f97316{% else %}#1e293b{% endif %};"
                        title="Acceso al informe Power BI de Archivo de Seguimiento">
@@ -549,13 +526,6 @@ async function toggleActivo(btn, activar) {
     else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
 }
 
-async function toggleDashboard(btn, dar) {
-    const nombre = btn.dataset.nombre;
-    if (!confirm((dar ? "¿Dar acceso al Dashboard gerencial a" : "¿Quitar el acceso al Dashboard gerencial a") + " «" + nombre + "»?")) return;
-    const r = await apiFetch("/admin/api/usuarios/" + btn.dataset.id, "PUT", { acceso_dashboard: dar });
-    if (r.success) location.reload();
-    else mostrarAlerta("alerta", r.mensaje || "Error", "danger");
-}
 
 async function eliminarUsuario(btn) {
     if (!confirm("¿Eliminar permanentemente al usuario «" + btn.dataset.nombre + "»?")) return;
