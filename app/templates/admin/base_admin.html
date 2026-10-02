@@ -182,7 +182,7 @@
 
     <!-- ── USUARIOS ── -->
     {% set ep = request.endpoint %}
-    {% set usuarios_active = ep in ['admin_bp.neo_usuarios','admin_bp.coordinador_usuarios','admin_bp.supervisor_usuarios','admin_bp.director_usuarios','admin_bp.parqueadero_usuarios'] %}
+    {% set usuarios_active = ep in ['admin_bp.neo_usuarios','admin_bp.coordinador_usuarios','admin_bp.supervisor_usuarios','admin_bp.director_usuarios','admin_bp.parqueadero_usuarios','admin_bp.gerente_usuarios'] %}
     <div class="sb-group">
       <div class="sb-group-hdr {% if usuarios_active %}open{% endif %}" onclick="toggleGroup(this)">
         <i class="bi bi-people-fill sb-group-hdr-icon"></i>
@@ -209,6 +209,10 @@
         <a href="{{ url_for('admin_bp.parqueadero_usuarios') }}"
            class="adm-nav-link {% if ep == 'admin_bp.parqueadero_usuarios' %}active{% endif %}">
           <i class="bi bi-p-square"></i> Parqueadero
+        </a>
+        <a href="{{ url_for('admin_bp.gerente_usuarios') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.gerente_usuarios' %}active{% endif %}">
+          <i class="bi bi-person-badge-fill"></i> Gerente
         </a>
       </div>
     </div>

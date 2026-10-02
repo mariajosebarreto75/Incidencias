@@ -338,6 +338,24 @@ def director_usuarios():
                            color_acento="#f59e0b")
 
 
+@admin_bp.route("/gerente-usuarios")
+@admin_required
+def gerente_usuarios():
+    lista = User.query.filter_by(rol="gerente").order_by(User.nombre_completo).all()
+    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    asignados_por_usuario = {
+        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
+        for u in lista
+    }
+    return render_template("admin/usuarios_tipo.html",
+                           usuarios=lista, contratos=contratos,
+                           asignados_por_usuario=asignados_por_usuario,
+                           titulo="Usuarios Gerente",
+                           rol_nuevo="gerente",
+                           icono="bi-person-badge-fill",
+                           color_acento="#8b5cf6")
+
+
 @admin_bp.route("/api/usuarios", methods=["POST"])
 @admin_required
 def api_crear_usuario():
