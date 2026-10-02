@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<script>document.documentElement.setAttribute('data-theme','light');</script>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Gerencia — NEO{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--accent:#0891B2;--accent-2:#0E7490;}
+body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;background:#F5F7FA;}
+.ger-topbar{
+  background:linear-gradient(90deg,#005f6b,#00b8c9);
+  padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;
+  box-shadow:0 2px 8px rgba(0,95,107,.35);
+}
+.ger-topbar img{height:32px;filter:brightness(0) invert(1);opacity:.9;flex:none;}
+.ger-topbar-title{color:#fff;font-size:1rem;font-weight:700;font-family:"Manrope",system-ui,sans-serif;}
+.ger-topbar-sub{color:rgba(255,255,255,.65);font-size:.75rem;}
+.ger-btn{
+  display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);color:#fff;
+  border:1px solid rgba(255,255,255,.25);border-radius:6px;padding:6px 13px;font-size:.78rem;
+  font-weight:600;cursor:pointer;text-decoration:none;transition:background .15s;
+}
+.ger-btn:hover{background:rgba(255,255,255,.25);color:#fff;}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<div class="ger-topbar">
+  <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+  <div style="flex:1;min-width:0;">
+    <div class="ger-topbar-title">{% block topbar_title %}Compromisos{% endblock %}</div>
+    <div class="ger-topbar-sub">{{ current_user.nombre_completo }}</div>
+  </div>
+  <a href="{{ url_for('dashboard.dashboards_hub') }}" class="ger-btn">
+    <i class="bi bi-arrow-left"></i> Dashboards
+  </a>
+  <a href="{{ url_for('auth.logout') }}" class="ger-btn">
+    <i class="bi bi-box-arrow-right"></i> Salir
+  </a>
+</div>
+
+{% block content %}{% endblock %}
+
+</body>
+</html>

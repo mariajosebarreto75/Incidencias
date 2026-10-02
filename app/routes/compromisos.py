@@ -17,8 +17,12 @@ compromisos_bp = Blueprint("compromisos", __name__, url_prefix="/compromisos")
 
 
 def _es_neo():
-    """Retorna True si el usuario tiene permisos completos (neo o admin)."""
+    """Retorna True si el usuario tiene permisos de escritura completos (neo o admin)."""
     return current_user.rol.lower() in ("neo", "admin")
+
+
+def _es_gerente():
+    return current_user.rol.lower() == "gerente"
 
 ALLOWED_EXT = {"png", "jpg", "jpeg", "webp", "pdf"}
 UPLOAD_FOLDER_NAME = "evidencias_compromisos"
@@ -36,9 +40,9 @@ def _allowed(filename):
 
 def _contratos_usuario():
     """Contratos que el usuario actual puede ver."""
-    if current_user.rol in ("admin", "neo"):
+    if current_user.rol in ("admin", "neo", "gerente"):
         return Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
-    # coordinador: solo sus contratos asignados
+    # coordinador/director: solo sus contratos asignados
     asignados = (UserContrato.query
                  .filter_by(user_id=current_user.id)
                  .with_entities(UserContrato.contrato).all())
@@ -123,10 +127,17 @@ def index():
         proxima_fecha_str = (f"{DIAS_ES[proxima_fecha.weekday()]} "
                              f"{proxima_fecha.day} de {MESES[proxima_fecha.month-1]}")
 
+    if _es_neo():
+        tpl = "neo/navbNeo.html"
+    elif _es_gerente():
+        tpl = "gerente/navb_gerente.html"
+    else:
+        tpl = "coordinador/navbarcoor.html"
+
     return render_template(
         "compromisos/hub.html",
         es_neo=_es_neo(),
-        base_template="neo/navbNeo.html" if _es_neo() else "coordinador/navbarcoor.html",
+        base_template=tpl,
         kpi=dict(total=total_comp, pendientes=pendientes, atrasados=atrasados,
                  reuniones_hoy=reuniones_hoy),
         proxima=proxima,
@@ -208,7 +219,7 @@ def lista():
         est_rep_sel=est_rep,
         est_cerr_sel=est_cerr,
         es_neo=_es_neo(),
-        base_template="neo/navbNeo.html" if _es_neo() else "coordinador/navbarcoor.html",
+        base_template="neo/navbNeo.html" if _es_neo() else ("gerente/navb_gerente.html" if _es_gerente() else "coordinador/navbarcoor.html"),
         kpi=dict(total=total, pendientes=pendientes,
                  reprogramados=reprogramados, cerrados=cerrados, atrasados=atrasados_n),
     )
@@ -743,7 +754,7 @@ def reuniones():
     return render_template(
         "compromisos/reuniones.html",
         es_neo=_es_neo(),
-        base_template="neo/navbNeo.html" if _es_neo() else "coordinador/navbarcoor.html",
+        base_template="neo/navbNeo.html" if _es_neo() else ("gerente/navb_gerente.html" if _es_gerente() else "coordinador/navbarcoor.html"),
         contratos=_contratos_usuario(),
     )
 
@@ -863,5 +874,5 @@ def checklist():
     return render_template(
         "compromisos/checklist.html",
         es_neo=_es_neo(),
-        base_template="neo/navbNeo.html" if _es_neo() else "coordinador/navbarcoor.html",
+        base_template="neo/navbNeo.html" if _es_neo() else ("gerente/navb_gerente.html" if _es_gerente() else "coordinador/navbarcoor.html"),
     )
