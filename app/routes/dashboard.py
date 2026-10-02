@@ -51,6 +51,7 @@ def dashboards_hub():
         "coordinador": "coordinador.dashboard_coordinador",
         "admin":       "admin_bp.dashboard",
         "director":    "dashboard.director",
+        "gerente":     "dashboard.dashboards_hub",
     }
     return render_template(
         "dashboard/hub.html",
@@ -89,7 +90,7 @@ def _formato_horas(total_horas):
 @login_required
 def indicadores():
 
-    if not (current_user.rol.lower() in ("admin", "director") or current_user.acceso_dashboard or current_user.tiene_permiso("dashboard_gerencial")):
+    if not (current_user.rol.lower() in ("admin", "director", "gerente") or current_user.acceso_dashboard or current_user.tiene_permiso("dashboard_gerencial")):
         abort(403)
 
     # ---- Contratos visibles para este usuario (si no tiene asignados, ve todos) ----
@@ -567,6 +568,7 @@ def indicadores():
         "coordinador": "coordinador.dashboard_coordinador",
         "admin":       "admin_bp.dashboard",
         "director":    "dashboard.director",
+        "gerente":     "dashboard.dashboards_hub",
     }
 
     return render_template(
@@ -620,7 +622,7 @@ def indicadores():
 @login_required
 def centro_monitoreo():
 
-    if not (current_user.rol.lower() in ("admin", "director") or current_user.acceso_dashboard or current_user.tiene_permiso("dashboard_gerencial")):
+    if not (current_user.rol.lower() in ("admin", "director", "gerente") or current_user.acceso_dashboard or current_user.tiene_permiso("dashboard_gerencial")):
         abort(403)
 
     rol = current_user.rol.lower()
@@ -629,6 +631,7 @@ def centro_monitoreo():
         "coordinador": "coordinador.dashboard_coordinador",
         "admin":       "admin_bp.dashboard",
         "director":    "dashboard.director",
+        "gerente":     "dashboard.dashboards_hub",
     }
 
     return render_template(

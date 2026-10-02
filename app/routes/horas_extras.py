@@ -201,7 +201,7 @@ def api_he_registros():
 @login_required
 def he_dashboard():
     rol = current_user.rol.lower()
-    if not (rol == "admin" or current_user.tiene_permiso("dashboard_he")):
+    if not (rol in ("admin", "gerente") or current_user.tiene_permiso("dashboard_he")):
         abort(403)
     contratos = _contratos_del_usuario() if rol == "admin" else _contratos_del_usuario()
     # Deduplicar por rango de fechas: un solo corte por período (preferir contrato_id no nulo)
@@ -218,6 +218,7 @@ def he_dashboard():
         "coordinador": "coordinador.dashboard_coordinador",
         "admin":       "admin_bp.dashboard",
         "director":    "dashboard.director",
+        "gerente":     "dashboard.dashboards_hub",
     }
     return render_template("horas_extras/dashboard_he.html",
                            contratos=contratos, cortes=cortes,

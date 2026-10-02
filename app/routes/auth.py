@@ -46,6 +46,8 @@ def _redirect_por_rol(user: User):
         return redirect(url_for("neo.home_neo"))
     if rol in ("director", "supervisor"):
         return redirect(url_for("coordinador.dashboard_coordinador"))
+    if rol == "gerente":
+        return redirect(url_for("dashboard.dashboards_hub"))
     if rol == "parqueadero":
         return redirect(url_for("parqueadero.operador"))
     if rol == "admin_parqueadero":

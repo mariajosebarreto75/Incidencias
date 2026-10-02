@@ -1049,8 +1049,9 @@ def distribucion_importar_excel():
 @coordinador.route("/coordinador/preoperacionales")
 @login_required
 def preoperacionales():
-    if not current_user.tiene_permiso("preoperacionales"):
-        destino = "neo.home" if current_user.rol.lower() == "neo" else "coordinador.dashboard_coordinador"
+    rol = current_user.rol.lower()
+    if not (rol == "gerente" or current_user.tiene_permiso("preoperacionales")):
+        destino = "neo.home" if rol == "neo" else "coordinador.dashboard_coordinador"
         return redirect(url_for(destino))
     return render_template("coordinador/preoperacionales.html")
 
