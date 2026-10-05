@@ -1,0 +1,76 @@
+/* ============================================================
+   PORTAL DE INICIO — estilo compartido por los landing pages de
+   NEO, Coordinador/Director, Supervisor y Gerente.
+   ============================================================ */
+
+:root{
+  --portal-bg:#F5F7FA; --portal-surface:#FFFFFF; --portal-border:#DDE4EC;
+  --portal-ink:#101A2E; --portal-ink-muted:#5B6B84; --portal-ink-faint:#8393AC;
+  --portal-accent:#0891B2; --portal-accent-2:#0E7490; --portal-accent-soft:#E0F2FE;
+  --portal-shadow:0 1px 2px rgba(16,26,46,.04), 0 8px 24px -12px rgba(16,26,46,.12);
+  --portal-shadow-lg:0 24px 48px -16px rgba(16,26,46,.22);
+}
+
+body.portal-body{
+  margin:0; background:var(--portal-bg); color:var(--portal-ink);
+  font-family:"IBM Plex Sans", system-ui, sans-serif; -webkit-font-smoothing:antialiased;
+}
+.portal-h{font-family:"Manrope", system-ui, sans-serif; margin:0;}
+
+/* ---- Topbar (igual en todas las páginas del portal) ---- */
+.portal-topbar{
+  background:linear-gradient(90deg,#005f6b,#00b8c9);
+  padding:0 24px; display:flex; align-items:center; gap:16px; height:56px;
+  box-shadow:0 2px 8px rgba(0,95,107,.35);
+}
+.portal-topbar img{height:32px; filter:brightness(0) invert(1); opacity:.9; flex:none;}
+.portal-topbar-title{color:#fff; font-size:1rem; font-weight:700; font-family:"Manrope", system-ui, sans-serif;}
+.portal-topbar-sub{color:rgba(255,255,255,.65); font-size:.75rem;}
+.portal-topbar-btn{
+  display:flex; align-items:center; gap:5px; background:rgba(255,255,255,.15); color:#fff;
+  border:1px solid rgba(255,255,255,.25); border-radius:6px; padding:6px 13px; font-size:.78rem;
+  font-weight:600; cursor:pointer; text-decoration:none; transition:background .15s;
+}
+.portal-topbar-btn:hover{background:rgba(255,255,255,.25); color:#fff;}
+
+/* ---- Cuerpo ---- */
+.portal-main{max-width:1180px; margin:0 auto; padding:36px 24px 60px;}
+.portal-intro{margin-bottom:28px;}
+.portal-intro h1{font-size:23px; letter-spacing:-.3px;}
+.portal-intro p{font-size:13.5px; color:var(--portal-ink-muted); margin:6px 0 0;}
+
+.portal-section{margin-bottom:26px;}
+.portal-section-head{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+.portal-section-head .ic{
+  width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  flex:none; font-size:14px;
+}
+.portal-section-head h2{font-size:14px; font-weight:700;}
+
+.portal-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:13px;}
+
+.portal-card{
+  display:flex; align-items:flex-start; gap:12px; text-decoration:none; color:inherit;
+  background:var(--portal-surface); border:1px solid var(--portal-border); border-radius:13px;
+  padding:15px 16px; box-shadow:var(--portal-shadow); transition:transform .14s, border-color .14s, box-shadow .14s;
+}
+.portal-card:hover{transform:translateY(-2px); border-color:var(--portal-accent); box-shadow:var(--portal-shadow-lg); color:inherit;}
+.portal-card .ic{
+  width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+  flex:none; font-size:16px; background:var(--portal-accent-soft); color:var(--portal-accent-2);
+}
+.portal-card .txt{min-width:0;}
+.portal-card .txt b{font-size:13px; font-weight:700; display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+.portal-card .txt span{font-size:11.5px; color:var(--portal-ink-muted); line-height:1.45; display:block; margin-top:2px;}
+.portal-card .ext-ic{opacity:.5; font-size:11px;}
+.portal-card .badge-ic{
+  background:#DC2626; color:#fff; font-size:9.5px; font-weight:800; border-radius:99px; padding:1px 6px;
+}
+
+footer.portal-footer{max-width:1180px; margin:0 auto; padding:0 24px 40px; font-size:12px; color:var(--portal-ink-faint);}
+footer.portal-footer a{color:var(--portal-accent-2);}
+
+@media (max-width:560px){
+  .portal-grid{grid-template-columns:1fr;}
+  .portal-main{padding:26px 16px 44px;}
+}

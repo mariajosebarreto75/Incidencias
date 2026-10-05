@@ -28,31 +28,41 @@ def director():
 
 
 # ======================
-# HUB DE DASHBOARDS
+# PORTAL DE GERENCIA
 # ======================
 
 @dashboard.route("/dashboard/hub")
 @login_required
 def dashboards_hub():
-    rol = current_user.rol.lower()
-    home_por_rol = {
-        "neo":         "neo.home_neo",
-        "coordinador": "coordinador.dashboard_coordinador",
-        "admin":       "admin_bp.dashboard",
-        "director":    "dashboard.director",
-        "gerente":     "dashboard.dashboards_hub",
-    }
+    """Portal de inicio del rol gerente (vista ejecutiva de solo lectura)."""
+    groups = [
+        {
+            "name": "Dashboards Ejecutivos", "icon": "bi-bar-chart-line-fill", "tint": "#0891B2",
+            "items": [
+                {"label": "Dashboard HE", "icon": "bi-clock-history", "url": url_for("he_bp.he_dashboard"),
+                 "desc": "KPIs de horas extras, tipos de HE, límite legal y valor de nómina"},
+                {"label": "Preoperacionales", "icon": "bi-truck", "url": url_for("coordinador.preoperacionales"),
+                 "desc": "Estado de inspecciones preoperacionales por sede y contrato"},
+            ],
+        },
+        {
+            "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
+            "items": [
+                {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
+                 "desc": "Programación de reuniones por contrato"},
+                {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
+                 "desc": "Checklist de reuniones realizadas"},
+                {"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
+                 "desc": "Compromisos pendientes y atrasados"},
+            ],
+        },
+    ]
     return render_template(
-        "dashboard/hub.html",
-        home_endpoint=home_por_rol.get(rol),
+        "portal/home.html",
+        page_title="Gerencia",
+        page_desc="Portal ejecutivo de gerencia",
+        intro_title=f"Hola, {current_user.nombre_completo}",
+        intro_sub="Elige un dashboard o módulo para continuar",
+        groups=groups,
+        home_endpoint=None,
     )
-
-
-# =====================================
-# DASHBOARD GERENCIAL (eliminado)
-# =====================================
-
-@dashboard.route("/dashboard-gerencial")
-@login_required
-def indicadores():
-    return redirect(url_for("dashboard.dashboards_hub"))

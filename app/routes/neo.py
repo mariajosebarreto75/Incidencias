@@ -310,12 +310,80 @@ def distribucion_neo():
 @neo.route("/neo")
 @login_required
 def home_neo():
+    u = current_user
+    es_admin = u.rol.lower() == "admin"
+    dash = es_admin or u.acceso_dashboard
 
-    nombre = current_user.nombre_completo.title()
+    groups = [
+        {
+            "name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2",
+            "items": [
+                {"label": "Reportar", "icon": "bi-clipboard2-pulse-fill", "url": url_for("neo.panel_reportes"),
+                 "desc": "Registrar una incidencia operativa de campo"},
+                {"label": "Validar Reportes", "icon": "bi-patch-check-fill", "url": url_for("neo.validar_reportes"),
+                 "desc": "Revisar y calificar reportes del equipo"},
+                {"label": "Distribución Operativa", "icon": "bi-table", "url": url_for("neo.distribucion_neo"),
+                 "desc": "Programación diaria de cuadrillas y recursos"},
+            ],
+        },
+    ]
+
+    he_items = []
+    if u.tiene_permiso("horas_extras") or es_admin:
+        he_items.append({"label": "Registro / Validación", "icon": "bi-pencil-square", "url": "/horas-extras",
+                          "desc": "Ingreso y validación de horas extras"})
+    if u.tiene_permiso("dashboard_he") or dash:
+        he_items.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill", "url": url_for("he_bp.he_dashboard"),
+                          "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
+    if he_items:
+        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "items": he_items})
+
+    seg_items = []
+    if u.tiene_permiso("bi_seguimiento"):
+        seg_items.append({"label": "Archivo de Seguimiento", "icon": "bi-folder2-open", "url": url_for("coordinador.bi_seguimiento"),
+                           "desc": "Informe operacional de seguimiento (Power BI)"})
+    if u.tiene_permiso("bi_inspecciones"):
+        seg_items.append({"label": "Inspecciones", "icon": "bi-search",
+                           "url": "https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9",
+                           "ext": True, "desc": "Indicador de inspecciones (Power BI)"})
+    if u.tiene_permiso("preoperacionales") or dash:
+        seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("neo.preoperacionales_neo"),
+                           "desc": "Cumplimiento, estado de vehículos y placas"})
+    if seg_items:
+        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "items": seg_items})
+
+    groups.append({
+        "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
+        "items": [
+            {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
+             "desc": "Programación de reuniones por contrato"},
+            {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
+             "desc": "Checklist de reuniones realizadas"},
+            {"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
+             "desc": "Compromisos pendientes y atrasados"},
+        ],
+    })
+
+    groups.append({
+        "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
+        "items": [
+            {"label": "Alertas GPS", "icon": "bi-bell-fill", "url": url_for("neo.alertas_gps"),
+             "desc": "Paradas no programadas, desvíos de ruta y retornos"},
+            {"label": "GPS Monitor", "icon": "bi-display", "url": "http://178.219.0.123/Auth/Login",
+             "ext": True, "desc": "Aplicativo externo de monitoreo GPS"},
+            {"label": "Rastrear", "icon": "bi-map", "url": "https://plataforma.sistemagps.online/ui/map/objects",
+             "ext": True, "desc": "Mapa de vehículos en vivo"},
+        ],
+    })
 
     return render_template(
-        "neo/home.html",
-        nombre = nombre
+        "portal/home.html",
+        page_title="NEO",
+        page_desc="Módulo NEO — gestión de incidencias operativas de campo",
+        intro_title=f"Hola, {current_user.nombre_completo.title()}",
+        intro_sub="Módulo NEO — Gestión de incidencias operativas de campo",
+        groups=groups,
+        home_endpoint=None,
     )
 
 
