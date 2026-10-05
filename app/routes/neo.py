@@ -1245,14 +1245,17 @@ def alertas_gps():
     # Mostramos la más reciente de cada placa con el conteo total
     import json as _json
     grupos = {}
+    grupos_codes = {}  # tipo_es → set de alert_type crudos (para depurar por tipo)
     for a in alertas:
         tipo_es = TIPOS_ALERTA.get(a.alert_type, a.alert_type or "Otro")
         plate   = a.vehicle_plate or "—"
         if tipo_es not in grupos:
             grupos[tipo_es] = {}
+            grupos_codes[tipo_es] = set()
         if plate not in grupos[tipo_es]:
             grupos[tipo_es][plate] = []
         grupos[tipo_es][plate].append(a)
+        grupos_codes[tipo_es].add(a.alert_type or "")
 
     # Parsear metadata_raw para cada alerta (speed, tiempo, distancia)
     extras = {}  # alert.id → dict con campos extras para mostrar
@@ -1291,6 +1294,7 @@ def alertas_gps():
     return render_template(
         "neo/alertas_gps.html",
         grupos           = grupos,
+        grupos_codes     = grupos_codes,
         extras           = extras,
         filtro           = filtro,
         placa            = placa,
@@ -1358,6 +1362,48 @@ def depurar_alertas():
     if not ids:
         return jsonify({"ok": False, "error": "No se enviaron IDs"}), 400
     eliminados = AlertaGPS.query.filter(AlertaGPS.id.in_(ids)).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({"ok": True, "eliminados": eliminados})
+
+
+@neo.route("/neo/alertas/depurar-tipo", methods=["POST"])
+@login_required
+def depurar_alertas_tipo():
+    """Elimina TODAS las alertas de uno o varios tipos (alert_type) que calcen con los
+    filtros activos de la vista, incluyendo duplicados por placa que no se listan
+    individualmente en pantalla."""
+    if current_user.rol.lower() not in ("neo", "admin"):
+        abort(403)
+    d     = request.get_json(silent=True) or {}
+    codes = [c for c in d.get("codes", []) if c]
+    if not codes:
+        return jsonify({"ok": False, "error": "No se enviaron tipos"}), 400
+
+    filtro   = d.get("filtro", "pendiente")
+    placa    = (d.get("placa") or "").strip().upper()
+    contrato = (d.get("contrato") or "").strip()
+    recurso  = (d.get("recurso") or "").strip()
+    scope    = d.get("scope", "todos")
+
+    from datetime import timedelta
+    ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    q = AlertaGPS.query.filter(AlertaGPS.alert_type.in_(codes))
+    q = q.filter(AlertaGPS.triggered_at >= ayer)
+    if filtro != "todas":
+        q = q.filter(AlertaGPS.estado_local == filtro)
+    if scope == "sin_contrato":
+        q = q.filter(AlertaGPS.contract_code == None)
+    elif scope == "con_contrato":
+        q = q.filter(AlertaGPS.contract_code != None)
+    if placa:
+        q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
+    if contrato:
+        q = q.filter(AlertaGPS.contract_code == contrato)
+    if recurso:
+        q = q.filter(AlertaGPS.resource_code.ilike(f"%{recurso}%"))
+
+    eliminados = q.delete(synchronize_session=False)
     db.session.commit()
     return jsonify({"ok": True, "eliminados": eliminados})
 
