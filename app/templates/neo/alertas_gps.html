@@ -790,6 +790,12 @@ function toggleCheck(event, id, forceVal) {
 
 function seleccionarTodo() {
     const items = document.querySelectorAll(".ag-item");
+
+    // Defensa: purgar del set cualquier id que ya no exista en el DOM
+    // (ej. se depuró un grupo completo mientras había selección activa).
+    const idsActuales = new Set(Array.from(items, el => Number(el.dataset.id)));
+    seleccionadas.forEach(id => { if (!idsActuales.has(id)) seleccionadas.delete(id); });
+
     const todosSeleccionados = seleccionadas.size === items.length;
 
     items.forEach(function(item) {
@@ -880,7 +886,14 @@ async function depurarTipo(btn, tipoLabel, total) {
         const data = await r.json();
         if (data.ok) {
             const items = header.nextElementSibling;
-            if (items) items.remove();
+            if (items) {
+                // Sacar del set de seleccionadas cualquier id de este grupo
+                // (si no, "Seleccionar todo" y el contador quedan desincronizados).
+                items.querySelectorAll(".ag-item").forEach(el => {
+                    seleccionadas.delete(Number(el.dataset.id));
+                });
+                items.remove();
+            }
             header.remove();
             if (alertaActiva && !document.getElementById("item-" + alertaActiva)) {
                 document.getElementById("agCard").style.display  = "none";
@@ -889,6 +902,7 @@ async function depurarTipo(btn, tipoLabel, total) {
             }
             const totalBadge = document.querySelector(".ag-badge-total");
             if (totalBadge) totalBadge.textContent = Math.max(0, (parseInt(totalBadge.textContent, 10) || 0) - data.eliminados);
+            actualizarContador();
             actualizarBadge();
         } else {
             alert("Error: " + (data.error || "No se pudo depurar"));
