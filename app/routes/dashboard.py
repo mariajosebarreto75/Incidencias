@@ -202,25 +202,51 @@ def indicadores():
         for r in evolucion_rows
     ]
 
-    # ── Casos abiertos recientes (para atención) ──────────────────
-    casos_atencion_rows = base_q()\
-        .filter(ReporteOperacional.estado == "Abierto")\
-        .order_by(ReporteOperacional.afectacion_economica.desc())\
-        .limit(25).all()
+    # ── Tabla de reportes detallada (aplica filtros) ──────────────
+    reportes_rows = base_q()\
+        .order_by(ReporteOperacional.fecha_reporte.desc(), ReporteOperacional.id.desc())\
+        .limit(200).all()
 
     casos_atencion = [
         {
             "id": r.id,
             "contrato": r.contrato,
-            "tipo": r.tipo_incidencia,
             "fecha": r.fecha_reporte.strftime("%d/%m/%Y") if r.fecha_reporte else "",
-            "horas": r.horas_afectadas or 0,
-            "afectacion": int(r.afectacion_economica or 0),
-            "accion": r.accion_a_tomar or "Sin respuesta",
-            "estado": r.estado,
+            "recurso": r.recurso or "—",
+            "tipo": r.tipo_incidencia,
+            "duracion": r.duracion or "—",
+            "observacion": (r.observacion or "")[:120],
+            "accion": r.accion_a_tomar or "—",
+            "respuesta": (r.respuesta or "")[:100],
             "conformidad": r.conformidad_neo or "—",
+            "obs_conf": (r.observacion_conformidad or "")[:100],
+            "reportado_por": r.reportado_por or "—",
+            "respondido_por": r.respondido_por or "—",
+            "estado": r.estado,
+            "horas": round(r.horas_afectadas or 0, 1),
+            "afectacion": int(r.afectacion_economica or 0),
         }
-        for r in casos_atencion_rows
+        for r in reportes_rows
+    ]
+
+    # ── Recursos más reincidentes (top 8) ─────────────────────────
+    rein_q = db.session.query(
+        ReporteOperacional.recurso,
+        func.count(ReporteOperacional.id).label("casos"),
+        func.sum(ReporteOperacional.horas_afectadas).label("horas"),
+    )
+    if extra:
+        rein_q = rein_q.filter(*extra)
+    rein_rows = rein_q.filter(
+        ReporteOperacional.recurso.isnot(None),
+        ReporteOperacional.recurso != "",
+    ).group_by(ReporteOperacional.recurso)\
+     .order_by(func.count(ReporteOperacional.id).desc())\
+     .limit(8).all()
+
+    reincidentes = [
+        {"recurso": r.recurso, "casos": r.casos, "horas": round(float(r.horas or 0), 1)}
+        for r in rein_rows
     ]
 
     stats = {
@@ -262,6 +288,7 @@ def indicadores():
         acciones_data=acciones_data,
         evolucion_data=evolucion_data,
         casos_atencion=casos_atencion,
+        reincidentes=reincidentes,
         filtros_activos=filtros_activos,
     )
 
