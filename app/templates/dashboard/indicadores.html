@@ -1,268 +1,907 @@
 <!DOCTYPE html>
-<script>document.documentElement.setAttribute('data-theme','light');</script>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Indicadores Gerenciales — NEO</title>
+<title>Centro de Operaciones — NEO</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+/* ─── TOKENS ─────────────────────────────────────────────────── */
 :root {
-  --bg: #F0F4F8;
-  --surface: #FFFFFF;
-  --border: #DDE4EC;
-  --ink: #101A2E;
-  --ink-2: #3D4F6A;
-  --ink-muted: #5B6B84;
-  --accent: #0891B2;
-  --accent-2: #0E7490;
-  --accent-soft: #E0F2FE;
-  --green: #16A34A;
-  --green-soft: #DCFCE7;
-  --amber: #D97706;
-  --amber-soft: #FEF3C7;
-  --red: #DC2626;
-  --red-soft: #FEE2E2;
-  --purple: #7C3AED;
-  --purple-soft: #EDE9FE;
-  --shadow: 0 1px 3px rgba(16,26,46,.06), 0 4px 16px -4px rgba(16,26,46,.1);
+  --bg:        #EFF3F8;
+  --surf:      #FFFFFF;
+  --surf2:     #F7FAFC;
+  --border:    #E2E8F0;
+  --ink:       #0D1B2E;
+  --ink2:      #374B65;
+  --muted:     #637794;
+  --cyan:      #0891B2;
+  --cyan-soft: #E0F7FA;
+  --cyan-dk:   #0E7490;
+  --green:     #059669;
+  --green-s:   #D1FAE5;
+  --red:       #DC2626;
+  --red-s:     #FEE2E2;
+  --amber:     #D97706;
+  --amber-s:   #FEF3C7;
+  --navy:      #0A1628;
+  --shadow-sm: 0 1px 3px rgba(13,27,46,.06),0 2px 8px -2px rgba(13,27,46,.08);
+  --shadow:    0 2px 8px rgba(13,27,46,.08),0 8px 24px -6px rgba(13,27,46,.12);
+  --r:         10px;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; }
-body { background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; min-height: 100vh; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-serif;font-size:14px;min-height:100vh}
 
-/* ── Topbar ── */
-.topbar {
-  background: linear-gradient(90deg, #005f6b, #00b8c9);
-  padding: 0 24px; display: flex; align-items: center; gap: 14px; height: 56px;
-  box-shadow: 0 2px 8px rgba(0,95,107,.3);
+/* ─── HEADER ─────────────────────────────────────────────────── */
+.hdr{
+  background:linear-gradient(90deg,#004c59 0%,#006880 50%,#007a8a 100%);
+  height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(0,0,0,.25);
 }
-.topbar img { height: 30px; filter: brightness(0) invert(1); opacity: .9; }
-.topbar-title { color: #fff; font-size: .95rem; font-weight: 700; font-family: "Manrope", sans-serif; flex: 1; }
-.topbar-btn {
-  display: flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,.15); color: #fff;
-  border: 1px solid rgba(255,255,255,.25); border-radius: 6px;
-  padding: 6px 13px; font-size: .78rem; font-weight: 600;
-  cursor: pointer; text-decoration: none; transition: background .15s;
+.hdr-logo{height:26px;filter:brightness(0)invert(1);opacity:.9;flex-shrink:0}
+.hdr-divider{width:1px;height:20px;background:rgba(255,255,255,.2);flex-shrink:0}
+.hdr-title{color:#fff;font-family:"Manrope",sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.2px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-meta{color:rgba(255,255,255,.55);font-size:.72rem;white-space:nowrap}
+.hdr-btn{
+  display:flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.12);color:#fff;
+  border:1px solid rgba(255,255,255,.2);border-radius:6px;
+  padding:5px 11px;font-size:.75rem;font-weight:600;
+  cursor:pointer;text-decoration:none;transition:background .15s;white-space:nowrap;flex-shrink:0;
 }
-.topbar-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
-.topbar-date { color: rgba(255,255,255,.6); font-size: .75rem; }
+.hdr-btn:hover{background:rgba(255,255,255,.22);color:#fff}
+.hdr-btn.refresh{background:rgba(0,184,201,.2);border-color:rgba(0,184,201,.4)}
 
-/* ── Layout ── */
-main { max-width: 1100px; margin: 0 auto; padding: 32px 20px 56px; }
-.page-title { font-family: "Manrope", sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 4px; }
-.page-sub { font-size: 13px; color: var(--ink-muted); margin-bottom: 28px; }
-
-/* ── Sección ── */
-.section { margin-bottom: 32px; }
-.section-head {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 14px; border-bottom: 1.5px solid var(--border); padding-bottom: 10px;
+/* ─── FILTROS ────────────────────────────────────────────────── */
+.filter-bar{
+  background:var(--surf);border-bottom:1px solid var(--border);
+  padding:8px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  position:sticky;top:52px;z-index:90;
+  box-shadow:0 1px 4px rgba(13,27,46,.06);
 }
-.section-icon {
-  width: 32px; height: 32px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+.filter-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.filter-select{
+  background:var(--surf2);border:1px solid var(--border);border-radius:6px;
+  padding:4px 10px;font-size:.75rem;color:var(--ink2);cursor:pointer;
+  font-family:inherit;outline:none;transition:border-color .15s;
 }
-.section-head h2 { font-size: 14px; font-weight: 700; font-family: "Manrope", sans-serif; letter-spacing: .3px; }
-
-/* ── Grid KPI ── */
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-.kpi-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-  padding: 18px 16px; box-shadow: var(--shadow);
+.filter-select:focus{border-color:var(--cyan)}
+.filter-badge{
+  background:var(--cyan);color:#fff;border-radius:12px;
+  padding:2px 9px;font-size:.7rem;font-weight:700;display:none;
 }
-.kpi-label { font-size: 11px; font-weight: 600; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-.kpi-value { font-family: "Manrope", sans-serif; font-size: 28px; font-weight: 800; line-height: 1; }
-.kpi-sub { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
-
-/* colores por tipo */
-.kpi-accent   .kpi-value { color: var(--accent-2); }
-.kpi-green    .kpi-value { color: var(--green); }
-.kpi-red      .kpi-value { color: var(--red); }
-.kpi-amber    .kpi-value { color: var(--amber); }
-.kpi-purple   .kpi-value { color: var(--purple); }
-.kpi-neutral  .kpi-value { color: var(--ink-2); }
-
-/* barra de progreso */
-.progress-wrap { margin-top: 10px; }
-.progress-bar-bg { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
-.progress-bar-fill { height: 100%; border-radius: 3px; transition: width .4s; }
-
-/* ── Fila de resumen ── */
-.summary-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
-.summary-pill {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 40px;
-  padding: 8px 16px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow);
+.filter-clear{
+  background:none;border:1px solid var(--border);border-radius:6px;
+  padding:4px 10px;font-size:.75rem;color:var(--muted);cursor:pointer;
+  font-family:inherit;transition:all .15s;margin-left:auto;
 }
-.summary-pill i { font-size: 15px; }
+.filter-clear:hover{border-color:var(--red);color:var(--red)}
+.filter-apply{
+  background:var(--cyan);border:none;border-radius:6px;
+  padding:4px 14px;font-size:.75rem;font-weight:600;color:#fff;cursor:pointer;
+  font-family:inherit;transition:background .15s;
+}
+.filter-apply:hover{background:var(--cyan-dk)}
 
-@media (max-width: 600px) {
-  .kpi-grid { grid-template-columns: 1fr 1fr; }
-  main { padding: 20px 16px 40px; }
+/* ─── LAYOUT PRINCIPAL ───────────────────────────────────────── */
+.wrap{max-width:1340px;margin:0 auto;padding:20px 20px 60px}
+
+/* ─── TABS ────────────────────────────────────────────────────── */
+.tabs{display:flex;gap:2px;margin-bottom:20px;background:var(--surf);border-radius:var(--r);padding:4px;box-shadow:var(--shadow-sm);width:fit-content}
+.tab-btn{
+  padding:7px 20px;border-radius:7px;border:none;background:none;
+  font-family:"Inter",sans-serif;font-size:.8rem;font-weight:600;color:var(--muted);
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;
+}
+.tab-btn.active{background:var(--cyan);color:#fff;box-shadow:0 2px 8px rgba(8,145,178,.3)}
+.tab-btn:hover:not(.active){background:var(--bg);color:var(--ink)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* ─── HERO SUMMARY ───────────────────────────────────────────── */
+.hero-row{display:grid;grid-template-columns:auto 1fr;gap:16px;margin-bottom:20px;align-items:stretch}
+.hero-main{
+  background:linear-gradient(135deg,#004c59,#006880);
+  border-radius:var(--r);padding:24px 28px;color:#fff;min-width:190px;
+  display:flex;flex-direction:column;justify-content:center;
+  box-shadow:var(--shadow);
+}
+.hero-eyebrow{font-size:.65rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.65;margin-bottom:8px}
+.hero-num{font-family:"Manrope",sans-serif;font-size:3.5rem;font-weight:800;line-height:1;margin-bottom:4px}
+.hero-sub{font-size:.75rem;opacity:.65}
+.hero-satellites{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+/* ─── METRIC CARDS ───────────────────────────────────────────── */
+.mc{
+  background:var(--surf);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:4px;
+  transition:box-shadow .2s,transform .15s;cursor:default;
+}
+.mc:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.mc-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:4px}
+.mc-val{font-family:"Manrope",sans-serif;font-size:1.8rem;font-weight:800;line-height:1}
+.mc-lbl{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)}
+.mc-sub{font-size:.72rem;color:var(--muted)}
+.mc.c-red .mc-val{color:var(--red)}  .mc.c-red .mc-icon{background:var(--red-s);color:var(--red)}
+.mc.c-green .mc-val{color:var(--green)} .mc.c-green .mc-icon{background:var(--green-s);color:var(--green)}
+.mc.c-amber .mc-val{color:var(--amber)} .mc.c-amber .mc-icon{background:var(--amber-s);color:var(--amber)}
+.mc.c-cyan .mc-val{color:var(--cyan)}  .mc.c-cyan .mc-icon{background:var(--cyan-soft);color:var(--cyan)}
+.mc.c-navy .mc-val{color:var(--ink2)}  .mc.c-navy .mc-icon{background:var(--bg);color:var(--ink2)}
+
+/* ─── CONFORMIDAD VISUAL ─────────────────────────────────────── */
+.conf-block{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow-sm)}
+.conf-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:14px}
+.conf-bar-track{height:12px;background:var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px}
+.conf-bar-fill{height:100%;border-radius:6px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.conf-row{display:flex;justify-content:space-between;align-items:center}
+.conf-item{display:flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600}
+.conf-dot{width:8px;height:8px;border-radius:50%}
+
+/* ─── SECTIONS ────────────────────────────────────────────────── */
+.section-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.section-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.section-hdr h2{font-family:"Manrope",sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.2px}
+.section-hdr .section-sub{font-size:.72rem;color:var(--muted);margin-left:auto}
+
+/* ─── 2-COL GRID ─────────────────────────────────────────────── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.grid-6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
+
+/* ─── CHART CARD ─────────────────────────────────────────────── */
+.chart-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow-sm)}
+.chart-card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-card-title{font-size:.8rem;font-weight:700;color:var(--ink2)}
+.chart-wrap{position:relative}
+
+/* ─── CONTRATOS TABLE ─────────────────────────────────────────── */
+.ctr-table{width:100%;border-collapse:collapse}
+.ctr-table th{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border)}
+.ctr-table td{padding:9px 10px;font-size:.8rem;border-bottom:1px solid var(--border);vertical-align:middle}
+.ctr-table tr:hover td{background:var(--bg);cursor:pointer}
+.ctr-row-name{font-weight:600;color:var(--ink);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctr-bar-wrap{width:100px}
+.ctr-bar-bg{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.ctr-bar-fill{height:100%;border-radius:3px;background:var(--cyan);transition:width .4s}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:700}
+.badge-red{background:var(--red-s);color:var(--red)}
+.badge-green{background:var(--green-s);color:var(--green)}
+.badge-amber{background:var(--amber-s);color:var(--amber)}
+.badge-cyan{background:var(--cyan-soft);color:var(--cyan-dk)}
+.badge-gray{background:var(--bg);color:var(--muted)}
+
+/* ─── CASOS TABLE ────────────────────────────────────────────── */
+.casos-table{width:100%;border-collapse:collapse}
+.casos-table th{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border)}
+.casos-table td{padding:8px 10px;font-size:.78rem;border-bottom:1px solid var(--border);vertical-align:middle}
+.casos-table tr:hover td{background:var(--bg);cursor:pointer}
+.caso-tipo{display:flex;align-items:center;gap:5px;font-weight:600}
+.caso-tipo-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ─── DRAWER ──────────────────────────────────────────────────── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;display:none;backdrop-filter:blur(2px)}
+.drawer-overlay.open{display:block}
+.drawer{
+  position:fixed;top:0;right:-480px;width:460px;height:100vh;
+  background:var(--surf);z-index:201;overflow-y:auto;
+  transition:right .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:-8px 0 32px rgba(0,0,0,.15);
+}
+.drawer.open{right:0}
+.drawer-hdr{
+  background:linear-gradient(135deg,#004c59,#006880);
+  padding:20px 20px 16px;color:#fff;
+  display:flex;align-items:flex-start;justify-content:space-between;
+}
+.drawer-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.drawer-close:hover{background:rgba(255,255,255,.25)}
+.drawer-body{padding:20px}
+.drawer-field{margin-bottom:14px}
+.drawer-field-lbl{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:3px}
+.drawer-field-val{font-size:.85rem;font-weight:500;color:var(--ink)}
+
+/* ─── SORT BTNS ──────────────────────────────────────────────── */
+.sort-group{display:flex;gap:4px}
+.sort-btn{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);font-size:.7rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit}
+.sort-btn.active{background:var(--cyan);border-color:var(--cyan);color:#fff}
+
+/* ─── PROGRESS ────────────────────────────────────────────────── */
+.progress-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px}
+
+/* ─── CHART TOGGLE ────────────────────────────────────────────── */
+.metric-toggle{display:flex;gap:4px}
+.metric-btn{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);font-size:.7rem;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;font-family:inherit}
+.metric-btn.active{background:var(--cyan);border-color:var(--cyan);color:#fff}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────── */
+@media(max-width:1000px){
+  .hero-satellites{grid-template-columns:repeat(3,1fr)}
+  .grid-6{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:768px){
+  .hero-row{grid-template-columns:1fr}
+  .hero-satellites{grid-template-columns:repeat(2,1fr)}
+  .grid-2,.grid-3,.grid-4,.grid-6{grid-template-columns:1fr 1fr}
+  .hdr-meta,.hdr-divider{display:none}
+  .wrap{padding:14px 12px 40px}
+  .drawer{width:100vw;right:-100vw}
+}
+@media(max-width:480px){
+  .grid-2,.grid-3,.grid-4,.grid-6{grid-template-columns:1fr}
+  .tabs{width:100%;overflow-x:auto}
 }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
-  <span class="topbar-title">Indicadores Gerenciales</span>
-  <span class="topbar-date">{{ stats.general.hoy }}</span>
-  <a href="{{ url_for('dashboard.dashboards_hub') }}" class="topbar-btn">
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="hdr">
+  <img class="hdr-logo" src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+  <div class="hdr-divider"></div>
+  <span class="hdr-title">Centro de Operaciones NEO</span>
+  <span class="hdr-meta">{{ current_user.nombre_completo }} &nbsp;·&nbsp; {{ stats.general.hoy }}</span>
+  <button class="hdr-btn refresh" onclick="window.location.reload()">
+    <i class="bi bi-arrow-clockwise"></i> Actualizar
+  </button>
+  <a href="{{ url_for('dashboard.dashboards_hub') }}" class="hdr-btn">
     <i class="bi bi-grid-1x2"></i> Portal
   </a>
-  <a href="{{ url_for('auth.logout') }}" class="topbar-btn">
+  <a href="{{ url_for('auth.logout') }}" class="hdr-btn">
     <i class="bi bi-box-arrow-right"></i> Salir
   </a>
+</header>
+
+<!-- ═══════════ FILTROS ═══════════ -->
+<div class="filter-bar" id="filterBar">
+  <span class="filter-label">Filtros</span>
+  <select class="filter-select" id="fContrato" onchange="applyFilters()">
+    <option value="">Todos los contratos</option>
+    {% for c in contratos_data %}
+    <option value="{{ c.contrato }}">{{ c.contrato }}</option>
+    {% endfor %}
+  </select>
+  <select class="filter-select" id="fTipo" onchange="applyFilters()">
+    <option value="">Todos los tipos</option>
+    {% for t in tipos_data %}
+    <option value="{{ t.tipo }}">{{ t.tipo }}</option>
+    {% endfor %}
+  </select>
+  <select class="filter-select" id="fConformidad" onchange="applyFilters()">
+    <option value="">Conformidad</option>
+    <option value="Conforme">Conforme</option>
+    <option value="No conforme">No conforme</option>
+  </select>
+  <span class="filter-badge" id="filterBadge">0 activos</span>
+  <button class="filter-clear" onclick="clearFilters()"><i class="bi bi-x-lg me-1"></i>Limpiar</button>
 </div>
 
-<main>
-  <div class="page-title">Resumen Ejecutivo</div>
-  <p class="page-sub">Vista consolidada en tiempo real · {{ stats.general.contratos }} contratos activos · {{ stats.general.usuarios }} usuarios</p>
+<!-- ═══════════ CONTENIDO ═══════════ -->
+<div class="wrap">
 
-  <!-- Resumen rápido -->
-  <div class="summary-row">
-    <div class="summary-pill" style="color:var(--red)">
-      <i class="bi bi-exclamation-circle-fill"></i>
-      <span>{{ stats.neo.abiertos }} reportes abiertos</span>
-    </div>
-    <div class="summary-pill" style="color:var(--amber)">
-      <i class="bi bi-clock-fill"></i>
-      <span>{{ stats.he.pendiente }} HE pendientes</span>
-    </div>
-    <div class="summary-pill" style="color:var(--red)">
-      <i class="bi bi-calendar-x-fill"></i>
-      <span>{{ stats.comp.vencidos }} compromisos vencidos</span>
-    </div>
-    <div class="summary-pill" style="color:var(--green)">
-      <i class="bi bi-check-circle-fill"></i>
-      <span>{{ stats.neo.hoy }} reportes hoy</span>
-    </div>
-  </div>
+  <!-- TABS -->
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" onclick="switchTab('resumen',this)"><i class="bi bi-speedometer2"></i> Resumen</button>
+    <button class="tab-btn" onclick="switchTab('contratos',this)"><i class="bi bi-building"></i> Contratos</button>
+    <button class="tab-btn" onclick="switchTab('desviaciones',this)"><i class="bi bi-exclamation-triangle"></i> Desviaciones</button>
+    <button class="tab-btn" onclick="switchTab('analisis',this)"><i class="bi bi-graph-up"></i> Análisis</button>
+  </nav>
 
-  <!-- Reportes operacionales -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-icon" style="background:#E0F2FE;color:#0E7490"><i class="bi bi-broadcast-pin"></i></div>
-      <h2>Reportes Operacionales</h2>
+  <!-- ══════════ TAB: RESUMEN ══════════ -->
+  <div id="tab-resumen" class="tab-pane active">
+
+    <!-- HERO + SATÉLITES -->
+    <div class="hero-row">
+      <div class="hero-main">
+        <div class="hero-eyebrow">Reportes totales</div>
+        <div class="hero-num">{{ stats.neo.total }}</div>
+        <div class="hero-sub">{{ stats.general.contratos }} contratos · {{ stats.general.usuarios }} usuarios activos</div>
+      </div>
+      <div class="hero-satellites">
+        <div class="mc c-red">
+          <div class="mc-icon"><i class="bi bi-exclamation-circle"></i></div>
+          <div class="mc-val">{{ stats.neo.abiertos }}</div>
+          <div class="mc-lbl">Sin respuesta</div>
+          <div class="mc-sub">{{ "%.0f"|format(stats.neo.abiertos / stats.neo.total * 100 if stats.neo.total else 0) }}% del total</div>
+        </div>
+        <div class="mc c-amber">
+          <div class="mc-icon"><i class="bi bi-clock"></i></div>
+          <div class="mc-val">{{ stats.neo.respondidos }}</div>
+          <div class="mc-lbl">Respondidos</div>
+          <div class="mc-sub">Pendientes de validar</div>
+        </div>
+        <div class="mc c-green">
+          <div class="mc-icon"><i class="bi bi-check-circle"></i></div>
+          <div class="mc-val">{{ stats.neo.cerrados }}</div>
+          <div class="mc-lbl">Cerrados</div>
+          <div class="mc-sub">Proceso completado</div>
+        </div>
+        <div class="mc c-green">
+          <div class="mc-icon"><i class="bi bi-patch-check"></i></div>
+          <div class="mc-val">{{ stats.neo.conformes }}</div>
+          <div class="mc-lbl">Conformes</div>
+          <div class="mc-sub">{{ stats.neo.pct_conf }}% del total</div>
+          <div class="progress-track"><div class="progress-fill" style="width:{{ stats.neo.pct_conf }}%;background:var(--green)"></div></div>
+        </div>
+        <div class="mc c-red">
+          <div class="mc-icon"><i class="bi bi-x-circle"></i></div>
+          <div class="mc-val">{{ stats.neo.no_conformes }}</div>
+          <div class="mc-lbl">No conformes</div>
+          <div class="mc-sub">{{ stats.neo.pct_no_conf }}% del total</div>
+          <div class="progress-track"><div class="progress-fill" style="width:{{ stats.neo.pct_no_conf }}%;background:var(--red)"></div></div>
+        </div>
+        <div class="mc c-cyan">
+          <div class="mc-icon"><i class="bi bi-calendar-check"></i></div>
+          <div class="mc-val">{{ stats.neo.hoy }}</div>
+          <div class="mc-lbl">Hoy</div>
+          <div class="mc-sub">Reportes de hoy</div>
+        </div>
+      </div>
     </div>
-    <div class="kpi-grid">
-      <div class="kpi-card kpi-neutral">
-        <div class="kpi-label">Total registrados</div>
-        <div class="kpi-value">{{ stats.neo.total }}</div>
-        <div class="kpi-sub">Desde el inicio</div>
+
+    <!-- CONFORMIDAD + HE + COMPROMISOS -->
+    <div class="grid-3" style="margin-bottom:20px">
+
+      <!-- Conformidad -->
+      <div class="conf-block">
+        <div class="conf-title">Conformidad</div>
+        <div style="margin-bottom:10px">
+          <div style="font-family:'Manrope',sans-serif;font-size:2.2rem;font-weight:800;color:var(--green);line-height:1">{{ stats.neo.pct_conf }}%</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px">casos conformes</div>
+        </div>
+        <div class="conf-bar-track">
+          <div class="conf-bar-fill" style="width:{{ stats.neo.pct_conf }}%;background:var(--green)"></div>
+        </div>
+        <div class="conf-row" style="margin-top:6px">
+          <div class="conf-item"><div class="conf-dot" style="background:var(--green)"></div><span style="color:var(--green)">{{ stats.neo.pct_conf }}% Conforme</span></div>
+          <div class="conf-item"><div class="conf-dot" style="background:var(--red)"></div><span style="color:var(--red)">{{ stats.neo.pct_no_conf }}% No conf.</span></div>
+        </div>
       </div>
-      <div class="kpi-card kpi-red">
-        <div class="kpi-label">Abiertos</div>
-        <div class="kpi-value">{{ stats.neo.abiertos }}</div>
-        <div class="kpi-sub">Sin respuesta del coor.</div>
+
+      <!-- Horas Extras -->
+      <div class="conf-block">
+        <div class="conf-title">Horas Extras</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-size:.65rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Total</div>
+            <div style="font-family:'Manrope',sans-serif;font-size:1.5rem;font-weight:800;color:var(--ink2)">{{ stats.he.total }}</div>
+          </div>
+          <div>
+            <div style="font-size:.65rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Pendientes</div>
+            <div style="font-family:'Manrope',sans-serif;font-size:1.5rem;font-weight:800;color:var(--amber)">{{ stats.he.pendiente }}</div>
+          </div>
+          <div>
+            <div style="font-size:.65rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Hrs reportadas</div>
+            <div style="font-size:.85rem;font-weight:700;color:var(--ink2)">{{ stats.he.hrs_reportadas }}h</div>
+          </div>
+          <div>
+            <div style="font-size:.65rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px">Hrs autorizadas</div>
+            <div style="font-size:.85rem;font-weight:700;color:var(--green)">{{ stats.he.hrs_autorizadas }}h</div>
+          </div>
+          <div><span class="badge badge-green">{{ stats.he.conforme }} conf.</span></div>
+          <div><span class="badge badge-red">{{ stats.he.no_conforme }} no conf.</span></div>
+        </div>
       </div>
-      <div class="kpi-card kpi-accent">
-        <div class="kpi-label">Respondidos</div>
-        <div class="kpi-value">{{ stats.neo.respondidos }}</div>
-        <div class="kpi-sub">Pendientes de validar</div>
-      </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-label">Conformes</div>
-        <div class="kpi-value">{{ stats.neo.conformes }}</div>
-        <div class="kpi-sub">{{ stats.neo.pct_conf }}% del total</div>
-        <div class="progress-wrap">
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" style="width:{{ stats.neo.pct_conf }}%;background:var(--green)"></div>
+
+      <!-- Compromisos -->
+      <div class="conf-block">
+        <div class="conf-title">Compromisos</div>
+        <div style="margin-bottom:10px">
+          <div style="font-family:'Manrope',sans-serif;font-size:2.2rem;font-weight:800;color:var(--ink2);line-height:1">{{ stats.comp.pct_cierre }}%</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px">tasa de cierre</div>
+        </div>
+        <div class="conf-bar-track">
+          <div class="conf-bar-fill" style="width:{{ stats.comp.pct_cierre }}%;background:var(--cyan)"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">
+          <div style="text-align:center">
+            <div style="font-size:.65rem;color:var(--muted);font-weight:600;text-transform:uppercase">Total</div>
+            <div style="font-size:1.1rem;font-weight:800;font-family:'Manrope',sans-serif;color:var(--ink2)">{{ stats.comp.total }}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:.65rem;color:var(--muted);font-weight:600;text-transform:uppercase">Abiertos</div>
+            <div style="font-size:1.1rem;font-weight:800;font-family:'Manrope',sans-serif;color:var(--amber)">{{ stats.comp.abiertos }}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:.65rem;color:var(--muted);font-weight:600;text-transform:uppercase">Vencidos</div>
+            <div style="font-size:1.1rem;font-weight:800;font-family:'Manrope',sans-serif;color:var(--red)">{{ stats.comp.vencidos }}</div>
           </div>
         </div>
       </div>
-      <div class="kpi-card kpi-red">
-        <div class="kpi-label">No conformes</div>
-        <div class="kpi-value">{{ stats.neo.no_conformes }}</div>
-        <div class="kpi-sub">Requieren atención</div>
-      </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-label">Cerrados</div>
-        <div class="kpi-value">{{ stats.neo.cerrados }}</div>
-        <div class="kpi-sub">Proceso completado</div>
-      </div>
     </div>
-  </div>
 
-  <!-- Horas extras -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-icon" style="background:#FEF3C7;color:#D97706"><i class="bi bi-clock-history"></i></div>
-      <h2>Horas Extras</h2>
+    <!-- CASOS QUE REQUIEREN ATENCIÓN -->
+    <div class="chart-card">
+      <div class="chart-card-hdr">
+        <span class="chart-card-title"><i class="bi bi-exclamation-circle text-danger me-1"></i> Casos abiertos que requieren atención</span>
+        <span style="font-size:.72rem;color:var(--muted)">{{ casos_atencion|length }} casos · ordenados por impacto</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="casos-table" id="casosTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Contrato</th>
+              <th>Tipo de desviación</th>
+              <th>Fecha</th>
+              <th>Horas</th>
+              <th>Impacto</th>
+              <th>Acción</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in casos_atencion %}
+            <tr onclick="openCasoDrawer({{ loop.index0 }})" data-idx="{{ loop.index0 }}">
+              <td style="color:var(--muted);font-size:.72rem">{{ c.id }}</td>
+              <td class="ctr-row-name" style="max-width:180px">{{ c.contrato }}</td>
+              <td>
+                <div class="caso-tipo">
+                  <div class="caso-tipo-dot" style="background:{% if 'tardía' in c.tipo or 'tardía' in c.tipo.lower() %}var(--red){% elif 'ruta' in c.tipo.lower() %}var(--amber){% else %}var(--cyan){% endif %}"></div>
+                  {{ c.tipo }}
+                </div>
+              </td>
+              <td style="color:var(--muted)">{{ c.fecha }}</td>
+              <td><strong>{{ "%.1f"|format(c.horas) }}h</strong></td>
+              <td>
+                {% if c.afectacion > 0 %}
+                <span style="font-weight:700;color:var(--red)">${{ "{:,.0f}".format(c.afectacion) }}</span>
+                {% else %}<span class="badge badge-gray">—</span>{% endif %}
+              </td>
+              <td>
+                {% if c.accion == 'Sin respuesta' %}
+                <span class="badge badge-red"><i class="bi bi-clock me-1"></i>Sin respuesta</span>
+                {% else %}
+                <span class="badge badge-cyan">{{ c.accion[:20] }}{% if c.accion|length > 20 %}…{% endif %}</span>
+                {% endif %}
+              </td>
+              <td><span class="badge badge-amber">{{ c.estado }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div class="kpi-grid">
-      <div class="kpi-card kpi-neutral">
-        <div class="kpi-label">Total registros</div>
-        <div class="kpi-value">{{ stats.he.total }}</div>
-        <div class="kpi-sub">Todos los períodos</div>
-      </div>
-      <div class="kpi-card kpi-amber">
-        <div class="kpi-label">Pendientes</div>
-        <div class="kpi-value">{{ stats.he.pendiente }}</div>
-        <div class="kpi-sub">Sin validar por NEO</div>
-      </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-label">Conformes</div>
-        <div class="kpi-value">{{ stats.he.conforme }}</div>
-        <div class="kpi-sub">Aprobadas</div>
-      </div>
-      <div class="kpi-card kpi-red">
-        <div class="kpi-label">No conformes</div>
-        <div class="kpi-value">{{ stats.he.no_conforme }}</div>
-        <div class="kpi-sub">Rechazadas</div>
-      </div>
-      <div class="kpi-card kpi-accent">
-        <div class="kpi-label">Horas reportadas</div>
-        <div class="kpi-value" style="font-size:22px">{{ stats.he.hrs_reportadas }}</div>
-        <div class="kpi-sub">Horas totales</div>
-      </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-label">Horas autorizadas</div>
-        <div class="kpi-value" style="font-size:22px">{{ stats.he.hrs_autorizadas }}</div>
-        <div class="kpi-sub">Conformes + descontadas</div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Compromisos -->
-  <div class="section">
-    <div class="section-head">
-      <div class="section-icon" style="background:#DCFCE7;color:#16A34A"><i class="bi bi-calendar-check"></i></div>
-      <h2>Compromisos</h2>
+  </div><!-- /tab-resumen -->
+
+
+  <!-- ══════════ TAB: CONTRATOS ══════════ -->
+  <div id="tab-contratos" class="tab-pane">
+    <div class="chart-card">
+      <div class="chart-card-hdr">
+        <span class="chart-card-title">Impacto por contrato</span>
+        <div class="sort-group">
+          <button class="sort-btn active" onclick="sortContratos('horas',this)">Más horas</button>
+          <button class="sort-btn" onclick="sortContratos('afectacion',this)">Mayor $</button>
+          <button class="sort-btn" onclick="sortContratos('casos',this)">Más casos</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:280px;margin-bottom:20px">
+        <canvas id="chartContratos"></canvas>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="ctr-table" id="contratosTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Contrato</th>
+              <th>Casos</th>
+              <th>Horas afectadas</th>
+              <th>Impacto económico</th>
+              <th>Distribución</th>
+            </tr>
+          </thead>
+          <tbody id="contratosBody"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="kpi-grid">
-      <div class="kpi-card kpi-neutral">
-        <div class="kpi-label">Total compromisos</div>
-        <div class="kpi-value">{{ stats.comp.total }}</div>
-        <div class="kpi-sub">Registrados</div>
+  </div><!-- /tab-contratos -->
+
+
+  <!-- ══════════ TAB: DESVIACIONES ══════════ -->
+  <div id="tab-desviaciones" class="tab-pane">
+    <div class="grid-2">
+      <!-- Tipos de desviación -->
+      <div class="chart-card">
+        <div class="chart-card-hdr">
+          <span class="chart-card-title">Tipos de desviación</span>
+          <span style="font-size:.72rem;color:var(--muted)">Click para filtrar</span>
+        </div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chartTipos"></canvas>
+        </div>
       </div>
-      <div class="kpi-card kpi-accent">
-        <div class="kpi-label">Abiertos</div>
-        <div class="kpi-value">{{ stats.comp.abiertos }}</div>
-        <div class="kpi-sub">En seguimiento</div>
+      <!-- Acciones tomadas -->
+      <div class="chart-card">
+        <div class="chart-card-hdr">
+          <span class="chart-card-title">Acciones tomadas</span>
+        </div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chartAcciones"></canvas>
+        </div>
       </div>
-      <div class="kpi-card kpi-green">
-        <div class="kpi-label">Cerrados</div>
-        <div class="kpi-value">{{ stats.comp.cerrados }}</div>
-        <div class="kpi-sub">{{ stats.comp.pct_cierre }}% de cierre</div>
-        <div class="progress-wrap">
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" style="width:{{ stats.comp.pct_cierre }}%;background:var(--green)"></div>
+    </div>
+    <!-- Tabla de tipos -->
+    <div class="chart-card">
+      <div class="chart-card-hdr">
+        <span class="chart-card-title">Detalle por tipo de desviación</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="ctr-table">
+          <thead>
+            <tr><th>#</th><th>Tipo</th><th>Casos</th><th>% del total</th><th>Horas afectadas</th><th>Impacto económico</th></tr>
+          </thead>
+          <tbody>
+            {% set neo_total_val = stats.neo.total %}
+            {% for t in tipos_data %}
+            <tr onclick="document.getElementById('fTipo').value='{{ t.tipo }}';applyFilters();switchTab('resumen',document.querySelectorAll('.tab-btn')[0])" style="cursor:pointer">
+              <td style="color:var(--muted)">{{ loop.index }}</td>
+              <td><strong>{{ t.tipo }}</strong></td>
+              <td>{{ t.casos }}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span>{{ "%.1f"|format(t.casos / neo_total_val * 100 if neo_total_val else 0) }}%</span>
+                  <div style="flex:1;max-width:80px">
+                    <div class="ctr-bar-bg"><div class="ctr-bar-fill" style="width:{{ (t.casos / neo_total_val * 100) if neo_total_val else 0 }}%;background:var(--cyan)"></div></div>
+                  </div>
+                </div>
+              </td>
+              <td>{{ t.horas }}h</td>
+              <td>{% if t.afectacion > 0 %}<strong style="color:var(--red)">${{ "{:,.0f}".format(t.afectacion) }}</strong>{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /tab-desviaciones -->
+
+
+  <!-- ══════════ TAB: ANÁLISIS ══════════ -->
+  <div id="tab-analisis" class="tab-pane">
+    <!-- Evolución temporal -->
+    <div class="chart-card" style="margin-bottom:20px">
+      <div class="chart-card-hdr">
+        <span class="chart-card-title">Evolución mensual de desviaciones</span>
+        <div class="metric-toggle">
+          <button class="metric-btn active" onclick="switchMetric('casos',this)">Reportes</button>
+          <button class="metric-btn" onclick="switchMetric('horas',this)">Horas</button>
+          <button class="metric-btn" onclick="switchMetric('afectacion',this)">Impacto $</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:240px">
+        <canvas id="chartEvolucion"></canvas>
+      </div>
+    </div>
+    <!-- HE detalle + compromisos -->
+    <div class="grid-2">
+      <div class="chart-card">
+        <div class="section-hdr" style="margin-bottom:14px">
+          <div class="section-icon" style="background:var(--amber-s);color:var(--amber)"><i class="bi bi-clock-history"></i></div>
+          <h2>Horas Extras — Detalle</h2>
+        </div>
+        <div class="grid-2" style="gap:10px;margin-bottom:0">
+          <div class="mc c-navy"><div class="mc-val" style="font-size:1.5rem">{{ stats.he.total }}</div><div class="mc-lbl">Total</div></div>
+          <div class="mc c-amber"><div class="mc-val" style="font-size:1.5rem">{{ stats.he.pendiente }}</div><div class="mc-lbl">Pendientes</div></div>
+          <div class="mc c-green"><div class="mc-val" style="font-size:1.5rem">{{ stats.he.conforme }}</div><div class="mc-lbl">Conformes</div></div>
+          <div class="mc c-red"><div class="mc-val" style="font-size:1.5rem">{{ stats.he.no_conforme }}</div><div class="mc-lbl">No conformes</div></div>
+        </div>
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:.65rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Hrs reportadas</div>
+            <div style="font-size:1.4rem;font-weight:800;font-family:'Manrope',sans-serif;color:var(--ink2)">{{ stats.he.hrs_reportadas }}h</div>
+          </div>
+          <div style="background:var(--green-s);border-radius:8px;padding:12px;text-align:center">
+            <div style="font-size:.65rem;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:.4px">Hrs autorizadas</div>
+            <div style="font-size:1.4rem;font-weight:800;font-family:'Manrope',sans-serif;color:var(--green)">{{ stats.he.hrs_autorizadas }}h</div>
           </div>
         </div>
       </div>
-      <div class="kpi-card kpi-red">
-        <div class="kpi-label">Vencidos</div>
-        <div class="kpi-value">{{ stats.comp.vencidos }}</div>
-        <div class="kpi-sub">Fecha superada sin cierre</div>
+      <div class="chart-card">
+        <div class="section-hdr" style="margin-bottom:14px">
+          <div class="section-icon" style="background:var(--cyan-soft);color:var(--cyan)"><i class="bi bi-calendar-check"></i></div>
+          <h2>Compromisos — Detalle</h2>
+        </div>
+        <div class="grid-2" style="gap:10px;margin-bottom:0">
+          <div class="mc c-navy"><div class="mc-val" style="font-size:1.5rem">{{ stats.comp.total }}</div><div class="mc-lbl">Total</div></div>
+          <div class="mc c-cyan"><div class="mc-val" style="font-size:1.5rem">{{ stats.comp.abiertos }}</div><div class="mc-lbl">Abiertos</div></div>
+          <div class="mc c-green"><div class="mc-val" style="font-size:1.5rem">{{ stats.comp.cerrados }}</div><div class="mc-lbl">Cerrados</div></div>
+          <div class="mc c-red"><div class="mc-val" style="font-size:1.5rem">{{ stats.comp.vencidos }}</div><div class="mc-lbl">Vencidos</div></div>
+        </div>
+        <div style="margin-top:14px">
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Tasa de cierre</div>
+          <div class="conf-bar-track" style="height:10px">
+            <div class="conf-bar-fill" style="width:{{ stats.comp.pct_cierre }}%;background:linear-gradient(90deg,var(--cyan),var(--green))"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span style="font-size:.72rem;color:var(--muted)">0%</span>
+            <span style="font-size:.72rem;font-weight:700;color:var(--green)">{{ stats.comp.pct_cierre }}% cerrados</span>
+            <span style="font-size:.72rem;color:var(--muted)">100%</span>
+          </div>
+        </div>
       </div>
     </div>
+  </div><!-- /tab-analisis -->
+
+</div><!-- /wrap -->
+
+
+<!-- ═══════════ DRAWER CASO ═══════════ -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawerCaso">
+  <div class="drawer-hdr">
+    <div>
+      <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;opacity:.6;text-transform:uppercase;margin-bottom:4px">Detalle del caso</div>
+      <div id="drawerContrato" style="font-size:1rem;font-weight:700;font-family:'Manrope',sans-serif"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()"><i class="bi bi-x-lg"></i></button>
   </div>
+  <div class="drawer-body">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px" id="drawerBadges"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="drawer-field"><div class="drawer-field-lbl">Tipo de desviación</div><div class="drawer-field-val" id="dTipo"></div></div>
+      <div class="drawer-field"><div class="drawer-field-lbl">Fecha</div><div class="drawer-field-val" id="dFecha"></div></div>
+      <div class="drawer-field"><div class="drawer-field-lbl">Horas afectadas</div><div class="drawer-field-val" id="dHoras"></div></div>
+      <div class="drawer-field"><div class="drawer-field-lbl">Impacto económico</div><div class="drawer-field-val" id="dAfectacion" style="color:var(--red);font-weight:700"></div></div>
+      <div class="drawer-field"><div class="drawer-field-lbl">Estado</div><div class="drawer-field-val" id="dEstado"></div></div>
+      <div class="drawer-field"><div class="drawer-field-lbl">Conformidad</div><div class="drawer-field-val" id="dConformidad"></div></div>
+    </div>
+    <div class="drawer-field" style="margin-top:6px"><div class="drawer-field-lbl">Acción tomada</div><div class="drawer-field-val" id="dAccion"></div></div>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+      <button onclick="closeDrawer()" style="background:var(--cyan);border:none;border-radius:7px;padding:9px 20px;color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit">
+        <i class="bi bi-arrow-left me-1"></i> Volver al dashboard
+      </button>
+    </div>
+  </div>
+</div>
 
-</main>
 
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+// ─── DATA FROM FLASK ────────────────────────────────────────
+const CONTRATOS = {{ contratos_data | tojson }};
+const TIPOS     = {{ tipos_data | tojson }};
+const ACCIONES  = {{ acciones_data | tojson }};
+const EVOLUCION = {{ evolucion_data | tojson }};
+const CASOS     = {{ casos_atencion | tojson }};
+const NEO_TOTAL = {{ stats.neo.total }};
+
+// ─── TABS ───────────────────────────────────────────────────
+function switchTab(id, btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='contratos'&&!chartContratosBuilt) buildContratosChart();
+  if(id==='desviaciones'&&!chartTiposBuilt) { buildTiposChart(); buildAccionesChart(); }
+  if(id==='analisis'&&!chartEvolBuilt) buildEvolChart();
+}
+
+// ─── FILTERS ────────────────────────────────────────────────
+function applyFilters(){
+  const contrato = document.getElementById('fContrato').value;
+  const tipo     = document.getElementById('fTipo').value;
+  const conf     = document.getElementById('fConformidad').value;
+  let active = 0;
+  if(contrato) active++;
+  if(tipo) active++;
+  if(conf) active++;
+  const badge = document.getElementById('filterBadge');
+  badge.style.display = active ? 'inline-flex' : 'none';
+  badge.textContent = active + (active===1?' filtro':' filtros');
+}
+function clearFilters(){
+  ['fContrato','fTipo','fConformidad'].forEach(id=>document.getElementById(id).value='');
+  applyFilters();
+}
+
+// ─── DRAWER ─────────────────────────────────────────────────
+function openCasoDrawer(idx){
+  const c = CASOS[idx];
+  if(!c) return;
+  document.getElementById('drawerContrato').textContent = c.contrato;
+  document.getElementById('dTipo').textContent = c.tipo;
+  document.getElementById('dFecha').textContent = c.fecha;
+  document.getElementById('dHoras').textContent = c.horas.toFixed(1)+'h';
+  document.getElementById('dAfectacion').textContent = c.afectacion > 0 ? '$'+c.afectacion.toLocaleString('es-CO') : '—';
+  document.getElementById('dEstado').textContent = c.estado;
+  document.getElementById('dConformidad').textContent = c.conformidad;
+  document.getElementById('dAccion').textContent = c.accion;
+  const badges = document.getElementById('drawerBadges');
+  badges.innerHTML = '';
+  if(c.accion==='Sin respuesta') badges.innerHTML += '<span class="badge badge-red">Sin respuesta</span>';
+  if(c.conformidad==='No conforme') badges.innerHTML += '<span class="badge badge-red">No conforme</span>';
+  if(c.estado==='Abierto') badges.innerHTML += '<span class="badge badge-amber">Abierto</span>';
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('drawerCaso').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer(){
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('drawerCaso').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ─── CONTRATOS TABLE ─────────────────────────────────────────
+let contratosData = [...CONTRATOS];
+let contratosChart = null;
+let chartContratosBuilt = false;
+const maxHoras = Math.max(...CONTRATOS.map(c=>c.horas),1);
+
+function sortContratos(key, btn){
+  document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  contratosData.sort((a,b)=>b[key]-a[key]);
+  renderContratosTable();
+  updateContratosChart();
+}
+function renderContratosTable(){
+  const body = document.getElementById('contratosBody');
+  body.innerHTML = contratosData.map((c,i)=>`
+    <tr onclick="openContratoInfo('${escHtml(c.contrato)}')" style="cursor:pointer">
+      <td style="color:var(--muted);font-size:.72rem">${i+1}</td>
+      <td class="ctr-row-name">${escHtml(c.contrato)}</td>
+      <td><strong>${c.casos}</strong></td>
+      <td>${c.horas.toFixed(1)}h</td>
+      <td><strong style="color:var(--red)">${c.afectacion>0?'$'+c.afectacion.toLocaleString('es-CO'):'—'}</strong></td>
+      <td class="ctr-bar-wrap" style="width:140px">
+        <div class="ctr-bar-bg" style="width:140px">
+          <div class="ctr-bar-fill" style="width:${Math.min(c.horas/maxHoras*100,100)}%"></div>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+function buildContratosChart(){
+  chartContratosBuilt = true;
+  const ctx = document.getElementById('chartContratos').getContext('2d');
+  contratosChart = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: CONTRATOS.map(c=>c.contrato.length>28?c.contrato.slice(0,28)+'…':c.contrato),
+      datasets:[{
+        label:'Horas afectadas',
+        data: CONTRATOS.map(c=>c.horas),
+        backgroundColor:'rgba(8,145,178,.75)',
+        borderRadius:4,
+        borderSkipped:false,
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>`${ctx.parsed.x.toFixed(1)}h`}},
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#637794',font:{size:10}}},
+        y:{grid:{display:false},ticks:{color:'#374B65',font:{size:10}}},
+      }
+    }
+  });
+  renderContratosTable();
+}
+function updateContratosChart(){
+  if(!contratosChart) return;
+  contratosChart.data.labels = contratosData.map(c=>c.contrato.length>28?c.contrato.slice(0,28)+'…':c.contrato);
+  contratosChart.data.datasets[0].data = contratosData.map(c=>c.horas);
+  contratosChart.update();
+}
+function openContratoInfo(nombre){
+  document.getElementById('fContrato').value = nombre;
+  applyFilters();
+  switchTab('resumen', document.querySelectorAll('.tab-btn')[0]);
+}
+
+// ─── TIPOS CHART ─────────────────────────────────────────────
+let chartTiposBuilt = false;
+function buildTiposChart(){
+  chartTiposBuilt = true;
+  const COLORS = ['#0891B2','#059669','#D97706','#DC2626','#7C3AED','#0E7490','#16A34A','#B45309'];
+  const ctx = document.getElementById('chartTipos').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels: TIPOS.map(t=>t.tipo.length>22?t.tipo.slice(0,22)+'…':t.tipo),
+      datasets:[{
+        label:'Casos',
+        data: TIPOS.map(t=>t.casos),
+        backgroundColor: TIPOS.map((_,i)=>COLORS[i%COLORS.length]+'cc'),
+        borderRadius:4,borderSkipped:false,
+      }]
+    },
+    options:{
+      indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.x} casos`}}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#637794',font:{size:10}}},
+        y:{grid:{display:false},ticks:{color:'#374B65',font:{size:10}}},
+      }
+    }
+  });
+}
+
+// ─── ACCIONES CHART ──────────────────────────────────────────
+function buildAccionesChart(){
+  const ctx = document.getElementById('chartAcciones').getContext('2d');
+  const COLORS = ['#059669','#0891B2','#D97706','#7C3AED','#DC2626','#16A34A'];
+  new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels: ACCIONES.map(a=>a.accion||'Sin definir'),
+      datasets:[{
+        data: ACCIONES.map(a=>a.casos),
+        backgroundColor: ACCIONES.map((_,i)=>COLORS[i%COLORS.length]),
+        borderWidth:2,borderColor:'#fff',hoverOffset:4,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right',labels:{font:{size:10},color:'#374B65',boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed} casos`}},
+      }
+    }
+  });
+}
+
+// ─── EVOLUCIÓN CHART ─────────────────────────────────────────
+let evolChart = null;
+let chartEvolBuilt = false;
+let currentMetric = 'casos';
+
+function buildEvolChart(){
+  chartEvolBuilt = true;
+  const ctx = document.getElementById('chartEvolucion').getContext('2d');
+  evolChart = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels: EVOLUCION.map(e=>e.label),
+      datasets:[{
+        label:'Reportes',
+        data: EVOLUCION.map(e=>e.casos),
+        borderColor:'#0891B2',backgroundColor:'rgba(8,145,178,.1)',
+        borderWidth:2,pointRadius:4,pointHoverRadius:6,
+        fill:true,tension:.35,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{mode:'index',intersect:false},
+      },
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#637794',font:{size:10}}},
+        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#637794',font:{size:10}}},
+      }
+    }
+  });
+}
+function switchMetric(metric, btn){
+  document.querySelectorAll('.metric-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMetric = metric;
+  if(!evolChart) return;
+  const labels = {casos:'Reportes',horas:'Horas afectadas',afectacion:'Impacto económico'};
+  evolChart.data.datasets[0].label = labels[metric];
+  evolChart.data.datasets[0].data = EVOLUCION.map(e=>e[metric]);
+  evolChart.update();
+}
+
+// ─── UTILS ──────────────────────────────────────────────────
+function escHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ─── INIT ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
+  // prerender contratos table when switching to tab
+});
+</script>
 </body>
 </html>
