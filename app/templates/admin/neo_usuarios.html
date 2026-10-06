@@ -368,6 +368,16 @@
                            onchange="togglePermiso(this)">
                     <span><i class="bi bi-clipboard2-check me-1" style="color:#34d399;"></i>Preoperacionales</span>
                 </label>
+                <label class="nu-check-label" style="border-color:{% if 'indicadores' in perms %}#0891b2{% else %}#1e293b{% endif %};"
+                       title="Dashboard de Indicadores Gerenciales — KPIs de reportes, HE y compromisos">
+                    <input type="checkbox"
+                           class="perm-ck"
+                           data-uid="{{ u.id }}"
+                           data-permiso="indicadores"
+                           {% if 'indicadores' in perms %}checked{% endif %}
+                           onchange="togglePermiso(this)">
+                    <span><i class="bi bi-speedometer2 me-1" style="color:#38bdf8;"></i>Indicadores</span>
+                </label>
             </div>
         </div>
     </div>

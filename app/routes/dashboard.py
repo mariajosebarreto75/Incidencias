@@ -46,7 +46,8 @@ def director():
 @login_required
 def indicadores():
     """Dashboard gerencial con KPIs en tiempo real."""
-    if current_user.rol.lower() not in ("admin", "gerente"):
+    rol = current_user.rol.lower()
+    if rol not in ("admin", "gerente") and not current_user.tiene_permiso("indicadores"):
         abort(403)
 
     hoy = date.today()
