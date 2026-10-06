@@ -317,7 +317,7 @@ def home_neo():
     groups = [
         {
             "name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2",
-            "items": [
+            "links": [
                 {"label": "Reportar", "icon": "bi-clipboard2-pulse-fill", "url": url_for("neo.panel_reportes"),
                  "desc": "Registrar una incidencia operativa de campo"},
                 {"label": "Validar Reportes", "icon": "bi-patch-check-fill", "url": url_for("neo.validar_reportes"),
@@ -336,7 +336,7 @@ def home_neo():
         he_items.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill", "url": url_for("he_bp.he_dashboard"),
                           "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
     if he_items:
-        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "items": he_items})
+        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items})
 
     seg_items = []
     if u.tiene_permiso("bi_seguimiento"):
@@ -350,11 +350,11 @@ def home_neo():
         seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("neo.preoperacionales_neo"),
                            "desc": "Cumplimiento, estado de vehículos y placas"})
     if seg_items:
-        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "items": seg_items})
+        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
 
     groups.append({
         "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
-        "items": [
+        "links": [
             {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
              "desc": "Programación de reuniones por contrato"},
             {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
@@ -366,7 +366,7 @@ def home_neo():
 
     groups.append({
         "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
-        "items": [
+        "links": [
             {"label": "Alertas GPS", "icon": "bi-bell-fill", "url": url_for("neo.alertas_gps"),
              "desc": "Paradas no programadas, desvíos de ruta y retornos"},
             {"label": "GPS Monitor", "icon": "bi-display", "url": "http://178.219.0.123/Auth/Login",

@@ -38,7 +38,7 @@ def dashboards_hub():
     groups = [
         {
             "name": "Dashboards Ejecutivos", "icon": "bi-bar-chart-line-fill", "tint": "#0891B2",
-            "items": [
+            "links": [
                 {"label": "Dashboard HE", "icon": "bi-clock-history", "url": url_for("he_bp.he_dashboard"),
                  "desc": "KPIs de horas extras, tipos de HE, límite legal y valor de nómina"},
                 {"label": "Preoperacionales", "icon": "bi-truck", "url": url_for("coordinador.preoperacionales"),
@@ -47,7 +47,7 @@ def dashboards_hub():
         },
         {
             "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
-            "items": [
+            "links": [
                 {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
                  "desc": "Programación de reuniones por contrato"},
                 {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),

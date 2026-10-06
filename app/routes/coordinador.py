@@ -1,4 +1,4 @@
-﻿
+
 import uuid
 import os
 import json
@@ -143,7 +143,7 @@ def dashboard_coordinador():
         rep_items.append({"label": "Distribución Operativa", "icon": "bi-diagram-3-fill", "url": url_for("coordinador.distribucion_operativa"),
                            "desc": "Recursos, cuadrillas y órdenes de trabajo"})
     if rep_items:
-        groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "items": rep_items})
+        groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "links": rep_items})
 
     he_items = []
     if es_admin or u.tiene_permiso("horas_extras"):
@@ -153,7 +153,7 @@ def dashboard_coordinador():
         he_items.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill", "url": url_for("he_bp.he_dashboard"),
                           "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
     if he_items:
-        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "items": he_items})
+        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items})
 
     seg_items = []
     if u.tiene_permiso("bi_seguimiento"):
@@ -170,11 +170,11 @@ def dashboard_coordinador():
         seg_items.append({"label": "Semáforo", "icon": "bi-stoplights-fill", "url": url_for("coordinador.semaforo_dashboard"),
                            "desc": "Estado de actividades por contrato"})
     if seg_items:
-        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "items": seg_items})
+        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
 
     groups.append({
         "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
-        "items": [
+        "links": [
             {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
              "desc": "Programación de reuniones por contrato"},
             {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
@@ -186,7 +186,7 @@ def dashboard_coordinador():
 
     groups.append({
         "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
-        "items": [
+        "links": [
             {"label": "Rastrear", "icon": "bi-map", "url": "https://plataforma.sistemagps.online/ui/map/objects",
              "ext": True, "desc": "Mapa de vehículos en vivo"},
         ],
@@ -217,10 +217,10 @@ def dashboard_supervisor():
         rep_items.append({"label": "Reportes NEO", "icon": "bi-broadcast-pin", "url": url_for("neo.panel_reportes"),
                            "desc": "Panel de reportes operacionales del equipo"})
     if rep_items:
-        groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "items": rep_items})
+        groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "links": rep_items})
 
     if u.tiene_permiso("horas_extras"):
-        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "items": [
+        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": [
             {"label": "Registro / Validación", "icon": "bi-pencil-square", "url": url_for("he_bp.he_hub"),
              "desc": "Ingreso y validación de horas extras"},
         ]})
@@ -240,11 +240,11 @@ def dashboard_supervisor():
         seg_items.append({"label": "Semáforo", "icon": "bi-stoplights-fill", "url": url_for("coordinador.semaforo_dashboard"),
                            "desc": "Estado de actividades por contrato"})
     if seg_items:
-        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "items": seg_items})
+        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
 
     groups.append({
         "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
-        "items": [
+        "links": [
             {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
              "desc": "Programación de reuniones por contrato"},
             {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),

@@ -44,7 +44,7 @@
             <h2>{{ group.name }}</h2>
         </div>
         <div class="portal-grid">
-            {% for item in group.items %}
+            {% for item in group.links %}
             <a class="portal-card" href="{{ item.url }}" {% if item.ext %}target="_blank"{% endif %}>
                 <div class="ic"><i class="bi {{ item.icon }}"></i></div>
                 <div class="txt">
