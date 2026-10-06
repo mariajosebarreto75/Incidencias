@@ -4,7 +4,7 @@ Servicio GPS Monitor — cliente oficial del desarrollador (adaptado).
 
 import requests
 
-BASE_URL = "http://143.20.129.195/api/distributor"
+BASE_URL = "http://178.219.0.123/api/distributor"
 API_KEY  = "gps_CRfC_rpCOihAanlm5xdMCen8G0K3NNA5zsorERZ90_I"
 
 _HEADERS = {"X-Api-Key": API_KEY}

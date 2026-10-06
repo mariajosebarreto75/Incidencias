@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<script>document.documentElement.setAttribute('data-theme','light');</script>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page_title }} — NEO</title>
+<meta name="description" content="{{ page_desc }}">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="{{ static_v('css/portal.css') }}">
+</head>
+<body class="portal-body">
+
+{% set _parts = current_user.nombre_completo.split() %}
+{% set _initials = (_parts[0][0] ~ (_parts[-1][0] if _parts|length > 1 else "")) | upper %}
+
+<div class="portal-topbar">
+    <div class="portal-brand">
+        <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+        <span class="portal-brand-name">{{ page_title }}</span>
+    </div>
+    <div class="portal-topbar-spacer"></div>
+    <div class="portal-user">
+        <div class="portal-avatar">{{ _initials }}</div>
+        <span class="portal-user-name">{{ current_user.nombre_completo }}</span>
+    </div>
+    {% if home_endpoint %}
+    <div class="portal-divider"></div>
+    <a href="{{ url_for(home_endpoint) }}" class="portal-iconbtn" title="Volver al menú">
+        <i class="bi bi-arrow-left"></i>
+    </a>
+    {% endif %}
+    <div class="portal-divider"></div>
+    <a href="{{ url_for('auth.logout') }}" class="portal-iconbtn" title="Cerrar sesión">
+        <i class="bi bi-box-arrow-right"></i>
+    </a>
+</div>
+
+{% set TINT_SOFT = {
+    "#0891B2": "#E0F2FE",
+    "#8B5CF6": "#EDE9FE",
+    "#16A34A": "#DCFCE7",
+    "#D97706": "#FEF3C7",
+    "#DC2626": "#FEE2E2",
+} %}
+
+<main class="portal-main">
+    <div class="portal-intro">
+        <h1>{{ intro_title }}</h1>
+        <p><i class="bi bi-broadcast-pin"></i>{{ intro_sub }}</p>
+    </div>
+
+    {% for group in groups %}
+    <div class="portal-section" style="--card-tint:{{ group.tint }}; --card-tint-soft:{{ TINT_SOFT.get(group.tint, '#F1F5F9') }}">
+        <div class="portal-section-head">
+            <div class="ic" style="background:{{ TINT_SOFT.get(group.tint, '#F1F5F9') }};color:{{ group.tint }}"><i class="bi {{ group.icon }}"></i></div>
+            <h2>{{ group.name }}</h2>
+        </div>
+        <div class="portal-grid">
+            {% for item in group.links %}
+            <a class="portal-card" href="{{ item.url }}" {% if item.ext %}target="_blank" rel="noopener"{% endif %}>
+                <div class="top-row">
+                    <div class="ic"><i class="bi {{ item.icon }}"></i></div>
+                    <div class="portal-arrow"><i class="bi bi-arrow-right"></i></div>
+                </div>
+                <div class="title">{{ item.label }}
+                    {% if item.ext %}<i class="bi bi-box-arrow-up-right ext-ic"></i>{% endif %}
+                </div>
+                <p class="desc">{{ item.desc }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</main>
+
+<footer class="portal-footer">
+    Sesión activa como <strong>{{ current_user.username }}</strong> · <a href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+</footer>
+
+</body>
+</html>

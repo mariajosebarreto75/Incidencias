@@ -310,12 +310,80 @@ def distribucion_neo():
 @neo.route("/neo")
 @login_required
 def home_neo():
+    u = current_user
+    es_admin = u.rol.lower() == "admin"
+    dash = es_admin or u.acceso_dashboard
 
-    nombre = current_user.nombre_completo.title()
+    groups = [
+        {
+            "name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2",
+            "links": [
+                {"label": "Reportar", "icon": "bi-clipboard2-pulse-fill", "url": url_for("neo.panel_reportes"),
+                 "desc": "Registrar una incidencia operativa de campo"},
+                {"label": "Validar Reportes", "icon": "bi-patch-check-fill", "url": url_for("neo.validar_reportes"),
+                 "desc": "Revisar y calificar reportes del equipo"},
+                {"label": "Distribución Operativa", "icon": "bi-table", "url": url_for("neo.distribucion_neo"),
+                 "desc": "Programación diaria de cuadrillas y recursos"},
+            ],
+        },
+    ]
+
+    he_items = []
+    if u.tiene_permiso("horas_extras") or es_admin:
+        he_items.append({"label": "Registro / Validación", "icon": "bi-pencil-square", "url": "/horas-extras",
+                          "desc": "Ingreso y validación de horas extras"})
+    if u.tiene_permiso("dashboard_he") or dash:
+        he_items.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill", "url": url_for("he_bp.he_dashboard"),
+                          "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
+    if he_items:
+        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items})
+
+    seg_items = []
+    if u.tiene_permiso("bi_seguimiento"):
+        seg_items.append({"label": "Archivo de Seguimiento", "icon": "bi-folder2-open", "url": url_for("coordinador.bi_seguimiento"),
+                           "desc": "Informe operacional de seguimiento (Power BI)"})
+    if u.tiene_permiso("bi_inspecciones"):
+        seg_items.append({"label": "Inspecciones", "icon": "bi-search",
+                           "url": "https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9",
+                           "ext": True, "desc": "Indicador de inspecciones (Power BI)"})
+    if u.tiene_permiso("preoperacionales") or dash:
+        seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("neo.preoperacionales_neo"),
+                           "desc": "Cumplimiento, estado de vehículos y placas"})
+    if seg_items:
+        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
+
+    groups.append({
+        "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
+        "links": [
+            {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
+             "desc": "Programación de reuniones por contrato"},
+            {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
+             "desc": "Checklist de reuniones realizadas"},
+            {"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
+             "desc": "Compromisos pendientes y atrasados"},
+        ],
+    })
+
+    groups.append({
+        "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
+        "links": [
+            {"label": "Alertas GPS", "icon": "bi-bell-fill", "url": url_for("neo.alertas_gps"),
+             "desc": "Paradas no programadas, desvíos de ruta y retornos"},
+            {"label": "GPS Monitor", "icon": "bi-display", "url": "http://178.219.0.123/Auth/Login",
+             "ext": True, "desc": "Aplicativo externo de monitoreo GPS"},
+            {"label": "Rastrear", "icon": "bi-map", "url": "https://plataforma.sistemagps.online/ui/map/objects",
+             "ext": True, "desc": "Mapa de vehículos en vivo"},
+        ],
+    })
 
     return render_template(
-        "neo/home.html",
-        nombre = nombre
+        "portal/home.html",
+        page_title="NEO",
+        page_desc="Módulo NEO — gestión de incidencias operativas de campo",
+        intro_title=f"Hola, {current_user.nombre_completo.title()}",
+        intro_sub="Módulo NEO — Gestión de incidencias operativas de campo",
+        groups=groups,
+        home_endpoint=None,
     )
 
 
@@ -1245,14 +1313,17 @@ def alertas_gps():
     # Mostramos la más reciente de cada placa con el conteo total
     import json as _json
     grupos = {}
+    grupos_codes = {}  # tipo_es → set de alert_type crudos (para depurar por tipo)
     for a in alertas:
         tipo_es = TIPOS_ALERTA.get(a.alert_type, a.alert_type or "Otro")
         plate   = a.vehicle_plate or "—"
         if tipo_es not in grupos:
             grupos[tipo_es] = {}
+            grupos_codes[tipo_es] = set()
         if plate not in grupos[tipo_es]:
             grupos[tipo_es][plate] = []
         grupos[tipo_es][plate].append(a)
+        grupos_codes[tipo_es].add(a.alert_type or "")
 
     # Parsear metadata_raw para cada alerta (speed, tiempo, distancia)
     extras = {}  # alert.id → dict con campos extras para mostrar
@@ -1291,6 +1362,7 @@ def alertas_gps():
     return render_template(
         "neo/alertas_gps.html",
         grupos           = grupos,
+        grupos_codes     = grupos_codes,
         extras           = extras,
         filtro           = filtro,
         placa            = placa,
@@ -1358,6 +1430,48 @@ def depurar_alertas():
     if not ids:
         return jsonify({"ok": False, "error": "No se enviaron IDs"}), 400
     eliminados = AlertaGPS.query.filter(AlertaGPS.id.in_(ids)).delete(synchronize_session=False)
+    db.session.commit()
+    return jsonify({"ok": True, "eliminados": eliminados})
+
+
+@neo.route("/neo/alertas/depurar-tipo", methods=["POST"])
+@login_required
+def depurar_alertas_tipo():
+    """Elimina TODAS las alertas de uno o varios tipos (alert_type) que calcen con los
+    filtros activos de la vista, incluyendo duplicados por placa que no se listan
+    individualmente en pantalla."""
+    if current_user.rol.lower() not in ("neo", "admin"):
+        abort(403)
+    d     = request.get_json(silent=True) or {}
+    codes = [c for c in d.get("codes", []) if c]
+    if not codes:
+        return jsonify({"ok": False, "error": "No se enviaron tipos"}), 400
+
+    filtro   = d.get("filtro", "pendiente")
+    placa    = (d.get("placa") or "").strip().upper()
+    contrato = (d.get("contrato") or "").strip()
+    recurso  = (d.get("recurso") or "").strip()
+    scope    = d.get("scope", "todos")
+
+    from datetime import timedelta
+    ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    q = AlertaGPS.query.filter(AlertaGPS.alert_type.in_(codes))
+    q = q.filter(AlertaGPS.triggered_at >= ayer)
+    if filtro != "todas":
+        q = q.filter(AlertaGPS.estado_local == filtro)
+    if scope == "sin_contrato":
+        q = q.filter(AlertaGPS.contract_code == None)
+    elif scope == "con_contrato":
+        q = q.filter(AlertaGPS.contract_code != None)
+    if placa:
+        q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
+    if contrato:
+        q = q.filter(AlertaGPS.contract_code == contrato)
+    if recurso:
+        q = q.filter(AlertaGPS.resource_code.ilike(f"%{recurso}%"))
+
+    eliminados = q.delete(synchronize_session=False)
     db.session.commit()
     return jsonify({"ok": True, "eliminados": eliminados})
 

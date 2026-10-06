@@ -1,4 +1,4 @@
-﻿
+
 import uuid
 import os
 import json
@@ -131,7 +131,76 @@ def formatear_coordenada(valor, posicion_coma):
 @coordinador.route("/coordinador")
 @login_required
 def dashboard_coordinador():
-    return render_template("coordinador/dashboard.html")
+    u = current_user
+    es_admin = u.rol.lower() == "admin"
+    dash = es_admin or u.acceso_dashboard
+    groups = []
+
+    rep_items = []
+    if es_admin or u.tiene_permiso("neo_reportes"):
+        rep_items.append({"label": "Panel de Reportes NEO", "icon": "bi-clipboard-data-fill", "url": url_for("coordinador.panel_reportes"),
+                           "desc": "Valide y gestione reportes operacionales"})
+        rep_items.append({"label": "Distribución Operativa", "icon": "bi-diagram-3-fill", "url": url_for("coordinador.distribucion_operativa"),
+                           "desc": "Recursos, cuadrillas y órdenes de trabajo"})
+    if rep_items:
+        groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "links": rep_items})
+
+    he_items = []
+    if es_admin or u.tiene_permiso("horas_extras"):
+        he_items.append({"label": "Registro / Validación", "icon": "bi-pencil-square", "url": "/horas-extras",
+                          "desc": "Ingreso y validación de horas extras"})
+    if es_admin or u.tiene_permiso("dashboard_he") or dash:
+        he_items.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill", "url": url_for("he_bp.he_dashboard"),
+                          "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
+    if he_items:
+        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items})
+
+    seg_items = []
+    if u.tiene_permiso("bi_seguimiento"):
+        seg_items.append({"label": "Archivo de Seguimiento", "icon": "bi-folder2-open", "url": url_for("coordinador.bi_seguimiento"),
+                           "desc": "Informe operacional de seguimiento (Power BI)"})
+    if u.tiene_permiso("bi_inspecciones"):
+        seg_items.append({"label": "Inspecciones", "icon": "bi-search",
+                           "url": "https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9",
+                           "ext": True, "desc": "Indicador de inspecciones (Power BI)"})
+    if u.tiene_permiso("preoperacionales") or dash:
+        seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("coordinador.preoperacionales"),
+                           "desc": "Cumplimiento, estado de vehículos y placas"})
+    if es_admin or u.tiene_permiso("semaforo"):
+        seg_items.append({"label": "Semáforo", "icon": "bi-stoplights-fill", "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Estado de actividades por contrato"})
+    if seg_items:
+        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
+
+    groups.append({
+        "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
+        "links": [
+            {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
+             "desc": "Programación de reuniones por contrato"},
+            {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
+             "desc": "Checklist de reuniones realizadas"},
+            {"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
+             "desc": "Compromisos pendientes y atrasados"},
+        ],
+    })
+
+    groups.append({
+        "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
+        "links": [
+            {"label": "Rastrear", "icon": "bi-map", "url": "https://plataforma.sistemagps.online/ui/map/objects",
+             "ext": True, "desc": "Mapa de vehículos en vivo"},
+        ],
+    })
+
+    return render_template(
+        "portal/home.html",
+        page_title="Panel de Gestión",
+        page_desc="Panel de coordinación y gestión operativa",
+        intro_title=f"Hola, {u.nombre_completo}",
+        intro_sub="Elige el módulo que deseas gestionar",
+        groups=groups,
+        home_endpoint=None,
+    )
 
 
 @coordinador.route("/supervisor")
@@ -140,7 +209,60 @@ def dashboard_supervisor():
     """Panel de inicio para usuarios con rol supervisor."""
     if current_user.rol.lower() not in ("supervisor", "admin"):
         abort(403)
-    return render_template("supervisor/home.html")
+    u = current_user
+    groups = []
+
+    rep_items = []
+    if u.tiene_permiso("neo_reportes"):
+        rep_items.append({"label": "Reportes NEO", "icon": "bi-broadcast-pin", "url": url_for("neo.panel_reportes"),
+                           "desc": "Panel de reportes operacionales del equipo"})
+    if rep_items:
+        groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "links": rep_items})
+
+    if u.tiene_permiso("horas_extras"):
+        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": [
+            {"label": "Registro / Validación", "icon": "bi-pencil-square", "url": url_for("he_bp.he_hub"),
+             "desc": "Ingreso y validación de horas extras"},
+        ]})
+
+    seg_items = []
+    if u.tiene_permiso("bi_seguimiento"):
+        seg_items.append({"label": "Archivo de Seguimiento", "icon": "bi-folder2-open", "url": url_for("coordinador.bi_seguimiento"),
+                           "desc": "Informe operacional de seguimiento (Power BI)"})
+    if u.tiene_permiso("bi_inspecciones"):
+        seg_items.append({"label": "Inspecciones", "icon": "bi-search",
+                           "url": "https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9",
+                           "ext": True, "desc": "Indicador de inspecciones (Power BI)"})
+    if u.tiene_permiso("preoperacionales"):
+        seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("coordinador.preoperacionales"),
+                           "desc": "Cumplimiento, estado de vehículos y placas"})
+    if u.tiene_permiso("semaforo"):
+        seg_items.append({"label": "Semáforo", "icon": "bi-stoplights-fill", "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Estado de actividades por contrato"})
+    if seg_items:
+        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
+
+    groups.append({
+        "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
+        "links": [
+            {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
+             "desc": "Programación de reuniones por contrato"},
+            {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
+             "desc": "Checklist de reuniones realizadas"},
+            {"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
+             "desc": "Compromisos pendientes y atrasados"},
+        ],
+    })
+
+    return render_template(
+        "portal/home.html",
+        page_title="Panel Supervisor",
+        page_desc="Panel de inicio del rol supervisor",
+        intro_title=f"Hola, {u.nombre_completo}",
+        intro_sub="Elige el módulo que deseas gestionar",
+        groups=groups,
+        home_endpoint=None,
+    )
 
 
 # =====================================

@@ -130,6 +130,15 @@ body { background: var(--ag-bg); }
 .ag-group-header.collapsed .ag-chevron {
     transform: rotate(-90deg);
 }
+.ag-group-depurar {
+    display: flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+    background: rgba(229,62,62,.12); color: #fc8181;
+    border: 1px solid rgba(229,62,62,.3);
+    font-size: .72rem; cursor: pointer; transition: background .15s;
+}
+.ag-group-depurar:hover { background: rgba(229,62,62,.3); color: #fff; }
+.ag-group-depurar:disabled { opacity: .4; cursor: default; }
 
 /* Item de alerta */
 .ag-items { display: block; }
@@ -440,13 +449,18 @@ body { background: var(--ag-bg); }
                 {% set tipo_total = namespace(n=0) %}
                 {% for p, lst in por_placa.items() %}{% set tipo_total.n = tipo_total.n + lst|length %}{% endfor %}
 
-                <div class="ag-group-header" onclick="toggleGrupo(this)">
+                <div class="ag-group-header" onclick="toggleGrupo(this)" data-codes="{{ grupos_codes[tipo]|join(',') }}">
                     <div class="ag-group-left">
                         <span class="ag-dot"></span>
                         <span class="ag-group-name">{{ tipo }}</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px">
                         <span class="ag-count-badge">{{ tipo_total.n }}</span>
+                        <button class="ag-group-depurar" type="button"
+                                onclick="event.stopPropagation(); depurarTipo(this, {{ tipo|tojson }}, {{ tipo_total.n }})"
+                                title="Depurar todas las alertas de &quot;{{ tipo }}&quot;">
+                            <i class="bi bi-trash3"></i>
+                        </button>
                         <i class="bi bi-chevron-down ag-chevron"></i>
                     </div>
                 </div>
@@ -686,6 +700,16 @@ let alertaActiva  = null;
 let modoSeleccion = false;
 let seleccionadas = new Set();
 
+// Filtros activos de la vista actual, para que "depurar por tipo" elimine
+// exactamente lo que se está viendo (incluyendo duplicados ocultos por placa).
+const FILTROS_ACTUALES = {
+    filtro:   {{ filtro|tojson }},
+    placa:    {{ placa|tojson }},
+    contrato: {{ contrato|tojson }},
+    recurso:  {{ recurso|tojson }},
+    scope:    {{ scope|tojson }},
+};
+
 // Las horas se guardan/envían en UTC (data-utc); convertir a hora de Colombia para mostrar.
 // No se reutiliza fmtHoraAD (navbNeo.html) porque ese script carga después de este bloque.
 function _fmtHoraLocalAG(utcStr) {
@@ -766,6 +790,12 @@ function toggleCheck(event, id, forceVal) {
 
 function seleccionarTodo() {
     const items = document.querySelectorAll(".ag-item");
+
+    // Defensa: purgar del set cualquier id que ya no exista en el DOM
+    // (ej. se depuró un grupo completo mientras había selección activa).
+    const idsActuales = new Set(Array.from(items, el => Number(el.dataset.id)));
+    seleccionadas.forEach(id => { if (!idsActuales.has(id)) seleccionadas.delete(id); });
+
     const todosSeleccionados = seleccionadas.size === items.length;
 
     items.forEach(function(item) {
@@ -835,6 +865,52 @@ async function _depurar(ids) {
         }
     } catch(e) {
         alert("Error de conexión");
+    }
+}
+
+// Depura TODAS las alertas de un tipo (incluye duplicados por placa que no
+// se listan individualmente en pantalla), respetando los filtros activos.
+async function depurarTipo(btn, tipoLabel, total) {
+    const header = btn.closest(".ag-group-header");
+    const codes  = (header.dataset.codes || "").split(",").filter(Boolean);
+    if (!codes.length) return;
+    if (!confirm(`¿Eliminar las ${total} alerta(s) de tipo "${tipoLabel}"?\nEsta acción no se puede deshacer.`)) return;
+
+    btn.disabled = true;
+    try {
+        const r = await fetch("/neo/alertas/depurar-tipo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ codes, ...FILTROS_ACTUALES })
+        });
+        const data = await r.json();
+        if (data.ok) {
+            const items = header.nextElementSibling;
+            if (items) {
+                // Sacar del set de seleccionadas cualquier id de este grupo
+                // (si no, "Seleccionar todo" y el contador quedan desincronizados).
+                items.querySelectorAll(".ag-item").forEach(el => {
+                    seleccionadas.delete(Number(el.dataset.id));
+                });
+                items.remove();
+            }
+            header.remove();
+            if (alertaActiva && !document.getElementById("item-" + alertaActiva)) {
+                document.getElementById("agCard").style.display  = "none";
+                document.getElementById("agEmpty").style.display = "flex";
+                alertaActiva = null;
+            }
+            const totalBadge = document.querySelector(".ag-badge-total");
+            if (totalBadge) totalBadge.textContent = Math.max(0, (parseInt(totalBadge.textContent, 10) || 0) - data.eliminados);
+            actualizarContador();
+            actualizarBadge();
+        } else {
+            alert("Error: " + (data.error || "No se pudo depurar"));
+            btn.disabled = false;
+        }
+    } catch (e) {
+        alert("Error de conexión");
+        btn.disabled = false;
     }
 }
 

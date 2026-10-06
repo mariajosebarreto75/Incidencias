@@ -388,6 +388,19 @@ def create_app():
         if req.endpoint and req.endpoint not in rutas_permitidas:
             return redirect(url_for("auth.cambio_obligatorio"))
 
+    @app.template_global("static_v")
+    def static_v(filename):
+        """URL de un archivo estático con un parámetro de versión basado en su
+        fecha de modificación, para que el navegador (y cualquier proxy/caché
+        intermedio) descarguen la versión nueva cuando el archivo cambia, en
+        vez de servir una copia vieja de un CSS/JS ya cacheada."""
+        ruta = os.path.join(app.static_folder, filename)
+        try:
+            v = int(os.path.getmtime(ruta))
+        except OSError:
+            v = 0
+        return f"{url_for('static', filename=filename)}?v={v}"
+
     return app
 
 

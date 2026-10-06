@@ -1,0 +1,182 @@
+/* ============================================================
+   PORTAL DE INICIO — menú de módulos por categoría.
+   Compartido por los landing pages de NEO, Coordinador/Director,
+   Supervisor y Gerente. Diseño: premium minimalista, sin KPIs.
+   ============================================================ */
+
+:root{
+  --portal-bg:#F7F8FA;
+  --portal-surface:#FFFFFF;
+  --portal-border:#EAEDF1;
+  --portal-border-strong:#DCE1E8;
+  --portal-ink:#12161F;
+  --portal-ink-muted:#667085;
+  --portal-ink-faint:#9AA1AE;
+  --portal-accent:#0891B2;
+  --portal-accent-ink:#0E7490;
+  --portal-ring:rgba(8,145,178,.14);
+  --portal-shadow-rest:0 1px 2px rgba(16,24,40,.04);
+  --portal-shadow-hover:0 12px 28px -14px rgba(16,24,40,.18), 0 2px 6px -2px rgba(16,24,40,.06);
+}
+
+body.portal-body{
+  margin:0; background:var(--portal-bg); color:var(--portal-ink);
+  font-family:"IBM Plex Sans", system-ui, sans-serif; -webkit-font-smoothing:antialiased;
+}
+.portal-h{font-family:"Manrope", system-ui, sans-serif; margin:0;}
+
+/* ---------------------------------------------------------- */
+/* TOPBAR — blanca, delgada, sin degradado                     */
+/* ---------------------------------------------------------- */
+.portal-topbar{
+  background:var(--portal-surface);
+  border-bottom:1px solid var(--portal-border);
+  height:64px; padding:0 28px;
+  display:flex; align-items:center; gap:14px;
+  position:sticky; top:0; z-index:30;
+}
+.portal-brand{display:flex; align-items:center; gap:10px; min-width:0;}
+.portal-brand img{height:26px; width:auto; display:block; flex:none;}
+.portal-brand-name{font-family:"Manrope", system-ui, sans-serif; font-weight:800; font-size:15px; color:var(--portal-ink); letter-spacing:-.1px; white-space:nowrap;}
+
+.portal-topbar-spacer{flex:1;}
+
+.portal-user{display:flex; align-items:center; gap:10px;}
+.portal-avatar{
+  width:32px; height:32px; border-radius:50%; flex:none;
+  background:linear-gradient(135deg, var(--portal-accent), var(--portal-accent-ink));
+  color:#fff; font-family:"Manrope", system-ui, sans-serif; font-weight:700; font-size:12px;
+  display:flex; align-items:center; justify-content:center; letter-spacing:.2px;
+}
+.portal-user-name{font-size:13px; font-weight:600; color:var(--portal-ink); white-space:nowrap;}
+
+.portal-divider{width:1px; height:22px; background:var(--portal-border-strong); flex:none;}
+
+.portal-iconbtn{
+  display:flex; align-items:center; gap:6px;
+  background:transparent; border:1px solid transparent; color:var(--portal-ink-muted);
+  border-radius:8px; padding:7px 10px; font-size:12.5px; font-weight:600;
+  text-decoration:none; cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+}
+.portal-iconbtn:hover{background:#F2F4F7; color:var(--portal-ink); border-color:var(--portal-border);}
+.portal-iconbtn i{font-size:14px;}
+
+@media (max-width:640px){
+  .portal-user-name{display:none;}
+  .portal-brand-name{display:none;}
+}
+
+/* ---------------------------------------------------------- */
+/* CUERPO                                                       */
+/* ---------------------------------------------------------- */
+.portal-main{max-width:1080px; margin:0 auto; padding:52px 28px 64px;}
+
+.portal-intro{margin-bottom:44px;}
+.portal-intro h1{
+  font-size:26px; font-weight:800; letter-spacing:-.4px; line-height:1.25;
+  font-family:"Manrope", system-ui, sans-serif;
+}
+.portal-intro p{
+  font-size:13.5px; color:var(--portal-ink-muted); margin:7px 0 0; line-height:1.5;
+  display:flex; align-items:center; gap:7px;
+}
+.portal-intro p i{font-size:13px; color:var(--portal-ink-faint);}
+
+.portal-section{margin-bottom:38px;}
+.portal-section:last-child{margin-bottom:0;}
+.portal-section-head{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+.portal-section-head .ic{
+  width:26px; height:26px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  flex:none; font-size:13px;
+}
+.portal-section-head h2{
+  font-size:14.5px; font-weight:700; letter-spacing:-.1px; color:var(--portal-ink);
+  font-family:"Manrope", system-ui, sans-serif;
+}
+
+.portal-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(252px, 326px));
+  justify-content:start;
+  gap:14px;
+}
+
+/* ---------------------------------------------------------- */
+/* TARJETAS — accesos limpios, sin KPIs                         */
+/* ---------------------------------------------------------- */
+.portal-card{
+  position:relative;
+  display:block; text-decoration:none; color:inherit;
+  background:var(--portal-surface);
+  border:1px solid var(--portal-border);
+  border-radius:16px;
+  padding:20px 20px 21px;
+  box-shadow:var(--portal-shadow-rest);
+  transition:transform .16s cubic-bezier(.2,.8,.2,1), border-color .16s ease, box-shadow .16s ease;
+}
+.portal-card:hover{
+  transform:translateY(-2px);
+  border-color:var(--card-tint, var(--portal-accent));
+  box-shadow:var(--portal-shadow-hover);
+  color:inherit;
+}
+.portal-card:focus-visible{
+  outline:2px solid var(--portal-accent); outline-offset:2px;
+}
+
+.portal-card .top-row{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px;}
+.portal-card .ic{
+  width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+  flex:none; font-size:18px;
+  background:var(--card-tint-soft, #F1F5F9);
+  color:var(--card-tint, var(--portal-accent));
+}
+
+.portal-arrow{
+  width:26px; height:26px; border-radius:50%; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--portal-ink-faint); font-size:13px;
+  transition:transform .16s cubic-bezier(.2,.8,.2,1), color .16s ease, background .16s ease;
+}
+.portal-card:hover .portal-arrow{
+  transform:translateX(3px);
+  color:var(--card-tint, var(--portal-accent));
+  background:var(--card-tint-soft, #F1F5F9);
+}
+
+.portal-card .title{
+  font-size:14.5px; font-weight:700; color:var(--portal-ink); letter-spacing:-.1px;
+  display:flex; align-items:center; gap:6px; margin:0 0 4px;
+  font-family:"Manrope", system-ui, sans-serif;
+}
+.portal-card .title .ext-ic{font-size:11px; color:var(--portal-ink-faint); font-weight:400;}
+.portal-card .desc{
+  font-size:12.8px; color:var(--portal-ink-muted); line-height:1.5; margin:0;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+
+/* ---------------------------------------------------------- */
+/* PIE                                                           */
+/* ---------------------------------------------------------- */
+footer.portal-footer{
+  max-width:1080px; margin:0 auto; padding:0 28px 48px;
+  font-size:12px; color:var(--portal-ink-faint);
+}
+footer.portal-footer a{color:var(--portal-accent-ink); text-decoration:none;}
+footer.portal-footer a:hover{text-decoration:underline;}
+
+/* ---------------------------------------------------------- */
+/* RESPONSIVE                                                    */
+/* ---------------------------------------------------------- */
+@media (max-width:680px){
+  .portal-topbar{padding:0 18px;}
+  .portal-main{padding:36px 18px 48px;}
+  .portal-intro{margin-bottom:34px;}
+  .portal-intro h1{font-size:22px;}
+  .portal-grid{grid-template-columns:1fr;}
+  .portal-section{margin-bottom:32px;}
+}
+
+@media (prefers-reduced-motion: reduce){
+  .portal-card, .portal-card .ic, .portal-arrow{transition:none;}
+}
