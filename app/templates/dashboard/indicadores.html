@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<script>document.documentElement.setAttribute('data-theme','light');</script>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Indicadores Gerenciales — NEO</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F0F4F8;
+  --surface: #FFFFFF;
+  --border: #DDE4EC;
+  --ink: #101A2E;
+  --ink-2: #3D4F6A;
+  --ink-muted: #5B6B84;
+  --accent: #0891B2;
+  --accent-2: #0E7490;
+  --accent-soft: #E0F2FE;
+  --green: #16A34A;
+  --green-soft: #DCFCE7;
+  --amber: #D97706;
+  --amber-soft: #FEF3C7;
+  --red: #DC2626;
+  --red-soft: #FEE2E2;
+  --purple: #7C3AED;
+  --purple-soft: #EDE9FE;
+  --shadow: 0 1px 3px rgba(16,26,46,.06), 0 4px 16px -4px rgba(16,26,46,.1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; min-height: 100vh; }
+
+/* ── Topbar ── */
+.topbar {
+  background: linear-gradient(90deg, #005f6b, #00b8c9);
+  padding: 0 24px; display: flex; align-items: center; gap: 14px; height: 56px;
+  box-shadow: 0 2px 8px rgba(0,95,107,.3);
+}
+.topbar img { height: 30px; filter: brightness(0) invert(1); opacity: .9; }
+.topbar-title { color: #fff; font-size: .95rem; font-weight: 700; font-family: "Manrope", sans-serif; flex: 1; }
+.topbar-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.15); color: #fff;
+  border: 1px solid rgba(255,255,255,.25); border-radius: 6px;
+  padding: 6px 13px; font-size: .78rem; font-weight: 600;
+  cursor: pointer; text-decoration: none; transition: background .15s;
+}
+.topbar-btn:hover { background: rgba(255,255,255,.25); color: #fff; }
+.topbar-date { color: rgba(255,255,255,.6); font-size: .75rem; }
+
+/* ── Layout ── */
+main { max-width: 1100px; margin: 0 auto; padding: 32px 20px 56px; }
+.page-title { font-family: "Manrope", sans-serif; font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+.page-sub { font-size: 13px; color: var(--ink-muted); margin-bottom: 28px; }
+
+/* ── Sección ── */
+.section { margin-bottom: 32px; }
+.section-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; border-bottom: 1.5px solid var(--border); padding-bottom: 10px;
+}
+.section-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+}
+.section-head h2 { font-size: 14px; font-weight: 700; font-family: "Manrope", sans-serif; letter-spacing: .3px; }
+
+/* ── Grid KPI ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 18px 16px; box-shadow: var(--shadow);
+}
+.kpi-label { font-size: 11px; font-weight: 600; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.kpi-value { font-family: "Manrope", sans-serif; font-size: 28px; font-weight: 800; line-height: 1; }
+.kpi-sub { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+
+/* colores por tipo */
+.kpi-accent   .kpi-value { color: var(--accent-2); }
+.kpi-green    .kpi-value { color: var(--green); }
+.kpi-red      .kpi-value { color: var(--red); }
+.kpi-amber    .kpi-value { color: var(--amber); }
+.kpi-purple   .kpi-value { color: var(--purple); }
+.kpi-neutral  .kpi-value { color: var(--ink-2); }
+
+/* barra de progreso */
+.progress-wrap { margin-top: 10px; }
+.progress-bar-bg { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+
+/* ── Fila de resumen ── */
+.summary-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+.summary-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 40px;
+  padding: 8px 16px; font-size: 13px; font-weight: 600; box-shadow: var(--shadow);
+}
+.summary-pill i { font-size: 15px; }
+
+@media (max-width: 600px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  main { padding: 20px 16px 40px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+  <span class="topbar-title">Indicadores Gerenciales</span>
+  <span class="topbar-date">{{ stats.general.hoy }}</span>
+  <a href="{{ url_for('dashboard.dashboards_hub') }}" class="topbar-btn">
+    <i class="bi bi-grid-1x2"></i> Portal
+  </a>
+  <a href="{{ url_for('auth.logout') }}" class="topbar-btn">
+    <i class="bi bi-box-arrow-right"></i> Salir
+  </a>
+</div>
+
+<main>
+  <div class="page-title">Resumen Ejecutivo</div>
+  <p class="page-sub">Vista consolidada en tiempo real · {{ stats.general.contratos }} contratos activos · {{ stats.general.usuarios }} usuarios</p>
+
+  <!-- Resumen rápido -->
+  <div class="summary-row">
+    <div class="summary-pill" style="color:var(--red)">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      <span>{{ stats.neo.abiertos }} reportes abiertos</span>
+    </div>
+    <div class="summary-pill" style="color:var(--amber)">
+      <i class="bi bi-clock-fill"></i>
+      <span>{{ stats.he.pendiente }} HE pendientes</span>
+    </div>
+    <div class="summary-pill" style="color:var(--red)">
+      <i class="bi bi-calendar-x-fill"></i>
+      <span>{{ stats.comp.vencidos }} compromisos vencidos</span>
+    </div>
+    <div class="summary-pill" style="color:var(--green)">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>{{ stats.neo.hoy }} reportes hoy</span>
+    </div>
+  </div>
+
+  <!-- Reportes operacionales -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-icon" style="background:#E0F2FE;color:#0E7490"><i class="bi bi-broadcast-pin"></i></div>
+      <h2>Reportes Operacionales</h2>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-neutral">
+        <div class="kpi-label">Total registrados</div>
+        <div class="kpi-value">{{ stats.neo.total }}</div>
+        <div class="kpi-sub">Desde el inicio</div>
+      </div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-label">Abiertos</div>
+        <div class="kpi-value">{{ stats.neo.abiertos }}</div>
+        <div class="kpi-sub">Sin respuesta del coor.</div>
+      </div>
+      <div class="kpi-card kpi-accent">
+        <div class="kpi-label">Respondidos</div>
+        <div class="kpi-value">{{ stats.neo.respondidos }}</div>
+        <div class="kpi-sub">Pendientes de validar</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Conformes</div>
+        <div class="kpi-value">{{ stats.neo.conformes }}</div>
+        <div class="kpi-sub">{{ stats.neo.pct_conf }}% del total</div>
+        <div class="progress-wrap">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ stats.neo.pct_conf }}%;background:var(--green)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-label">No conformes</div>
+        <div class="kpi-value">{{ stats.neo.no_conformes }}</div>
+        <div class="kpi-sub">Requieren atención</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Cerrados</div>
+        <div class="kpi-value">{{ stats.neo.cerrados }}</div>
+        <div class="kpi-sub">Proceso completado</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Horas extras -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-icon" style="background:#FEF3C7;color:#D97706"><i class="bi bi-clock-history"></i></div>
+      <h2>Horas Extras</h2>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-neutral">
+        <div class="kpi-label">Total registros</div>
+        <div class="kpi-value">{{ stats.he.total }}</div>
+        <div class="kpi-sub">Todos los períodos</div>
+      </div>
+      <div class="kpi-card kpi-amber">
+        <div class="kpi-label">Pendientes</div>
+        <div class="kpi-value">{{ stats.he.pendiente }}</div>
+        <div class="kpi-sub">Sin validar por NEO</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Conformes</div>
+        <div class="kpi-value">{{ stats.he.conforme }}</div>
+        <div class="kpi-sub">Aprobadas</div>
+      </div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-label">No conformes</div>
+        <div class="kpi-value">{{ stats.he.no_conforme }}</div>
+        <div class="kpi-sub">Rechazadas</div>
+      </div>
+      <div class="kpi-card kpi-accent">
+        <div class="kpi-label">Horas reportadas</div>
+        <div class="kpi-value" style="font-size:22px">{{ stats.he.hrs_reportadas }}</div>
+        <div class="kpi-sub">Horas totales</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Horas autorizadas</div>
+        <div class="kpi-value" style="font-size:22px">{{ stats.he.hrs_autorizadas }}</div>
+        <div class="kpi-sub">Conformes + descontadas</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compromisos -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-icon" style="background:#DCFCE7;color:#16A34A"><i class="bi bi-calendar-check"></i></div>
+      <h2>Compromisos</h2>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-neutral">
+        <div class="kpi-label">Total compromisos</div>
+        <div class="kpi-value">{{ stats.comp.total }}</div>
+        <div class="kpi-sub">Registrados</div>
+      </div>
+      <div class="kpi-card kpi-accent">
+        <div class="kpi-label">Abiertos</div>
+        <div class="kpi-value">{{ stats.comp.abiertos }}</div>
+        <div class="kpi-sub">En seguimiento</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Cerrados</div>
+        <div class="kpi-value">{{ stats.comp.cerrados }}</div>
+        <div class="kpi-sub">{{ stats.comp.pct_cierre }}% de cierre</div>
+        <div class="progress-wrap">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:{{ stats.comp.pct_cierre }}%;background:var(--green)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-label">Vencidos</div>
+        <div class="kpi-value">{{ stats.comp.vencidos }}</div>
+        <div class="kpi-sub">Fecha superada sin cierre</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+</body>
+</html>
