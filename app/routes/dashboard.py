@@ -89,6 +89,16 @@ def indicadores():
     neo_no_conf     = base_q().filter_by(conformidad_neo="No conforme").count()
     neo_hoy         = base_q().filter_by(fecha_reporte=hoy).count()
 
+    # ── Horas extras (sin filtros de NEO, son datos independientes) ──
+    he_total     = HoraExtra.query.count()
+    he_pendiente = HoraExtra.query.filter_by(estado="PENDIENTE").count()
+    he_conforme  = HoraExtra.query.filter_by(estado="CONFORME").count()
+    he_no_conf   = HoraExtra.query.filter_by(estado="NO CONFORME").count()
+    he_hrs_rep   = db.session.query(func.sum(HoraExtra.horas_reportadas)).scalar() or 0
+    he_hrs_auth  = db.session.query(func.sum(HoraExtra.horas_autorizadas)).filter(
+        HoraExtra.estado.in_(["CONFORME", "DESCONTADA"])
+    ).scalar() or 0
+
     # ── General ────────────────────────────────────────────────
     contratos_activos = Contrato.query.filter_by(activo=True).count()
     usuarios_activos  = User.query.filter_by(activo=True).count()
@@ -221,6 +231,12 @@ def indicadores():
             "hoy": neo_hoy,
             "pct_conf": round(neo_conformes / neo_total * 100, 1) if neo_total else 0,
             "pct_no_conf": round(neo_no_conf / neo_total * 100, 1) if neo_total else 0,
+        },
+        "he": {
+            "total": he_total, "pendiente": he_pendiente,
+            "conforme": he_conforme, "no_conforme": he_no_conf,
+            "hrs_reportadas": round(he_hrs_rep, 1),
+            "hrs_autorizadas": round(he_hrs_auth, 1),
         },
         "general": {
             "contratos": contratos_activos,
