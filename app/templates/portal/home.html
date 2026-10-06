@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/portal.css') }}">
+<link rel="stylesheet" href="{{ static_v('css/portal.css') }}">
 </head>
 <body class="portal-body">
 
@@ -19,10 +19,10 @@
 {% set _initials = (_parts[0][0] ~ (_parts[-1][0] if _parts|length > 1 else "")) | upper %}
 
 <div class="portal-topbar">
-    <a class="portal-brand" href="{{ request.path }}">
+    <div class="portal-brand">
         <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
         <span class="portal-brand-name">{{ page_title }}</span>
-    </a>
+    </div>
     <div class="portal-topbar-spacer"></div>
     <div class="portal-user">
         <div class="portal-avatar">{{ _initials }}</div>
