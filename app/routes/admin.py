@@ -64,6 +64,7 @@ def admin_required(f):
     @wraps(f)
     @login_required
     def decorated(*args, **kwargs):
+        """Redirige al login si el usuario no tiene rol de administrador."""
         if current_user.rol.lower() != "admin":
             return redirect(url_for("auth.login"))
         return f(*args, **kwargs)
@@ -77,6 +78,7 @@ def admin_required(f):
 @admin_bp.route("/")
 @admin_required
 def dashboard():
+    """Muestra el dashboard principal de administración con estadísticas globales."""
     hoy = date.today()
 
     # ── Catálogos ──
@@ -145,6 +147,7 @@ def dashboard():
 @admin_bp.route("/contratos")
 @admin_required
 def contratos():
+    """Lista todos los contratos con sus usuarios asignados."""
     lista = Contrato.query.order_by(Contrato.contrato).all()
     todos_usuarios = User.query.filter(
         User.rol.in_(["coordinador", "director"])
@@ -165,6 +168,7 @@ def contratos():
 @admin_bp.route("/api/contratos", methods=["POST"])
 @admin_required
 def api_crear_contrato():
+    """Crea un nuevo contrato vía API JSON."""
     d = request.get_json() or {}
     nombre_completo = (d.get("contrato") or "").strip()
     if not nombre_completo:
@@ -190,6 +194,7 @@ def api_crear_contrato():
 @admin_bp.route("/api/contratos/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_contrato(id):
+    """Actualiza los campos de un contrato existente."""
     c = db.session.get(Contrato, id)
     if not c:
         return jsonify({"success": False}), 404
@@ -217,6 +222,7 @@ def api_editar_contrato(id):
 @admin_bp.route("/api/contratos/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_contrato(id):
+    """Elimina permanentemente un contrato por su ID."""
     c = db.session.get(Contrato, id)
     if not c:
         return jsonify({"success": False}), 404
@@ -232,6 +238,7 @@ def api_eliminar_contrato(id):
 @admin_bp.route("/usuarios")
 @admin_required
 def usuarios():
+    """Lista todos los usuarios que no son NEO ni admin con sus contratos asignados."""
     lista = User.query.filter(
         ~User.rol.in_(["neo", "admin"])
     ).order_by(User.rol, User.nombre_completo).all()
@@ -254,6 +261,7 @@ def usuarios():
 @admin_bp.route("/neo-usuarios")
 @admin_required
 def neo_usuarios():
+    """Lista los usuarios con rol NEO o admin y sus contratos asignados."""
     lista = User.query.filter(
         User.rol.in_(["neo", "admin"])
     ).order_by(User.rol, User.nombre_completo).all()
@@ -279,6 +287,7 @@ def neo_usuarios():
 @admin_bp.route("/coordinador-usuarios")
 @admin_required
 def coordinador_usuarios():
+    """Muestra la página de gestión de usuarios coordinadores."""
     lista = User.query.filter_by(rol="coordinador").order_by(User.nombre_completo).all()
     contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     asignados_por_usuario = {
@@ -297,6 +306,7 @@ def coordinador_usuarios():
 @admin_bp.route("/supervisor-usuarios")
 @admin_required
 def supervisor_usuarios():
+    """Muestra la página de gestión de usuarios supervisores."""
     lista = User.query.filter_by(rol="supervisor").order_by(User.nombre_completo).all()
     contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     asignados_por_usuario = {
@@ -315,6 +325,7 @@ def supervisor_usuarios():
 @admin_bp.route("/director-usuarios")
 @admin_required
 def director_usuarios():
+    """Muestra la página de gestión de usuarios directores."""
     lista = User.query.filter_by(rol="director").order_by(User.nombre_completo).all()
     contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     asignados_por_usuario = {
@@ -333,6 +344,7 @@ def director_usuarios():
 @admin_bp.route("/gerente-usuarios")
 @admin_required
 def gerente_usuarios():
+    """Muestra la página de gestión de usuarios gerentes."""
     lista = User.query.filter_by(rol="gerente").order_by(User.nombre_completo).all()
     contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     asignados_por_usuario = {
@@ -351,6 +363,7 @@ def gerente_usuarios():
 @admin_bp.route("/api/usuarios", methods=["POST"])
 @admin_required
 def api_crear_usuario():
+    """Crea un nuevo usuario con rol, nombre y contraseña inicial."""
     d = request.get_json() or {}
     username = (d.get("username") or "").strip()
     nombre   = (d.get("nombre_completo") or "").strip()
@@ -377,6 +390,7 @@ def api_crear_usuario():
 @admin_bp.route("/api/usuarios/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_usuario(id):
+    """Actualiza los datos de un usuario, incluyendo permisos y contraseña opcional."""
     u = db.session.get(User, id)
     if not u:
         return jsonify({"success": False}), 404
@@ -401,6 +415,7 @@ def api_editar_usuario(id):
 @admin_bp.route("/api/usuarios/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_usuario(id):
+    """Elimina permanentemente un usuario por su ID."""
     u = db.session.get(User, id)
     if not u:
         return jsonify({"success": False}), 404
@@ -416,6 +431,7 @@ def api_eliminar_usuario(id):
 @admin_bp.route("/personas")
 @admin_required
 def personas():
+    """Lista todas las personas (empleados) registradas."""
     lista = Persona.query.order_by(Persona.Nombre).all()
     return render_template("admin/personas.html", personas=lista)
 
@@ -423,6 +439,7 @@ def personas():
 @admin_bp.route("/api/personas", methods=["POST"])
 @admin_required
 def api_crear_persona():
+    """Registra una nueva persona con cédula, nombre y cargo."""
     d = request.get_json() or {}
     doc    = (d.get("Documento") or "").strip()
     nombre = (d.get("Nombre") or "").strip()
@@ -441,6 +458,7 @@ def api_crear_persona():
 @admin_bp.route("/api/personas/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_persona(id):
+    """Actualiza nombre, cargo y salario de una persona."""
     p = db.session.get(Persona, id)
     if not p:
         return jsonify({"success": False}), 404
@@ -455,6 +473,7 @@ def api_editar_persona(id):
 @admin_bp.route("/api/personas/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_persona(id):
+    """Elimina una persona por su ID."""
     p = db.session.get(Persona, id)
     if not p:
         return jsonify({"success": False}), 404
@@ -466,6 +485,7 @@ def api_eliminar_persona(id):
 @admin_bp.route("/api/personas/bulk-delete", methods=["POST"])
 @admin_required
 def api_bulk_delete_personas():
+    """Elimina múltiples personas en bloque a partir de una lista de IDs."""
     data = request.get_json() or {}
     ids = data.get("ids", [])
     if not ids:
@@ -482,6 +502,7 @@ def api_bulk_delete_personas():
 @admin_bp.route("/api/personas/export")
 @admin_required
 def api_exportar_personas():
+    """Exporta el listado completo de personas a un archivo Excel."""
     import pandas as pd
     lista = Persona.query.order_by(Persona.Nombre).all()
     df = pd.DataFrame([{
@@ -500,6 +521,7 @@ def api_exportar_personas():
 @admin_bp.route("/api/personas/import", methods=["POST"])
 @admin_required
 def api_importar_personas():
+    """Importa personas desde un Excel, insertando nuevas y actualizando existentes."""
     import pandas as pd
     archivo = request.files.get("archivo")
     if not archivo:
@@ -511,6 +533,7 @@ def api_importar_personas():
         df.columns = [str(c).strip() for c in df.columns]
         # Aliases aceptados por columna (en minúsculas)
         def _col(aliases):
+            """Busca la primera columna del DataFrame que coincida con uno de los alias dados."""
             for a in aliases:
                 if a in col_map:
                     return col_map[a]
@@ -560,6 +583,7 @@ def api_importar_personas():
 @admin_bp.route("/api/sync-nombres", methods=["POST"])
 @admin_required
 def api_sync_nombres():
+    """Sincroniza manualmente los nombres de HoraExtra desde la tabla de personas."""
     try:
         count = _sync_nombres_desde_personas()
         return jsonify({"success": True, "actualizados": count})
@@ -575,6 +599,7 @@ def api_sync_nombres():
 @admin_bp.route("/metas")
 @admin_required
 def metas():
+    """Lista todas las metas operativas por contrato y tipo de cuadrilla."""
     lista = MetaOperativa.query.order_by(
         MetaOperativa.contrato, MetaOperativa.Tipo_cuadrilla
     ).all()
@@ -585,6 +610,7 @@ def metas():
 @admin_bp.route("/api/metas", methods=["POST"])
 @admin_required
 def api_crear_meta():
+    """Crea una nueva meta operativa para un contrato y tipo de cuadrilla."""
     d = request.get_json() or {}
     tipo     = (d.get("Tipo_cuadrilla") or "").strip()
     contrato = (d.get("contrato") or "").strip()
@@ -609,6 +635,7 @@ def api_crear_meta():
 @admin_bp.route("/api/metas/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_meta(id):
+    """Actualiza los campos de una meta operativa existente."""
     m = db.session.get(MetaOperativa, id)
     if not m:
         return jsonify({"success": False}), 404
@@ -633,6 +660,7 @@ def api_editar_meta(id):
 @admin_bp.route("/api/metas/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_meta(id):
+    """Elimina una meta operativa por su ID."""
     m = db.session.get(MetaOperativa, id)
     if not m:
         return jsonify({"success": False}), 404
@@ -644,6 +672,7 @@ def api_eliminar_meta(id):
 @admin_bp.route("/api/metas/bulk-delete", methods=["DELETE"])
 @admin_required
 def api_eliminar_metas_bulk():
+    """Elimina múltiples metas operativas a partir de una lista de IDs."""
     ids = (request.get_json() or {}).get("ids", [])
     if not ids:
         return jsonify({"success": False, "mensaje": "Sin IDs"}), 400
@@ -655,6 +684,7 @@ def api_eliminar_metas_bulk():
 @admin_bp.route("/api/metas/export")
 @admin_required
 def api_exportar_metas():
+    """Exporta todas las metas operativas a un archivo Excel."""
     import pandas as pd
     lista = MetaOperativa.query.order_by(MetaOperativa.contrato, MetaOperativa.Tipo_cuadrilla).all()
     df = pd.DataFrame([{
@@ -673,6 +703,7 @@ def api_exportar_metas():
 @admin_bp.route("/api/metas/import", methods=["POST"])
 @admin_required
 def api_importar_metas():
+    """Importa metas operativas desde un archivo Excel, actualizando existentes."""
     import pandas as pd
     archivo = request.files.get("archivo")
     if not archivo:
@@ -721,6 +752,7 @@ def api_importar_metas():
 @admin_bp.route("/desvios")
 @admin_required
 def desvios():
+    """Lista todos los tipos de desvío disponibles."""
     lista = TipoDesvio.query.order_by(TipoDesvio.tipo_desvio).all()
     return render_template("admin/desvios.html", desvios=lista)
 
@@ -728,6 +760,7 @@ def desvios():
 @admin_bp.route("/api/desvios", methods=["POST"])
 @admin_required
 def api_crear_desvio():
+    """Crea un nuevo tipo de desvío."""
     d = request.get_json() or {}
     nombre = (d.get("tipo_desvio") or "").strip()
     if not nombre:
@@ -743,6 +776,7 @@ def api_crear_desvio():
 @admin_bp.route("/api/desvios/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_desvio(id):
+    """Actualiza el nombre de un tipo de desvío."""
     t = db.session.get(TipoDesvio, id)
     if not t:
         return jsonify({"success": False}), 404
@@ -755,6 +789,7 @@ def api_editar_desvio(id):
 @admin_bp.route("/api/desvios/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_desvio(id):
+    """Elimina un tipo de desvío por su ID."""
     t = db.session.get(TipoDesvio, id)
     if not t:
         return jsonify({"success": False}), 404
@@ -770,6 +805,7 @@ def api_eliminar_desvio(id):
 @admin_bp.route("/parametros")
 @admin_required
 def parametros():
+    """Lista todos los parámetros NEO configurados."""
     lista = ParametroNeo.query.order_by(ParametroNeo.parametroNeo).all()
     contratos = Contrato.query.order_by(Contrato.contrato).all()
     return render_template("admin/parametros.html", parametros=lista, contratos=contratos)
@@ -778,6 +814,7 @@ def parametros():
 @admin_bp.route("/api/parametros", methods=["POST"])
 @admin_required
 def api_crear_parametro():
+    """Crea un nuevo parámetro NEO."""
     d = request.get_json() or {}
     nombre = (d.get("parametroNeo") or "").strip()
     if not nombre:
@@ -793,6 +830,7 @@ def api_crear_parametro():
 @admin_bp.route("/api/parametros/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_parametro(id):
+    """Actualiza el nombre de un parámetro NEO."""
     p = db.session.get(ParametroNeo, id)
     if not p:
         return jsonify({"success": False}), 404
@@ -805,6 +843,7 @@ def api_editar_parametro(id):
 @admin_bp.route("/api/parametros/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_parametro(id):
+    """Elimina un parámetro NEO por su ID."""
     p = db.session.get(ParametroNeo, id)
     if not p:
         return jsonify({"success": False}), 404
@@ -820,6 +859,7 @@ def api_eliminar_parametro(id):
 @admin_bp.route("/actividades")
 @admin_required
 def actividades():
+    """Lista todas las actividades configuradas por contrato."""
     lista = Actividad.query.order_by(
         Actividad.contrato, Actividad.actividad
     ).all()
@@ -831,6 +871,7 @@ def actividades():
 @admin_bp.route("/api/actividades", methods=["POST"])
 @admin_required
 def api_crear_actividad():
+    """Crea una nueva actividad asociada opcionalmente a un contrato."""
     d = request.get_json() or {}
     nombre   = (d.get("actividad") or "").strip()
     contrato = (d.get("contrato") or "").strip()
@@ -845,6 +886,7 @@ def api_crear_actividad():
 @admin_bp.route("/api/actividades/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_actividad(id):
+    """Actualiza el nombre y contrato de una actividad."""
     a = db.session.get(Actividad, id)
     if not a:
         return jsonify({"success": False}), 404
@@ -858,6 +900,7 @@ def api_editar_actividad(id):
 @admin_bp.route("/api/actividades/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_actividad(id):
+    """Elimina una actividad por su ID."""
     a = db.session.get(Actividad, id)
     if not a:
         return jsonify({"success": False}), 404
@@ -873,6 +916,7 @@ def api_eliminar_actividad(id):
 @admin_bp.route("/recursos-neo")
 @admin_required
 def recursos_neo():
+    """Lista los recursos predefinidos (Centros Técnicos y Sedes) por contrato."""
     lista = RecursoContrato.query.filter(
         db.or_(
             RecursoContrato.recurso.like("Centro Técnico%"),
@@ -887,6 +931,7 @@ def recursos_neo():
 @admin_bp.route("/api/recursos-neo", methods=["POST"])
 @admin_required
 def api_crear_recurso_neo():
+    """Crea un recurso predefinido (Centro Técnico o Sede) para un contrato."""
     d = request.get_json() or {}
     recurso  = (d.get("recurso") or "").strip()
     contrato = (d.get("contrato") or "").strip()
@@ -903,6 +948,7 @@ def api_crear_recurso_neo():
 @admin_bp.route("/api/recursos-neo/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_recurso_neo(id):
+    """Actualiza recurso y contrato de un recurso predefinido."""
     rc = db.session.get(RecursoContrato, id)
     if not rc:
         return jsonify({"success": False}), 404
@@ -923,6 +969,7 @@ def api_editar_recurso_neo(id):
 @admin_bp.route("/api/recursos-neo/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_recurso_neo(id):
+    """Elimina un recurso predefinido por su ID."""
     rc = db.session.get(RecursoContrato, id)
     if not rc:
         return jsonify({"success": False}), 404
@@ -934,6 +981,7 @@ def api_eliminar_recurso_neo(id):
 @admin_bp.route("/api/recursos-neo/seed", methods=["POST"])
 @admin_required
 def api_seed_recursos_neo():
+    """Pobla la tabla de recursos predefinidos con los valores iniciales por contrato."""
     from app.routes.neo import RECURSOS_EXTRA_POR_CONTRATO
     insertados = 0
     for contrato, recursos in RECURSOS_EXTRA_POR_CONTRATO.items():
@@ -967,6 +1015,7 @@ _ACCIONES_SEED = [
 @admin_bp.route("/acciones")
 @admin_required
 def acciones():
+    """Lista todas las acciones a tomar disponibles para coordinadores."""
     lista = AccionTomar.query.order_by(AccionTomar.accion).all()
     return render_template("admin/acciones.html", acciones=lista)
 
@@ -974,6 +1023,7 @@ def acciones():
 @admin_bp.route("/api/acciones/seed", methods=["POST"])
 @admin_required
 def api_seed_acciones():
+    """Inserta las acciones predefinidas iniciales si no existen."""
     insertados = 0
     for texto in _ACCIONES_SEED:
         if not AccionTomar.query.filter_by(accion=texto).first():
@@ -986,6 +1036,7 @@ def api_seed_acciones():
 @admin_bp.route("/api/acciones", methods=["POST"])
 @admin_required
 def api_crear_accion():
+    """Crea una nueva acción a tomar para coordinadores."""
     d = request.get_json() or {}
     accion = (d.get("accion") or "").strip()
     if not accion:
@@ -1000,6 +1051,7 @@ def api_crear_accion():
 @admin_bp.route("/api/acciones/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_accion(id):
+    """Actualiza el texto de una acción a tomar."""
     a = db.session.get(AccionTomar, id)
     if not a:
         return jsonify({"success": False}), 404
@@ -1018,6 +1070,7 @@ def api_editar_accion(id):
 @admin_bp.route("/api/acciones/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_accion(id):
+    """Elimina una acción a tomar por su ID."""
     a = db.session.get(AccionTomar, id)
     if not a:
         return jsonify({"success": False}), 404
@@ -1038,6 +1091,7 @@ _PARAMETROS_COOR_SEED = [
 @admin_bp.route("/parametros-coordinador")
 @admin_required
 def parametros_coordinador():
+    """Lista todos los parámetros de coordinador disponibles."""
     lista = ParametroCoor.query.order_by(ParametroCoor.parametro).all()
     return render_template("admin/parametros_coor.html", parametros=lista)
 
@@ -1045,6 +1099,7 @@ def parametros_coordinador():
 @admin_bp.route("/api/parametros-coordinador/seed", methods=["POST"])
 @admin_required
 def api_seed_parametros_coor():
+    """Inserta los parámetros de coordinador predefinidos si no existen."""
     insertados = 0
     for texto in _PARAMETROS_COOR_SEED:
         if not ParametroCoor.query.filter_by(parametro=texto).first():
@@ -1057,6 +1112,7 @@ def api_seed_parametros_coor():
 @admin_bp.route("/api/parametros-coordinador", methods=["POST"])
 @admin_required
 def api_crear_parametro_coor():
+    """Crea un nuevo parámetro de evaluación para coordinadores."""
     d = request.get_json() or {}
     parametro = (d.get("parametro") or "").strip()
     if not parametro:
@@ -1085,6 +1141,7 @@ def _wb_styles():
 @admin_bp.route("/exportar/usuarios")
 @admin_required
 def exportar_usuarios():
+    """Exporta todos los usuarios a un archivo Excel formateado."""
     hdr_fill, hdr_font, hdr_align, border = _wb_styles()
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -1131,6 +1188,7 @@ def exportar_usuarios():
 @admin_bp.route("/exportar/contratos")
 @admin_required
 def exportar_contratos():
+    """Exporta todos los contratos a un archivo Excel formateado."""
     hdr_fill, hdr_font, hdr_align, border = _wb_styles()
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -1203,6 +1261,7 @@ _IMPORT_COLS = [
 @admin_bp.route("/reportes")
 @admin_required
 def reportes():
+    """Muestra la página de gestión de reportes operacionales."""
     total = ReporteOperacional.query.count()
     return render_template("admin/reportes.html", total=total)
 
@@ -1355,6 +1414,7 @@ _SUPERVISORES_SEED = [
 @admin_bp.route("/supervisores")
 @admin_required
 def supervisores():
+    """Lista todos los supervisores registrados con sus contratos asignados."""
     lista = Supervisor.query.order_by(Supervisor.nombre).all()
     contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     return render_template("admin/supervisores.html", supervisores=lista, contratos=contratos)
@@ -1363,6 +1423,7 @@ def supervisores():
 @admin_bp.route("/api/supervisores/seed", methods=["POST"])
 @admin_required
 def api_seed_supervisores():
+    """Inserta la lista predefinida de supervisores si no existen."""
     insertados = 0
     for nombre in _SUPERVISORES_SEED:
         if not Supervisor.query.filter_by(nombre=nombre).first():
@@ -1375,6 +1436,7 @@ def api_seed_supervisores():
 @admin_bp.route("/api/supervisores", methods=["POST"])
 @admin_required
 def api_crear_supervisor():
+    """Crea un nuevo supervisor y le asigna contratos opcionales."""
     d = request.get_json() or {}
     nombre = (d.get("nombre") or "").strip().upper()
     if not nombre:
@@ -1393,6 +1455,7 @@ def api_crear_supervisor():
 @admin_bp.route("/api/supervisores/<int:id>", methods=["PUT"])
 @admin_required
 def api_editar_supervisor(id):
+    """Actualiza nombre, estado activo y contratos de un supervisor."""
     s = db.session.get(Supervisor, id)
     if not s:
         return jsonify({"success": False}), 404
@@ -1414,6 +1477,7 @@ def api_editar_supervisor(id):
 @admin_bp.route("/api/supervisores/<int:id>", methods=["DELETE"])
 @admin_required
 def api_eliminar_supervisor(id):
+    """Elimina un supervisor por su ID."""
     s = db.session.get(Supervisor, id)
     if not s:
         return jsonify({"success": False}), 404
@@ -1649,6 +1713,7 @@ def api_get_contratos_usuario(id):
 @admin_bp.route("/api/usuarios/<int:id>/contratos", methods=["POST"])
 @admin_required
 def api_set_contratos_usuario(id):
+    """Reemplaza los contratos asignados a un usuario por la nueva lista enviada."""
     u = db.session.get(User, id)
     if not u:
         return jsonify({"success": False, "mensaje": "Usuario no encontrado"}), 404
@@ -1669,6 +1734,7 @@ def api_set_contratos_usuario(id):
 @admin_bp.route("/he/dashboard-acceso")
 @admin_required
 def he_dashboard_acceso():
+    """Muestra la página de control de acceso al dashboard de horas extras."""
     usuarios = User.query.filter_by(activo=True).order_by(User.nombre_completo).all()
     return render_template("admin/he_dashboard_acceso.html", usuarios=usuarios)
 
@@ -1676,6 +1742,7 @@ def he_dashboard_acceso():
 @admin_bp.route("/he/kpis")
 @admin_required
 def he_kpis():
+    """Muestra el dashboard de KPIs de horas extras con filtros por contrato y corte."""
     contratos = Contrato.query.order_by(Contrato.contrato).all()
     cortes    = HeCorte.query.order_by(HeCorte.fecha_inicio.desc()).all()
     return render_template("admin/he_kpis.html",
@@ -1685,6 +1752,7 @@ def he_kpis():
 @admin_bp.route("/he/cortes")
 @admin_required
 def he_cortes():
+    """Muestra la página de gestión de cortes de horas extras."""
     contratos = Contrato.query.order_by(Contrato.contrato).all()
     return render_template("admin/he_cortes.html", contratos=contratos)
 
@@ -1692,6 +1760,7 @@ def he_cortes():
 @admin_bp.route("/he/registros")
 @admin_required
 def he_registros():
+    """Muestra la tabla de registros de horas extras con filtros."""
     contratos = Contrato.query.order_by(Contrato.contrato).all()
     cortes    = HeCorte.query.order_by(HeCorte.fecha_inicio.desc()).all()
     return render_template("admin/he_registros.html",
@@ -1701,6 +1770,7 @@ def he_registros():
 @admin_bp.route("/api/he/dashboard-data")
 @login_required
 def api_he_dashboard_data():
+    """Devuelve KPIs, distribución por tipo y alertas de límite legal de horas extras."""
     if not (current_user.rol.lower() == "admin" or current_user.tiene_permiso("dashboard_he")):
         return jsonify({"error": "Sin permiso"}), 403
 
@@ -1903,6 +1973,7 @@ def api_he_dashboard_data():
 @admin_bp.route("/api/he/kpis-concepto")
 @admin_required
 def api_he_kpis_concepto():
+    """Devuelve registros y horas agrupadas por código de concepto de horas extras."""
     q = HoraExtra.query
     contrato_id = request.args.get("contrato_id", type=int)
     corte_id    = request.args.get("corte_id", type=int)
@@ -1972,6 +2043,7 @@ def api_he_bulk_delete():
 @admin_bp.route("/api/he/registros/export")
 @admin_required
 def api_he_registros_export():
+    """Exporta los registros de horas extras a Excel con filtros opcionales."""
     import pandas as pd
     from sqlalchemy import or_ as sa_or
     q = HoraExtra.query
@@ -2038,6 +2110,7 @@ def api_he_registros_export():
 @admin_bp.route("/he-configuracion")
 @admin_required
 def he_configuracion():
+    """Muestra la página de configuración del módulo horas extras."""
     config = {
         "password_corte_cerrado": HeConfig.get("password_corte_cerrado", ""),
     }
@@ -2047,6 +2120,7 @@ def he_configuracion():
 @admin_bp.route("/he/auditoria")
 @admin_required
 def he_auditoria():
+    """Muestra el log de auditoría de operaciones sobre horas extras."""
     contratos = Contrato.query.order_by(Contrato.contrato).all()
     return render_template("admin/he_auditoria.html", contratos=contratos)
 
@@ -2054,6 +2128,7 @@ def he_auditoria():
 @admin_bp.route("/api/he/auditoria")
 @admin_required
 def api_he_auditoria():
+    """Devuelve el log de auditoría de horas extras filtrado con límite configurable."""
     from sqlalchemy import text as sa_text
     contrato_id  = request.args.get("contrato_id", type=int)
     operacion    = request.args.get("operacion", "")
@@ -2106,6 +2181,7 @@ def api_he_auditoria():
 @admin_bp.route("/api/he/config", methods=["POST"])
 @admin_required
 def api_he_config_guardar():
+    """Guarda un parámetro de configuración del módulo horas extras."""
     d = request.get_json() or {}
     clave  = (d.get("clave") or "").strip()
     valor  = (d.get("valor") or "")
