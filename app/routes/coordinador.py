@@ -242,6 +242,12 @@ def dashboard_supervisor():
     if seg_items:
         groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
 
+    if u.tiene_permiso("indicadores"):
+        groups.append({"name": "Indicadores", "icon": "bi-speedometer2", "tint": "#0891B2", "links": [
+            {"label": "Indicadores Gerenciales", "icon": "bi-speedometer2", "url": url_for("dashboard.indicadores"),
+             "desc": "KPIs en tiempo real: reportes, horas extras y compromisos"},
+        ]})
+
     groups.append({
         "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
         "links": [
