@@ -338,6 +338,13 @@ def home_neo():
     if he_items:
         groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items})
 
+    if u.tiene_permiso("indicadores") or es_admin:
+        groups[0]["links"].append({
+            "label": "Indicadores", "icon": "bi-speedometer2",
+            "url": url_for("dashboard.indicadores"),
+            "desc": "Dashboard gerencial de KPIs: reportes, horas extras y compromisos",
+        })
+
     seg_items = []
     if u.tiene_permiso("bi_seguimiento"):
         seg_items.append({"label": "Archivo de Seguimiento", "icon": "bi-folder2-open", "url": url_for("coordinador.bi_seguimiento"),
