@@ -6,6 +6,7 @@ from flask import (
     redirect,
     render_template,
     abort,
+    request,
 )
 
 from flask_login import (
@@ -52,48 +53,72 @@ def indicadores():
 
     hoy = date.today()
 
+    # ── Filtros activos (query params) ──────────────────────────
+    f_contrato    = request.args.get("contrato", "").strip()
+    f_tipo        = request.args.get("tipo", "").strip()
+    f_conformidad = request.args.get("conformidad", "").strip()
+
+    def base_q():
+        q = ReporteOperacional.query
+        if f_contrato:
+            q = q.filter(ReporteOperacional.contrato == f_contrato)
+        if f_tipo:
+            q = q.filter(ReporteOperacional.tipo_incidencia == f_tipo)
+        if f_conformidad:
+            q = q.filter(ReporteOperacional.conformidad_neo == f_conformidad)
+        return q
+
+    def base_agg():
+        q = db.session.query
+        filters = []
+        if f_contrato:
+            filters.append(ReporteOperacional.contrato == f_contrato)
+        if f_tipo:
+            filters.append(ReporteOperacional.tipo_incidencia == f_tipo)
+        if f_conformidad:
+            filters.append(ReporteOperacional.conformidad_neo == f_conformidad)
+        return filters
+
     # ── Reportes operacionales ──────────────────────────────────
-    neo_total       = ReporteOperacional.query.count()
-    neo_abiertos    = ReporteOperacional.query.filter_by(estado="Abierto").count()
-    neo_respondidos = ReporteOperacional.query.filter_by(estado="Respondido").count()
-    neo_cerrados    = ReporteOperacional.query.filter_by(estado="Cerrado").count()
-    neo_conformes   = ReporteOperacional.query.filter_by(conformidad_neo="Conforme").count()
-    neo_no_conf     = ReporteOperacional.query.filter_by(conformidad_neo="No conforme").count()
-    neo_hoy         = ReporteOperacional.query.filter_by(fecha_reporte=hoy).count()
-
-    # ── Horas extras ───────────────────────────────────────────
-    he_total     = HoraExtra.query.count()
-    he_pendiente = HoraExtra.query.filter_by(estado="PENDIENTE").count()
-    he_conforme  = HoraExtra.query.filter_by(estado="CONFORME").count()
-    he_no_conf   = HoraExtra.query.filter_by(estado="NO CONFORME").count()
-    he_desc      = HoraExtra.query.filter_by(estado="DESCONTADA").count()
-    he_hrs_rep   = db.session.query(func.sum(HoraExtra.horas_reportadas)).scalar() or 0
-    he_hrs_auth  = db.session.query(func.sum(HoraExtra.horas_autorizadas)).filter(
-        HoraExtra.estado.in_(["CONFORME", "DESCONTADA"])
-    ).scalar() or 0
-
-    # ── Compromisos ────────────────────────────────────────────
-    comp_total    = Compromiso.query.count()
-    comp_cerrados = Compromiso.query.filter_by(estado="Cerrado").count()
-    comp_vencidos = Compromiso.query.filter(
-        Compromiso.estado != "Cerrado",
-        Compromiso.fecha_entrega < hoy
-    ).count()
-    comp_abiertos = comp_total - comp_cerrados
+    extra = base_agg()
+    neo_total       = base_q().count()
+    neo_abiertos    = base_q().filter_by(estado="Abierto").count()
+    neo_respondidos = base_q().filter_by(estado="Respondido").count()
+    neo_cerrados    = base_q().filter_by(estado="Cerrado").count()
+    neo_conformes   = base_q().filter_by(conformidad_neo="Conforme").count()
+    neo_no_conf     = base_q().filter_by(conformidad_neo="No conforme").count()
+    neo_hoy         = base_q().filter_by(fecha_reporte=hoy).count()
 
     # ── General ────────────────────────────────────────────────
     contratos_activos = Contrato.query.filter_by(activo=True).count()
     usuarios_activos  = User.query.filter_by(activo=True).count()
 
+    # ── Lista de contratos para el filtro (sin aplicar filtro de contrato) ──
+    todos_contratos_rows = db.session.query(
+        ReporteOperacional.contrato
+    ).group_by(ReporteOperacional.contrato)\
+     .order_by(ReporteOperacional.contrato).all()
+    todos_contratos = [r.contrato for r in todos_contratos_rows]
+
+    # ── Lista de tipos para el filtro (sin aplicar filtro de tipo) ──
+    todos_tipos_rows = db.session.query(
+        ReporteOperacional.tipo_incidencia
+    ).group_by(ReporteOperacional.tipo_incidencia)\
+     .order_by(ReporteOperacional.tipo_incidencia).all()
+    todos_tipos = [r.tipo_incidencia for r in todos_tipos_rows]
+
     # ── Por contrato (top 10 por horas afectadas) ─────────────────
-    contratos_rows = db.session.query(
+    ctr_q = db.session.query(
         ReporteOperacional.contrato,
         func.count(ReporteOperacional.id).label("casos"),
         func.sum(ReporteOperacional.horas_afectadas).label("horas"),
         func.sum(ReporteOperacional.afectacion_economica).label("afectacion"),
-    ).group_by(ReporteOperacional.contrato)\
-     .order_by(func.sum(ReporteOperacional.horas_afectadas).desc())\
-     .limit(10).all()
+    )
+    if extra:
+        ctr_q = ctr_q.filter(*extra)
+    contratos_rows = ctr_q.group_by(ReporteOperacional.contrato)\
+        .order_by(func.sum(ReporteOperacional.horas_afectadas).desc())\
+        .limit(10).all()
 
     contratos_data = [
         {
@@ -106,14 +131,16 @@ def indicadores():
     ]
 
     # ── Por tipo de incidencia ────────────────────────────────────
-    tipos_rows = db.session.query(
+    tip_q = db.session.query(
         ReporteOperacional.tipo_incidencia,
         func.count(ReporteOperacional.id).label("casos"),
         func.sum(ReporteOperacional.horas_afectadas).label("horas"),
         func.sum(ReporteOperacional.afectacion_economica).label("afectacion"),
-    ).group_by(ReporteOperacional.tipo_incidencia)\
-     .order_by(func.count(ReporteOperacional.id).desc())\
-     .all()
+    )
+    if extra:
+        tip_q = tip_q.filter(*extra)
+    tipos_rows = tip_q.group_by(ReporteOperacional.tipo_incidencia)\
+        .order_by(func.count(ReporteOperacional.id).desc()).all()
 
     tipos_data = [
         {
@@ -126,14 +153,15 @@ def indicadores():
     ]
 
     # ── Por acción tomada ─────────────────────────────────────────
-    acciones_rows = db.session.query(
+    acc_q = db.session.query(
         ReporteOperacional.accion_a_tomar,
         func.count(ReporteOperacional.id).label("casos"),
     ).filter(ReporteOperacional.accion_a_tomar.isnot(None),
-             ReporteOperacional.accion_a_tomar != "")\
-     .group_by(ReporteOperacional.accion_a_tomar)\
-     .order_by(func.count(ReporteOperacional.id).desc())\
-     .all()
+             ReporteOperacional.accion_a_tomar != "")
+    if extra:
+        acc_q = acc_q.filter(*extra)
+    acciones_rows = acc_q.group_by(ReporteOperacional.accion_a_tomar)\
+        .order_by(func.count(ReporteOperacional.id).desc()).all()
 
     acciones_data = [
         {"accion": r.accion_a_tomar, "casos": r.casos}
@@ -141,15 +169,16 @@ def indicadores():
     ]
 
     # ── Evolución mensual ─────────────────────────────────────────
-    evolucion_rows = db.session.query(
+    evo_q = db.session.query(
         extract("year", ReporteOperacional.fecha_reporte).label("anio"),
         extract("month", ReporteOperacional.fecha_reporte).label("mes"),
         func.count(ReporteOperacional.id).label("casos"),
         func.sum(ReporteOperacional.horas_afectadas).label("horas"),
         func.sum(ReporteOperacional.afectacion_economica).label("afectacion"),
-    ).group_by("anio", "mes")\
-     .order_by("anio", "mes")\
-     .all()
+    )
+    if extra:
+        evo_q = evo_q.filter(*extra)
+    evolucion_rows = evo_q.group_by("anio", "mes").order_by("anio", "mes").all()
 
     meses_es = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun",
                 "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
@@ -164,7 +193,7 @@ def indicadores():
     ]
 
     # ── Casos abiertos recientes (para atención) ──────────────────
-    casos_atencion_rows = ReporteOperacional.query\
+    casos_atencion_rows = base_q()\
         .filter(ReporteOperacional.estado == "Abierto")\
         .order_by(ReporteOperacional.afectacion_economica.desc())\
         .limit(25).all()
@@ -187,22 +216,11 @@ def indicadores():
     stats = {
         "neo": {
             "total": neo_total, "abiertos": neo_abiertos,
-            "respondidos": neo_respondidos, "cerrados": neo_cerrados,
+            "con_respuesta": neo_respondidos, "cerrados": neo_cerrados,
             "conformes": neo_conformes, "no_conformes": neo_no_conf,
             "hoy": neo_hoy,
             "pct_conf": round(neo_conformes / neo_total * 100, 1) if neo_total else 0,
             "pct_no_conf": round(neo_no_conf / neo_total * 100, 1) if neo_total else 0,
-        },
-        "he": {
-            "total": he_total, "pendiente": he_pendiente,
-            "conforme": he_conforme, "no_conforme": he_no_conf, "descontada": he_desc,
-            "hrs_reportadas": round(he_hrs_rep, 1),
-            "hrs_autorizadas": round(he_hrs_auth, 1),
-        },
-        "comp": {
-            "total": comp_total, "cerrados": comp_cerrados,
-            "abiertos": comp_abiertos, "vencidos": comp_vencidos,
-            "pct_cierre": round(comp_cerrados / comp_total * 100, 1) if comp_total else 0,
         },
         "general": {
             "contratos": contratos_activos,
@@ -211,14 +229,24 @@ def indicadores():
         },
     }
 
+    filtros_activos = {
+        "contrato": f_contrato,
+        "tipo": f_tipo,
+        "conformidad": f_conformidad,
+        "count": sum(1 for v in [f_contrato, f_tipo, f_conformidad] if v),
+    }
+
     return render_template(
         "dashboard/indicadores.html",
         stats=stats,
+        todos_contratos=todos_contratos,
+        todos_tipos=todos_tipos,
         contratos_data=contratos_data,
         tipos_data=tipos_data,
         acciones_data=acciones_data,
         evolucion_data=evolucion_data,
         casos_atencion=casos_atencion,
+        filtros_activos=filtros_activos,
     )
 
 
