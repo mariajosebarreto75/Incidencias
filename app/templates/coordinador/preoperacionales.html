@@ -637,9 +637,17 @@ function buildCharts(data){
   const estados=data.estados||[];
   G.charts['cDonut']=new Chart(document.getElementById('cDonut'),{
     type:'doughnut',
-    data:{labels:estados.map(e=>e.estado.length>32?e.estado.slice(0,30)+'…':e.estado),
+    data:{labels:estados.map(e=>e.estado),
       datasets:[{data:estados.map(e=>e.total),backgroundColor:estados.map(e=>CEST[nEst(e.estado)]||'#64748B'),borderWidth:2,borderColor:surf}]},
-    options:{plugins:{legend:{position:'right',labels:{font:{size:10},color:ink}},datalabels:{display:false}},cutout:'60%'}
+    options:{plugins:{legend:{position:'right',labels:{font:{size:10},color:ink,boxWidth:12,padding:6,
+        generateLabels(chart){
+          return chart.data.labels.map((lbl,i)=>{
+            const n=nEst(lbl);
+            const abbr={'1':'Conf. OK','2':'Conf.+GPS','3':'Env. sin aprobación','4':'Env. sin apr. (coord)','5':'Sin movimiento','6':'Con mov. sin preop.','7':'Conf. incoherente','8':'Con justificación'}[n]||lbl;
+            return{text:abbr+' ('+chart.data.datasets[0].data[i]+')',fillStyle:CEST[n]||'#64748B',strokeStyle:surf,lineWidth:2,index:i};
+          });
+        }
+      }},datalabels:{display:false}},cutout:'60%'}
   });
 
   // ── Sedes ──
@@ -735,7 +743,7 @@ function renderSedeTable(sedes){
     const cls=s.pct>=80?'sg':s.pct>=60?'sy':'sr';
     return`<tr class="cl" onclick="filterBySede('${s.sede.replace(/'/g,"\\'")}')">
       <td>${s.sede}</td><td>${fN(s.total)}</td><td>${fN(s.cumple)}</td>
-      <td>${fN(s.total-s.cumple-(s.sin_mov||0))}</td>
+      <td>${fN(s.incumple||0)}</td>
       <td class="${cls}">${fP(s.pct)}</td></tr>`;
   }).join('');
 }

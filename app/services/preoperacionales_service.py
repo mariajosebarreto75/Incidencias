@@ -340,18 +340,20 @@ def datos_dashboard(filtros: dict | None = None) -> dict:
                           for k, v in inc_contrato.most_common(10)]
 
     # Cumplimiento por sede
-    sedes_data: dict = defaultdict(lambda: {"total": 0, "cumple": 0})
+    sedes_data: dict = defaultdict(lambda: {"total": 0, "cumple": 0, "sin_mov": 0, "incumple": 0})
     for r in filtrados:
         s = r["sede"] or "Sin sede"
         sedes_data[s]["total"] += 1
-        if r["cumple"]:
-            sedes_data[s]["cumple"] += 1
+        if r["cumple"]:    sedes_data[s]["cumple"]   += 1
+        if r["sin_mov"]:   sedes_data[s]["sin_mov"]  += 1
+        if r["incumple"]:  sedes_data[s]["incumple"] += 1
     sedes_lista = []
     for sede, d in sorted(sedes_data.items()):
-        con_mov = d["total"] - sum(1 for r in filtrados if r["sede"] == sede and r["sin_mov"])
+        con_mov = d["total"] - d["sin_mov"]
         pct = round(d["cumple"] / con_mov * 100, 1) if con_mov else 0
         sedes_lista.append({"sede": sede, "total": d["total"],
-                             "cumple": d["cumple"], "pct": pct})
+                             "cumple": d["cumple"], "sin_mov": d["sin_mov"],
+                             "incumple": d["incumple"], "pct": pct})
 
     # Opciones de filtros
     # fechas viene de filtrados para que respete el mes/año seleccionado
