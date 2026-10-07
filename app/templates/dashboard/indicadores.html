@@ -86,6 +86,32 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
   font-family:inherit;transition:background .15s;
 }
 .filter-apply:hover{background:var(--cyan-dk)}
+/* ─── DATE PICKER BUTTON ─────────────────────────────────────── */
+.date-btn{
+  position:relative;display:inline-flex;align-items:center;gap:5px;
+  background:var(--surf2);border:1px solid var(--border);border-radius:6px;
+  padding:4px 10px;font-size:.75rem;color:var(--ink2);cursor:pointer;
+  font-family:inherit;outline:none;white-space:nowrap;transition:border-color .15s;
+}
+.date-btn:hover,.date-btn.open{border-color:var(--cyan);color:var(--cyan)}
+.date-dropdown{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:200;
+  background:var(--surf);border:1px solid var(--border);border-radius:10px;
+  padding:14px;display:none;flex-direction:column;gap:10px;
+  box-shadow:0 8px 24px rgba(0,0,0,.14);min-width:220px;
+}
+.date-dropdown.open{display:flex}
+.date-dropdown label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.date-dropdown select{
+  width:100%;background:var(--surf2);border:1px solid var(--border);border-radius:6px;
+  padding:5px 8px;font-size:.78rem;color:var(--ink2);cursor:pointer;
+  font-family:inherit;outline:none;
+}
+.date-dropdown select:focus{border-color:var(--cyan)}
+.date-dropdown-footer{display:flex;gap:6px;margin-top:4px}
+.date-dropdown-footer button{flex:1;border:none;border-radius:6px;padding:5px;font-size:.73rem;font-weight:600;cursor:pointer;font-family:inherit}
+.dd-apply{background:var(--cyan);color:#fff}
+.dd-clear{background:var(--surf2);border:1px solid var(--border)!important;color:var(--muted)}
 
 /* ─── LAYOUT PRINCIPAL ───────────────────────────────────────── */
 .wrap{max-width:1340px;margin:0 auto;padding:20px 20px 60px}
@@ -283,19 +309,45 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
     <option value="{{ r }}" {% if filtros_activos.recurso == r %}selected{% endif %}>{{ r }}</option>
     {% endfor %}
   </select>
-  <!-- Fecha cascada: año → mes → día -->
-  <select class="filter-select" name="anio" id="fAnio" style="max-width:100px" onchange="cascadeAnio()">
-    <option value="">Año</option>
-    {% for y in anios_disponibles %}
-    <option value="{{ y }}" {% if filtros_activos.anio == y %}selected{% endif %}>{{ y }}</option>
-    {% endfor %}
-  </select>
-  <select class="filter-select" name="mes" id="fMes" style="max-width:110px" onchange="cascadeMes()">
-    <option value="">Mes</option>
-  </select>
-  <select class="filter-select" name="dia" id="fDia" style="max-width:90px">
-    <option value="">Día</option>
-  </select>
+  <!-- Filtro fecha: botón único con dropdown cascada -->
+  <div style="position:relative">
+    <button type="button" class="date-btn" id="dateBtnToggle" onclick="toggleDateDropdown()">
+      <i class="bi bi-calendar3"></i>
+      <span id="dateBtnLabel">{% if filtros_activos.anio %}{{ filtros_activos.anio }}{% if filtros_activos.mes %} / {{ '%02d'|format(filtros_activos.mes|int) }}{% endif %}{% if filtros_activos.dia %} / {{ '%02d'|format(filtros_activos.dia|int) }}{% endif %}{% else %}Fecha{% endif %}</span>
+      <i class="bi bi-chevron-down" style="font-size:.6rem"></i>
+    </button>
+    <div class="date-dropdown" id="dateDropdown">
+      <div>
+        <label>Año</label>
+        <select id="ddAnio" onchange="ddCascadeAnio()">
+          <option value="">Todos</option>
+          {% for y in anios_disponibles %}
+          <option value="{{ y }}" {% if filtros_activos.anio == y %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Mes</label>
+        <select id="ddMes" onchange="ddCascadeMes()">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div>
+        <label>Día</label>
+        <select id="ddDia">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div class="date-dropdown-footer">
+        <button type="button" class="dd-clear" onclick="ddClear()">Limpiar</button>
+        <button type="button" class="dd-apply" onclick="ddApply()">Aplicar</button>
+      </div>
+    </div>
+  </div>
+  <!-- Hidden inputs que se envían con el form -->
+  <input type="hidden" name="anio" id="fAnio" value="{{ filtros_activos.anio }}">
+  <input type="hidden" name="mes"  id="fMes"  value="{{ filtros_activos.mes }}">
+  <input type="hidden" name="dia"  id="fDia"  value="{{ filtros_activos.dia }}">
   {% if filtros_activos.count %}
   <span class="filter-badge" style="display:inline-flex">{{ filtros_activos.count }} filtro{% if filtros_activos.count > 1 %}s{% endif %}</span>
   {% else %}
@@ -309,35 +361,51 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
   {% endif %}
 </form>
 <script>
-// Datos de fechas disponibles para la cascada
+// ── Fecha cascada ─────────────────────────────────────────────
 const FECHAS = {{ fechas_disponibles | tojson }};
 const MESES_NOMBRES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-function cascadeAnio() {
-  const anio = document.getElementById('fAnio').value;
-  const selMes = document.getElementById('fMes');
-  const selDia = document.getElementById('fDia');
-  selMes.innerHTML = '<option value="">Mes</option>';
-  selDia.innerHTML = '<option value="">Día</option>';
+function toggleDateDropdown() {
+  const dd = document.getElementById('dateDropdown');
+  const btn = document.getElementById('dateBtnToggle');
+  const open = dd.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  if (open) {
+    // cerrar al hacer clic fuera
+    setTimeout(() => document.addEventListener('click', closeDateOnOutside, {once:true}), 10);
+  }
+}
+function closeDateOnOutside(e) {
+  const dd = document.getElementById('dateDropdown');
+  if (!dd.contains(e.target) && e.target.id !== 'dateBtnToggle') {
+    dd.classList.remove('open');
+    document.getElementById('dateBtnToggle').classList.remove('open');
+  }
+}
+
+function ddCascadeAnio() {
+  const anio = document.getElementById('ddAnio').value;
+  const selMes = document.getElementById('ddMes');
+  const selDia = document.getElementById('ddDia');
+  selMes.innerHTML = '<option value="">Todos</option>';
+  selDia.innerHTML = '<option value="">Todos</option>';
   if (anio && FECHAS[anio]) {
-    const meses = Object.keys(FECHAS[anio]).sort((a,b) => +a - +b);
-    meses.forEach(m => {
+    Object.keys(FECHAS[anio]).sort((a,b)=>+a-+b).forEach(m => {
       const opt = document.createElement('option');
       opt.value = m;
-      opt.textContent = MESES_NOMBRES[+m] + ' (' + m + ')';
+      opt.textContent = MESES_NOMBRES[+m] + ' (' + String(m).padStart(2,'0') + ')';
       selMes.appendChild(opt);
     });
   }
 }
 
-function cascadeMes() {
-  const anio = document.getElementById('fAnio').value;
-  const mes = document.getElementById('fMes').value;
-  const selDia = document.getElementById('fDia');
-  selDia.innerHTML = '<option value="">Día</option>';
+function ddCascadeMes() {
+  const anio = document.getElementById('ddAnio').value;
+  const mes  = document.getElementById('ddMes').value;
+  const selDia = document.getElementById('ddDia');
+  selDia.innerHTML = '<option value="">Todos</option>';
   if (anio && mes && FECHAS[anio] && FECHAS[anio][mes]) {
-    const dias = FECHAS[anio][mes].sort((a,b) => a-b);
-    dias.forEach(d => {
+    FECHAS[anio][mes].slice().sort((a,b)=>a-b).forEach(d => {
       const opt = document.createElement('option');
       opt.value = d;
       opt.textContent = String(d).padStart(2,'0');
@@ -346,28 +414,53 @@ function cascadeMes() {
   }
 }
 
-function clearAllFilters() {
-  ['fContrato','fTipo','fConformidad','fRecurso','fAnio'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  document.getElementById('fMes').innerHTML = '<option value="">Mes</option>';
-  document.getElementById('fDia').innerHTML = '<option value="">Día</option>';
+function ddApply() {
+  const anio = document.getElementById('ddAnio').value;
+  const mes  = document.getElementById('ddMes').value;
+  const dia  = document.getElementById('ddDia').value;
+  document.getElementById('fAnio').value = anio;
+  document.getElementById('fMes').value  = mes;
+  document.getElementById('fDia').value  = dia;
+  // Actualizar label del botón
+  let label = 'Fecha';
+  if (anio) {
+    label = anio;
+    if (mes) label += ' / ' + String(mes).padStart(2,'0');
+    if (dia) label += ' / ' + String(dia).padStart(2,'0');
+  }
+  document.getElementById('dateBtnLabel').textContent = label;
+  document.getElementById('dateDropdown').classList.remove('open');
+  document.getElementById('dateBtnToggle').classList.remove('open');
+  document.getElementById('filterBar').submit();
 }
 
-// Restaurar selects mes/día si hay filtros activos al cargar
-(function initCascade() {
-  const anioActivo = "{{ filtros_activos.anio }}";
-  const mesActivo  = "{{ filtros_activos.mes }}";
-  const diaActivo  = "{{ filtros_activos.dia }}";
-  if (anioActivo) {
-    cascadeAnio();
-    if (mesActivo) {
-      document.getElementById('fMes').value = mesActivo;
-      cascadeMes();
-      if (diaActivo) {
-        document.getElementById('fDia').value = diaActivo;
-      }
+function ddClear() {
+  document.getElementById('ddAnio').value = '';
+  document.getElementById('ddMes').innerHTML  = '<option value="">Todos</option>';
+  document.getElementById('ddDia').innerHTML  = '<option value="">Todos</option>';
+}
+
+function clearAllFilters() {
+  ['fContrato','fTipo','fConformidad','fRecurso'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('fAnio').value = '';
+  document.getElementById('fMes').value  = '';
+  document.getElementById('fDia').value  = '';
+  ddClear();
+}
+
+// Restaurar cascada si hay filtros de fecha al cargar
+(function initDateCascade() {
+  const anio = "{{ filtros_activos.anio }}";
+  const mes  = "{{ filtros_activos.mes }}";
+  const dia  = "{{ filtros_activos.dia }}";
+  if (anio) {
+    ddCascadeAnio();
+    if (mes) {
+      document.getElementById('ddMes').value = mes;
+      ddCascadeMes();
+      if (dia) document.getElementById('ddDia').value = dia;
     }
   }
 })();
