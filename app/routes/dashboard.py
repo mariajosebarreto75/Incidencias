@@ -229,6 +229,28 @@ def indicadores():
         for r in acciones_rows
     ]
 
+    # ── Acciones a tomar por contrato / por recurso (top 10 c/u) ──
+    def _acciones_por(col):
+        q = db.session.query(
+            col.label("grupo"),
+            ReporteOperacional.accion_a_tomar.label("accion"),
+            func.count(ReporteOperacional.id).label("casos"),
+        ).filter(col.isnot(None), col != "")
+        if extra:
+            q = q.filter(*extra)
+        grupos = {}
+        for r in q.group_by(col, ReporteOperacional.accion_a_tomar).all():
+            g = grupos.setdefault(r.grupo, {"grupo": r.grupo, "total": 0, "acciones": {}})
+            accion = r.accion or "Sin acción"
+            g["acciones"][accion] = g["acciones"].get(accion, 0) + r.casos
+            g["total"] += r.casos
+        return sorted(grupos.values(), key=lambda g: g["total"], reverse=True)[:10]
+
+    acciones_por = {
+        "contrato": _acciones_por(ReporteOperacional.contrato),
+        "recurso": _acciones_por(ReporteOperacional.recurso),
+    }
+
     # ── Evolución mensual ─────────────────────────────────────────
     evo_q = db.session.query(
         extract("year", ReporteOperacional.fecha_reporte).label("anio"),
@@ -358,6 +380,7 @@ def indicadores():
         contratos_data=contratos_data,
         tipos_data=tipos_data,
         acciones_data=acciones_data,
+        acciones_por=acciones_por,
         evolucion_data=evolucion_data,
         casos_atencion=casos_atencion,
         reincidentes=reincidentes,
