@@ -58,9 +58,11 @@ def indicadores():
     f_tipo        = request.args.get("tipo", "").strip()
     f_conformidad = request.args.get("conformidad", "").strip()
     f_recurso     = request.args.get("recurso", "").strip()
+    f_anio        = request.args.get("anio", "").strip()
+    f_mes         = request.args.get("mes", "").strip()
+    f_dia         = request.args.get("dia", "").strip()
 
-    def base_q():
-        q = ReporteOperacional.query
+    def _apply_filters(q):
         if f_contrato:
             q = q.filter(ReporteOperacional.contrato == f_contrato)
         if f_tipo:
@@ -69,19 +71,35 @@ def indicadores():
             q = q.filter(ReporteOperacional.conformidad_neo == f_conformidad)
         if f_recurso:
             q = q.filter(ReporteOperacional.recurso == f_recurso)
+        if f_anio:
+            q = q.filter(extract("year", ReporteOperacional.fecha_reporte) == int(f_anio))
+        if f_mes:
+            q = q.filter(extract("month", ReporteOperacional.fecha_reporte) == int(f_mes))
+        if f_dia:
+            q = q.filter(extract("day", ReporteOperacional.fecha_reporte) == int(f_dia))
         return q
 
+    def base_q():
+        return _apply_filters(ReporteOperacional.query)
+
     def base_agg():
-        filters = []
+        # devuelve lista de condiciones para queries con db.session.query(...)
+        conds = []
         if f_contrato:
-            filters.append(ReporteOperacional.contrato == f_contrato)
+            conds.append(ReporteOperacional.contrato == f_contrato)
         if f_tipo:
-            filters.append(ReporteOperacional.tipo_incidencia == f_tipo)
+            conds.append(ReporteOperacional.tipo_incidencia == f_tipo)
         if f_conformidad:
-            filters.append(ReporteOperacional.conformidad_neo == f_conformidad)
+            conds.append(ReporteOperacional.conformidad_neo == f_conformidad)
         if f_recurso:
-            filters.append(ReporteOperacional.recurso == f_recurso)
-        return filters
+            conds.append(ReporteOperacional.recurso == f_recurso)
+        if f_anio:
+            conds.append(extract("year", ReporteOperacional.fecha_reporte) == int(f_anio))
+        if f_mes:
+            conds.append(extract("month", ReporteOperacional.fecha_reporte) == int(f_mes))
+        if f_dia:
+            conds.append(extract("day", ReporteOperacional.fecha_reporte) == int(f_dia))
+        return conds
 
     # ── Reportes operacionales ──────────────────────────────────
     extra = base_agg()
@@ -130,6 +148,21 @@ def indicadores():
      .order_by(func.count(ReporteOperacional.id).desc())\
      .limit(60).all()
     todos_recursos = [r.recurso for r in todos_recursos_rows]
+
+    # ── Fechas disponibles para cascada año→mes→día ───────────────
+    fechas_rows = db.session.query(
+        extract("year",  ReporteOperacional.fecha_reporte).label("y"),
+        extract("month", ReporteOperacional.fecha_reporte).label("m"),
+        extract("day",   ReporteOperacional.fecha_reporte).label("d"),
+    ).group_by("y", "m", "d").order_by("y", "m", "d").all()
+
+    # estructura: { "2025": { "1": [1,2,3,...], "2": [...] }, ... }
+    from collections import defaultdict
+    _fd: dict = defaultdict(lambda: defaultdict(list))
+    for r in fechas_rows:
+        _fd[str(int(r.y))][str(int(r.m))].append(int(r.d))
+    fechas_disponibles = {y: dict(meses) for y, meses in _fd.items()}
+    anios_disponibles = sorted(fechas_disponibles.keys(), reverse=True)
 
     # ── Por contrato (top 10 por horas afectadas) ─────────────────
     ctr_q = db.session.query(
@@ -298,7 +331,10 @@ def indicadores():
         "tipo": f_tipo,
         "conformidad": f_conformidad,
         "recurso": f_recurso,
-        "count": sum(1 for v in [f_contrato, f_tipo, f_conformidad, f_recurso] if v),
+        "anio": f_anio,
+        "mes": f_mes,
+        "dia": f_dia,
+        "count": sum(1 for v in [f_contrato, f_tipo, f_conformidad, f_recurso, f_anio, f_mes, f_dia] if v),
     }
 
     return render_template(
@@ -314,6 +350,8 @@ def indicadores():
         casos_atencion=casos_atencion,
         reincidentes=reincidentes,
         filtros_activos=filtros_activos,
+        fechas_disponibles=fechas_disponibles,
+        anios_disponibles=anios_disponibles,
     )
 
 

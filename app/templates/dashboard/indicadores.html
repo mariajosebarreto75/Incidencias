@@ -283,6 +283,19 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
     <option value="{{ r }}" {% if filtros_activos.recurso == r %}selected{% endif %}>{{ r }}</option>
     {% endfor %}
   </select>
+  <!-- Fecha cascada: año → mes → día -->
+  <select class="filter-select" name="anio" id="fAnio" style="max-width:100px" onchange="cascadeAnio()">
+    <option value="">Año</option>
+    {% for y in anios_disponibles %}
+    <option value="{{ y }}" {% if filtros_activos.anio == y %}selected{% endif %}>{{ y }}</option>
+    {% endfor %}
+  </select>
+  <select class="filter-select" name="mes" id="fMes" style="max-width:110px" onchange="cascadeMes()">
+    <option value="">Mes</option>
+  </select>
+  <select class="filter-select" name="dia" id="fDia" style="max-width:90px">
+    <option value="">Día</option>
+  </select>
   {% if filtros_activos.count %}
   <span class="filter-badge" style="display:inline-flex">{{ filtros_activos.count }} filtro{% if filtros_activos.count > 1 %}s{% endif %}</span>
   {% else %}
@@ -292,9 +305,73 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
   {% if filtros_activos.count %}
   <a href="{{ url_for('dashboard.indicadores') }}" class="filter-clear"><i class="bi bi-x-lg"></i> Limpiar</a>
   {% else %}
-  <button type="button" class="filter-clear" onclick="document.getElementById('fContrato').value='';document.getElementById('fTipo').value='';document.getElementById('fConformidad').value=''"><i class="bi bi-x-lg"></i> Limpiar</button>
+  <button type="button" class="filter-clear" onclick="clearAllFilters()"><i class="bi bi-x-lg"></i> Limpiar</button>
   {% endif %}
 </form>
+<script>
+// Datos de fechas disponibles para la cascada
+const FECHAS = {{ fechas_disponibles | tojson }};
+const MESES_NOMBRES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function cascadeAnio() {
+  const anio = document.getElementById('fAnio').value;
+  const selMes = document.getElementById('fMes');
+  const selDia = document.getElementById('fDia');
+  selMes.innerHTML = '<option value="">Mes</option>';
+  selDia.innerHTML = '<option value="">Día</option>';
+  if (anio && FECHAS[anio]) {
+    const meses = Object.keys(FECHAS[anio]).sort((a,b) => +a - +b);
+    meses.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = MESES_NOMBRES[+m] + ' (' + m + ')';
+      selMes.appendChild(opt);
+    });
+  }
+}
+
+function cascadeMes() {
+  const anio = document.getElementById('fAnio').value;
+  const mes = document.getElementById('fMes').value;
+  const selDia = document.getElementById('fDia');
+  selDia.innerHTML = '<option value="">Día</option>';
+  if (anio && mes && FECHAS[anio] && FECHAS[anio][mes]) {
+    const dias = FECHAS[anio][mes].sort((a,b) => a-b);
+    dias.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = String(d).padStart(2,'0');
+      selDia.appendChild(opt);
+    });
+  }
+}
+
+function clearAllFilters() {
+  ['fContrato','fTipo','fConformidad','fRecurso','fAnio'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('fMes').innerHTML = '<option value="">Mes</option>';
+  document.getElementById('fDia').innerHTML = '<option value="">Día</option>';
+}
+
+// Restaurar selects mes/día si hay filtros activos al cargar
+(function initCascade() {
+  const anioActivo = "{{ filtros_activos.anio }}";
+  const mesActivo  = "{{ filtros_activos.mes }}";
+  const diaActivo  = "{{ filtros_activos.dia }}";
+  if (anioActivo) {
+    cascadeAnio();
+    if (mesActivo) {
+      document.getElementById('fMes').value = mesActivo;
+      cascadeMes();
+      if (diaActivo) {
+        document.getElementById('fDia').value = diaActivo;
+      }
+    }
+  }
+})();
+</script>
 
 <!-- ═══════════ CONTENIDO ═══════════ -->
 <div class="wrap">
