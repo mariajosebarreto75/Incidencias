@@ -60,27 +60,17 @@ def indicadores():
     f_recurso     = request.args.get("recurso", "").strip()
     f_anio        = request.args.get("anio", "").strip()
     f_mes         = request.args.get("mes", "").strip()
-    f_dia         = request.args.get("dia", "").strip()
-
-    def _apply_filters(q):
-        if f_contrato:
-            q = q.filter(ReporteOperacional.contrato == f_contrato)
-        if f_tipo:
-            q = q.filter(ReporteOperacional.tipo_incidencia == f_tipo)
-        if f_conformidad:
-            q = q.filter(ReporteOperacional.conformidad_neo == f_conformidad)
-        if f_recurso:
-            q = q.filter(ReporteOperacional.recurso == f_recurso)
-        if f_anio:
-            q = q.filter(extract("year", ReporteOperacional.fecha_reporte) == int(f_anio))
-        if f_mes:
-            q = q.filter(extract("month", ReporteOperacional.fecha_reporte) == int(f_mes))
-        if f_dia:
-            q = q.filter(extract("day", ReporteOperacional.fecha_reporte) == int(f_dia))
-        return q
+    # Días: uno o varios separados por coma ("3,7,15")
+    f_dias        = sorted({int(d) for d in request.args.get("dia", "").split(",")
+                            if d.strip().isdigit() and 1 <= int(d) <= 31})
+    f_dia         = ",".join(str(d) for d in f_dias)
+    # Semana del mes en bloques de 7 días: 1 = 1-7, 2 = 8-14, ... 5 = 29-fin de mes
+    f_semana      = request.args.get("semana", "").strip()
+    if f_semana not in ("1", "2", "3", "4", "5"):
+        f_semana = ""
 
     def base_q():
-        return _apply_filters(ReporteOperacional.query)
+        return ReporteOperacional.query.filter(*base_agg())
 
     def base_agg():
         # devuelve lista de condiciones para queries con db.session.query(...)
@@ -97,8 +87,12 @@ def indicadores():
             conds.append(extract("year", ReporteOperacional.fecha_reporte) == int(f_anio))
         if f_mes:
             conds.append(extract("month", ReporteOperacional.fecha_reporte) == int(f_mes))
-        if f_dia:
-            conds.append(extract("day", ReporteOperacional.fecha_reporte) == int(f_dia))
+        dia_col = extract("day", ReporteOperacional.fecha_reporte)
+        if f_semana:
+            ini = (int(f_semana) - 1) * 7 + 1
+            conds.append(dia_col.between(ini, ini + 6))
+        if f_dias:
+            conds.append(dia_col.in_(f_dias))
         return conds
 
     # ── Reportes operacionales ──────────────────────────────────
@@ -229,27 +223,29 @@ def indicadores():
         for r in acciones_rows
     ]
 
-    # ── Acciones a tomar por contrato / por recurso (top 10 c/u) ──
-    def _acciones_por(col):
-        q = db.session.query(
-            col.label("grupo"),
-            ReporteOperacional.accion_a_tomar.label("accion"),
-            func.count(ReporteOperacional.id).label("casos"),
-        ).filter(col.isnot(None), col != "")
-        if extra:
-            q = q.filter(*extra)
-        grupos = {}
-        for r in q.group_by(col, ReporteOperacional.accion_a_tomar).all():
-            g = grupos.setdefault(r.grupo, {"grupo": r.grupo, "total": 0, "acciones": {}})
-            accion = r.accion or "Sin acción"
-            g["acciones"][accion] = g["acciones"].get(accion, 0) + r.casos
-            g["total"] += r.casos
-        return sorted(grupos.values(), key=lambda g: g["total"], reverse=True)[:10]
-
-    acciones_por = {
-        "contrato": _acciones_por(ReporteOperacional.contrato),
-        "recurso": _acciones_por(ReporteOperacional.recurso),
-    }
+    # ── Acciones a tomar: casos por contrato × recurso × acción ──
+    # El front arma las vistas (por contrato, por recurso o ambas anidadas)
+    acc_det_q = db.session.query(
+        ReporteOperacional.contrato,
+        ReporteOperacional.recurso,
+        ReporteOperacional.accion_a_tomar,
+        func.count(ReporteOperacional.id).label("casos"),
+    )
+    if extra:
+        acc_det_q = acc_det_q.filter(*extra)
+    acciones_por = [
+        {
+            "c": r.contrato or "—",
+            "r": r.recurso or "—",
+            "a": r.accion_a_tomar or "Sin acción",
+            "n": r.casos,
+        }
+        for r in acc_det_q.group_by(
+            ReporteOperacional.contrato,
+            ReporteOperacional.recurso,
+            ReporteOperacional.accion_a_tomar,
+        ).all()
+    ]
 
     # ── Evolución mensual ─────────────────────────────────────────
     evo_q = db.session.query(
@@ -368,7 +364,9 @@ def indicadores():
         "anio": f_anio,
         "mes": f_mes,
         "dia": f_dia,
-        "count": sum(1 for v in [f_contrato, f_tipo, f_conformidad, f_recurso, f_anio, f_mes, f_dia] if v),
+        "dias": f_dias,
+        "semana": f_semana,
+        "count": sum(1 for v in [f_contrato, f_tipo, f_conformidad, f_recurso, f_anio, f_mes, f_dia, f_semana] if v),
     }
 
     return render_template(

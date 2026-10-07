@@ -108,6 +108,14 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
   font-family:inherit;outline:none;
 }
 .date-dropdown select:focus{border-color:var(--cyan)}
+.date-dropdown select:disabled{opacity:.5;cursor:not-allowed}
+.date-dropdown{min-width:260px}
+.dd-dias{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dd-dias label{margin:0;cursor:pointer}
+.dd-dias input{display:none}
+.dd-dias span.dd-dia{display:block;text-align:center;padding:4px 0;border:1px solid var(--border);border-radius:5px;font-size:.72rem;font-weight:600;color:var(--ink2);background:var(--surf2);font-variant-numeric:tabular-nums;text-transform:none;letter-spacing:0}
+.dd-dias input:checked + span.dd-dia{background:var(--cyan);border-color:var(--cyan);color:#fff}
+.dd-dias .dd-hint{grid-column:1/-1;font-size:.72rem;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500}
 .date-dropdown-footer{display:flex;gap:6px;margin-top:4px}
 .date-dropdown-footer button{flex:1;border:none;border-radius:6px;padding:5px;font-size:.73rem;font-weight:600;cursor:pointer;font-family:inherit}
 .dd-apply{background:var(--cyan);color:#fff}
@@ -248,6 +256,13 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
 .acc-matrix td.tot{font-weight:800;color:var(--ink)}
 .acc-matrix td.zero{color:var(--border)}
 .acc-matrix th.sin{color:var(--red)}
+.acc-matrix td.clic{cursor:pointer;transition:box-shadow .12s}
+.acc-matrix td.clic:hover{box-shadow:0 0 0 2px var(--ink2) inset}
+.acc-matrix tr.acc-padre td.grp{font-weight:800;color:var(--ink);padding-top:10px}
+.acc-matrix tr.acc-hijo td.grp{padding-left:18px;font-weight:500;color:var(--ink2)}
+.acc-matrix tr.acc-hijo td{font-size:.72rem;padding:4px}
+#accFiltroBanner{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:8px 12px;border-radius:7px;background:#E0F2FE;color:#0E7490;font-size:.76rem;scroll-margin-top:12px}
+#accFiltroBanner button{margin-left:auto;background:#fff;border:1px solid #0891B2;color:#0891B2;border-radius:5px;padding:3px 10px;font-size:.7rem;font-weight:600;cursor:pointer;font-family:inherit}
 
 /* ─── PROGRESS ────────────────────────────────────────────────── */
 .progress-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
@@ -326,7 +341,7 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
   <div style="position:relative">
     <button type="button" class="date-btn" id="dateBtnToggle" onclick="toggleDateDropdown()">
       <i class="bi bi-calendar3"></i>
-      <span id="dateBtnLabel">{% if filtros_activos.anio %}{{ filtros_activos.anio }}{% if filtros_activos.mes %} / {{ '%02d'|format(filtros_activos.mes|int) }}{% endif %}{% if filtros_activos.dia %} / {{ '%02d'|format(filtros_activos.dia|int) }}{% endif %}{% else %}Fecha{% endif %}</span>
+      <span id="dateBtnLabel">Fecha</span>
       <i class="bi bi-chevron-down" style="font-size:.6rem"></i>
     </button>
     <div class="date-dropdown" id="dateDropdown">
@@ -346,10 +361,17 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
         </select>
       </div>
       <div>
-        <label>Día</label>
-        <select id="ddDia">
-          <option value="">Todos</option>
+        <label>Semana</label>
+        <select id="ddSemana" onchange="ddCascadeSemana()" disabled>
+          <option value="">Todas</option>
         </select>
+      </div>
+      <div>
+        <label style="display:flex;justify-content:space-between;align-items:center">
+          <span>Días <span id="ddDiasCount" style="text-transform:none;color:var(--cyan)"></span></span>
+          <a href="#" id="ddDiasLimpiar" onclick="ddDiasNinguno();return false" style="text-transform:none;font-weight:600;color:var(--cyan);text-decoration:none;display:none">Quitar</a>
+        </label>
+        <div id="ddDias" class="dd-dias"><span class="dd-hint">Elige un mes</span></div>
       </div>
       <div class="date-dropdown-footer">
         <button type="button" class="dd-clear" onclick="ddClear()">Limpiar</button>
@@ -361,6 +383,7 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
   <input type="hidden" name="anio" id="fAnio" value="{{ filtros_activos.anio }}">
   <input type="hidden" name="mes"  id="fMes"  value="{{ filtros_activos.mes }}">
   <input type="hidden" name="dia"  id="fDia"  value="{{ filtros_activos.dia }}">
+  <input type="hidden" name="semana" id="fSemana" value="{{ filtros_activos.semana }}">
   {% if filtros_activos.count %}
   <span class="filter-badge" style="display:inline-flex">{{ filtros_activos.count }} filtro{% if filtros_activos.count > 1 %}s{% endif %}</span>
   {% else %}
@@ -380,28 +403,35 @@ const MESES_NOMBRES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep',
 
 function toggleDateDropdown() {
   const dd = document.getElementById('dateDropdown');
-  const btn = document.getElementById('dateBtnToggle');
   const open = dd.classList.toggle('open');
-  btn.classList.toggle('open', open);
-  if (open) {
-    // cerrar al hacer clic fuera
-    setTimeout(() => document.addEventListener('click', closeDateOnOutside, {once:true}), 10);
-  }
+  document.getElementById('dateBtnToggle').classList.toggle('open', open);
 }
-function closeDateOnOutside(e) {
+// Cerrar al hacer clic fuera (listener fijo: los clics dentro del panel no lo consumen)
+document.addEventListener('click', e => {
   const dd = document.getElementById('dateDropdown');
-  if (!dd.contains(e.target) && e.target.id !== 'dateBtnToggle') {
+  if (!dd.classList.contains('open')) return;
+  if (!dd.contains(e.target) && !document.getElementById('dateBtnToggle').contains(e.target)) {
     dd.classList.remove('open');
     document.getElementById('dateBtnToggle').classList.remove('open');
   }
+});
+
+// Semanas del mes en bloques de 7 días: 1 = 1-7, 2 = 8-14, ... 5 = 29-fin de mes
+function semanaRango(anio, mes, sem) {
+  const finMes = new Date(+anio, +mes, 0).getDate();
+  const ini = (sem - 1) * 7 + 1;
+  return ini > finMes ? null : [ini, Math.min(ini + 6, finMes)];
+}
+function diasDisponibles() {
+  const anio = document.getElementById('ddAnio').value;
+  const mes  = document.getElementById('ddMes').value;
+  return (anio && mes && FECHAS[anio] && FECHAS[anio][mes]) ? FECHAS[anio][mes].slice().sort((a,b)=>a-b) : [];
 }
 
 function ddCascadeAnio() {
   const anio = document.getElementById('ddAnio').value;
   const selMes = document.getElementById('ddMes');
-  const selDia = document.getElementById('ddDia');
   selMes.innerHTML = '<option value="">Todos</option>';
-  selDia.innerHTML = '<option value="">Todos</option>';
   if (anio && FECHAS[anio]) {
     Object.keys(FECHAS[anio]).sort((a,b)=>+a-+b).forEach(m => {
       const opt = document.createElement('option');
@@ -410,38 +440,88 @@ function ddCascadeAnio() {
       selMes.appendChild(opt);
     });
   }
+  ddCascadeMes();
 }
 
 function ddCascadeMes() {
   const anio = document.getElementById('ddAnio').value;
   const mes  = document.getElementById('ddMes').value;
-  const selDia = document.getElementById('ddDia');
-  selDia.innerHTML = '<option value="">Todos</option>';
-  if (anio && mes && FECHAS[anio] && FECHAS[anio][mes]) {
-    FECHAS[anio][mes].slice().sort((a,b)=>a-b).forEach(d => {
+  const selSem = document.getElementById('ddSemana');
+  selSem.innerHTML = '<option value="">Todas</option>';
+  selSem.disabled = !(anio && mes);
+  if (anio && mes) {
+    const dias = diasDisponibles();
+    for (let s = 1; s <= 5; s++) {
+      const r = semanaRango(anio, mes, s);
+      if (!r) break;
+      const conDatos = dias.some(d => d >= r[0] && d <= r[1]);
       const opt = document.createElement('option');
-      opt.value = d;
-      opt.textContent = String(d).padStart(2,'0');
-      selDia.appendChild(opt);
-    });
+      opt.value = s;
+      opt.textContent = `Semana ${s} (${r[0]}–${r[1]} ${MESES_NOMBRES[+mes].toLowerCase()})` + (conDatos ? '' : ' · sin reportes');
+      opt.disabled = !conDatos;
+      selSem.appendChild(opt);
+    }
   }
+  ddCascadeSemana();
+}
+
+function ddCascadeSemana() {
+  const anio = document.getElementById('ddAnio').value;
+  const mes  = document.getElementById('ddMes').value;
+  const sem  = document.getElementById('ddSemana').value;
+  const cont = document.getElementById('ddDias');
+  // Conservar los días marcados que sigan siendo válidos
+  const marcados = new Set(ddDiasMarcados());
+  let dias = diasDisponibles();
+  if (sem) {
+    const r = semanaRango(anio, mes, +sem);
+    dias = dias.filter(d => d >= r[0] && d <= r[1]);
+  }
+  if (!anio || !mes) {
+    cont.innerHTML = '<span class="dd-hint">Elige un mes</span>';
+  } else if (!dias.length) {
+    cont.innerHTML = '<span class="dd-hint">Sin reportes en este rango</span>';
+  } else {
+    cont.innerHTML = dias.map(d =>
+      `<label><input type="checkbox" value="${d}" ${marcados.has(d) ? 'checked' : ''} onchange="ddDiasActualizar()">`
+      + `<span class="dd-dia">${String(d).padStart(2,'0')}</span></label>`).join('');
+  }
+  ddDiasActualizar();
+}
+
+function ddDiasMarcados() {
+  return [...document.querySelectorAll('#ddDias input:checked')].map(i => +i.value);
+}
+function ddDiasActualizar() {
+  const n = ddDiasMarcados().length;
+  document.getElementById('ddDiasCount').textContent = n ? `(${n})` : '';
+  document.getElementById('ddDiasLimpiar').style.display = n ? '' : 'none';
+}
+function ddDiasNinguno() {
+  document.querySelectorAll('#ddDias input:checked').forEach(i => { i.checked = false; });
+  ddDiasActualizar();
+}
+
+function ddLabel(anio, mes, semana, dias) {
+  if (!anio) return 'Fecha';
+  let label = anio;
+  if (mes) label += ' / ' + String(mes).padStart(2,'0');
+  if (semana) label += ' · Sem ' + semana;
+  if (dias.length === 1) label += ' · día ' + String(dias[0]).padStart(2,'0');
+  else if (dias.length > 1) label += ` · ${dias.length} días`;
+  return label;
 }
 
 function ddApply() {
   const anio = document.getElementById('ddAnio').value;
   const mes  = document.getElementById('ddMes').value;
-  const dia  = document.getElementById('ddDia').value;
-  document.getElementById('fAnio').value = anio;
-  document.getElementById('fMes').value  = mes;
-  document.getElementById('fDia').value  = dia;
-  // Actualizar label del botón
-  let label = 'Fecha';
-  if (anio) {
-    label = anio;
-    if (mes) label += ' / ' + String(mes).padStart(2,'0');
-    if (dia) label += ' / ' + String(dia).padStart(2,'0');
-  }
-  document.getElementById('dateBtnLabel').textContent = label;
+  const sem  = mes ? document.getElementById('ddSemana').value : '';
+  const dias = mes ? ddDiasMarcados() : [];
+  document.getElementById('fAnio').value   = anio;
+  document.getElementById('fMes').value    = mes;
+  document.getElementById('fSemana').value = sem;
+  document.getElementById('fDia').value    = dias.join(',');
+  document.getElementById('dateBtnLabel').textContent = ddLabel(anio, mes, sem, dias);
   document.getElementById('dateDropdown').classList.remove('open');
   document.getElementById('dateBtnToggle').classList.remove('open');
   document.getElementById('filterBar').submit();
@@ -449,33 +529,37 @@ function ddApply() {
 
 function ddClear() {
   document.getElementById('ddAnio').value = '';
-  document.getElementById('ddMes').innerHTML  = '<option value="">Todos</option>';
-  document.getElementById('ddDia').innerHTML  = '<option value="">Todos</option>';
+  ddCascadeAnio();
 }
 
 function clearAllFilters() {
   ['fContrato','fTipo','fConformidad','fRecurso'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
-  document.getElementById('fAnio').value = '';
-  document.getElementById('fMes').value  = '';
-  document.getElementById('fDia').value  = '';
+  ['fAnio','fMes','fDia','fSemana'].forEach(id => { document.getElementById(id).value = ''; });
   ddClear();
 }
 
 // Restaurar cascada si hay filtros de fecha al cargar
 (function initDateCascade() {
-  const anio = "{{ filtros_activos.anio }}";
-  const mes  = "{{ filtros_activos.mes }}";
-  const dia  = "{{ filtros_activos.dia }}";
+  const anio   = "{{ filtros_activos.anio }}";
+  const mes    = "{{ filtros_activos.mes }}";
+  const semana = "{{ filtros_activos.semana }}";
+  const dias   = {{ filtros_activos.dias | tojson }};
   if (anio) {
     ddCascadeAnio();
     if (mes) {
       document.getElementById('ddMes').value = mes;
       ddCascadeMes();
-      if (dia) document.getElementById('ddDia').value = dia;
+      if (semana) {
+        document.getElementById('ddSemana').value = semana;
+        ddCascadeSemana();
+      }
+      document.querySelectorAll('#ddDias input').forEach(i => { i.checked = dias.includes(+i.value); });
+      ddDiasActualizar();
     }
   }
+  document.getElementById('dateBtnLabel').textContent = ddLabel(anio, mes, semana, mes ? ddDiasMarcados() : []);
 })();
 </script>
 
@@ -587,15 +671,19 @@ function clearAllFilters() {
       <div class="chart-card-hdr" style="margin-bottom:4px">
         <span class="chart-card-title"><i class="bi bi-list-check" style="color:var(--cyan)"></i> Acciones a tomar</span>
         <div style="display:flex;gap:4px">
-          <button type="button" class="acc-toggle active" onclick="renderAccionesPor('contrato',this)">Por contrato</button>
-          <button type="button" class="acc-toggle" onclick="renderAccionesPor('recurso',this)">Por recurso</button>
+          <button type="button" class="acc-toggle active" id="accBtnContrato" onclick="toggleAccVista('contrato')">Por contrato</button>
+          <button type="button" class="acc-toggle" id="accBtnRecurso" onclick="toggleAccVista('recurso')">Por recurso</button>
         </div>
       </div>
       <div style="font-size:.7rem;color:var(--muted);margin-bottom:10px">
-        Número de casos por acción. Mientras más oscura la celda, más casos. Top 10 con más casos según los filtros.
+        Número de casos por acción; mientras más oscura la celda, más casos. Activa ambos botones para ver los recursos de cada contrato.
+        Haz clic en un número para ver esos reportes en la tabla de abajo.
       </div>
       <div id="accPorBody" style="overflow-x:auto"></div>
     </div>
+
+    <!-- Aviso de filtro aplicado desde la matriz de acciones -->
+    <div id="accFiltroBanner"></div>
 
     <!-- Barra de búsqueda y filtros de tabla -->
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
@@ -1212,55 +1300,128 @@ function switchMetric(metric, btn){
 }
 
 // ─── ACCIONES A TOMAR POR CONTRATO / RECURSO (matriz) ────────
-function accCelda(n, max, rgb){
+// Botones tipo interruptor (como en Horas Extras): contrato, recurso o ambos
+const accVista = {contrato:true, recurso:false};
+let accClick = [];   // celdas clicables → {c, r, a, n}
+
+function toggleAccVista(cual){
+  const otro = cual === 'contrato' ? 'recurso' : 'contrato';
+  if(accVista[cual] && !accVista[otro]) return;   // siempre queda uno activo
+  accVista[cual] = !accVista[cual];
+  document.getElementById('accBtnContrato').classList.toggle('active', accVista.contrato);
+  document.getElementById('accBtnRecurso').classList.toggle('active', accVista.recurso);
+  renderAccionesPor();
+}
+function accAgrupar(filas, clave){
+  const m = {};
+  filas.forEach(f=>{
+    const k = f[clave];
+    const g = m[k] || (m[k] = {grupo:k, total:0, acciones:{}, filas:[]});
+    g.acciones[f.a] = (g.acciones[f.a] || 0) + f.n;
+    g.total += f.n;
+    g.filas.push(f);
+  });
+  return Object.values(m).sort((x,y)=>y.total - x.total);
+}
+function accCelda(n, max, rgb, filtro){
   if(!n) return '<td class="zero">·</td>';
   const a = 0.12 + 0.78 * (n / max);
   const fg = a > 0.5 ? '#fff' : 'var(--ink2)';
-  return `<td style="background:rgba(${rgb},${a.toFixed(2)});color:${fg}">${n}</td>`;
+  accClick.push(Object.assign({n}, filtro));
+  return `<td class="clic" onclick="accVerReportes(${accClick.length - 1})" title="Ver estos reportes en la tabla"
+            style="background:rgba(${rgb},${a.toFixed(2)});color:${fg}">${n}</td>`;
 }
-function renderAccionesPor(modo, btn){
-  if(btn){
-    document.querySelectorAll('.acc-toggle').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-  }
-  const grupos = ACCIONES_POR[modo] || [];
+function renderAccionesPor(){
   const body = document.getElementById('accPorBody');
+  accClick = [];
+  const ambos = accVista.contrato && accVista.recurso;
+  const clave = accVista.contrato ? 'c' : 'r';
+  const filas = ACCIONES_POR.filter(f=>f[clave] !== '—');
+  const grupos = accAgrupar(filas, clave).slice(0, 10);
   if(!grupos.length){
     body.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">Sin datos para los filtros seleccionados.</div>';
     return;
   }
+  // Sub-grupos (recursos de cada contrato) solo cuando ambos botones están activos
+  grupos.forEach(g=>{
+    g.subs = ambos ? accAgrupar(g.filas.filter(f=>f.r !== '—'), 'r') : [];
+  });
   // Columnas: acciones presentes, en orden de frecuencia global; "Sin acción" al final
   const presentes = new Set();
   grupos.forEach(g=>Object.keys(g.acciones).forEach(a=>presentes.add(a)));
   const cols = ACCIONES.map(a=>a.accion).filter(a=>presentes.has(a));
   presentes.forEach(a=>{ if(a !== 'Sin acción' && !cols.includes(a)) cols.push(a); });
   const haySin = presentes.has('Sin acción');
-  // Máximo para la intensidad de color (sin contar "Sin acción", que tiene su propia escala)
-  let max = 1, maxSin = 1;
-  grupos.forEach(g=>{
-    cols.forEach(a=>{ max = Math.max(max, g.acciones[a] || 0); });
-    maxSin = Math.max(maxSin, g.acciones['Sin acción'] || 0);
-  });
-  const etiqueta = modo === 'contrato' ? 'Contrato' : 'Recurso';
+  // Intensidad de color: escala propia por nivel (contrato / recurso) y para "Sin acción"
+  const maxDe = (lista, sin) => Math.max(1, ...lista.map(g=>
+    sin ? (g.acciones['Sin acción'] || 0) : Math.max(0, ...cols.map(a=>g.acciones[a] || 0))));
+  const subsTodos = grupos.flatMap(g=>g.subs);
+  const esc = {
+    g: {max:maxDe(grupos,false), sin:maxDe(grupos,true)},
+    s: {max:maxDe(subsTodos,false), sin:maxDe(subsTodos,true)},
+  };
+  const fila = (g, nivel, base) => {
+    const e = esc[nivel];
+    return cols.map(a=>accCelda(g.acciones[a] || 0, e.max, '8,145,178', Object.assign({a}, base))).join('')
+      + (haySin ? accCelda(g.acciones['Sin acción'] || 0, e.sin, '220,38,38', Object.assign({a:'Sin acción'}, base)) : '')
+      + `<td class="tot">${g.total}</td>`;
+  };
+  const etiqueta = ambos ? 'Contrato / recurso' : (accVista.contrato ? 'Contrato' : 'Recurso');
   let html = '<table class="acc-matrix"><thead><tr>'
     + `<th>${etiqueta}</th>`
     + cols.map(a=>`<th title="${escHtml(a)}">${escHtml(a.charAt(0) + a.slice(1).toLowerCase())}</th>`).join('')
     + (haySin ? '<th class="sin">Sin acción</th>' : '')
     + '<th>Total</th></tr></thead><tbody>';
   grupos.forEach(g=>{
-    html += '<tr>'
-      + `<td class="grp" title="${escHtml(g.grupo)}">${escHtml(g.grupo)}</td>`
-      + cols.map(a=>accCelda(g.acciones[a] || 0, max, '8,145,178')).join('')
-      + (haySin ? accCelda(g.acciones['Sin acción'] || 0, maxSin, '220,38,38') : '')
-      + `<td class="tot">${g.total}</td></tr>`;
+    const base = clave === 'c' ? {c:g.grupo} : {r:g.grupo};
+    html += `<tr class="${ambos ? 'acc-padre' : ''}"><td class="grp" title="${escHtml(g.grupo)}">${escHtml(g.grupo)}</td>${fila(g, 'g', base)}</tr>`;
+    g.subs.slice(0, 10).forEach(s=>{
+      html += `<tr class="acc-hijo"><td class="grp" title="${escHtml(s.grupo)}">${escHtml(s.grupo)}</td>${fila(s, 's', {c:g.grupo, r:s.grupo})}</tr>`;
+    });
+    if(g.subs.length > 10){
+      html += `<tr class="acc-hijo"><td class="grp" colspan="${cols.length + (haySin ? 2 : 1) + 1}" style="color:var(--muted);font-weight:500">y ${g.subs.length - 10} recursos más…</td></tr>`;
+    }
   });
   body.innerHTML = html + '</tbody></table>';
 }
-renderAccionesPor('contrato');
+renderAccionesPor();
+
+// Clic en una celda → filtra la tabla detallada a ese contrato/recurso + acción
+function accVerReportes(i){
+  const f = accClick[i];
+  if(!f) return;
+  tablaFiltroAcc = f;
+  // Arranca desde "Todos" y sin búsqueda para no ocultar reportes del filtro
+  tablaFiltroEstado = 'todos';
+  tablaBusqueda = '';
+  const inp = document.getElementById('buscarTabla');
+  if(inp) inp.value = '';
+  document.querySelectorAll('#tab-resumen .sort-btn').forEach((b,k)=>b.classList.toggle('active', k === 0));
+  const visibles = aplicarFiltroTabla();
+  const quien = [f.c, f.r].filter(Boolean).map(escHtml).join(' · ');
+  let txt = `<i class="bi bi-funnel-fill"></i><span>Reportes de <b>${quien}</b> con acción <b>${escHtml(f.a)}</b>: ${visibles} de ${f.n}`;
+  if(visibles < f.n) txt += ' <span style="color:var(--muted)">(la tabla muestra solo los 200 reportes más recientes; filtra arriba por recurso para verlos todos)</span>';
+  txt += '</span>';
+  const ban = document.getElementById('accFiltroBanner');
+  ban.innerHTML = txt + '<button type="button" onclick="quitarFiltroAcc()">Quitar filtro</button>';
+  ban.style.display = 'flex';
+  ban.scrollIntoView({behavior:'smooth', block:'start'});
+  // Si es un único reporte, abrir su detalle directamente
+  if(visibles === 1){
+    const idx = [...document.querySelectorAll('#casosBody .caso-row')].findIndex(r=>r.style.display !== 'none');
+    if(idx >= 0) setTimeout(()=>openCasoDrawer(idx), 350);
+  }
+}
+function quitarFiltroAcc(){
+  tablaFiltroAcc = null;
+  document.getElementById('accFiltroBanner').style.display = 'none';
+  aplicarFiltroTabla();
+}
 
 // ─── TABLA DETALLADA ─────────────────────────────────────────
 let tablaFiltroEstado = 'todos';
 let tablaBusqueda = '';
+let tablaFiltroAcc = null;   // {c?, r?, a} desde la matriz de acciones
 
 function filtrarTabla(estado, btn){
   tablaFiltroEstado = estado;
@@ -1275,7 +1436,7 @@ function buscarEnTabla(q){
 function aplicarFiltroTabla(){
   const rows = document.querySelectorAll('#casosBody .caso-row');
   let visible = 0;
-  rows.forEach(row=>{
+  rows.forEach((row, i)=>{
     const estado = row.dataset.estado || '';
     const conf   = row.dataset.conformidad || '';
     const search = row.dataset.search || '';
@@ -1284,11 +1445,19 @@ function aplicarFiltroTabla(){
     else if(tablaFiltroEstado === 'No conforme') show = conf === 'No conforme';
     else if(tablaFiltroEstado !== 'todos')  show = estado === tablaFiltroEstado;
     if(show && tablaBusqueda) show = search.includes(tablaBusqueda);
+    if(show && tablaFiltroAcc){
+      const c = CASOS[i] || {};
+      const accion = (!c.accion || c.accion === '—') ? 'Sin acción' : c.accion;
+      show = accion === tablaFiltroAcc.a
+        && (!tablaFiltroAcc.c || (c.contrato || '—') === tablaFiltroAcc.c)
+        && (!tablaFiltroAcc.r || (c.recurso || '—') === tablaFiltroAcc.r);
+    }
     row.style.display = show ? '' : 'none';
     if(show) visible++;
   });
   const el = document.getElementById('tablaConteo');
   if(el) el.textContent = visible;
+  return visible;
 }
 
 // ─── UTILS ──────────────────────────────────────────────────
