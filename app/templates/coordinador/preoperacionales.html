@@ -190,7 +190,7 @@
     <!-- Donut -->
     <div class="ccard">
       <h4>Distribución por Estado</h4>
-      <div style="position:relative;height:260px"><canvas id="cDonut"></canvas></div>
+      <div style="position:relative;height:300px"><canvas id="cDonut"></canvas></div>
     </div>
 
     <!-- Sedes -->
@@ -643,11 +643,10 @@ function buildCharts(data){
         generateLabels(chart){
           return chart.data.labels.map((lbl,i)=>{
             const n=nEst(lbl);
-            const abbr={'1':'Conf. OK','2':'Conf.+GPS','3':'Env. sin aprobación','4':'Env. sin apr. (coord)','5':'Sin movimiento','6':'Con mov. sin preop.','7':'Conf. incoherente','8':'Con justificación'}[n]||lbl;
-            return{text:abbr+' ('+chart.data.datasets[0].data[i]+')',fillStyle:CEST[n]||'#64748B',strokeStyle:surf,lineWidth:2,index:i};
+            return{text:lbl+' ('+chart.data.datasets[0].data[i]+')',fillStyle:CEST[n]||'#64748B',strokeStyle:surf,lineWidth:2,index:i};
           });
         }
-      }},datalabels:{display:false}},cutout:'60%'}
+      }},datalabels:{display:false}},cutout:'60%',layout:{padding:{right:8}}}
   });
 
   // ── Sedes ──
