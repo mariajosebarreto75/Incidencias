@@ -546,7 +546,7 @@ function clearAllFilters() {
     <div class="grid-2" style="margin-bottom:20px">
 
       <!-- Conformidad -->
-      <div class="conf-block">
+      <div class="conf-block" style="display:flex;flex-direction:column;justify-content:center">
         <div class="conf-title">Conformidad</div>
         <div style="margin-bottom:10px">
           <div style="font-family:'Manrope',sans-serif;font-size:2.2rem;font-weight:800;color:var(--green);line-height:1">{{ stats.neo.pct_conf }}%</div>
@@ -560,11 +560,6 @@ function clearAllFilters() {
           <div class="conf-item"><div class="conf-dot" style="background:var(--red)"></div><span style="color:var(--red)">{{ stats.neo.pct_no_conf }}% No conf.</span></div>
         </div>
       </div>
-
-    </div>
-
-    <!-- REINCIDENTES + TABLA DETALLADA -->
-    <div class="grid-2" style="margin-bottom:16px;align-items:start">
 
       <!-- Widget reincidentes -->
       <div class="chart-card" style="padding:16px">
