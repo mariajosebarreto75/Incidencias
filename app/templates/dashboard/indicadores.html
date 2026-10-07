@@ -277,6 +277,12 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
     <option value="Conforme" {% if filtros_activos.conformidad == 'Conforme' %}selected{% endif %}>Conforme</option>
     <option value="No conforme" {% if filtros_activos.conformidad == 'No conforme' %}selected{% endif %}>No conforme</option>
   </select>
+  <select class="filter-select" name="recurso" id="fRecurso" style="max-width:160px">
+    <option value="">Todos los recursos</option>
+    {% for r in todos_recursos %}
+    <option value="{{ r }}" {% if filtros_activos.recurso == r %}selected{% endif %}>{{ r }}</option>
+    {% endfor %}
+  </select>
   {% if filtros_activos.count %}
   <span class="filter-badge" style="display:inline-flex">{{ filtros_activos.count }} filtro{% if filtros_activos.count > 1 %}s{% endif %}</span>
   {% else %}
@@ -654,30 +660,71 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
 
 <!-- ═══════════ DRAWER CASO ═══════════ -->
 <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
-<div class="drawer" id="drawerCaso">
+<div class="drawer" id="drawerCaso" style="width:520px">
   <div class="drawer-hdr">
-    <div>
-      <div style="font-size:.65rem;font-weight:700;letter-spacing:1px;opacity:.6;text-transform:uppercase;margin-bottom:4px">Detalle del caso</div>
-      <div id="drawerContrato" style="font-size:1rem;font-weight:700;font-family:'Manrope',sans-serif"></div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:.6rem;font-weight:700;letter-spacing:1px;opacity:.6;text-transform:uppercase;margin-bottom:3px">Reporte #<span id="dId"></span></div>
+      <div id="drawerContrato" style="font-size:.95rem;font-weight:700;font-family:'Manrope',sans-serif;line-height:1.2"></div>
+      <div id="dRecurso" style="font-size:.8rem;opacity:.75;margin-top:2px"></div>
     </div>
     <button class="drawer-close" onclick="closeDrawer()"><i class="bi bi-x-lg"></i></button>
   </div>
-  <div class="drawer-body">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px" id="drawerBadges"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="drawer-field"><div class="drawer-field-lbl">Tipo de desviación</div><div class="drawer-field-val" id="dTipo"></div></div>
-      <div class="drawer-field"><div class="drawer-field-lbl">Fecha</div><div class="drawer-field-val" id="dFecha"></div></div>
-      <div class="drawer-field"><div class="drawer-field-lbl">Horas afectadas</div><div class="drawer-field-val" id="dHoras"></div></div>
-      <div class="drawer-field"><div class="drawer-field-lbl">Impacto económico</div><div class="drawer-field-val" id="dAfectacion" style="color:var(--red);font-weight:700"></div></div>
-      <div class="drawer-field"><div class="drawer-field-lbl">Estado</div><div class="drawer-field-val" id="dEstado"></div></div>
-      <div class="drawer-field"><div class="drawer-field-lbl">Conformidad</div><div class="drawer-field-val" id="dConformidad"></div></div>
+  <div class="drawer-body" style="padding:16px">
+
+    <!-- Badges de estado -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="drawerBadges"></div>
+
+    <!-- Bloque 1: Identificación -->
+    <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--cyan);margin-bottom:8px">Identificación</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="drawer-field"><div class="drawer-field-lbl">Fecha</div><div class="drawer-field-val" id="dFecha"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">Hora inicio</div><div class="drawer-field-val" id="dHoraIni"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">Hora fin</div><div class="drawer-field-val" id="dHoraFin"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">Placa</div><div class="drawer-field-val" id="dPlaca"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">Cuadrilla</div><div class="drawer-field-val" id="dCuadrilla"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">OT</div><div class="drawer-field-val" id="dOT"></div></div>
+      </div>
     </div>
-    <div class="drawer-field" style="margin-top:6px"><div class="drawer-field-lbl">Acción tomada</div><div class="drawer-field-val" id="dAccion"></div></div>
-    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
-      <button onclick="closeDrawer()" style="background:var(--cyan);border:none;border-radius:7px;padding:9px 20px;color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit">
-        <i class="bi bi-arrow-left me-1"></i> Volver al dashboard
-      </button>
+
+    <!-- Bloque 2: Incidencia -->
+    <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--amber);margin-bottom:8px">Incidencia</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="drawer-field"><div class="drawer-field-lbl">Tipo de desvío</div><div class="drawer-field-val" id="dTipo"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">Duración</div><div class="drawer-field-val" id="dDuracion"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">Horas afectadas</div><div class="drawer-field-val" id="dHoras"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">Impacto económico</div><div class="drawer-field-val" id="dAfectacion" style="color:var(--red);font-weight:700"></div></div>
+      </div>
+      <div class="drawer-field"><div class="drawer-field-lbl">Parámetro NEO</div><div class="drawer-field-val" id="dParamNeo" style="font-size:.8rem"></div></div>
+      <div class="drawer-field" style="margin-top:6px"><div class="drawer-field-lbl">Observación</div><div class="drawer-field-val" id="dObs" style="font-size:.8rem;line-height:1.4;white-space:pre-wrap"></div></div>
+      <div style="font-size:.65rem;color:var(--muted);margin-top:4px">Reportado por: <strong id="dReporta"></strong></div>
     </div>
+
+    <!-- Bloque 3: Respuesta coordinador -->
+    <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--cyan-dk);margin-bottom:8px">Respuesta coordinador</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="drawer-field"><div class="drawer-field-lbl">Acción tomada</div><div class="drawer-field-val" id="dAccion"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">Parámetro coor.</div><div class="drawer-field-val" id="dParamCoor" style="font-size:.8rem"></div></div>
+      </div>
+      <div class="drawer-field"><div class="drawer-field-lbl">Respuesta</div><div class="drawer-field-val" id="dRespuesta" style="font-size:.8rem;line-height:1.4;white-space:pre-wrap"></div></div>
+      <div style="font-size:.65rem;color:var(--muted);margin-top:4px">Responde: <strong id="dResponde"></strong> &nbsp;·&nbsp; <span id="dFechaResp"></span></div>
+    </div>
+
+    <!-- Bloque 4: Validación NEO -->
+    <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:16px">
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-bottom:8px">Validación NEO</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="drawer-field"><div class="drawer-field-lbl">Estado</div><div class="drawer-field-val" id="dEstado"></div></div>
+        <div class="drawer-field"><div class="drawer-field-lbl">Conformidad</div><div class="drawer-field-val" id="dConformidad"></div></div>
+      </div>
+      <div class="drawer-field" style="margin-top:6px"><div class="drawer-field-lbl">Observación de no conformidad</div><div class="drawer-field-val" id="dObsConf" style="font-size:.8rem;color:var(--red);line-height:1.4;white-space:pre-wrap"></div></div>
+    </div>
+
+    <button onclick="closeDrawer()" style="background:var(--cyan);border:none;border-radius:7px;padding:8px 18px;color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit">
+      <i class="bi bi-arrow-left me-1"></i> Volver al dashboard
+    </button>
   </div>
 </div>
 
@@ -706,22 +753,48 @@ function switchTab(id, btn){
 // ─── FILTERS — el form hace GET real al servidor ─────────────
 
 // ─── DRAWER ─────────────────────────────────────────────────
+function set(id, val){ const el=document.getElementById(id); if(el) el.textContent=val||'—'; }
 function openCasoDrawer(idx){
   const c = CASOS[idx];
   if(!c) return;
+  set('dId', c.id);
   document.getElementById('drawerContrato').textContent = c.contrato;
-  document.getElementById('dTipo').textContent = c.tipo;
-  document.getElementById('dFecha').textContent = c.fecha;
-  document.getElementById('dHoras').textContent = c.horas.toFixed(1)+'h';
+  set('dRecurso', c.recurso);
+  // Identificación
+  set('dFecha', c.fecha);
+  set('dHoraIni', c.hora_inicio);
+  set('dHoraFin', c.hora_fin);
+  set('dPlaca', c.placa);
+  set('dCuadrilla', c.tipo_cuadrilla);
+  set('dOT', c.orden_trabajo);
+  // Incidencia
+  set('dTipo', c.tipo);
+  set('dDuracion', c.duracion);
+  set('dHoras', c.horas.toFixed(1)+'h');
   document.getElementById('dAfectacion').textContent = c.afectacion > 0 ? '$'+c.afectacion.toLocaleString('es-CO') : '—';
-  document.getElementById('dEstado').textContent = c.estado;
-  document.getElementById('dConformidad').textContent = c.conformidad;
-  document.getElementById('dAccion').textContent = c.accion;
+  set('dParamNeo', c.parametro_neo);
+  set('dObs', c.observacion);
+  set('dReporta', c.reportado_por);
+  // Respuesta
+  set('dAccion', c.accion);
+  set('dParamCoor', c.parametro_coordinador);
+  set('dRespuesta', c.respuesta);
+  set('dResponde', c.respondido_por);
+  set('dFechaResp', c.fecha_respuesta);
+  // Validación
+  set('dEstado', c.estado);
+  set('dConformidad', c.conformidad);
+  set('dObsConf', c.obs_conf);
+  // Badges
   const badges = document.getElementById('drawerBadges');
   badges.innerHTML = '';
-  if(c.accion==='Sin respuesta') badges.innerHTML += '<span class="badge badge-red">Sin respuesta</span>';
-  if(c.conformidad==='No conforme') badges.innerHTML += '<span class="badge badge-red">No conforme</span>';
-  if(c.estado==='Abierto') badges.innerHTML += '<span class="badge badge-amber">Abierto</span>';
+  const badgeMap = {
+    'Abierto':'badge-red','Respondido':'badge-amber','Cerrado':'badge-green'
+  };
+  if(c.estado) badges.innerHTML += `<span class="badge ${badgeMap[c.estado]||'badge-gray'}">${c.estado}</span>`;
+  if(c.conformidad==='Conforme') badges.innerHTML += '<span class="badge badge-green"><i class="bi bi-check2"></i> Conforme</span>';
+  if(c.conformidad==='No conforme') badges.innerHTML += '<span class="badge badge-red"><i class="bi bi-x"></i> No conforme</span>';
+  if(c.accion==='—') badges.innerHTML += '<span class="badge badge-red">Sin acción</span>';
   document.getElementById('drawerOverlay').classList.add('open');
   document.getElementById('drawerCaso').classList.add('open');
   document.body.style.overflow = 'hidden';

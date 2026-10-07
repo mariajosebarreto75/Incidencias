@@ -57,6 +57,7 @@ def indicadores():
     f_contrato    = request.args.get("contrato", "").strip()
     f_tipo        = request.args.get("tipo", "").strip()
     f_conformidad = request.args.get("conformidad", "").strip()
+    f_recurso     = request.args.get("recurso", "").strip()
 
     def base_q():
         q = ReporteOperacional.query
@@ -66,10 +67,11 @@ def indicadores():
             q = q.filter(ReporteOperacional.tipo_incidencia == f_tipo)
         if f_conformidad:
             q = q.filter(ReporteOperacional.conformidad_neo == f_conformidad)
+        if f_recurso:
+            q = q.filter(ReporteOperacional.recurso == f_recurso)
         return q
 
     def base_agg():
-        q = db.session.query
         filters = []
         if f_contrato:
             filters.append(ReporteOperacional.contrato == f_contrato)
@@ -77,6 +79,8 @@ def indicadores():
             filters.append(ReporteOperacional.tipo_incidencia == f_tipo)
         if f_conformidad:
             filters.append(ReporteOperacional.conformidad_neo == f_conformidad)
+        if f_recurso:
+            filters.append(ReporteOperacional.recurso == f_recurso)
         return filters
 
     # ── Reportes operacionales ──────────────────────────────────
@@ -116,6 +120,16 @@ def indicadores():
     ).group_by(ReporteOperacional.tipo_incidencia)\
      .order_by(ReporteOperacional.tipo_incidencia).all()
     todos_tipos = [r.tipo_incidencia for r in todos_tipos_rows]
+
+    # ── Lista de recursos para el filtro (top 60 por frecuencia) ──
+    todos_recursos_rows = db.session.query(
+        ReporteOperacional.recurso,
+        func.count(ReporteOperacional.id).label("n"),
+    ).filter(ReporteOperacional.recurso.isnot(None), ReporteOperacional.recurso != "")\
+     .group_by(ReporteOperacional.recurso)\
+     .order_by(func.count(ReporteOperacional.id).desc())\
+     .limit(60).all()
+    todos_recursos = [r.recurso for r in todos_recursos_rows]
 
     # ── Por contrato (top 10 por horas afectadas) ─────────────────
     ctr_q = db.session.query(
@@ -213,18 +227,26 @@ def indicadores():
             "contrato": r.contrato,
             "fecha": r.fecha_reporte.strftime("%d/%m/%Y") if r.fecha_reporte else "",
             "recurso": r.recurso or "—",
+            "placa": r.placa or "—",
+            "tipo_cuadrilla": r.tipo_cuadrilla or "—",
             "tipo": r.tipo_incidencia,
+            "parametro_neo": r.parametro_neo or "—",
+            "hora_inicio": r.hora_inicio.strftime("%H:%M") if r.hora_inicio else "—",
+            "hora_fin": r.hora_fin.strftime("%H:%M") if r.hora_fin else "—",
             "duracion": r.duracion or "—",
-            "observacion": (r.observacion or "")[:120],
-            "accion": r.accion_a_tomar or "—",
-            "respuesta": (r.respuesta or "")[:100],
-            "conformidad": r.conformidad_neo or "—",
-            "obs_conf": (r.observacion_conformidad or "")[:100],
-            "reportado_por": r.reportado_por or "—",
-            "respondido_por": r.respondido_por or "—",
-            "estado": r.estado,
             "horas": round(r.horas_afectadas or 0, 1),
             "afectacion": int(r.afectacion_economica or 0),
+            "observacion": r.observacion or "",
+            "accion": r.accion_a_tomar or "—",
+            "parametro_coordinador": r.parametro_coordinador or "—",
+            "respuesta": r.respuesta or "",
+            "respondido_por": r.respondido_por or "—",
+            "fecha_respuesta": r.fecha_respuesta.strftime("%d/%m/%Y %H:%M") if r.fecha_respuesta else "—",
+            "conformidad": r.conformidad_neo or "—",
+            "obs_conf": r.observacion_conformidad or "",
+            "reportado_por": r.reportado_por or "—",
+            "estado": r.estado,
+            "orden_trabajo": r.orden_trabajo or "—",
         }
         for r in reportes_rows
     ]
@@ -275,7 +297,8 @@ def indicadores():
         "contrato": f_contrato,
         "tipo": f_tipo,
         "conformidad": f_conformidad,
-        "count": sum(1 for v in [f_contrato, f_tipo, f_conformidad] if v),
+        "recurso": f_recurso,
+        "count": sum(1 for v in [f_contrato, f_tipo, f_conformidad, f_recurso] if v),
     }
 
     return render_template(
@@ -283,6 +306,7 @@ def indicadores():
         stats=stats,
         todos_contratos=todos_contratos,
         todos_tipos=todos_tipos,
+        todos_recursos=todos_recursos,
         contratos_data=contratos_data,
         tipos_data=tipos_data,
         acciones_data=acciones_data,
