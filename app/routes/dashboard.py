@@ -139,15 +139,19 @@ def indicadores():
      .order_by(ReporteOperacional.tipo_incidencia).all()
     todos_tipos = [r.tipo_incidencia for r in todos_tipos_rows]
 
-    # ── Lista de recursos para el filtro (top 60 por frecuencia) ──
-    todos_recursos_rows = db.session.query(
+    # ── Lista de recursos para el filtro (top 60 por frecuencia, del contrato elegido) ──
+    rec_q = db.session.query(
         ReporteOperacional.recurso,
         func.count(ReporteOperacional.id).label("n"),
-    ).filter(ReporteOperacional.recurso.isnot(None), ReporteOperacional.recurso != "")\
-     .group_by(ReporteOperacional.recurso)\
+    ).filter(ReporteOperacional.recurso.isnot(None), ReporteOperacional.recurso != "")
+    if f_contrato:
+        rec_q = rec_q.filter(ReporteOperacional.contrato == f_contrato)
+    todos_recursos_rows = rec_q.group_by(ReporteOperacional.recurso)\
      .order_by(func.count(ReporteOperacional.id).desc())\
      .limit(60).all()
     todos_recursos = [r.recurso for r in todos_recursos_rows]
+    if f_recurso and f_recurso not in todos_recursos:
+        todos_recursos.append(f_recurso)
 
     # ── Fechas disponibles para cascada año→mes→día ───────────────
     fechas_rows = db.session.query(
