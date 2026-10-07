@@ -240,9 +240,14 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
 .sort-btn.active{background:var(--cyan);border-color:var(--cyan);color:#fff}
 .acc-toggle{padding:3px 9px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);font-size:.68rem;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
 .acc-toggle.active{background:var(--cyan);border-color:var(--cyan);color:#fff}
-.acc-stack{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--border)}
-.acc-stack > div{height:100%}
-.acc-stack > div + div{border-left:1px solid var(--surf)}
+.acc-matrix{width:100%;border-collapse:separate;border-spacing:3px;font-size:.75rem}
+.acc-matrix th{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);text-align:center;vertical-align:bottom;padding:2px 4px;line-height:1.2;min-width:62px;max-width:96px}
+.acc-matrix th:first-child{text-align:left;min-width:200px;max-width:none}
+.acc-matrix td{text-align:center;padding:6px 4px;border-radius:5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.acc-matrix td.grp{text-align:left;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;padding-left:0}
+.acc-matrix td.tot{font-weight:800;color:var(--ink)}
+.acc-matrix td.zero{color:var(--border)}
+.acc-matrix th.sin{color:var(--red)}
 
 /* ─── PROGRESS ────────────────────────────────────────────────── */
 .progress-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
@@ -580,19 +585,21 @@ function clearAllFilters() {
         {% endfor %}
       </div>
 
-      <!-- Widget acciones a tomar por contrato / recurso -->
-      <div class="chart-card" style="padding:16px">
-        <div class="chart-card-hdr" style="margin-bottom:8px">
-          <span class="chart-card-title"><i class="bi bi-list-check" style="color:var(--cyan)"></i> Acciones a tomar</span>
-          <div style="display:flex;gap:4px">
-            <button type="button" class="acc-toggle active" onclick="renderAccionesPor('contrato',this)">Por contrato</button>
-            <button type="button" class="acc-toggle" onclick="renderAccionesPor('recurso',this)">Por recurso</button>
-          </div>
-        </div>
-        <div id="accLegend" style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:10px"></div>
-        <div id="accPorBody"></div>
-      </div>
+    </div>
 
+    <!-- ACCIONES A TOMAR POR CONTRATO / RECURSO (matriz) -->
+    <div class="chart-card" style="padding:16px;margin-bottom:16px">
+      <div class="chart-card-hdr" style="margin-bottom:4px">
+        <span class="chart-card-title"><i class="bi bi-list-check" style="color:var(--cyan)"></i> Acciones a tomar</span>
+        <div style="display:flex;gap:4px">
+          <button type="button" class="acc-toggle active" onclick="renderAccionesPor('contrato',this)">Por contrato</button>
+          <button type="button" class="acc-toggle" onclick="renderAccionesPor('recurso',this)">Por recurso</button>
+        </div>
+      </div>
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:10px">
+        Número de casos por acción. Mientras más oscura la celda, más casos. Top 10 con más casos según los filtros.
+      </div>
+      <div id="accPorBody" style="overflow-x:auto"></div>
     </div>
 
     <!-- Barra de búsqueda y filtros de tabla -->
@@ -1209,13 +1216,12 @@ function switchMetric(metric, btn){
   evolChart.update();
 }
 
-// ─── ACCIONES A TOMAR POR CONTRATO / RECURSO ─────────────────
-const ACC_COLORS = ['#059669','#0891B2','#D97706','#7C3AED','#DC2626','#16A34A'];
-const ACC_SIN = '#94A3B8';
-function accColor(accion){
-  if(accion === 'Sin acción') return ACC_SIN;
-  const i = ACCIONES.findIndex(a=>a.accion === accion);
-  return i >= 0 ? ACC_COLORS[i % ACC_COLORS.length] : ACC_SIN;
+// ─── ACCIONES A TOMAR POR CONTRATO / RECURSO (matriz) ────────
+function accCelda(n, max, rgb){
+  if(!n) return '<td class="zero">·</td>';
+  const a = 0.12 + 0.78 * (n / max);
+  const fg = a > 0.5 ? '#fff' : 'var(--ink2)';
+  return `<td style="background:rgba(${rgb},${a.toFixed(2)});color:${fg}">${n}</td>`;
 }
 function renderAccionesPor(modo, btn){
   if(btn){
@@ -1224,35 +1230,36 @@ function renderAccionesPor(modo, btn){
   }
   const grupos = ACCIONES_POR[modo] || [];
   const body = document.getElementById('accPorBody');
-  const legend = document.getElementById('accLegend');
   if(!grupos.length){
-    legend.innerHTML = '';
     body.innerHTML = '<div style="font-size:.78rem;color:var(--muted)">Sin datos para los filtros seleccionados.</div>';
     return;
   }
-  // Leyenda: solo acciones presentes, en el orden global
+  // Columnas: acciones presentes, en orden de frecuencia global; "Sin acción" al final
   const presentes = new Set();
   grupos.forEach(g=>Object.keys(g.acciones).forEach(a=>presentes.add(a)));
-  const orden = ACCIONES.map(a=>a.accion).filter(a=>presentes.has(a));
-  if(presentes.has('Sin acción')) orden.push('Sin acción');
-  legend.innerHTML = orden.map(a=>
-    `<span style="display:inline-flex;align-items:center;gap:4px;font-size:.66rem;color:var(--ink2)">
-       <span style="width:8px;height:8px;border-radius:2px;background:${accColor(a)}"></span>${escHtml(a)}</span>`
-  ).join('');
-  body.innerHTML = grupos.map(g=>{
-    const segs = orden.filter(a=>g.acciones[a]).map(a=>{
-      const n = g.acciones[a];
-      return `<div style="width:${n / g.total * 100}%;background:${accColor(a)}" title="${escHtml(a)}: ${n} caso${n>1?'s':''}"></div>`;
-    }).join('');
-    const sin = g.acciones['Sin acción'] || 0;
-    return `<div style="margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px">
-        <span style="font-size:.78rem;font-weight:600;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(g.grupo)}">${escHtml(g.grupo)}</span>
-        <span style="font-size:.72rem;font-weight:700;color:var(--muted);white-space:nowrap">${g.total} casos${sin ? ` · <span style="color:var(--red)">${sin} sin acción</span>` : ''}</span>
-      </div>
-      <div class="acc-stack">${segs}</div>
-    </div>`;
-  }).join('');
+  const cols = ACCIONES.map(a=>a.accion).filter(a=>presentes.has(a));
+  presentes.forEach(a=>{ if(a !== 'Sin acción' && !cols.includes(a)) cols.push(a); });
+  const haySin = presentes.has('Sin acción');
+  // Máximo para la intensidad de color (sin contar "Sin acción", que tiene su propia escala)
+  let max = 1, maxSin = 1;
+  grupos.forEach(g=>{
+    cols.forEach(a=>{ max = Math.max(max, g.acciones[a] || 0); });
+    maxSin = Math.max(maxSin, g.acciones['Sin acción'] || 0);
+  });
+  const etiqueta = modo === 'contrato' ? 'Contrato' : 'Recurso';
+  let html = '<table class="acc-matrix"><thead><tr>'
+    + `<th>${etiqueta}</th>`
+    + cols.map(a=>`<th title="${escHtml(a)}">${escHtml(a.charAt(0) + a.slice(1).toLowerCase())}</th>`).join('')
+    + (haySin ? '<th class="sin">Sin acción</th>' : '')
+    + '<th>Total</th></tr></thead><tbody>';
+  grupos.forEach(g=>{
+    html += '<tr>'
+      + `<td class="grp" title="${escHtml(g.grupo)}">${escHtml(g.grupo)}</td>`
+      + cols.map(a=>accCelda(g.acciones[a] || 0, max, '8,145,178')).join('')
+      + (haySin ? accCelda(g.acciones['Sin acción'] || 0, maxSin, '220,38,38') : '')
+      + `<td class="tot">${g.total}</td></tr>`;
+  });
+  body.innerHTML = html + '</tbody></table>';
 }
 renderAccionesPor('contrato');
 
