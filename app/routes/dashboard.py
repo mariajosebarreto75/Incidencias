@@ -280,6 +280,14 @@ def indicadores():
             "reportado_por": r.reportado_por or "—",
             "estado": r.estado,
             "orden_trabajo": r.orden_trabajo or "—",
+            # Evidencias del reporte (quien reporta)
+            "evidencia_1": r.evidencia_1 or "",
+            "evidencia_2": r.evidencia_2 or "",
+            # Evidencias del coordinador (quien responde)
+            "evidencia_coor_1": r.evidencia_coor_1 or "",
+            "evidencia_coor_2": r.evidencia_coor_2 or "",
+            # Evidencia de conformidad NEO
+            "evidencia_conformidad": r.evidencia_conformidad or "",
         }
         for r in reportes_rows
     ]

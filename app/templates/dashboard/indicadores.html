@@ -548,28 +548,6 @@ function clearAllFilters() {
         </div>
       </div>
 
-      <!-- Distribución de estados -->
-      <div class="conf-block">
-        <div class="conf-title">Distribución de estados</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;height:calc(100% - 28px);align-items:center">
-          <div style="text-align:center">
-            <div style="font-family:'Manrope',sans-serif;font-size:1.6rem;font-weight:800;color:var(--red)">{{ stats.neo.abiertos }}</div>
-            <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:2px">Sin respuesta</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-family:'Manrope',sans-serif;font-size:1.6rem;font-weight:800;color:var(--amber)">{{ stats.neo.con_respuesta }}</div>
-            <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:2px">Con respuesta</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-family:'Manrope',sans-serif;font-size:1.6rem;font-weight:800;color:var(--green)">{{ stats.neo.conformes }}</div>
-            <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:2px">Conformes</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-family:'Manrope',sans-serif;font-size:1.6rem;font-weight:800;color:var(--red)">{{ stats.neo.no_conformes }}</div>
-            <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:2px">No conformes</div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- REINCIDENTES + TABLA DETALLADA -->
@@ -594,28 +572,22 @@ function clearAllFilters() {
         {% endfor %}
       </div>
 
-      <!-- Mini filtros de tabla -->
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div class="chart-card" style="padding:14px">
-          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:8px">Filtrar tabla de reportes</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button class="sort-btn active" onclick="filtrarTabla('todos',this)">Todos</button>
-            <button class="sort-btn" onclick="filtrarTabla('Abierto',this)">Abiertos</button>
-            <button class="sort-btn" onclick="filtrarTabla('Respondido',this)">Con respuesta</button>
-            <button class="sort-btn" onclick="filtrarTabla('Conforme',this)" style="border-color:var(--green);color:var(--green)">Conformes</button>
-            <button class="sort-btn" onclick="filtrarTabla('No conforme',this)" style="border-color:var(--red);color:var(--red)">No conformes</button>
-            <button class="sort-btn" onclick="filtrarTabla('Cerrado',this)">Cerrados</button>
-          </div>
-          <div style="margin-top:8px">
-            <input type="text" id="buscarTabla" placeholder="Buscar recurso, tipo, observación…"
-              oninput="buscarEnTabla(this.value)"
-              style="width:100%;padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;font-family:inherit;background:var(--surf2);color:var(--ink);outline:none">
-          </div>
-        </div>
-        <div style="font-size:.72rem;color:var(--muted);padding:0 4px">
-          <span id="tablaConteo">{{ casos_atencion|length }}</span> reportes · últimos 200 · ordenados por fecha desc
-        </div>
+    </div>
+
+    <!-- Barra de búsqueda y filtros de tabla -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <button class="sort-btn active" onclick="filtrarTabla('todos',this)">Todos</button>
+        <button class="sort-btn" onclick="filtrarTabla('Abierto',this)">Sin respuesta</button>
+        <button class="sort-btn" onclick="filtrarTabla('Respondido',this)">Con respuesta</button>
+        <button class="sort-btn" onclick="filtrarTabla('Conforme',this)" style="border-color:var(--green);color:var(--green)">Conformes</button>
+        <button class="sort-btn" onclick="filtrarTabla('No conforme',this)" style="border-color:var(--red);color:var(--red)">No conformes</button>
+        <button class="sort-btn" onclick="filtrarTabla('Cerrado',this)">Cerrados</button>
       </div>
+      <input type="text" id="buscarTabla" placeholder="Buscar recurso, tipo, observación…"
+        oninput="buscarEnTabla(this.value)"
+        style="flex:1;min-width:200px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:.78rem;font-family:inherit;background:var(--surf2);color:var(--ink);outline:none">
+      <span style="font-size:.72rem;color:var(--muted);white-space:nowrap"><span id="tablaConteo">{{ casos_atencion|length }}</span> reportes</span>
     </div>
 
     <!-- TABLA DETALLADA -->
@@ -885,11 +857,55 @@ function clearAllFilters() {
     <!-- Bloque 4: Validación NEO -->
     <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:16px">
       <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-bottom:8px">Validación NEO</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div class="drawer-field"><div class="drawer-field-lbl">Estado</div><div class="drawer-field-val" id="dEstado"></div></div>
-        <div class="drawer-field"><div class="drawer-field-lbl">Conformidad</div><div class="drawer-field-val" id="dConformidad"></div></div>
-      </div>
+      <div class="drawer-field"><div class="drawer-field-lbl">Conformidad</div><div class="drawer-field-val" id="dConformidad"></div></div>
       <div class="drawer-field" style="margin-top:6px"><div class="drawer-field-lbl">Observación de no conformidad</div><div class="drawer-field-val" id="dObsConf" style="font-size:.8rem;color:var(--red);line-height:1.4;white-space:pre-wrap"></div></div>
+      <!-- Imagen evidencia NEO -->
+      <div id="dEvConfWrap" style="display:none;margin-top:8px">
+        <div class="drawer-field-lbl" style="margin-bottom:4px">Evidencia NEO</div>
+        <a id="dEvConfLink" href="#" target="_blank">
+          <img id="dEvConf" src="" alt="Evidencia NEO" style="max-width:100%;border-radius:6px;border:1px solid var(--border);cursor:zoom-in">
+        </a>
+      </div>
+    </div>
+
+    <!-- Bloque 5: Imágenes del reporte -->
+    <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:16px" id="dImgReporteWrap">
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--cyan);margin-bottom:8px">Evidencias del reporte</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="dImgReporteGrid">
+        <div id="dEv1Wrap" style="display:none;flex:1;min-width:120px">
+          <div class="drawer-field-lbl" style="margin-bottom:4px">Imagen 1</div>
+          <a id="dEv1Link" href="#" target="_blank">
+            <img id="dEv1" src="" alt="Evidencia 1" style="width:100%;border-radius:6px;border:1px solid var(--border);cursor:zoom-in">
+          </a>
+        </div>
+        <div id="dEv2Wrap" style="display:none;flex:1;min-width:120px">
+          <div class="drawer-field-lbl" style="margin-bottom:4px">Imagen 2</div>
+          <a id="dEv2Link" href="#" target="_blank">
+            <img id="dEv2" src="" alt="Evidencia 2" style="width:100%;border-radius:6px;border:1px solid var(--border);cursor:zoom-in">
+          </a>
+        </div>
+      </div>
+      <div id="dImgReporteEmpty" style="display:none;font-size:.78rem;color:var(--muted)">Sin evidencias adjuntas</div>
+    </div>
+
+    <!-- Bloque 6: Imágenes del coordinador -->
+    <div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:16px" id="dImgCoorWrap">
+      <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--amber);margin-bottom:8px">Evidencias del coordinador</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div id="dEvc1Wrap" style="display:none;flex:1;min-width:120px">
+          <div class="drawer-field-lbl" style="margin-bottom:4px">Imagen 1</div>
+          <a id="dEvc1Link" href="#" target="_blank">
+            <img id="dEvc1" src="" alt="Evidencia coordinador 1" style="width:100%;border-radius:6px;border:1px solid var(--border);cursor:zoom-in">
+          </a>
+        </div>
+        <div id="dEvc2Wrap" style="display:none;flex:1;min-width:120px">
+          <div class="drawer-field-lbl" style="margin-bottom:4px">Imagen 2</div>
+          <a id="dEvc2Link" href="#" target="_blank">
+            <img id="dEvc2" src="" alt="Evidencia coordinador 2" style="width:100%;border-radius:6px;border:1px solid var(--border);cursor:zoom-in">
+          </a>
+        </div>
+      </div>
+      <div id="dImgCoorEmpty" style="display:none;font-size:.78rem;color:var(--muted)">Sin evidencias adjuntas</div>
     </div>
 
     <button onclick="closeDrawer()" style="background:var(--cyan);border:none;border-radius:7px;padding:8px 18px;color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit">
@@ -951,8 +967,7 @@ function openCasoDrawer(idx){
   set('dRespuesta', c.respuesta);
   set('dResponde', c.respondido_por);
   set('dFechaResp', c.fecha_respuesta);
-  // Validación
-  set('dEstado', c.estado);
+  // Validación NEO
   set('dConformidad', c.conformidad);
   set('dObsConf', c.obs_conf);
   // Badges
@@ -965,6 +980,36 @@ function openCasoDrawer(idx){
   if(c.conformidad==='Conforme') badges.innerHTML += '<span class="badge badge-green"><i class="bi bi-check2"></i> Conforme</span>';
   if(c.conformidad==='No conforme') badges.innerHTML += '<span class="badge badge-red"><i class="bi bi-x"></i> No conforme</span>';
   if(c.accion==='—') badges.innerHTML += '<span class="badge badge-red">Sin acción</span>';
+  // Evidencia conformidad NEO
+  const evConf = c.evidencia_conformidad;
+  if(evConf) {
+    const url = '/neo/evidencia/' + evConf;
+    document.getElementById('dEvConf').src = url;
+    document.getElementById('dEvConfLink').href = url;
+    document.getElementById('dEvConfWrap').style.display = 'block';
+  } else {
+    document.getElementById('dEvConfWrap').style.display = 'none';
+  }
+  // Evidencias del reporte
+  function showImg(wrapId, imgId, linkId, ruta) {
+    const wrap = document.getElementById(wrapId);
+    if(ruta) {
+      const url = '/neo/evidencia/' + ruta;
+      document.getElementById(imgId).src = url;
+      document.getElementById(linkId).href = url;
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+    }
+  }
+  showImg('dEv1Wrap','dEv1','dEv1Link', c.evidencia_1);
+  showImg('dEv2Wrap','dEv2','dEv2Link', c.evidencia_2);
+  const hayRep = c.evidencia_1 || c.evidencia_2;
+  document.getElementById('dImgReporteEmpty').style.display = hayRep ? 'none' : 'block';
+  showImg('dEvc1Wrap','dEvc1','dEvc1Link', c.evidencia_coor_1);
+  showImg('dEvc2Wrap','dEvc2','dEvc2Link', c.evidencia_coor_2);
+  const hayCoor = c.evidencia_coor_1 || c.evidencia_coor_2;
+  document.getElementById('dImgCoorEmpty').style.display = hayCoor ? 'none' : 'block';
   document.getElementById('drawerOverlay').classList.add('open');
   document.getElementById('drawerCaso').classList.add('open');
   document.body.style.overflow = 'hidden';
