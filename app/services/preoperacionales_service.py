@@ -247,38 +247,6 @@ def obtener_datos() -> tuple[list[dict], Optional[dict]]:
         return _cache.get("datos", []), _cache.get("meta")
 
 
-def _kpis(registros: list[dict], filtros: dict) -> dict:
-    """Calcula KPIs sobre los registros ya filtrados."""
-    total = len(registros)
-    if total == 0:
-        return {"total": 0, "cumple": 0, "incumple": 0, "sin_mov": 0,
-                "pct_cumplimiento": 0, "pct_incumplimiento": 0}
-
-    cumple   = sum(1 for r in registros if r["cumple"])
-    incumple = sum(1 for r in registros if r["incumple"])
-    sin_mov  = sum(1 for r in registros if r["sin_mov"])
-    con_mov  = total - sin_mov  # vehículos que debían tener preoperacional
-
-    pct_cumplimiento    = round(cumple / con_mov * 100, 1) if con_mov else 0
-    pct_incumplimiento  = round(incumple / con_mov * 100, 1) if con_mov else 0
-
-    sin_gps = sum(1 for r in registros if r["estado"] in {
-        "2. Preoperacional Confirmado y sin GPS",
-        "4. Vehículo con movimiento, Sin GPS",
-    })
-
-    return {
-        "total":              total,
-        "cumple":             cumple,
-        "incumple":           incumple,
-        "sin_mov":            sin_mov,
-        "sin_gps":            sin_gps,
-        "con_movimiento":     con_mov,
-        "pct_cumplimiento":   pct_cumplimiento,
-        "pct_incumplimiento": pct_incumplimiento,
-    }
-
-
 def _filtrar(registros: list[dict], filtros: dict) -> list[dict]:
     sede     = filtros.get("sede")
     contrato = filtros.get("contrato")
@@ -318,39 +286,60 @@ def datos_dashboard(filtros: dict | None = None) -> dict:
     filtros = filtros or {}
     filtrados = _filtrar(registros, filtros)
 
-    kpis = _kpis(filtrados, filtros)
+    # ── Una sola pasada sobre filtrados para todos los agregados ──
+    total = cumple = incumple = sin_mov = sin_gps = 0
+    serie: dict        = defaultdict(lambda: {"total": 0, "cumple": 0, "incumple": 0})
+    estados_cnt        = Counter()
+    inc_contrato       = Counter()
+    sedes_data: dict   = defaultdict(lambda: {"total": 0, "cumple": 0, "sin_mov": 0, "incumple": 0})
 
-    # Serie por fecha
-    serie: dict = defaultdict(lambda: {"total": 0, "cumple": 0, "incumple": 0})
+    _OK = _ESTADOS_OK
+    _SIN_GPS = {"2. Preoperacional Confirmado y sin GPS", "4. Vehículo con movimiento, Sin GPS"}
+
     for r in filtrados:
-        d = r["fecha_str"] or "sin fecha"
-        serie[d]["total"]    += 1
-        if r["cumple"]:   serie[d]["cumple"]   += 1
-        if r["incumple"]: serie[d]["incumple"] += 1
-    serie_lista = [{"fecha": k, **v} for k, v in sorted(serie.items())]
+        total += 1
+        c = r["cumple"];  i = r["incumple"];  sm = r["sin_mov"]
+        if c:  cumple   += 1
+        if i:  incumple += 1
+        if sm: sin_mov  += 1
+        if r["estado"] in _SIN_GPS: sin_gps += 1
 
-    # Distribución por estado
-    estados_cnt = Counter(r["estado"] for r in filtrados)
+        d = r["fecha_str"] or "sin fecha"
+        serie[d]["total"] += 1
+        if c: serie[d]["cumple"]   += 1
+        if i: serie[d]["incumple"] += 1
+
+        estados_cnt[r["estado"]] += 1
+        if i: inc_contrato[r["contrato"]] += 1
+
+        s = r["sede"] or "Sin sede"
+        sedes_data[s]["total"] += 1
+        if c:  sedes_data[s]["cumple"]   += 1
+        if sm: sedes_data[s]["sin_mov"]  += 1
+        if i:  sedes_data[s]["incumple"] += 1
+
+    con_mov = total - sin_mov
+    kpis = {
+        "total":              total,
+        "cumple":             cumple,
+        "incumple":           incumple,
+        "sin_mov":            sin_mov,
+        "sin_gps":            sin_gps,
+        "con_movimiento":     con_mov,
+        "pct_cumplimiento":   round(cumple   / con_mov * 100, 1) if con_mov else 0,
+        "pct_incumplimiento": round(incumple / con_mov * 100, 1) if con_mov else 0,
+    }
+
+    serie_lista = [{"fecha": k, **v} for k, v in sorted(serie.items())]
     estados_lista = [{"estado": k, "total": v}
                      for k, v in sorted(estados_cnt.items(), key=lambda x: x[0])]
-
-    # Top contratos con incumplimiento
-    inc_contrato = Counter(r["contrato"] for r in filtrados if r["incumple"])
     top_incumplimiento = [{"contrato": k, "incumple": v}
                           for k, v in inc_contrato.most_common(10)]
 
-    # Cumplimiento por sede
-    sedes_data: dict = defaultdict(lambda: {"total": 0, "cumple": 0, "sin_mov": 0, "incumple": 0})
-    for r in filtrados:
-        s = r["sede"] or "Sin sede"
-        sedes_data[s]["total"] += 1
-        if r["cumple"]:    sedes_data[s]["cumple"]   += 1
-        if r["sin_mov"]:   sedes_data[s]["sin_mov"]  += 1
-        if r["incumple"]:  sedes_data[s]["incumple"] += 1
     sedes_lista = []
     for sede, d in sorted(sedes_data.items()):
-        con_mov = d["total"] - d["sin_mov"]
-        pct = round(d["cumple"] / con_mov * 100, 1) if con_mov else 0
+        con_mov_s = d["total"] - d["sin_mov"]
+        pct = round(d["cumple"] / con_mov_s * 100, 1) if con_mov_s else 0
         sedes_lista.append({"sede": sede, "total": d["total"],
                              "cumple": d["cumple"], "sin_mov": d["sin_mov"],
                              "incumple": d["incumple"], "pct": pct})
