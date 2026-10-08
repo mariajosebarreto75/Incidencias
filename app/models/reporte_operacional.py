@@ -18,7 +18,8 @@ class ReporteOperacional(db.Model):
 
     fecha_reporte = db.Column(
         db.Date,
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     fecha_creado = db.Column(
@@ -32,12 +33,14 @@ class ReporteOperacional(db.Model):
 
     contrato = db.Column(
         db.String(250),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     recurso = db.Column(
         db.String(150),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     placa = db.Column(
@@ -135,7 +138,8 @@ class ReporteOperacional(db.Model):
 
     estado = db.Column(
         db.String(50),
-        default="Abierto"
+        default="Abierto",
+        index=True
     )
 
     # =====================
@@ -179,7 +183,8 @@ class ReporteOperacional(db.Model):
     # =====================
 
     conformidad_neo = db.Column(
-        db.String(100)
+        db.String(100),
+        index=True
     )
 
     observacion_conformidad = db.Column(
@@ -248,6 +253,11 @@ class ReporteOperacional(db.Model):
     revisado_reunion = db.Column(db.Boolean, default=False, nullable=False, server_default="FALSE")
     revisado_reunion_por = db.Column(db.String(150))
     fecha_revision_reunion = db.Column(db.DateTime)
+
+    __table_args__ = (
+        db.Index("ix_reporte_contrato_fecha", "contrato", "fecha_reporte"),
+        db.Index("ix_reporte_estado_conf", "estado", "conformidad_neo"),
+    )
 
     def __repr__(self):
 

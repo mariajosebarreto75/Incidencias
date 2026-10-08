@@ -95,25 +95,42 @@ def indicadores():
             conds.append(dia_col.in_(f_dias))
         return conds
 
-    # ── Reportes operacionales ──────────────────────────────────
+    # ── Reportes operacionales — una sola query con CASE/WHEN ──────
     extra = base_agg()
-    neo_total       = base_q().count()
-    neo_abiertos    = base_q().filter_by(estado="Abierto").count()
-    neo_respondidos = base_q().filter_by(estado="Respondido").count()
-    neo_cerrados    = base_q().filter_by(estado="Cerrado").count()
-    neo_conformes   = base_q().filter_by(conformidad_neo="Conforme").count()
-    neo_no_conf     = base_q().filter_by(conformidad_neo="No conforme").count()
-    neo_hoy         = base_q().filter_by(fecha_reporte=hoy).count()
+    _neo_row = db.session.query(
+        func.count(ReporteOperacional.id).label("total"),
+        func.sum(func.cast(ReporteOperacional.estado == "Abierto",    db.Integer)).label("abiertos"),
+        func.sum(func.cast(ReporteOperacional.estado == "Respondido", db.Integer)).label("respondidos"),
+        func.sum(func.cast(ReporteOperacional.estado == "Cerrado",    db.Integer)).label("cerrados"),
+        func.sum(func.cast(ReporteOperacional.conformidad_neo == "Conforme",    db.Integer)).label("conformes"),
+        func.sum(func.cast(ReporteOperacional.conformidad_neo == "No conforme", db.Integer)).label("no_conf"),
+        func.sum(func.cast(ReporteOperacional.fecha_reporte == hoy,   db.Integer)).label("hoy"),
+    ).filter(*extra).one()
+    neo_total       = _neo_row.total       or 0
+    neo_abiertos    = _neo_row.abiertos    or 0
+    neo_respondidos = _neo_row.respondidos or 0
+    neo_cerrados    = _neo_row.cerrados    or 0
+    neo_conformes   = _neo_row.conformes   or 0
+    neo_no_conf     = _neo_row.no_conf     or 0
+    neo_hoy         = _neo_row.hoy         or 0
 
-    # ── Horas extras (sin filtros de NEO, son datos independientes) ──
-    he_total     = HoraExtra.query.count()
-    he_pendiente = HoraExtra.query.filter_by(estado="PENDIENTE").count()
-    he_conforme  = HoraExtra.query.filter_by(estado="CONFORME").count()
-    he_no_conf   = HoraExtra.query.filter_by(estado="NO CONFORME").count()
-    he_hrs_rep   = db.session.query(func.sum(HoraExtra.horas_reportadas)).scalar() or 0
-    he_hrs_auth  = db.session.query(func.sum(HoraExtra.horas_autorizadas)).filter(
-        HoraExtra.estado.in_(["CONFORME", "DESCONTADA"])
-    ).scalar() or 0
+    # ── Horas extras — una sola query ────────────────────────────
+    _he_row = db.session.query(
+        func.count(HoraExtra.id).label("total"),
+        func.sum(func.cast(HoraExtra.estado == "PENDIENTE",  db.Integer)).label("pendiente"),
+        func.sum(func.cast(HoraExtra.estado == "CONFORME",   db.Integer)).label("conforme"),
+        func.sum(func.cast(HoraExtra.estado == "NO CONFORME",db.Integer)).label("no_conf"),
+        func.sum(HoraExtra.horas_reportadas).label("hrs_rep"),
+        func.sum(
+            func.case((HoraExtra.estado.in_(["CONFORME", "DESCONTADA"]), HoraExtra.horas_autorizadas), else_=0)
+        ).label("hrs_auth"),
+    ).one()
+    he_total     = _he_row.total     or 0
+    he_pendiente = _he_row.pendiente or 0
+    he_conforme  = _he_row.conforme  or 0
+    he_no_conf   = _he_row.no_conf   or 0
+    he_hrs_rep   = float(_he_row.hrs_rep  or 0)
+    he_hrs_auth  = float(_he_row.hrs_auth or 0)
 
     # ── General ────────────────────────────────────────────────
     contratos_activos = Contrato.query.filter_by(activo=True).count()
