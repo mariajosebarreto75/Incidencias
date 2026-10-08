@@ -36,30 +36,6 @@
 
     </div>
 
-    <!-- ===== BANNER ALERTA GPS ===== -->
-    {% if alerta_ctx %}
-    <div id="bannerAlertaGPS" style="
-        background: linear-gradient(135deg, #0d1b2a, #112236);
-        border: 1px solid #f5a623; border-radius: 12px;
-        padding: 14px 20px; margin-bottom: 1.2rem;
-        display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-        <i class="bi bi-bell-fill" style="color:#f5a623;font-size:1.4rem;flex-shrink:0"></i>
-        <div style="flex:1;min-width:0">
-            <div style="font-weight:800;color:#f5a623;font-size:.9rem;margin-bottom:2px">
-                Resolviendo alerta GPS — {{ alerta_ctx.placa or 'Sin placa' }}
-            </div>
-            <div style="font-size:.78rem;color:#7a97b0">
-                Contrato: <strong style="color:#e2e8f0">{{ alerta_ctx.contrato or '—' }}</strong>
-                &nbsp;·&nbsp; Recurso: <strong style="color:#e2e8f0">{{ alerta_ctx.recurso or '—' }}</strong>
-                &nbsp;·&nbsp; OT: <strong style="color:#e2e8f0">{{ alerta_ctx.orden_trabajo or '—' }}</strong>
-            </div>
-        </div>
-        <div style="font-size:.75rem;color:#f5a623;font-weight:700;white-space:nowrap">
-            <i class="bi bi-info-circle me-1"></i>Los campos se han pre-llenado automáticamente
-        </div>
-    </div>
-    {% endif %}
-
     <!-- ===== STEPS ===== -->
 
     <div class="rpt-steps mb-4">
@@ -481,85 +457,5 @@
 </div>
 <script src="{{ url_for('static', filename='js/neo/PanelNeo.js') }}"></script>
 
-
-{% if alerta_ctx %}
-<script>
-(function() {
-    const ctx = {{ alerta_ctx | tojson }};
-
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-
-    // Fecha hoy + campos directos
-    const hoy = new Date().toISOString().slice(0, 10);
-    setVal("fecha_reporte",  hoy);
-    setVal("placa",          ctx.placa);
-    setVal("tipo_cuadrilla", ctx.tipo_cuadrilla);
-
-    // Cascade: fecha → contrato → recurso → OT
-    async function preLlenarCascade() {
-        const fechaEl = document.getElementById("fecha_reporte");
-        if (fechaEl) fechaEl.dispatchEvent(new Event("change"));
-
-        // Esperar contrato
-        await new Promise(resolve => {
-            let n = 0;
-            const t = setInterval(() => {
-                const s = document.getElementById("contrato");
-                if ((s && s.options.length > 1) || ++n > 30) { clearInterval(t); resolve(); }
-            }, 300);
-        });
-        const selCont = document.getElementById("contrato");
-        if (selCont && ctx.contrato) {
-            for (let i = 0; i < selCont.options.length; i++) {
-                if (selCont.options[i].value === ctx.contrato) {
-                    selCont.selectedIndex = i;
-                    selCont.dispatchEvent(new Event("change"));
-                    break;
-                }
-            }
-        }
-
-        // Esperar recurso
-        await new Promise(resolve => {
-            let n = 0;
-            const t = setInterval(() => {
-                const s = document.getElementById("recurso");
-                if ((s && s.options.length > 1) || ++n > 30) { clearInterval(t); resolve(); }
-            }, 300);
-        });
-        const selRec = document.getElementById("recurso");
-        if (selRec && ctx.recurso) {
-            for (let i = 0; i < selRec.options.length; i++) {
-                if (selRec.options[i].value === ctx.recurso) {
-                    selRec.selectedIndex = i;
-                    selRec.dispatchEvent(new Event("change"));
-                    break;
-                }
-            }
-        }
-
-        // Esperar OT
-        await new Promise(resolve => setTimeout(resolve, 700));
-        const selOT = document.getElementById("orden_trabajo");
-        if (selOT && ctx.orden_trabajo) {
-            for (let i = 0; i < selOT.options.length; i++) {
-                if (selOT.options[i].value === ctx.orden_trabajo) {
-                    selOT.selectedIndex = i;
-                    selOT.dispatchEvent(new Event("change"));
-                    break;
-                }
-            }
-        }
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        preLlenarCascade();
-        // Marcar botón guardar con el ID de alerta para enviarlo en el payload
-        const btn = document.getElementById("btnGuardarReporte");
-        if (btn) btn.dataset.alertaId = ctx.id;
-    });
-})();
-</script>
-{% endif %}
 
 {% endblock %}

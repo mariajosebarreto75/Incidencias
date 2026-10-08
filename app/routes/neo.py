@@ -30,7 +30,6 @@ from app.models.parametro_neo import ParametroNeo
 from app.models.reporte_operacional import ReporteOperacional
 from app.models.recurso_contrato import RecursoContrato
 from app.models.user_contrato import UserContrato
-from app.models.alerta_gps import AlertaGPS
 from app.routes.notificaciones import crear_notificacion, coordinadores_de_contrato
 
 
@@ -40,23 +39,6 @@ neo = Blueprint("neo", __name__)
 # Debe coincidir con la fórmula usada al crear el reporte (app/static/js/neo/PanelNeo.js)
 HORAS_DIA_ESTANDAR = 7.33
 
-# Traducción de tipos de alerta GPS → español
-TIPOS_ALERTA = {
-    "speed_infraction":      "Velocidad excesiva",
-    "unscheduled_stop":      "Parada no programada",
-    "route_deviation":       "Desvío de ruta",
-    "time_deviation":        "Desvío de tiempo",
-    "unauthorized_movement": "Movimiento no autorizado",
-    "lunch_overtime":        "Almuerzo extendido",
-    "execution_overtime":    "OT fuera de tiempo",
-    "off_hours_movement":    "Movimiento nocturno",
-    "late_departure":        "Salida tardía",
-    "early_return":          "Retorno anticipado",
-    "long_stop":             "Parada prolongada",
-    "entry":                 "Entrada a zona",
-    "exit":                  "Salida de zona",
-    "both":                  "Entrada y salida",
-}
 
 
 RECURSOS_EXTRA_POR_CONTRATO = {
@@ -368,18 +350,6 @@ def home_neo():
              "desc": "Checklist de reuniones realizadas"},
             {"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
              "desc": "Compromisos pendientes y atrasados"},
-        ],
-    })
-
-    groups.append({
-        "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
-        "links": [
-            {"label": "Alertas GPS", "icon": "bi-bell-fill", "url": url_for("neo.alertas_gps"),
-             "desc": "Paradas no programadas, desvíos de ruta y retornos"},
-            {"label": "GPS Monitor", "icon": "bi-display", "url": "http://178.219.0.123/Auth/Login",
-             "ext": True, "desc": "Aplicativo externo de monitoreo GPS"},
-            {"label": "Rastrear", "icon": "bi-map", "url": "https://plataforma.sistemagps.online/ui/map/objects",
-             "ext": True, "desc": "Mapa de vehículos en vivo"},
         ],
     })
 
@@ -736,32 +706,10 @@ def panel_reportes():
     tipos_desvio   = TipoDesvio.query.order_by(TipoDesvio.tipo_desvio).all()
     parametros_neo = ParametroNeo.query.order_by(ParametroNeo.parametroNeo).all()
 
-    # Datos de alerta GPS pre-cargados (cuando se llega desde "Resolver")
-    alerta_ctx = None
-    alerta_id  = request.args.get("alerta_id", "").strip()
-    if alerta_id:
-        alerta_obj = AlertaGPS.query.get(alerta_id)
-        if alerta_obj and alerta_obj.estado_local == "pendiente":
-            # Resolver nombre completo del contrato desde código corto
-            contrato_nombre = alerta_obj.contract_code or ""
-            if alerta_obj.contract_code:
-                c_obj = Contrato.query.filter_by(codigo=alerta_obj.contract_code).first()
-                if c_obj:
-                    contrato_nombre = c_obj.contrato
-            alerta_ctx = {
-                "id":             alerta_obj.id,
-                "placa":          alerta_obj.vehicle_plate or "",
-                "contrato":       contrato_nombre,
-                "recurso":        alerta_obj.resource_code or "",
-                "orden_trabajo":  alerta_obj.order_number  or "",
-                "tipo_cuadrilla": alerta_obj.brigade_type  or "",
-            }
-
     return render_template(
         "neo/panelReportes.html",
         tipos_desvio   = tipos_desvio,
         parametros_neo = parametros_neo,
-        alerta_ctx     = alerta_ctx,
     )
 
 
@@ -1135,31 +1083,10 @@ def guardar_reporte():
                 ))
                 db.session.commit()
 
-        # Si el reporte viene de una alerta GPS, resolverla ahora
-        alerta_id_from = datos.get("alerta_id")
-        if alerta_id_from:
-            try:
-                alerta_id_from = int(alerta_id_from)
-            except (TypeError, ValueError):
-                alerta_id_from = None
-        if alerta_id_from:
-            alerta_obj = AlertaGPS.query.get(alerta_id_from)
-            if alerta_obj and alerta_obj.estado_local == "pendiente":
-                try:
-                    from app.services.gps_monitor import responder_alertas
-                    responder_alertas([{"alert_id": alerta_obj.alert_id_gps, "accion": "resolver"}])
-                except Exception:
-                    pass  # No bloquear si GPS Monitor falla
-                alerta_obj.estado_local   = "resuelta"
-                alerta_obj.atendida_por   = current_user.username
-                alerta_obj.fecha_atencion = datetime.now()
-                db.session.commit()
-
         return jsonify({
-            "success":   True,
-            "id":        reporte.id,
-            "mensaje":   f"Reporte #{reporte.id} guardado correctamente.",
-            "alerta_id": alerta_id_from,
+            "success": True,
+            "id":      reporte.id,
+            "mensaje": f"Reporte #{reporte.id} guardado correctamente.",
         })
 
     except Exception as e:
@@ -1246,241 +1173,6 @@ def api_actualizar_cuadrilla():
 
     db.session.commit()
     return jsonify({"ok": True, "actualizados": actualizados, "no_encontrados": no_encontrados})
-
-
-def _auto_limpiar_alertas_antiguas():
-    """Elimina alertas GPS con más de 1 día de antigüedad (solo quedan hoy y ayer)."""
-    from datetime import timedelta
-    ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    try:
-        AlertaGPS.query.filter(AlertaGPS.triggered_at < ayer).delete(synchronize_session=False)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-
-@neo.route("/neo/alertas")
-@login_required
-def alertas_gps():
-    if current_user.rol.lower() not in ("neo", "admin"):
-        abort(403)
-    _auto_limpiar_alertas_antiguas()
-
-    codigos_contrato = _codigos_contrato_usuario()
-
-    filtro   = request.args.get("filtro",   "pendiente")
-    placa    = request.args.get("placa",    "").strip().upper()
-    contrato = request.args.get("contrato", "").strip()
-    recurso  = request.args.get("recurso",  "").strip()
-    orden    = request.args.get("orden",    "reciente")
-    fecha    = request.args.get("fecha",    "").strip()   # YYYY-MM-DD, vacío = hoy y ayer
-    # "todos" | "con_contrato" | "sin_contrato"
-    scope    = request.args.get("scope",    "todos")
-
-    q = AlertaGPS.query
-
-    # Solo alertas de hoy y ayer (triggered_at es varchar ISO, compara lexicográficamente)
-    from datetime import timedelta
-    hoy  = datetime.now()
-    ayer = (hoy - timedelta(days=1)).strftime("%Y-%m-%d")
-    q = q.filter(AlertaGPS.triggered_at >= ayer)
-
-    # Filtro de estado (pendiente / resuelta / todas)
-    if filtro != "todas":
-        q = q.filter(AlertaGPS.estado_local == filtro)
-    # Filtro de scope
-    if scope == "sin_contrato":
-        q = q.filter(AlertaGPS.contract_code == None)
-    elif scope == "con_contrato":
-        q = q.filter(AlertaGPS.contract_code != None)
-    # Filtro de fecha
-    if fecha:
-        try:
-            from datetime import datetime as _dt
-            _dt.strptime(fecha, "%Y-%m-%d")  # valida formato
-            q = q.filter(AlertaGPS.triggered_at.like(f"{fecha}%"))
-        except ValueError:
-            pass
-    # Filtros adicionales
-    if placa:
-        q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
-    if contrato:
-        q = q.filter(AlertaGPS.contract_code == contrato)
-    if recurso:
-        q = q.filter(AlertaGPS.resource_code.ilike(f"%{recurso}%"))
-
-    if orden == "antiguo":
-        q = q.order_by(AlertaGPS.triggered_at.asc())
-    else:
-        q = q.order_by(AlertaGPS.triggered_at.desc())
-
-    alertas = q.all()
-
-    # Agrupar: tipo_es → placa → lista de alertas (desc por fecha)
-    # Mostramos la más reciente de cada placa con el conteo total
-    import json as _json
-    grupos = {}
-    grupos_codes = {}  # tipo_es → set de alert_type crudos (para depurar por tipo)
-    for a in alertas:
-        tipo_es = TIPOS_ALERTA.get(a.alert_type, a.alert_type or "Otro")
-        plate   = a.vehicle_plate or "—"
-        if tipo_es not in grupos:
-            grupos[tipo_es] = {}
-            grupos_codes[tipo_es] = set()
-        if plate not in grupos[tipo_es]:
-            grupos[tipo_es][plate] = []
-        grupos[tipo_es][plate].append(a)
-        grupos_codes[tipo_es].add(a.alert_type or "")
-
-    # Parsear metadata_raw para cada alerta (speed, tiempo, distancia)
-    extras = {}  # alert.id → dict con campos extras para mostrar
-    for a in alertas:
-        ex = {}
-        if a.metadata_raw:
-            try:
-                raw = a.metadata_raw
-                # puede venir como string doble-encoded
-                m = _json.loads(raw) if isinstance(raw, str) else raw
-                if isinstance(m, str):
-                    m = _json.loads(m)
-                if isinstance(m, dict):
-                    if "max_speed_kmh" in m:
-                        ex["velocidad"] = m["max_speed_kmh"]
-                    if "duration_sec" in m:
-                        mins = round(m["duration_sec"] / 60, 1)
-                        ex["duracion_min"] = mins
-                    if "point_count" in m:
-                        ex["puntos"] = m["point_count"]
-            except Exception:
-                pass
-        extras[a.id] = ex
-
-    total_pendientes = AlertaGPS.query.filter_by(estado_local="pendiente").count()
-
-    # Lista de contratos disponibles para el selector (todos los distintos en BD)
-    from sqlalchemy import distinct
-    todos_contratos = [
-        r[0] for r in
-        AlertaGPS.query.with_entities(distinct(AlertaGPS.contract_code))
-                       .filter(AlertaGPS.contract_code != None)
-                       .order_by(AlertaGPS.contract_code).all()
-    ]
-
-    return render_template(
-        "neo/alertas_gps.html",
-        grupos           = grupos,
-        grupos_codes     = grupos_codes,
-        extras           = extras,
-        filtro           = filtro,
-        placa            = placa,
-        contrato         = contrato,
-        recurso          = recurso,
-        orden            = orden,
-        scope            = scope,
-        codigos_contrato = todos_contratos,
-        total_alertas    = len(alertas),
-        total_pendientes = total_pendientes,
-    )
-
-
-@neo.route("/neo/alertas/<int:id>/responder", methods=["POST"])
-@login_required
-def responder_alerta_gps(id):
-    if current_user.rol.lower() not in ("neo", "admin"):
-        abort(403)
-    alerta = AlertaGPS.query.get_or_404(id)
-    datos  = request.get_json() or {}
-    accion = datos.get("accion")
-
-    if accion not in ("resolver", "liberar"):
-        return jsonify({"ok": False, "error": "Accion invalida"}), 400
-
-    try:
-        from app.services.gps_monitor import responder_alertas
-        resultado = responder_alertas([{"alert_id": alerta.alert_id_gps, "accion": accion}])
-        if resultado and resultado[0]["ok"]:
-            alerta.estado_local   = "resuelta" if accion == "resolver" else "liberada"
-            alerta.atendida_por   = current_user.username
-            alerta.fecha_atencion = datetime.now()
-            db.session.commit()
-            return jsonify({"ok": True})
-        else:
-            detalle = resultado[0]["detalle"] if resultado else "Sin respuesta"
-            return jsonify({"ok": False, "error": detalle})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
-
-
-@neo.route("/neo/alertas/badge")
-@login_required
-def badge_alertas():
-    # Solo NEO y admin pueden consultar el badge de alertas GPS
-    if current_user.rol.lower() not in ("neo", "admin"):
-        return jsonify({"pendientes": 0})
-    from datetime import timedelta
-    ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    count = AlertaGPS.query.filter(
-        AlertaGPS.estado_local == "pendiente",
-        AlertaGPS.triggered_at >= ayer,
-    ).count()
-    return jsonify({"pendientes": count})
-
-
-@neo.route("/neo/alertas/depurar", methods=["POST"])
-@login_required
-def depurar_alertas():
-    if current_user.rol.lower() not in ("neo", "admin"):
-        abort(403)
-    """Elimina definitivamente una o varias alertas GPS (depuración de falsas positivas)."""
-    d   = request.get_json(silent=True) or {}
-    ids = d.get("ids", [])
-    if not ids:
-        return jsonify({"ok": False, "error": "No se enviaron IDs"}), 400
-    eliminados = AlertaGPS.query.filter(AlertaGPS.id.in_(ids)).delete(synchronize_session=False)
-    db.session.commit()
-    return jsonify({"ok": True, "eliminados": eliminados})
-
-
-@neo.route("/neo/alertas/depurar-tipo", methods=["POST"])
-@login_required
-def depurar_alertas_tipo():
-    """Elimina TODAS las alertas de uno o varios tipos (alert_type) que calcen con los
-    filtros activos de la vista, incluyendo duplicados por placa que no se listan
-    individualmente en pantalla."""
-    if current_user.rol.lower() not in ("neo", "admin"):
-        abort(403)
-    d     = request.get_json(silent=True) or {}
-    codes = [c for c in d.get("codes", []) if c]
-    if not codes:
-        return jsonify({"ok": False, "error": "No se enviaron tipos"}), 400
-
-    filtro   = d.get("filtro", "pendiente")
-    placa    = (d.get("placa") or "").strip().upper()
-    contrato = (d.get("contrato") or "").strip()
-    recurso  = (d.get("recurso") or "").strip()
-    scope    = d.get("scope", "todos")
-
-    from datetime import timedelta
-    ayer = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-
-    q = AlertaGPS.query.filter(AlertaGPS.alert_type.in_(codes))
-    q = q.filter(AlertaGPS.triggered_at >= ayer)
-    if filtro != "todas":
-        q = q.filter(AlertaGPS.estado_local == filtro)
-    if scope == "sin_contrato":
-        q = q.filter(AlertaGPS.contract_code == None)
-    elif scope == "con_contrato":
-        q = q.filter(AlertaGPS.contract_code != None)
-    if placa:
-        q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
-    if contrato:
-        q = q.filter(AlertaGPS.contract_code == contrato)
-    if recurso:
-        q = q.filter(AlertaGPS.resource_code.ilike(f"%{recurso}%"))
-
-    eliminados = q.delete(synchronize_session=False)
-    db.session.commit()
-    return jsonify({"ok": True, "eliminados": eliminados})
 
 
 # =====================================
@@ -1655,130 +1347,6 @@ def neo_distribucion_importar_excel():
         return jsonify({"ok": False, "error": str(e)}), 500
 
     return jsonify({"ok": True, "insertados": insertados, "errores": errores})
-
-
-@neo.route("/neo/alertas/datos")
-@login_required
-def alertas_datos():
-    """Devuelve las alertas como JSON para el drawer del panel de reportes."""
-    if current_user.rol.lower() not in ("neo", "admin"):
-        return jsonify({"alertas": [], "total": 0, "pendientes": 0})
-    _auto_limpiar_alertas_antiguas()
-    import json as _json
-    from datetime import date as _date, datetime as _dt
-
-    filtro   = request.args.get("filtro",   "pendiente")
-    placa    = request.args.get("placa",    "").strip().upper()
-    contrato = request.args.get("contrato", "").strip()
-    recurso  = request.args.get("recurso",  "").strip()
-    orden    = request.args.get("orden",    "reciente")
-    scope    = request.args.get("scope",    "todos")
-    # Por defecto muestra solo las de hoy; "todas" desactiva el filtro de fecha
-    fecha    = request.args.get("fecha",    "").strip()
-
-    q = AlertaGPS.query
-    if filtro != "todas":
-        q = q.filter(AlertaGPS.estado_local == filtro)
-    if scope == "sin_contrato":
-        q = q.filter(AlertaGPS.contract_code == None)
-    elif scope == "con_contrato":
-        q = q.filter(AlertaGPS.contract_code != None)
-
-    # Filtro de fecha: fecha específica filtra solo ese día; vacío = hoy y ayer
-    if fecha:
-        try:
-            _dt.strptime(fecha, "%Y-%m-%d")
-            q = q.filter(AlertaGPS.triggered_at.like(f"{fecha}%"))
-        except ValueError:
-            from datetime import timedelta as _td
-            ayer_str = (_date.today() - _td(days=1)).strftime("%Y-%m-%d")
-            q = q.filter(AlertaGPS.triggered_at >= ayer_str)
-    else:
-        from datetime import timedelta as _td
-        ayer_str = (_date.today() - _td(days=1)).strftime("%Y-%m-%d")
-        q = q.filter(AlertaGPS.triggered_at >= ayer_str)
-
-    if placa:
-        q = q.filter(AlertaGPS.vehicle_plate.ilike(f"%{placa}%"))
-    if contrato:
-        q = q.filter(AlertaGPS.contract_code == contrato)
-    if recurso:
-        q = q.filter(AlertaGPS.resource_code.ilike(f"%{recurso}%"))
-
-    if orden == "antiguo":
-        q = q.order_by(AlertaGPS.triggered_at.asc())
-    else:
-        q = q.order_by(AlertaGPS.triggered_at.desc())
-
-    alertas = q.all()
-
-    # Agrupar tipo_es → placa → alertas
-    grupos = {}
-    for a in alertas:
-        tipo_es = TIPOS_ALERTA.get(a.alert_type, a.alert_type or "Otro")
-        plate   = a.vehicle_plate or "—"
-        grupos.setdefault(tipo_es, {}).setdefault(plate, []).append(a)
-
-    resultado = []
-    for tipo, por_placa in grupos.items():
-        grupo_total = sum(len(v) for v in por_placa.values())
-        items = []
-        for plate, lst in por_placa.items():
-            a   = lst[0]
-            cnt = len(lst)
-            ex  = {}
-            if a.metadata_raw:
-                try:
-                    m = _json.loads(a.metadata_raw)
-                    if isinstance(m, str):
-                        m = _json.loads(m)
-                    if isinstance(m, dict):
-                        if "max_speed_kmh" in m:
-                            ex["velocidad"] = m["max_speed_kmh"]
-                        if "duration_sec" in m:
-                            ex["duracion_min"] = round(m["duration_sec"] / 60, 1)
-                except Exception:
-                    pass
-            items.append({
-                "id":           a.id,
-                "plate":        a.vehicle_plate or "—",
-                "triggered_at": a.triggered_at or "",
-                "contract":     a.contract_code or "",
-                "resource":     a.resource_code or "",
-                "brigade":      a.brigade_type or "",
-                "plan_date":    a.plan_date or "",
-                "order":        a.order_number or "",
-                "lat":          a.lat,
-                "lon":          a.lon,
-                "estado":       a.estado_local,
-                "atendida_por": a.atendida_por or "",
-                "tech1":        str(a.tech1_doc) if a.tech1_doc else "",
-                "tech2":        str(a.tech2_doc) if a.tech2_doc else "",
-                "tech3":        str(a.tech3_doc) if a.tech3_doc else "",
-                "tech4":        str(a.tech4_doc) if a.tech4_doc else "",
-                "tech5":        str(a.tech5_doc) if a.tech5_doc else "",
-                "count":        cnt,
-                "velocidad":    ex.get("velocidad", ""),
-                "duracion_min": ex.get("duracion_min", ""),
-            })
-        resultado.append({"tipo": tipo, "total": grupo_total, "items": items})
-
-    pendientes = AlertaGPS.query.filter_by(estado_local="pendiente").count()
-
-    from sqlalchemy import distinct as _distinct
-    todos_contratos = [
-        r[0] for r in
-        AlertaGPS.query.with_entities(_distinct(AlertaGPS.contract_code))
-                       .filter(AlertaGPS.contract_code != None)
-                       .order_by(AlertaGPS.contract_code).all()
-    ]
-
-    return jsonify({
-        "grupos":           resultado,
-        "total":            len(alertas),
-        "pendientes":       pendientes,
-        "codigos_contrato": todos_contratos,
-    })
 
 
 # ── Preoperacionales (alias para usuarios NEO) ─────────────────

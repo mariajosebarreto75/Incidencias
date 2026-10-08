@@ -1,5 +1,5 @@
 """
-Servicio GPS Monitor — cliente oficial del desarrollador (adaptado).
+Servicio GPS Monitor — cliente para sincronización del plan operativo.
 """
 
 import requests
@@ -9,71 +9,6 @@ API_KEY  = "gps_CRfC_rpCOihAanlm5xdMCen8G0K3NNA5zsorERZ90_I"
 
 _HEADERS = {"X-Api-Key": API_KEY}
 _TIMEOUT = 15
-
-
-def obtener_alertas_pendientes():
-    """
-    Devuelve lista de diccionarios con todas las alertas pendientes.
-    Lista vacía = sin alertas (no es error).
-    """
-    resp = requests.get(
-        f"{BASE_URL}/alerts/pending",
-        headers=_HEADERS,
-        timeout=_TIMEOUT
-    )
-    resp.raise_for_status()
-    return resp.json()["alerts"]
-
-
-def responder_alertas(respuestas):
-    """
-    Informa a GPS Monitor qué se hizo con cada alerta.
-
-    respuestas: [{"alert_id": 123, "accion": "resolver" | "liberar"}, ...]
-
-    "resolver" → atendida y cerrada en GPS Monitor
-    "liberar"  → descartada y cerrada en GPS Monitor (desaparece de ambas apps)
-    """
-    resultados = []
-    for item in respuestas:
-        alert_id = item["alert_id"]
-        accion   = item["accion"]
-
-        try:
-            # Primero reclamar (requisito de la API)
-            claim = requests.post(
-                f"{BASE_URL}/alerts/{alert_id}/claim",
-                headers=_HEADERS,
-                timeout=_TIMEOUT
-            )
-            if claim.status_code != 200:
-                resultados.append({
-                    "alert_id": alert_id, "ok": False,
-                    "detalle": f"No se pudo reclamar: {claim.text}"
-                })
-                continue
-
-            # Ambas acciones cierran la alerta en GPS Monitor (resolve)
-            # La diferencia entre "resolver" y "liberar" es solo interna en NEO
-            endpoint = "resolve"
-            paso2 = requests.post(
-                f"{BASE_URL}/alerts/{alert_id}/{endpoint}",
-                headers=_HEADERS,
-                timeout=_TIMEOUT
-            )
-
-            if paso2.status_code == 200:
-                resultados.append({"alert_id": alert_id, "ok": True, "detalle": "ok"})
-            else:
-                resultados.append({
-                    "alert_id": alert_id, "ok": False,
-                    "detalle": f"Error al {accion}: {paso2.text}"
-                })
-
-        except requests.exceptions.RequestException as e:
-            resultados.append({"alert_id": alert_id, "ok": False, "detalle": str(e)})
-
-    return resultados
 
 
 def obtener_plan_del_dia(from_date, to_date=None):

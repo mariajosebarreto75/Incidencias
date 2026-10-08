@@ -85,7 +85,7 @@ async function cargarContratos() {
             sel.innerHTML =
                 '<option value="">— Sin distribución para esa fecha —</option>';
             mostrarAlerta(
-                "No hay distribución operativa cargada para esa fecha. Sincroniza primero desde GPS Monitor.",
+                "No hay distribución operativa cargada para esa fecha.",
                 "warning"
             );
             return;
@@ -822,7 +822,6 @@ document.getElementById("btnGuardarReporte")
 
     const payload = {
         fecha_reporte:          fechaVal,
-        alerta_id:              (document.getElementById("btnGuardarReporte").dataset.alertaId || null),
         contrato:               contratoVal,
         recurso:                recursoVal,
         orden_trabajo:          ordenVal,

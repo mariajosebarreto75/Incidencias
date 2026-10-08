@@ -18,7 +18,6 @@ from app.models.placa_contrato import PlacaContrato
 from app.models.actividad import Actividad
 from app.models.accion_tomar import AccionTomar
 from app.models.parametro_coor import ParametroCoor
-from app.models.alerta_gps import AlertaGPS
 from app.models.notificacion import Notificacion
 from app.models.hora_extra import HoraExtra
 from app.models.supervisor import Supervisor
@@ -267,17 +266,11 @@ def create_app():
         _seed_reuniones_recurrentes()
         _hashear_passwords_planos()
 
-    # Scheduler — sincroniza alertas GPS cada 5 minutos
+    # Scheduler
     import os
     app.config["SCHEDULER_API_ENABLED"] = False
     if not scheduler.running and _tiene_lock_scheduler(app):
         scheduler.init_app(app)
-
-        @scheduler.task("interval", id="sync_alertas_gps", minutes=5, misfire_grace_time=60)
-        def job_sync_alertas():
-            with app.app_context():
-                from app.services.sincronizar_alertas import sincronizar
-                sincronizar()
 
         # Sincroniza el plan del día automáticamente cada 10 minutos
         @scheduler.task("interval", id="sync_plan_gps", minutes=10, misfire_grace_time=60)
@@ -312,22 +305,6 @@ def create_app():
                 from app.services.preoperacionales_service import sincronizar
                 sincronizar()
         _threading.Thread(target=_sync_inicial, daemon=True).start()
-
-        # Purga mensual: el día 1 de cada mes elimina alertas del mes anterior
-        @scheduler.task("cron", id="purga_alertas_mes_anterior", day=1, hour=2, minute=0)
-        def job_purga_alertas():
-            with app.app_context():
-                from datetime import date as _date
-                from app.extensions import db as _db
-                from app.models.alerta_gps import AlertaGPS as _Alerta
-                hoy = _date.today()
-                # Primer día del mes actual → todo lo anterior se elimina
-                inicio_mes_actual = hoy.replace(day=1)
-                eliminadas = _Alerta.query.filter(
-                    _db.func.date(_Alerta.triggered_at) < inicio_mes_actual
-                ).delete(synchronize_session=False)
-                _db.session.commit()
-                print(f"[Purga GPS] {eliminadas} alertas del mes anterior eliminadas ({hoy})")
 
         # Evita doble arranque con el reloader de Flask en modo debug
         if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
