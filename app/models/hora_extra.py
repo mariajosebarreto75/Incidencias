@@ -26,9 +26,9 @@ class HoraExtra(db.Model):
     __tablename__ = "horas_extras"
 
     id                  = db.Column(db.Integer, primary_key=True)
-    contrato_id         = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=False)
-    fecha_labor         = db.Column(db.Date, nullable=False)
-    cedula              = db.Column(db.String(50), nullable=False)
+    contrato_id         = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=False, index=True)
+    fecha_labor         = db.Column(db.Date, nullable=False, index=True)
+    cedula              = db.Column(db.String(50), nullable=False, index=True)
     nombre              = db.Column(db.String(200))
     recurso             = db.Column(db.String(200))
     id_concepto         = db.Column(db.String(10), nullable=False)
@@ -46,18 +46,20 @@ class HoraExtra(db.Model):
     valor_extra         = db.Column(db.Numeric(14, 2))
 
     # Validación NEO
-    autorizacion_neo    = db.Column(db.String(30))   # CONFORME / NO CONFORME / DESCONTADA
+    autorizacion_neo    = db.Column(db.String(30))
     horas_autorizadas   = db.Column(db.Integer)
     obs_neo             = db.Column(db.Text)
-    estado              = db.Column(db.String(30), default="PENDIENTE")  # PENDIENTE / CONFORME / NO CONFORME / DESCONTADA
-    # Retroalimentación del coordinador (visible a NEO como read-only)
+    estado              = db.Column(db.String(30), default="PENDIENTE", index=True)
     retroalimentacion   = db.Column(db.Text)
-    # Evidencia fotográfica NEO (CONFORME / NO CONFORME / CONSILIADO)
     evidencia_neo       = db.Column(db.String(500))
-    # Evidencia fotográfica de consiliación (subida por coordinador)
     evidencia_consiliacion = db.Column(db.String(500))
 
-    corte_id            = db.Column(db.Integer, db.ForeignKey("he_cortes.id"))
+    corte_id            = db.Column(db.Integer, db.ForeignKey("he_cortes.id"), index=True)
+
+    __table_args__ = (
+        db.Index("ix_he_contrato_fecha",  "contrato_id", "fecha_labor"),
+        db.Index("ix_he_corte_estado",    "corte_id",    "estado"),
+    )
 
     # Metadatos
     reportado_por_id    = db.Column(db.Integer, db.ForeignKey("users.id"))

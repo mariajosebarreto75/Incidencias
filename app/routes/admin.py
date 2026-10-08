@@ -1822,17 +1822,29 @@ def api_he_dashboard_data():
         try: q = q.filter(HoraExtra.fecha_labor == date.fromisoformat(f_fecha))
         except Exception: pass
 
-    registros = q.order_by(HoraExtra.fecha_labor).all()
+    registros = q.order_by(HoraExtra.fecha_labor).with_entities(
+        HoraExtra.id, HoraExtra.cedula, HoraExtra.nombre, HoraExtra.fecha_labor,
+        HoraExtra.fecha_reporte, HoraExtra.id_concepto, HoraExtra.horas_reportadas,
+        HoraExtra.horas_autorizadas, HoraExtra.estado, HoraExtra.autorizacion_sup,
+        HoraExtra.contrato_id, HoraExtra.corte_id,
+    ).all()
 
-    # ── KPIs ─────────────────────────────────────────────────────────────────
-    total            = len(registros)
-    hrs_reportadas   = sum(r.horas_reportadas or 0 for r in registros)
-    hrs_autorizadas  = sum((r.horas_autorizadas or 0) for r in registros if r.estado in ("CONFORME", "DESCONTADA"))
-    hrs_descontadas  = sum(r.horas_autorizadas or 0 for r in registros if r.estado == "DESCONTADA")
-    hrs_no_conforme  = sum(r.horas_reportadas or 0 for r in registros if r.estado == "NO CONFORME")
-    hrs_conformes    = sum(r.horas_autorizadas or 0 for r in registros if r.estado == "CONFORME")
-    pendientes       = sum(1 for r in registros if r.estado == "PENDIENTE")
-    hrs_pendientes   = sum(r.horas_reportadas or 0 for r in registros if not r.estado or r.estado.upper() == "PENDIENTE")
+    # ── KPIs — una sola pasada ────────────────────────────────────────────────
+    total = hrs_reportadas = hrs_autorizadas = hrs_descontadas = 0
+    hrs_no_conforme = hrs_conformes = pendientes = hrs_pendientes = 0
+    for r in registros:
+        total += 1
+        hr = float(r.horas_reportadas or 0)
+        ha = float(r.horas_autorizadas or 0)
+        est = (r.estado or "").upper()
+        hrs_reportadas += hr
+        if est in ("CONFORME", "DESCONTADA"): hrs_autorizadas += ha
+        if est == "DESCONTADA":               hrs_descontadas += ha
+        if est == "NO CONFORME":              hrs_no_conforme += hr
+        if est == "CONFORME":                 hrs_conformes   += ha
+        if est == "PENDIENTE":
+            pendientes     += 1
+            hrs_pendientes += hr
 
     # ── Por tipo de HE ───────────────────────────────────────────────────────
     por_tipo = {}
@@ -1897,6 +1909,9 @@ def api_he_dashboard_data():
     # Para el límite legal usamos solo fecha_labor dentro del período del corte
     # (evita doble conteo del filtro OR corte_id/fecha_labor del query principal)
     co_obj = HeCorte.query.get(corte_id) if corte_id else None
+    # Mapa contrato_id → nombre (una sola query)
+    from app.models.contrato import Contrato as _Contrato
+    _cmap = {c.id: c.contrato for c in _Contrato.query.with_entities(_Contrato.id, _Contrato.contrato).all()}
     # Etiqueta de período: nombre del corte o rango de fechas si hay corte, mes si no
     if co_obj:
         _periodo_label = (co_obj.nombre or
@@ -1917,8 +1932,8 @@ def api_he_dashboard_data():
             continue
         he_por_persona_mes[llave]["nombre"]  = r.nombre or r.cedula
         he_por_persona_mes[llave]["periodo"] = _periodo_label or r.fecha_labor.strftime("%Y-%m")
-        if r.contrato:
-            he_por_persona_mes[llave]["contratos"].add(r.contrato.contrato)
+        if r.contrato_id and r.contrato_id in _cmap:
+            he_por_persona_mes[llave]["contratos"].add(_cmap[r.contrato_id])
         he_por_persona_mes[llave]["horas"] += hrs
 
     limite_legal = []
