@@ -1056,6 +1056,8 @@ def distribucion_manual_crear():
             cedula_4           = str(d.get("cedula_4") or "").strip() or None,
             cedula_5           = str(d.get("cedula_5") or "").strip() or None,
             numero_celular     = str(d.get("numero_celular") or "").strip() or None,
+            latitud            = str(d.get("latitud") or "").strip() or None,
+            longitud           = str(d.get("longitud") or "").strip() or None,
             duracion_actividad = str(d.get("duracion_actividad") or "").strip() or None,
             observacion        = str(d.get("observacion") or "").strip() or None,
             origen             = "manual",
@@ -1068,6 +1070,78 @@ def distribucion_manual_crear():
     except Exception as e:
         db.session.rollback()
         return jsonify({"ok": False, "msg": str(e)}), 500
+
+
+@coordinador.route("/coordinador/distribucion-operativa/manual-lote", methods=["POST"])
+@login_required
+def distribucion_manual_lote():
+    """Crea varios registros manuales desde pegado de Excel (lista de dicts)."""
+    from datetime import datetime as _dt, time as _time
+    d = request.get_json(silent=True) or {}
+    filas = d.get("filas", [])
+    if not filas:
+        return jsonify({"ok": False, "msg": "Sin filas"}), 422
+
+    def _t(v):
+        if not v: return None
+        try:
+            parts = str(v).strip().split(":")
+            return _time(int(parts[0]), int(parts[1]))
+        except Exception:
+            return None
+
+    def _fecha(v):
+        if not v: return None
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%m/%d/%Y"):
+            try: return _dt.strptime(str(v).strip(), fmt).date()
+            except ValueError: pass
+        return None
+
+    insertados = 0
+    errores = []
+    for i, row in enumerate(filas, 1):
+        fecha = _fecha(row.get("fecha"))
+        contrato = str(row.get("contrato") or "").strip() or None
+        recurso  = str(row.get("recurso")  or "").strip() or None
+        if not fecha or not contrato or not recurso:
+            errores.append(f"Fila {i}: fecha/contrato/recurso obligatorios")
+            continue
+        try:
+            reg = DistribucionOperativa(
+                fecha              = fecha,
+                contrato           = contrato,
+                sede               = str(row.get("sede") or "").strip() or None,
+                recurso            = recurso,
+                placa              = str(row.get("placa") or "").strip() or None,
+                orden_trabajo      = str(row.get("orden_trabajo") or "").strip() or None,
+                tipo_actividad     = str(row.get("tipo_actividad") or "").strip() or None,
+                tipo_cuadrilla     = str(row.get("tipo_cuadrilla") or "").strip() or None,
+                hora_salida_sede   = _t(row.get("hora_salida_sede")),
+                hora_llegada_sede  = _t(row.get("hora_llegada_sede")),
+                cedula_1           = str(row.get("cedula_1") or "").strip() or None,
+                cedula_2           = str(row.get("cedula_2") or "").strip() or None,
+                cedula_3           = str(row.get("cedula_3") or "").strip() or None,
+                cedula_4           = str(row.get("cedula_4") or "").strip() or None,
+                cedula_5           = str(row.get("cedula_5") or "").strip() or None,
+                numero_celular     = str(row.get("numero_celular") or "").strip() or None,
+                latitud            = str(row.get("latitud") or "").strip() or None,
+                longitud           = str(row.get("longitud") or "").strip() or None,
+                duracion_actividad = str(row.get("duracion_actividad") or "").strip() or None,
+                observacion        = str(row.get("observacion") or "").strip() or None,
+                origen             = "manual",
+            )
+            db.session.add(reg)
+            insertados += 1
+        except Exception as e:
+            errores.append(f"Fila {i}: {e}")
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"ok": False, "msg": str(e)}), 500
+
+    return jsonify({"ok": True, "insertados": insertados, "errores": errores})
 
 
 @coordinador.route("/coordinador/distribucion-operativa/manual/<int:rid>", methods=["DELETE"])

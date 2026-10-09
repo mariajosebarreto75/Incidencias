@@ -26,6 +26,7 @@ let tabla = new Tabulator("#tablaDistribucion", {
     clipboard: true,
     clipboardCopyStyled: false,
     clipboardCopyConfig: { rowHeaders: false, columnHeaders: true },
+    headerFilterLiveFilterDelay: 200,
     columns: [
         {
             title: "Fecha",
