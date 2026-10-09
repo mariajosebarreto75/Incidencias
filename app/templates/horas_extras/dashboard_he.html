@@ -184,11 +184,18 @@ body{ background:var(--dh-bg); color:var(--dh-text); font-family:"IBM Plex Sans"
         <div class="dh-card">
             <div class="dh-card-hdr" style="display:flex;align-items:center;justify-content:space-between">
                 <span class="dh-card-ttl"><i class="bi bi-person-lines-fill me-1" style="color:#DC2626"></i>Control HE por persona — HE puras (03,04,05,06)</span>
+                <div style="display:flex;gap:6px">
+                <button onclick="copiarTablaLimite(this)" title="Copiar tabla para pegar en Excel o Word"
+                    style="background:none;border:1px solid #CBD5E1;border-radius:6px;padding:2px 7px;cursor:pointer;color:#64748B;font-size:.78rem;line-height:1.4;display:flex;align-items:center;gap:4px;transition:background .15s">
+                    <i class="bi bi-clipboard"></i>
+                    <span>Copiar</span>
+                </button>
                 <button id="btnExpandLimite" onclick="toggleExpandLimite()" title="Expandir / contraer tabla"
                     style="background:none;border:1px solid #CBD5E1;border-radius:6px;padding:2px 7px;cursor:pointer;color:#64748B;font-size:.78rem;line-height:1.4;display:flex;align-items:center;gap:4px;transition:background .15s">
                     <i class="bi bi-arrows-expand" id="icoExpandLimite"></i>
                     <span id="lblExpandLimite">Expandir</span>
                 </button>
+                </div>
             </div>
             <div id="wrapLimite" style="overflow-x:auto;max-height:320px;overflow-y:auto;transition:max-height .3s ease">
                 <table class="dh-table" id="tblLimite">
@@ -843,6 +850,48 @@ cargar();
 
   setInterval(tick, 1000);
 })();
+
+// ── Copiar tabla "Control HE por persona" como HTML (compatible Excel/Word) ──
+function copiarTablaLimite(btn) {
+    const tabla = document.getElementById('tblLimite');
+    if (!tabla) return;
+
+    // Construir HTML limpio (sin clases ni estilos de la app)
+    const filas = [...tabla.querySelectorAll('tr')].map(tr => {
+        const celdas = [...tr.querySelectorAll('th,td')].map(td => {
+            const tag = td.tagName.toLowerCase();
+            return `<${tag}>${td.innerText.trim()}</${tag}>`;
+        }).join('');
+        return `<tr>${celdas}</tr>`;
+    }).join('');
+    const html = `<table border="1" cellpadding="4" cellspacing="0">${filas}</table>`;
+
+    // Texto plano como fallback (TSV, compatible Excel al pegar)
+    const tsv = [...tabla.querySelectorAll('tr')].map(tr =>
+        [...tr.querySelectorAll('th,td')].map(td => td.innerText.trim().replace(/\n/g,' ')).join('\t')
+    ).join('\n');
+
+    try {
+        const blob = new Blob([html], {type: 'text/html'});
+        const blobTxt = new Blob([tsv], {type: 'text/plain'});
+        const item = new ClipboardItem({'text/html': blob, 'text/plain': blobTxt});
+        navigator.clipboard.write([item]).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2"></i> <span>Copiado</span>';
+            btn.style.color = '#16A34A';
+            btn.style.borderColor = '#16A34A';
+            setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+        });
+    } catch(e) {
+        // Fallback: copiar solo texto plano
+        navigator.clipboard.writeText(tsv).then(() => {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2"></i> <span>Copiado</span>';
+            btn.style.color = '#16A34A';
+            setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+        });
+    }
+}
 
 // ── Expandir / contraer tabla "Control HE por persona" ──────────────────────
 let _limiteExpanded = false;
