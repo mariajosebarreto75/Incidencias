@@ -14,7 +14,7 @@ from flask_login import (
     current_user
 )
 
-from sqlalchemy import func, extract
+from sqlalchemy import func, extract, case
 from app.extensions import db
 from app.models.reporte_operacional import ReporteOperacional
 from app.models.hora_extra import HoraExtra
@@ -122,7 +122,7 @@ def indicadores():
         func.sum(func.cast(HoraExtra.estado == "NO CONFORME",db.Integer)).label("no_conf"),
         func.sum(HoraExtra.horas_reportadas).label("hrs_rep"),
         func.sum(
-            func.case((HoraExtra.estado.in_(["CONFORME", "DESCONTADA"]), HoraExtra.horas_autorizadas), else_=0)
+            case((HoraExtra.estado.in_(["CONFORME", "DESCONTADA"]), HoraExtra.horas_autorizadas), else_=0)
         ).label("hrs_auth"),
     ).one()
     he_total     = _he_row.total     or 0
