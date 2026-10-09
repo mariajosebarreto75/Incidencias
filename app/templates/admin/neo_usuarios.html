@@ -589,6 +589,19 @@
                                 </div>
                             </div>
                         </div>
+                        {%- set on = 'dashboard_he' in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-dashboard_he">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="dashboard_he"
+                                       {% if on %}checked{% endif %} onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Dashboard HE <span style="font-size:.65rem;background:#EDE9FE;color:#4C1D95;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:4px">VER</span></div>
+                                <div class="uu-mod-desc">Solo visualiza los indicadores de horas extras, sin registrar</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
                     </div>
                 </div>
 
@@ -599,9 +612,10 @@
                     </div>
                     <div class="uu-mod-items">
                         {% for m_id, m_nom, m_desc in [
-                            ('bi_seguimiento',  'Archivos de seguimiento', 'Informes Power BI de seguimiento'),
-                            ('bi_inspecciones', 'Inspecciones', 'Informes Power BI de inspecciones'),
-                            ('preoperacionales','Preoperacionales', 'Dashboard de cumplimiento preoperacional')
+                            ('bi_seguimiento',          'Archivos de seguimiento',     'Informes Power BI de seguimiento'),
+                            ('bi_inspecciones',         'Inspecciones',                'Informes Power BI de inspecciones'),
+                            ('preoperacionales',        'Preoperacionales (completo)', 'Acceso completo: cumplimiento, vehículos y placas'),
+                            ('preoperacionales_dashboard','Preoperacionales Dashboard', 'Solo visualiza el dashboard de preoperacionales')
                         ] %}
                         {%- set on = m_id in perms -%}
                         <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-{{ m_id }}">

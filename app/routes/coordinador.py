@@ -165,7 +165,7 @@ def dashboard_coordinador():
         seg_items.append({"label": "Inspecciones", "icon": "bi-search",
                            "url": "https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9",
                            "ext": True, "desc": "Indicador de inspecciones (Power BI)"})
-    if u.tiene_permiso("preoperacionales") or dash:
+    if u.tiene_permiso("preoperacionales") or u.tiene_permiso("preoperacionales_dashboard") or dash:
         seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("coordinador.preoperacionales"),
                            "desc": "Cumplimiento, estado de vehículos y placas"})
     if es_admin or u.tiene_permiso("semaforo"):
@@ -227,11 +227,15 @@ def dashboard_supervisor():
     if rep_items:
         groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "links": rep_items})
 
+    he_items_s = []
     if u.tiene_permiso("horas_extras"):
-        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": [
-            {"label": "Registro / Validación", "icon": "bi-pencil-square", "url": url_for("he_bp.he_hub"),
-             "desc": "Ingreso y validación de horas extras"},
-        ]})
+        he_items_s.append({"label": "Registro / Validación", "icon": "bi-pencil-square", "url": url_for("he_bp.he_hub"),
+                            "desc": "Ingreso y validación de horas extras"})
+    if u.tiene_permiso("dashboard_he"):
+        he_items_s.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill", "url": url_for("he_bp.he_dashboard"),
+                            "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
+    if he_items_s:
+        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items_s})
 
     seg_items = []
     if u.tiene_permiso("bi_seguimiento"):
@@ -241,7 +245,7 @@ def dashboard_supervisor():
         seg_items.append({"label": "Inspecciones", "icon": "bi-search",
                            "url": "https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9",
                            "ext": True, "desc": "Indicador de inspecciones (Power BI)"})
-    if u.tiene_permiso("preoperacionales"):
+    if u.tiene_permiso("preoperacionales") or u.tiene_permiso("preoperacionales_dashboard"):
         seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("coordinador.preoperacionales"),
                            "desc": "Cumplimiento, estado de vehículos y placas"})
     if u.tiene_permiso("semaforo"):
@@ -1280,8 +1284,8 @@ def distribucion_importar_excel():
 @login_required
 def preoperacionales():
     rol = current_user.rol.lower()
-    if not (rol == "gerente" or current_user.tiene_permiso("preoperacionales")):
-        destino = "neo.home" if rol == "neo" else "coordinador.dashboard_coordinador"
+    if not (rol == "gerente" or current_user.tiene_permiso("preoperacionales") or current_user.tiene_permiso("preoperacionales_dashboard")):
+        destino = "neo.home_neo" if rol == "neo" else "coordinador.dashboard_coordinador"
         return redirect(url_for(destino))
     return render_template("coordinador/preoperacionales.html")
 

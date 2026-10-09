@@ -79,7 +79,7 @@ def director():
         seg_items.append({"label": "Inspecciones", "icon": "bi-search",
                            "url": "https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9",
                            "ext": True, "desc": "Indicador de inspecciones (Power BI)"})
-    if u.tiene_permiso("preoperacionales") or es_admin:
+    if u.tiene_permiso("preoperacionales") or u.tiene_permiso("preoperacionales_dashboard") or es_admin:
         seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill",
                            "url": url_for("coordinador.preoperacionales"),
                            "desc": "Cumplimiento, estado de vehículos y placas"})

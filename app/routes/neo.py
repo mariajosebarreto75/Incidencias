@@ -337,7 +337,7 @@ def home_neo():
         seg_items.append({"label": "Inspecciones", "icon": "bi-search",
                            "url": "https://app.powerbi.com/view?r=eyJrIjoiYWYwYmRhZWQtOWYzNC00OWYxLWJkM2MtZGU5ZTk5MDU4ZTMxIiwidCI6ImU1NjkzYWJkLWViMTEtNDk5Mi05OGE5LThhNjRhODJkNTRhYiJ9",
                            "ext": True, "desc": "Indicador de inspecciones (Power BI)"})
-    if u.tiene_permiso("preoperacionales") or dash:
+    if u.tiene_permiso("preoperacionales") or u.tiene_permiso("preoperacionales_dashboard") or dash:
         seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("neo.preoperacionales_neo"),
                            "desc": "Cumplimiento, estado de vehículos y placas"})
     if u.tiene_permiso("semaforo"):
@@ -1372,7 +1372,7 @@ def neo_distribucion_importar_excel():
 @neo.route("/neo/preoperacionales")
 @login_required
 def preoperacionales_neo():
-    if not current_user.tiene_permiso("preoperacionales"):
+    if not (current_user.tiene_permiso("preoperacionales") or current_user.tiene_permiso("preoperacionales_dashboard")):
         return redirect(url_for("neo.home_neo"))
     return render_template("coordinador/preoperacionales.html")
 
@@ -1439,6 +1439,10 @@ def home_otros():
         seg_items.append({"label": "Archivo de Seguimiento", "icon": "bi-folder2-open",
                            "url": url_for("coordinador.bi_seguimiento"),
                            "desc": "Informe operacional de seguimiento (Power BI)"})
+    if u.tiene_permiso("preoperacionales") or u.tiene_permiso("preoperacionales_dashboard"):
+        seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill",
+                           "url": url_for("coordinador.preoperacionales"),
+                           "desc": "Cumplimiento, estado de vehículos y placas"})
     if u.tiene_permiso("semaforo"):
         seg_items.append({"label": "Semáforo (calificar)", "icon": "bi-stoplights-fill",
                            "url": url_for("coordinador.semaforo_dashboard"),
