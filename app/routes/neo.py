@@ -360,17 +360,18 @@ def home_neo():
             ],
         })
 
-    groups.append({
-        "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
-        "links": [
-            {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
-             "desc": "Programación de reuniones por contrato"},
-            {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
-             "desc": "Checklist de reuniones realizadas"},
-            {"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
-             "desc": "Compromisos pendientes y atrasados"},
-        ],
-    })
+    comp_items_n = []
+    if es_admin or u.tiene_permiso("compromisos_reuniones"):
+        comp_items_n.append({"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
+                              "desc": "Programación de reuniones por contrato"})
+    if es_admin or u.tiene_permiso("compromisos_checklist"):
+        comp_items_n.append({"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
+                              "desc": "Checklist de reuniones realizadas"})
+    if es_admin or u.tiene_permiso("compromisos_agenda"):
+        comp_items_n.append({"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
+                              "desc": "Compromisos pendientes y atrasados"})
+    if comp_items_n:
+        groups.append({"name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706", "links": comp_items_n})
 
     return render_template(
         "portal/home.html",
@@ -1460,6 +1461,19 @@ def home_otros():
                         "links": [{"label": "Rastrear", "icon": "bi-map",
                                    "url": "https://plataforma.sistemagps.online/ui/map/objects",
                                    "ext": True, "desc": "Mapa de vehículos en vivo"}]})
+
+    comp_items_o = []
+    if u.tiene_permiso("compromisos_reuniones"):
+        comp_items_o.append({"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
+                              "desc": "Programación de reuniones por contrato"})
+    if u.tiene_permiso("compromisos_checklist"):
+        comp_items_o.append({"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
+                              "desc": "Checklist de reuniones realizadas"})
+    if u.tiene_permiso("compromisos_agenda"):
+        comp_items_o.append({"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
+                              "desc": "Compromisos pendientes y atrasados"})
+    if comp_items_o:
+        groups.append({"name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706", "links": comp_items_o})
 
     if not groups:
         groups.append({"name": "Sin módulos asignados", "icon": "bi-info-circle",

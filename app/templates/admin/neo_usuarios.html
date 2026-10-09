@@ -661,6 +661,35 @@
                     </div>
                 </div>
 
+                <!-- COMPROMISOS -->
+                <div>
+                    <div class="uu-mod-group-label">
+                        <span class="uu-mod-dot" style="background:#D97706"></span>Compromisos
+                    </div>
+                    <div class="uu-mod-items">
+                        {% for m_id, m_nom, m_desc in [
+                            ('compromisos_reuniones', 'Reuniones',  'Programación de reuniones por contrato'),
+                            ('compromisos_checklist', 'Checklist',  'Checklist de reuniones realizadas'),
+                            ('compromisos_agenda',    'Agenda',     'Compromisos pendientes y atrasados')
+                        ] %}
+                        {%- set on = m_id in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-{{ m_id }}">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="{{ m_id }}"
+                                       {% if on %}checked{% endif %}
+                                       onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">{{ m_nom }}</div>
+                                <div class="uu-mod-desc">{{ m_desc }}</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
                 <!-- CAMPO -->
                 <div>
                     <div class="uu-mod-group-label">

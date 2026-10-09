@@ -179,17 +179,18 @@ def dashboard_coordinador():
     if seg_items:
         groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
 
-    groups.append({
-        "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
-        "links": [
-            {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
-             "desc": "Programación de reuniones por contrato"},
-            {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
-             "desc": "Checklist de reuniones realizadas"},
-            {"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
-             "desc": "Compromisos pendientes y atrasados"},
-        ],
-    })
+    comp_items = []
+    if es_admin or u.tiene_permiso("compromisos_reuniones"):
+        comp_items.append({"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
+                            "desc": "Programación de reuniones por contrato"})
+    if es_admin or u.tiene_permiso("compromisos_checklist"):
+        comp_items.append({"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
+                            "desc": "Checklist de reuniones realizadas"})
+    if es_admin or u.tiene_permiso("compromisos_agenda"):
+        comp_items.append({"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
+                            "desc": "Compromisos pendientes y atrasados"})
+    if comp_items:
+        groups.append({"name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706", "links": comp_items})
 
     if es_admin or u.tiene_permiso("gps"):
         groups.append({
@@ -265,17 +266,18 @@ def dashboard_supervisor():
              "desc": "KPIs en tiempo real: reportes, horas extras y compromisos"},
         ]})
 
-    groups.append({
-        "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
-        "links": [
-            {"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
-             "desc": "Programación de reuniones por contrato"},
-            {"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
-             "desc": "Checklist de reuniones realizadas"},
-            {"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
-             "desc": "Compromisos pendientes y atrasados"},
-        ],
-    })
+    comp_items_s = []
+    if u.tiene_permiso("compromisos_reuniones"):
+        comp_items_s.append({"label": "Reuniones", "icon": "bi-calendar3", "url": url_for("compromisos.reuniones"),
+                              "desc": "Programación de reuniones por contrato"})
+    if u.tiene_permiso("compromisos_checklist"):
+        comp_items_s.append({"label": "Checklist", "icon": "bi-list-check", "url": url_for("compromisos.checklist"),
+                              "desc": "Checklist de reuniones realizadas"})
+    if u.tiene_permiso("compromisos_agenda"):
+        comp_items_s.append({"label": "Agenda", "icon": "bi-journal-check", "url": url_for("compromisos.lista"),
+                              "desc": "Compromisos pendientes y atrasados"})
+    if comp_items_s:
+        groups.append({"name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706", "links": comp_items_s})
 
     if u.tiene_permiso("gps"):
         groups.append({
