@@ -70,15 +70,26 @@ body { background: var(--dn-bg); }
 .dn-nombre { font-weight:600; color:#0f172a; }
 .badge-origen-gps { background:#0ea5e9; color:#fff; font-size:11px; padding:.2rem .5rem; border-radius:4px; }
 .badge-origen-manual { background:#94a3b8; color:#fff; font-size:11px; padding:.2rem .5rem; border-radius:4px; }
-/* Filtros columna Tabulator */
+/* Filtros columna Tabulator — teal */
 .tabulator-header-filter input,
 .tabulator-header-filter select {
-    background:#fffbeb !important; border:1px solid #fbbf24 !important;
+    background:#e6fafb !important; border:1px solid #00b8c9 !important;
     border-radius:4px !important; font-size:.76rem !important;
     padding:2px 6px !important; color:#1e293b !important; width:100% !important;
 }
-.tabulator-header-filter input:focus { background:#fef9c3 !important; border-color:#f59e0b !important; outline:none !important; }
+.tabulator-header-filter input:focus,
+.tabulator-header-filter select:focus { background:#ccf5f8 !important; border-color:#007d8a !important; outline:none !important; box-shadow:0 0 0 2px rgba(0,184,201,.2) !important; }
 .tabulator-header-filter input::placeholder { color:#9ca3af !important; font-size:.72rem !important; }
+/* Estilo Excel tabla */
+.tabulator { border:1px solid #b7c9d3 !important; border-radius:4px !important; font-size:.82rem !important; background:#fff !important; }
+.tabulator-header { background:#d6eef2 !important; border-bottom:2px solid #00b8c9 !important; }
+.tabulator .tabulator-header .tabulator-col { background:#d6eef2 !important; border-right:1px solid #b0d8e0 !important; }
+.tabulator-col-title { color:#1a4a52 !important; font-size:.68rem !important; font-weight:700 !important; text-transform:uppercase !important; letter-spacing:.07em !important; padding:5px 8px 3px !important; }
+.tabulator-row { border-bottom:1px solid #d0dfe4 !important; }
+.tabulator-row:nth-child(even) { background:#f0f9fb !important; }
+.tabulator-row:nth-child(odd) { background:#ffffff !important; }
+.tabulator-row:hover { background:#d6f5f8 !important; }
+.tabulator-row .tabulator-cell { padding:3px 8px !important; border-right:1px solid #d0dfe4 !important; font-size:.82rem !important; line-height:1.4 !important; }
 /* Tabs modal */
 #tabsManual .nav-link { color:#64748b; font-size:.84rem; border-bottom:2px solid transparent; }
 #tabsManual .nav-link.active { color:#005f6b; border-bottom-color:#005f6b; font-weight:600; }

@@ -168,33 +168,34 @@ body {
 }
 
 .tabulator {
-    border: 1px solid #e2e8f0 !important;
-    border-radius: 0 0 10px 10px !important;
-    box-shadow: 0 2px 12px rgba(0,0,0,.05) !important;
-    font-size: .85rem !important;
+    border: 1px solid #b7c9d3 !important;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08) !important;
+    font-size: .82rem !important;
+    background: #fff !important;
 }
 
 /* ===== HEADER — limpio y compacto ===== */
 
 .tabulator-header {
-    background: #f8fafc !important;
-    border-bottom: 2px solid #e2e8f0 !important;
+    background: #d6eef2 !important;
+    border-bottom: 2px solid #00b8c9 !important;
 }
 
 .tabulator .tabulator-header .tabulator-col {
-    background: #f8fafc !important;
-    border-right: 1px solid #e8edf2 !important;
+    background: #d6eef2 !important;
+    border-right: 1px solid #b0d8e0 !important;
     padding: 0 !important;
 }
 
 /* Título de columna */
 .tabulator-col-title {
-    color: #475569 !important;
+    color: #1a4a52 !important;
     font-size: .68rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: .07em !important;
-    padding: 6px 10px 4px !important;
+    padding: 5px 8px 3px !important;
     white-space: nowrap;
 }
 
@@ -239,23 +240,28 @@ body {
 /* ===== FILAS ===== */
 
 .tabulator-row {
-    border-bottom: 1px solid #f1f5f9 !important;
+    border-bottom: 1px solid #d0dfe4 !important;
     transition: background .1s !important;
 }
 
 .tabulator-row:nth-child(even) {
-    background: #fafbfc !important;
+    background: #f0f9fb !important;
+}
+
+.tabulator-row:nth-child(odd) {
+    background: #ffffff !important;
 }
 
 .tabulator-row:hover {
-    background: #f0fdfe !important;
+    background: #d6f5f8 !important;
 }
 
 .tabulator-row .tabulator-cell {
-    padding: .55rem .75rem !important;
+    padding: 3px 8px !important;
     color: #1e293b !important;
-    border-right: 1px solid #f1f5f9 !important;
-    font-size: .84rem !important;
+    border-right: 1px solid #d0dfe4 !important;
+    font-size: .82rem !important;
+    line-height: 1.4 !important;
 }
 
 /* Columna congelada — sombra sutil a la derecha */
@@ -271,11 +277,11 @@ body {
     background: #ccf2f6 !important;
 }
 
-/* ── Filtros de columna Tabulator más visibles ── */
+/* ── Filtros de columna Tabulator — teal ── */
 .tabulator-header-filter input,
 .tabulator-header-filter select {
-    background: #fffbeb !important;
-    border: 1px solid #fbbf24 !important;
+    background: #e6fafb !important;
+    border: 1px solid #00b8c9 !important;
     border-radius: 4px !important;
     font-size: .76rem !important;
     padding: 2px 6px !important;
@@ -284,10 +290,10 @@ body {
 }
 .tabulator-header-filter input:focus,
 .tabulator-header-filter select:focus {
-    background: #fef9c3 !important;
-    border-color: #f59e0b !important;
+    background: #ccf5f8 !important;
+    border-color: #007d8a !important;
     outline: none !important;
-    box-shadow: 0 0 0 2px rgba(251,191,36,.25) !important;
+    box-shadow: 0 0 0 2px rgba(0,184,201,.2) !important;
 }
 .tabulator-header-filter input::placeholder {
     color: #9ca3af !important;
