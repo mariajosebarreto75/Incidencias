@@ -264,6 +264,25 @@
 .uu-empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
 .uu-empty i { font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: .4; }
 
+/* Password info */
+.uu-pwd-info { display:flex; align-items:center; gap:5px; margin-top:5px; flex-wrap:wrap; }
+.uu-pwd-val { font-family: 'Courier New', monospace; font-size:.78rem; color:#10201F; font-weight:600; letter-spacing:.03em; }
+.uu-pwd-val.masked { letter-spacing:.12em; color:#5A6B69; }
+.uu-pwd-toggle { background:none; border:none; color:#9CC9C5; cursor:pointer; padding:0 2px; font-size:.78rem; line-height:1; }
+.uu-pwd-toggle:hover { color:#0B6E75; }
+.uu-expiry { font-size:.65rem; padding:2px 7px; border-radius:10px; font-weight:700; white-space:nowrap; }
+.uu-expiry-ok   { background:#E2F2E8; color:#1F5A37; }
+.uu-expiry-warn { background:#FEF3C7; color:#92400E; }
+.uu-expiry-over { background:#FEE2E2; color:#dc2626; }
+
+/* Role edit inline */
+.uu-rol-edit { display:none; align-items:center; gap:4px; }
+.uu-rol-select { font-size:.7rem; border:1px solid #9CC9C5; border-radius:6px; padding:2px 6px; color:#10201F; background:#fff; cursor:pointer; outline:none; font-family:inherit; }
+.uu-rol-ok     { background:none; border:none; color:#0B6E75; cursor:pointer; font-size:.78rem; padding:0 2px; }
+.uu-rol-cancel { background:none; border:none; color:#dc2626; cursor:pointer; font-size:.78rem; padding:0 2px; }
+.uu-rol-pencil { background:none; border:none; color:#94a3b8; cursor:pointer; font-size:.68rem; padding:0 2px; vertical-align:middle; }
+.uu-rol-pencil:hover { color:#0B6E75; }
+
 @media (max-width: 768px) {
     .uu-metrics { gap: 12px; }
     .uu-panel-btn span { display: none; }
@@ -344,10 +363,35 @@
         <div class="uu-info">
             <div class="uu-fullname" id="nombre-{{ u.id }}">{{ u.nombre_completo }}</div>
             <div class="uu-meta">
-                <span class="uu-badge uu-badge-{{ rol_cls }}">{{ u.rol }}</span>
+                <span id="badge-{{ u.id }}" class="uu-badge uu-badge-{{ rol_cls }}">{{ u.rol }}</span>
+                <button class="uu-rol-pencil" title="Cambiar rol" onclick="abrirEditRol({{ u.id }}, '{{ rol_bajo }}')"><i class="bi bi-pencil-fill"></i></button>
+                <div id="rol-edit-{{ u.id }}" class="uu-rol-edit">
+                    <select class="uu-rol-select" id="rol-sel-{{ u.id }}">
+                        <option value="neo" {% if rol_bajo=='neo' %}selected{% endif %}>NEO</option>
+                        <option value="admin" {% if rol_bajo=='admin' %}selected{% endif %}>Admin</option>
+                        <option value="director" {% if rol_bajo=='director' %}selected{% endif %}>Director</option>
+                        <option value="coordinador" {% if rol_bajo=='coordinador' %}selected{% endif %}>Coordinador</option>
+                        <option value="supervisor" {% if rol_bajo=='supervisor' %}selected{% endif %}>Supervisor</option>
+                        <option value="gerente" {% if rol_bajo=='gerente' %}selected{% endif %}>Gerente</option>
+                        {% for r in roles_otros %}<option value="{{ r }}" {% if rol_bajo==r %}selected{% endif %}>{{ r|capitalize }}</option>{% endfor %}
+                    </select>
+                    <button class="uu-rol-ok" onclick="guardarRol({{ u.id }})" title="Guardar"><i class="bi bi-check-lg"></i></button>
+                    <button class="uu-rol-cancel" onclick="cerrarEditRol({{ u.id }})" title="Cancelar"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <span>·</span>
                 <span>@{{ u.username }}</span>
                 <span>·</span>
                 <span>{{ 'Activo' if u.activo else 'Inactivo' }}</span>
+            </div>
+            <div class="uu-pwd-info">
+                <i class="bi bi-lock-fill" style="color:#9CC9C5;font-size:.68rem"></i>
+                <span class="uu-pwd-val masked" id="pwd-val-{{ u.id }}"
+                      data-pwd="{{ u.contrasena | e if u.contrasena else '' }}">••••••••</span>
+                <button class="uu-pwd-toggle" onclick="togglePwdVer({{ u.id }})" title="Mostrar/ocultar">
+                    <i id="pwd-eye-{{ u.id }}" class="bi bi-eye"></i>
+                </button>
+                <span id="pwd-exp-{{ u.id }}" class="uu-expiry"
+                      data-changed="{{ u.password_changed_at.isoformat() if u.password_changed_at else '' }}"></span>
             </div>
         </div>
         <div class="uu-metrics">
@@ -557,8 +601,7 @@
                         {% for m_id, m_nom, m_desc in [
                             ('bi_seguimiento',  'Archivos de seguimiento', 'Informes Power BI de seguimiento'),
                             ('bi_inspecciones', 'Inspecciones', 'Informes Power BI de inspecciones'),
-                            ('preoperacionales','Preoperacionales', 'Dashboard de cumplimiento preoperacional'),
-                            ('semaforo',        'Semáforo', 'Semáforo de actividades y escalamientos')
+                            ('preoperacionales','Preoperacionales', 'Dashboard de cumplimiento preoperacional')
                         ] %}
                         {%- set on = m_id in perms -%}
                         <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-{{ m_id }}">
@@ -575,6 +618,32 @@
                             <span class="uu-vista-none">Misma vista para todos</span>
                         </div>
                         {% endfor %}
+                        {%- set on = 'semaforo' in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-semaforo">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="semaforo"
+                                       {% if on %}checked{% endif %} onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Semáforo <span style="font-size:.65rem;background:#E3F3F2;color:#0B5A60;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:4px">CALIFICAR</span></div>
+                                <div class="uu-mod-desc">Puede registrar calificaciones en el semáforo de actividades</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
+                        {%- set on = 'semaforo_dashboard' in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-semaforo_dashboard">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="semaforo_dashboard"
+                                       {% if on %}checked{% endif %} onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Semáforo Dashboard <span style="font-size:.65rem;background:#F3F5F4;color:#5A6B69;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:4px">VER</span></div>
+                                <div class="uu-mod-desc">Solo visualiza el dashboard del semáforo, sin calificar</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
                     </div>
                 </div>
 
@@ -911,7 +980,74 @@ async function eliminarUsuario(btn) {
     else mostrarAlerta('alerta', r.mensaje || 'Error al eliminar', 'danger');
 }
 
-/* ── Password ── */
+/* ── Password visibility toggle ── */
+function togglePwdVer(uid) {
+    var el  = document.getElementById('pwd-val-' + uid);
+    var eye = document.getElementById('pwd-eye-' + uid);
+    if (el.classList.contains('masked')) {
+        el.textContent = el.dataset.pwd || '(no registrada)';
+        el.classList.remove('masked');
+        eye.className = 'bi bi-eye-slash';
+    } else {
+        el.textContent = '••••••••';
+        el.classList.add('masked');
+        eye.className = 'bi bi-eye';
+    }
+}
+
+/* ── Role edit inline ── */
+function abrirEditRol(uid, rolActual) {
+    document.getElementById('badge-' + uid).style.display = 'none';
+    var ed = document.getElementById('rol-edit-' + uid);
+    ed.style.display = 'flex';
+    document.getElementById('rol-sel-' + uid).value = rolActual;
+}
+function cerrarEditRol(uid) {
+    document.getElementById('badge-' + uid).style.display = '';
+    document.getElementById('rol-edit-' + uid).style.display = 'none';
+}
+async function guardarRol(uid) {
+    var nuevoRol = document.getElementById('rol-sel-' + uid).value;
+    var r = await apiFetch('/admin/api/usuarios/' + uid, 'PUT', { rol: nuevoRol });
+    if (r.success) {
+        cerrarEditRol(uid);
+        var badge = document.getElementById('badge-' + uid);
+        badge.textContent = nuevoRol;
+        var pales = ['admin','neo','director','coordinador','supervisor','gerente'];
+        badge.className = 'uu-badge ' + (pales.indexOf(nuevoRol) >= 0 ? 'uu-badge-' + nuevoRol : 'uu-badge-default');
+        badge.closest('.uu-card').dataset.rol = nuevoRol.toLowerCase();
+        showToast('Rol cambiado a ' + nuevoRol + '.', 'success');
+    } else {
+        mostrarAlerta('alerta', r.mensaje || 'Error al cambiar rol', 'danger');
+    }
+}
+
+/* ── Password expiry on load ── */
+document.addEventListener('DOMContentLoaded', function() {
+    var _6M = 180 * 24 * 60 * 60 * 1000;
+    document.querySelectorAll('[id^="pwd-exp-"]').forEach(function(el) {
+        var changed = el.dataset.changed;
+        if (!changed) {
+            el.textContent = 'Sin fecha';
+            el.classList.add('uu-expiry-warn');
+            return;
+        }
+        var expiry = new Date(new Date(changed).getTime() + _6M);
+        var dias = Math.ceil((expiry - new Date()) / (1000 * 60 * 60 * 24));
+        if (dias <= 0) {
+            el.textContent = 'Vencida';
+            el.classList.add('uu-expiry-over');
+        } else if (dias <= 30) {
+            el.textContent = 'Vence en ' + dias + 'd';
+            el.classList.add('uu-expiry-warn');
+        } else {
+            el.textContent = dias + 'd restantes';
+            el.classList.add('uu-expiry-ok');
+        }
+    });
+});
+
+/* ── Password modal ── */
 function abrirCambioPwd(btn) {
     document.getElementById('pwdUserId').value = btn.dataset.id;
     document.getElementById('pwdUserLabel').textContent = '@' + btn.dataset.user + ' · ' + btn.dataset.nombre;
@@ -932,6 +1068,11 @@ async function guardarPwd() {
     if (r.success) {
         bootstrap.Modal.getInstance(document.getElementById('modalPwd'))?.hide();
         showToast('Contraseña actualizada.', 'success');
+        /* update displayed pwd and expiry */
+        var pv = document.getElementById('pwd-val-' + id);
+        if (pv) { pv.dataset.pwd = pwd; pv.textContent = '••••••••'; pv.classList.add('masked'); document.getElementById('pwd-eye-' + id).className = 'bi bi-eye'; }
+        var pe = document.getElementById('pwd-exp-' + id);
+        if (pe) { pe.dataset.changed = new Date().toISOString(); pe.textContent = '180d restantes'; pe.className = 'uu-expiry uu-expiry-ok'; }
     } else mostrarAlerta('alertaPwd', r.mensaje || 'Error', 'danger');
 }
 
