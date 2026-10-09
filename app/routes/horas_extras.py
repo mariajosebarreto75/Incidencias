@@ -1511,8 +1511,9 @@ def api_he_conceptos_delete(cid):
 def api_he_valor_extra_nomina():
     params = request.args
     q = HoraExtra.query
-    if params.get("contrato_id"):
-        q = q.filter(HoraExtra.contrato_id == int(params["contrato_id"]))
+    _cids = [int(x) for x in params.getlist("contrato_id") if x]
+    if _cids:
+        q = q.filter(HoraExtra.contrato_id.in_(_cids))
     if params.get("corte_id"):
         q = q.filter(HoraExtra.corte_id == int(params["corte_id"]))
     if params.get("mes"):
