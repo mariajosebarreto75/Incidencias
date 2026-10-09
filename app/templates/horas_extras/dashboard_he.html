@@ -182,10 +182,15 @@ body{ background:var(--dh-bg); color:var(--dh-text); font-family:"IBM Plex Sans"
     <div class="dh-grid3">
         <!-- Límite legal 48h -->
         <div class="dh-card">
-            <div class="dh-card-hdr">
+            <div class="dh-card-hdr" style="display:flex;align-items:center;justify-content:space-between">
                 <span class="dh-card-ttl"><i class="bi bi-person-lines-fill me-1" style="color:#DC2626"></i>Control HE por persona — HE puras (03,04,05,06)</span>
+                <button id="btnExpandLimite" onclick="toggleExpandLimite()" title="Expandir / contraer tabla"
+                    style="background:none;border:1px solid #CBD5E1;border-radius:6px;padding:2px 7px;cursor:pointer;color:#64748B;font-size:.78rem;line-height:1.4;display:flex;align-items:center;gap:4px;transition:background .15s">
+                    <i class="bi bi-arrows-expand" id="icoExpandLimite"></i>
+                    <span id="lblExpandLimite">Expandir</span>
+                </button>
             </div>
-            <div style="overflow-x:auto;max-height:320px;overflow-y:auto">
+            <div id="wrapLimite" style="overflow-x:auto;max-height:320px;overflow-y:auto;transition:max-height .3s ease">
                 <table class="dh-table" id="tblLimite">
                     <thead><tr><th>Colaborador</th><th>Contrato</th><th>Período</th><th style="text-align:right">Hrs HE</th><th>Estado</th></tr></thead>
                     <tbody id="tbodyLimite"><tr><td colspan="5" style="text-align:center;padding:20px;color:#8393AC">Sin datos</td></tr></tbody>
@@ -837,6 +842,24 @@ cargar();
 
   setInterval(tick, 1000);
 })();
+
+// ── Expandir / contraer tabla "Control HE por persona" ──────────────────────
+let _limiteExpanded = false;
+function toggleExpandLimite() {
+    _limiteExpanded = !_limiteExpanded;
+    const wrap = document.getElementById("wrapLimite");
+    const ico  = document.getElementById("icoExpandLimite");
+    const lbl  = document.getElementById("lblExpandLimite");
+    if (_limiteExpanded) {
+        wrap.style.maxHeight = "700px";
+        ico.className  = "bi bi-arrows-collapse";
+        lbl.textContent = "Contraer";
+    } else {
+        wrap.style.maxHeight = "320px";
+        ico.className  = "bi bi-arrows-expand";
+        lbl.textContent = "Expandir";
+    }
+}
 </script>
 
 </body>
