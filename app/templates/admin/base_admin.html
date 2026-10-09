@@ -145,79 +145,71 @@
   </div>
 
   <nav class="adm-nav">
+    {% set ep = request.endpoint %}
 
-    <!-- ── DASHBOARDS ── -->
+    <!-- ── INICIO ── -->
     <div class="sb-direct">
       <a href="{{ url_for('admin_bp.dashboard') }}"
-         class="adm-nav-link {% if request.endpoint == 'admin_bp.dashboard' %}active{% endif %}">
+         class="adm-nav-link {% if ep == 'admin_bp.dashboard' %}active{% endif %}">
         <i class="bi bi-speedometer2"></i> Dashboard
       </a>
       <a href="{{ url_for('admin_bp.reportes') }}"
-         class="adm-nav-link {% if request.endpoint == 'admin_bp.reportes' %}active{% endif %}">
+         class="adm-nav-link {% if ep == 'admin_bp.reportes' %}active{% endif %}">
         <i class="bi bi-clipboard2-data"></i> Reportes NEO
       </a>
       <a href="{{ url_for('admin_bp.evidencias_compromisos') }}"
-         class="adm-nav-link {% if request.endpoint == 'admin_bp.evidencias_compromisos' %}active{% endif %}">
+         class="adm-nav-link {% if ep == 'admin_bp.evidencias_compromisos' %}active{% endif %}">
         <i class="bi bi-file-earmark-arrow-down"></i> Evidencias compromisos
-      </a>
-      <a href="{{ url_for('admin_bp.semaforo') }}"
-         class="adm-nav-link {% if request.endpoint == 'admin_bp.semaforo' %}active{% endif %}">
-        <i class="bi bi-traffic-light"></i> Semáforo actividades
-      </a>
-      <a href="{{ url_for('esc_bp.lista') }}"
-         class="adm-nav-link {% if request.endpoint == 'esc_bp.lista' %}active{% endif %}">
-        <i class="bi bi-arrow-up-right-circle" style="color:#f87171"></i> Escalamientos
-      </a>
-      <a href="{{ url_for('admin_bp.preoperacionales_config') }}"
-         class="adm-nav-link {% if request.endpoint == 'admin_bp.preoperacionales_config' %}active{% endif %}">
-        <i class="bi bi-clipboard2-check" style="color:#34d399"></i> Preoperacionales
       </a>
     </div>
 
     <div class="sb-sep"></div>
 
     <!-- ── USUARIOS ── -->
-    {% set ep = request.endpoint %}
-    {% set usuarios_active = ep in ['admin_bp.neo_usuarios','admin_bp.coordinador_usuarios','admin_bp.supervisor_usuarios','admin_bp.director_usuarios','admin_bp.gerente_usuarios'] %}
+    {% set usuarios_active = ep in ['admin_bp.neo_usuarios','admin_bp.supervisor_usuarios','admin_bp.coordinador_usuarios','admin_bp.director_usuarios','admin_bp.gerente_usuarios','admin_bp.usuarios'] %}
     <div class="sb-group">
       <div class="sb-group-hdr {% if usuarios_active %}open{% endif %}" onclick="toggleGroup(this)">
         <i class="bi bi-people-fill sb-group-hdr-icon"></i>
-        Usuarios y accesos
+        Usuarios
         <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
       </div>
       <div class="sb-group-body {% if not usuarios_active %}collapsed{% endif %}">
         <a href="{{ url_for('admin_bp.neo_usuarios') }}"
            class="adm-nav-link {% if ep == 'admin_bp.neo_usuarios' %}active{% endif %}">
-          <i class="bi bi-person-badge"></i> NEO / Admin
-        </a>
-        <a href="{{ url_for('admin_bp.coordinador_usuarios') }}"
-           class="adm-nav-link {% if ep == 'admin_bp.coordinador_usuarios' %}active{% endif %}">
-          <i class="bi bi-person-workspace"></i> Coordinador
+          <i class="bi bi-person-badge"></i> NEO
         </a>
         <a href="{{ url_for('admin_bp.supervisor_usuarios') }}"
            class="adm-nav-link {% if ep == 'admin_bp.supervisor_usuarios' %}active{% endif %}">
           <i class="bi bi-person-check"></i> Supervisor
         </a>
+        <a href="{{ url_for('admin_bp.coordinador_usuarios') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.coordinador_usuarios' %}active{% endif %}">
+          <i class="bi bi-person-workspace"></i> Coordinador
+        </a>
         <a href="{{ url_for('admin_bp.director_usuarios') }}"
            class="adm-nav-link {% if ep == 'admin_bp.director_usuarios' %}active{% endif %}">
           <i class="bi bi-briefcase"></i> Director
         </a>
-<a href="{{ url_for('admin_bp.gerente_usuarios') }}"
+        <a href="{{ url_for('admin_bp.gerente_usuarios') }}"
            class="adm-nav-link {% if ep == 'admin_bp.gerente_usuarios' %}active{% endif %}">
           <i class="bi bi-person-badge-fill"></i> Gerente
+        </a>
+        <a href="{{ url_for('admin_bp.usuarios') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.usuarios' %}active{% endif %}">
+          <i class="bi bi-people"></i> Otros usuarios
         </a>
       </div>
     </div>
 
-    <!-- ── CONTRATOS Y RECURSOS ── -->
-    {% set contratos_active = ep in ['admin_bp.contratos','admin_bp.personas','admin_bp.recursos_neo','admin_bp.placas','admin_bp.metas'] %}
+    <!-- ── INFORMACIÓN DE LA EMPRESA ── -->
+    {% set empresa_active = ep in ['admin_bp.contratos','admin_bp.personas','admin_bp.recursos_neo','admin_bp.metas'] %}
     <div class="sb-group">
-      <div class="sb-group-hdr {% if contratos_active %}open{% endif %}" onclick="toggleGroup(this)">
-        <i class="bi bi-building sb-group-hdr-icon"></i>
-        Contratos y recursos
+      <div class="sb-group-hdr {% if empresa_active %}open{% endif %}" onclick="toggleGroup(this)">
+        <i class="bi bi-building-fill sb-group-hdr-icon"></i>
+        Información empresa
         <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
       </div>
-      <div class="sb-group-body {% if not contratos_active %}collapsed{% endif %}">
+      <div class="sb-group-body {% if not empresa_active %}collapsed{% endif %}">
         <a href="{{ url_for('admin_bp.contratos') }}"
            class="adm-nav-link {% if ep == 'admin_bp.contratos' %}active{% endif %}">
           <i class="bi bi-file-earmark-text"></i> Contratos
@@ -228,11 +220,7 @@
         </a>
         <a href="{{ url_for('admin_bp.recursos_neo') }}"
            class="adm-nav-link {% if ep == 'admin_bp.recursos_neo' %}active{% endif %}">
-          <i class="bi bi-building"></i> Recursos NEO
-        </a>
-        <a href="{{ url_for('admin_bp.placas') }}"
-           class="adm-nav-link {% if ep == 'admin_bp.placas' %}active{% endif %}">
-          <i class="bi bi-truck"></i> Placas por contrato
+          <i class="bi bi-truck-front"></i> Recursos NEO
         </a>
         <a href="{{ url_for('admin_bp.metas') }}"
            class="adm-nav-link {% if ep == 'admin_bp.metas' %}active{% endif %}">
@@ -241,15 +229,15 @@
       </div>
     </div>
 
-    <!-- ── CATÁLOGOS NEO ── -->
-    {% set neo_active = ep in ['admin_bp.desvios','admin_bp.parametros'] %}
+    <!-- ── PARAMETRIZACIÓN ── -->
+    {% set param_active = ep in ['admin_bp.desvios','admin_bp.parametros','admin_bp.supervisores','admin_bp.acciones','admin_bp.parametros_coordinador','admin_bp.actividades'] %}
     <div class="sb-group">
-      <div class="sb-group-hdr {% if neo_active %}open{% endif %}" onclick="toggleGroup(this)">
-        <i class="bi bi-exclamation-triangle sb-group-hdr-icon"></i>
-        Catálogos NEO
+      <div class="sb-group-hdr {% if param_active %}open{% endif %}" onclick="toggleGroup(this)">
+        <i class="bi bi-sliders2 sb-group-hdr-icon"></i>
+        Parametrización
         <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
       </div>
-      <div class="sb-group-body {% if not neo_active %}collapsed{% endif %}">
+      <div class="sb-group-body {% if not param_active %}collapsed{% endif %}">
         <a href="{{ url_for('admin_bp.desvios') }}"
            class="adm-nav-link {% if ep == 'admin_bp.desvios' %}active{% endif %}">
           <i class="bi bi-exclamation-triangle"></i> Tipos de desvío
@@ -258,25 +246,9 @@
            class="adm-nav-link {% if ep == 'admin_bp.parametros' %}active{% endif %}">
           <i class="bi bi-sliders"></i> Parámetros NEO
         </a>
-      </div>
-    </div>
-
-    <!-- ── CATÁLOGOS COORDINADOR ── -->
-    {% set coor_active = ep in ['admin_bp.supervisores','admin_bp.actividades','admin_bp.acciones','admin_bp.parametros_coordinador'] %}
-    <div class="sb-group">
-      <div class="sb-group-hdr {% if coor_active %}open{% endif %}" onclick="toggleGroup(this)">
-        <i class="bi bi-sliders2 sb-group-hdr-icon"></i>
-        Catálogos coordinador
-        <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
-      </div>
-      <div class="sb-group-body {% if not coor_active %}collapsed{% endif %}">
         <a href="{{ url_for('admin_bp.supervisores') }}"
            class="adm-nav-link {% if ep == 'admin_bp.supervisores' %}active{% endif %}">
           <i class="bi bi-person-check"></i> Supervisores
-        </a>
-        <a href="{{ url_for('admin_bp.actividades') }}"
-           class="adm-nav-link {% if ep == 'admin_bp.actividades' %}active{% endif %}">
-          <i class="bi bi-list-task"></i> Tipos de actividad
         </a>
         <a href="{{ url_for('admin_bp.acciones') }}"
            class="adm-nav-link {% if ep == 'admin_bp.acciones' %}active{% endif %}">
@@ -284,7 +256,7 @@
         </a>
         <a href="{{ url_for('admin_bp.parametros_coordinador') }}"
            class="adm-nav-link {% if ep == 'admin_bp.parametros_coordinador' %}active{% endif %}">
-          <i class="bi bi-sliders2"></i> Parámetros
+          <i class="bi bi-sliders2"></i> Parámetros operativos
         </a>
       </div>
     </div>
@@ -298,21 +270,9 @@
         <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
       </div>
       <div class="sb-group-body {% if not he_active %}collapsed{% endif %}">
-        <a href="{{ url_for('he_bp.he_dashboard') }}"
-           class="adm-nav-link {% if ep == 'he_bp.he_dashboard' %}active{% endif %}">
-          <i class="bi bi-speedometer2"></i> Dashboard HE
-        </a>
-        <a href="{{ url_for('admin_bp.he_kpis') }}"
-           class="adm-nav-link {% if ep == 'admin_bp.he_kpis' %}active{% endif %}">
-          <i class="bi bi-bar-chart-fill"></i> KPIs / Resumen
-        </a>
         <a href="{{ url_for('admin_bp.he_cortes') }}"
            class="adm-nav-link {% if ep == 'admin_bp.he_cortes' %}active{% endif %}">
           <i class="bi bi-scissors"></i> Cortes
-        </a>
-        <a href="{{ url_for('admin_bp.he_dashboard_acceso') }}"
-           class="adm-nav-link {% if ep == 'admin_bp.he_dashboard_acceso' %}active{% endif %}">
-          <i class="bi bi-person-check"></i> Acceso dashboard
         </a>
         <a href="{{ url_for('admin_bp.he_configuracion') }}"
            class="adm-nav-link {% if ep == 'admin_bp.he_configuracion' %}active{% endif %}">
@@ -321,6 +281,30 @@
         <a href="{{ url_for('admin_bp.he_auditoria') }}"
            class="adm-nav-link {% if ep == 'admin_bp.he_auditoria' %}active{% endif %}">
           <i class="bi bi-shield-check"></i> Auditoría
+        </a>
+      </div>
+    </div>
+
+    <!-- ── SEGUIMIENTOS ── -->
+    {% set seg_active = ep in ['admin_bp.semaforo','esc_bp.lista','admin_bp.preoperacionales_config'] %}
+    <div class="sb-group">
+      <div class="sb-group-hdr {% if seg_active %}open{% endif %}" onclick="toggleGroup(this)">
+        <i class="bi bi-binoculars-fill sb-group-hdr-icon"></i>
+        Seguimientos
+        <i class="bi bi-chevron-down sb-group-hdr-arrow"></i>
+      </div>
+      <div class="sb-group-body {% if not seg_active %}collapsed{% endif %}">
+        <a href="{{ url_for('admin_bp.semaforo') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.semaforo' %}active{% endif %}">
+          <i class="bi bi-traffic-light"></i> Semáforo actividades
+        </a>
+        <a href="{{ url_for('esc_bp.lista') }}"
+           class="adm-nav-link {% if ep == 'esc_bp.lista' %}active{% endif %}">
+          <i class="bi bi-arrow-up-right-circle"></i> Escalamientos
+        </a>
+        <a href="{{ url_for('admin_bp.preoperacionales_config') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.preoperacionales_config' %}active{% endif %}">
+          <i class="bi bi-clipboard2-check"></i> Preoperacionales
         </a>
       </div>
     </div>
