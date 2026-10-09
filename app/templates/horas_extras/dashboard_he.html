@@ -192,8 +192,8 @@ body{ background:var(--dh-bg); color:var(--dh-text); font-family:"IBM Plex Sans"
             </div>
             <div id="wrapLimite" style="overflow-x:auto;max-height:320px;overflow-y:auto;transition:max-height .3s ease">
                 <table class="dh-table" id="tblLimite">
-                    <thead><tr><th>Colaborador</th><th>Contrato</th><th>Período</th><th style="text-align:right">Hrs HE</th><th>Estado</th></tr></thead>
-                    <tbody id="tbodyLimite"><tr><td colspan="5" style="text-align:center;padding:20px;color:#8393AC">Sin datos</td></tr></tbody>
+                    <thead><tr><th>Colaborador</th><th>Cargo</th><th>Contrato</th><th>Período</th><th style="text-align:right">Hrs HE</th><th>Estado</th></tr></thead>
+                    <tbody id="tbodyLimite"><tr><td colspan="6" style="text-align:center;padding:20px;color:#8393AC">Sin datos</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -606,7 +606,7 @@ function fmtFecha(iso) {
 function renderLimite(lista) {
     const tbody = document.getElementById('tbodyLimite');
     if (!lista.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:#16A34A"><i class="bi bi-check-circle me-1"></i>Sin registros de horas extras</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#16A34A"><i class="bi bi-check-circle me-1"></i>Sin registros de horas extras</td></tr>';
         return;
     }
     const badgeCfg = {
@@ -621,6 +621,7 @@ function renderLimite(lista) {
         return `<tr class="${cfg.cls}" style="cursor:pointer;${activo}"
                     onclick="aplicarDrill({cedula:'${r.cedula}'}, 'Persona: ${r.nombre.replace(/'/g,"\\'")}')">
             <td><strong>${r.nombre}</strong><br><span style="font-size:.68rem;opacity:.7">${r.cedula}</span>${r.recurso ? `<br><span style="font-size:.65rem;color:#64748B">${r.recurso}</span>` : ''}</td>
+            <td style="font-size:.72rem">${r.cargo || '—'}</td>
             <td style="font-size:.72rem">${r.contrato}</td>
             <td style="font-size:.72rem">${r.mes}</td>
             <td style="text-align:right;font-weight:700;font-size:.9rem">${Math.round(r.horas)}h</td>

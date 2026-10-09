@@ -1912,6 +1912,9 @@ def api_he_dashboard_data():
     # Mapa contrato_id → nombre (una sola query)
     from app.models.contrato import Contrato as _Contrato
     _cmap = {c.id: c.contrato for c in _Contrato.query.with_entities(_Contrato.id, _Contrato.contrato).all()}
+    # Mapa cedula → cargo desde tabla personas
+    from app.models.persona import Persona as _Persona
+    _cargo_map = {p.Documento: p.Cargo for p in _Persona.query.with_entities(_Persona.Documento, _Persona.Cargo).all()}
     # Etiqueta de período: nombre del corte o rango de fechas si hay corte, mes si no
     if co_obj:
         _periodo_label = (co_obj.nombre or
@@ -1952,6 +1955,7 @@ def api_he_dashboard_data():
             "cedula":   ced,
             "nombre":   info["nombre"],
             "recurso":  info["recurso"],
+            "cargo":    _cargo_map.get(ced, ""),
             "contrato": " / ".join(sorted(info["contratos"])) if info["contratos"] else "",
             "mes":      info["periodo"] if corte_id else (mes_key or info["periodo"]),
             "horas":    h,
