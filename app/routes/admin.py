@@ -1778,7 +1778,8 @@ def api_he_dashboard_data():
     CODIGOS_HE = {"03", "04", "05", "06"}
 
     q = HoraExtra.query
-    contrato_id  = request.args.get("contrato_id", type=int)
+    _cids_raw    = request.args.getlist("contrato_id")
+    contrato_ids = [int(x) for x in _cids_raw if x]
     corte_id     = request.args.get("corte_id", type=int)
     fecha_desde  = request.args.get("fecha_desde", "")
     fecha_hasta  = request.args.get("fecha_hasta", "")
@@ -1789,8 +1790,8 @@ def api_he_dashboard_data():
     f_tipo       = request.args.get("tipo", "").strip()
     f_fecha      = request.args.get("fecha_drill", "").strip()
 
-    if contrato_id:
-        q = q.filter(HoraExtra.contrato_id == contrato_id)
+    if contrato_ids:
+        q = q.filter(HoraExtra.contrato_id.in_(contrato_ids))
     if corte_id:
         co = HeCorte.query.get(corte_id)
         if co:
@@ -1996,12 +1997,13 @@ def api_he_dashboard_data():
 def api_he_kpis_concepto():
     """Devuelve registros y horas agrupadas por código de concepto de horas extras."""
     q = HoraExtra.query
-    contrato_id = request.args.get("contrato_id", type=int)
+    _cids_raw   = request.args.getlist("contrato_id")
+    contrato_ids = [int(x) for x in _cids_raw if x]
     corte_id    = request.args.get("corte_id", type=int)
     fecha_desde = request.args.get("fecha_desde", "")
     fecha_hasta = request.args.get("fecha_hasta", "")
-    if contrato_id:
-        q = q.filter(HoraExtra.contrato_id == contrato_id)
+    if contrato_ids:
+        q = q.filter(HoraExtra.contrato_id.in_(contrato_ids))
     if corte_id:
         corte_obj = HeCorte.query.get(corte_id)
         if corte_obj:
@@ -2068,14 +2070,15 @@ def api_he_registros_export():
     import pandas as pd
     from sqlalchemy import or_ as sa_or
     q = HoraExtra.query
-    contrato_id = request.args.get("contrato_id", type=int)
+    _cids_raw   = request.args.getlist("contrato_id")
+    contrato_ids = [int(x) for x in _cids_raw if x]
     corte_id    = request.args.get("corte_id", type=int)
     estado      = request.args.get("estado", "")
     fecha_desde = request.args.get("fecha_desde", "")
     fecha_hasta = request.args.get("fecha_hasta", "")
     id_concepto = request.args.get("id_concepto", "")
-    if contrato_id:
-        q = q.filter(HoraExtra.contrato_id == contrato_id)
+    if contrato_ids:
+        q = q.filter(HoraExtra.contrato_id.in_(contrato_ids))
     if corte_id:
         corte_obj = HeCorte.query.get(corte_id)
         if corte_obj:

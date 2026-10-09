@@ -108,12 +108,22 @@ body{ background:var(--dh-bg); color:var(--dh-text); font-family:"IBM Plex Sans"
 
     <!-- FILTROS -->
     <div class="dh-card dh-filters" style="margin-bottom:1rem">
-        <div>
+        <div style="position:relative">
             <span class="dh-filter-lbl">Contrato</span>
-            <select id="fContrato" class="dh-select" style="min-width:200px">
-                <option value="">Todos</option>
-                {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
-            </select>
+            <div id="fContratoBtn" class="dh-select" style="min-width:200px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none" onclick="toggleContratoDropdown()">
+                <span id="fContratoLabel" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">Todos</span>
+                <i class="bi bi-chevron-down" style="font-size:.7rem;margin-left:4px;flex-shrink:0"></i>
+            </div>
+            <div id="fContratoPanel" style="display:none;position:absolute;top:100%;left:0;z-index:1000;background:#fff;border:1px solid #DDE4EC;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.12);min-width:260px;max-height:300px;overflow-y:auto;padding:6px 0">
+                <label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:.82rem;border-bottom:1px solid #f0f0f0">
+                    <input type="checkbox" id="chkContratoTodos" checked onchange="toggleTodosContrato(this)"> <span>Todos</span>
+                </label>
+                {% for c in contratos %}
+                <label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:.82rem" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background=''">
+                    <input type="checkbox" class="chk-contrato" value="{{ c.id }}" onchange="onContratoChange()"> <span>{{ c.contrato }}</span>
+                </label>
+                {% endfor %}
+            </div>
         </div>
         <div>
             <span class="dh-filter-lbl">Corte</span>
@@ -422,19 +432,54 @@ function _renderChartDiaActual() {
 const fmt    = n => (n||0).toLocaleString('es-CO');
 const fmtHrs = n => Math.round(n||0).toLocaleString('es-CO');
 
+// ── Dropdown multi-contrato ──────────────────────────────────────────────
+function toggleContratoDropdown() {
+    const panel = document.getElementById('fContratoPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+    const btn   = document.getElementById('fContratoBtn');
+    const panel = document.getElementById('fContratoPanel');
+    if (btn && panel && !btn.contains(e.target) && !panel.contains(e.target)) {
+        panel.style.display = 'none';
+    }
+});
+function toggleTodosContrato(chk) {
+    document.querySelectorAll('.chk-contrato').forEach(c => c.checked = false);
+    chk.checked = true;
+    _updateContratoLabel();
+}
+function onContratoChange() {
+    const sel = [...document.querySelectorAll('.chk-contrato:checked')];
+    document.getElementById('chkContratoTodos').checked = sel.length === 0;
+    _updateContratoLabel();
+}
+function _updateContratoLabel() {
+    const sel = [...document.querySelectorAll('.chk-contrato:checked')];
+    const lbl = document.getElementById('fContratoLabel');
+    if (sel.length === 0) { lbl.textContent = 'Todos'; return; }
+    if (sel.length === 1) { lbl.textContent = sel[0].closest('label').querySelector('span').textContent; return; }
+    lbl.textContent = sel.length + ' contratos';
+}
+function _getContratoIds() {
+    return [...document.querySelectorAll('.chk-contrato:checked')].map(c => c.value);
+}
+
 function limpiar() {
-    ['fContrato','fCorte'].forEach(id=>document.getElementById(id).value='');
+    document.querySelectorAll('.chk-contrato').forEach(c => c.checked = false);
+    document.getElementById('chkContratoTodos').checked = true;
+    _updateContratoLabel();
+    document.getElementById('fCorte').value = '';
     ['fDesde','fHasta'].forEach(id=>document.getElementById(id).value='');
     cargar();
 }
 
 function buildParams() {
     const p = new URLSearchParams();
-    const c = document.getElementById('fContrato').value;
+    _getContratoIds().forEach(id => p.append('contrato_id', id));
     const k = document.getElementById('fCorte').value;
     const d = document.getElementById('fDesde').value;
     const h = document.getElementById('fHasta').value;
-    if (c) p.set('contrato_id', c);
     if (k) p.set('corte_id', k);
     if (d) p.set('fecha_desde', d);
     if (h) p.set('fecha_hasta', h);
