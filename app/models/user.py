@@ -65,6 +65,9 @@ class User(
     # Lista de permisos de módulos extra, ej: ["horas_extras", "seguimiento"]
     permisos = db.Column(db.Text, default="[]", nullable=False, server_default="[]")
 
+    # Vista por módulo: {"neo_reportes": "coordinador", "indicadores": "neo", ...}
+    modulo_vistas = db.Column(db.Text, nullable=True, default="{}", server_default="{}")
+
     # Contraseña en texto visible para consulta del administrador
     contrasena = db.Column(db.String(255), nullable=True)
 
@@ -83,6 +86,12 @@ class User(
             return json.loads(self.permisos or "[]")
         except Exception:
             return []
+
+    def get_modulo_vistas(self):
+        try:
+            return json.loads(self.modulo_vistas or "{}")
+        except Exception:
+            return {}
 
     def tiene_permiso(self, permiso):
         if self.rol and self.rol.lower() == "admin":

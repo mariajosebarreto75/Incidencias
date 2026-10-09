@@ -266,25 +266,32 @@ def usuarios():
 @admin_bp.route("/neo-usuarios")
 @admin_required
 def neo_usuarios():
-    """Lista los usuarios con rol NEO o admin y sus contratos asignados."""
-    lista = User.query.filter(
-        User.rol.in_(["neo", "admin"])
-    ).order_by(User.rol, User.nombre_completo).all()
-    contratos = Contrato.query.order_by(Contrato.contrato).all()
+    """Gestión unificada de todos los usuarios del sistema."""
+    from collections import defaultdict
+    import json as _json
 
-    # Pre-cargar contratos asignados de todos los usuarios de la lista
-    asignados_por_usuario = {}
-    for u in lista:
-        asignados_por_usuario[u.id] = {
-            uc.contrato for uc in
-            UserContrato.query.filter_by(user_id=u.id).all()
-        }
+    lista = User.query.order_by(User.rol, User.nombre_completo).all()
+    contratos_todos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+
+    # Agrupar contratos por proceso (fallback: sede, luego "General")
+    _grupos = defaultdict(list)
+    for c in contratos_todos:
+        g = c.proceso or c.sede or "General"
+        _grupos[g].append(c)
+    contratos_agrupados = sorted(_grupos.items())
+
+    asignados_por_usuario = {
+        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
+        for u in lista
+    }
 
     return render_template(
         "admin/neo_usuarios.html",
         usuarios=lista,
-        contratos=contratos,
-        asignados_por_usuario=asignados_por_usuario
+        contratos=contratos_todos,
+        contratos_agrupados=contratos_agrupados,
+        asignados_por_usuario=asignados_por_usuario,
+        roles_otros=_ROLES_OTROS,
     )
 
 
@@ -410,6 +417,13 @@ def api_editar_usuario(id):
         u.telefono_whatsapp = raw if raw else None
     if "permiso" in d:
         u.set_permiso(d["permiso"], bool(d.get("valor", False)))
+    if "permisos_lista" in d:
+        import json as _json
+        permisos = [p for p in (d["permisos_lista"] or []) if isinstance(p, str)]
+        u.permisos = _json.dumps(permisos)
+    if "modulo_vistas" in d and isinstance(d["modulo_vistas"], dict):
+        import json as _json
+        u.modulo_vistas = _json.dumps(d["modulo_vistas"])
     if d.get("password"):
         u.set_password(d["password"].strip())
         u.must_change_password = True
