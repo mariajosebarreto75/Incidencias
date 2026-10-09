@@ -250,7 +250,7 @@
     </form>
 
     <div class="back-link">
-        <a href="/logout" onclick="return confirm('¿Cancelar y volver al inicio de sesión?')">
+        <a href="{{ url_for('auth.login') }}">
             <i class="bi bi-arrow-left-circle"></i> Volver al inicio de sesión
         </a>
     </div>

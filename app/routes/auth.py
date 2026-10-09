@@ -101,6 +101,8 @@ def login():
         login_user(user)
         return _redirect_por_rol(user)
 
+    # Limpiar sesión de cambio obligatorio pendiente al volver al login
+    session.pop(_SESSION_MCP, None)
     return render_template("login.html", show_cambio_pwd=False)
 
 
