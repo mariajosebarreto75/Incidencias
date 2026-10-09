@@ -204,38 +204,27 @@ body {
     border-top-color: #94a3b8 !important;
 }
 
-/* ===== FILTROS — finos y sutiles ===== */
-
-.tabulator-header-filter {
-    padding: 0 6px 5px !important;
-    background: #f8fafc !important;
-}
-
-.tabulator-header-filter input,
-.tabulator-header-filter select {
-    height: 24px !important;
-    font-size: .75rem !important;
-    border-radius: 5px !important;
-    border: 1.5px solid #e2e8f0 !important;
-    background: #fff !important;
-    color: #334155 !important;
-    padding: 0 6px !important;
-    transition: border-color .15s !important;
-    outline: none !important;
+/* ===== Botón filtro Excel ===== */
+.xl-title-wrap {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
     width: 100% !important;
-    box-shadow: none !important;
+    gap: 4px !important;
 }
 
-.tabulator-header-filter input:focus,
-.tabulator-header-filter select:focus {
-    border-color: var(--hesego-primary) !important;
-    background: #f0fdfe !important;
+.xl-fb {
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    color: #94a3b8 !important;
+    font-size: .68rem !important;
+    padding: 0 2px !important;
+    line-height: 1 !important;
+    flex-shrink: 0 !important;
+    transition: color .15s !important;
 }
-
-.tabulator-header-filter input::placeholder {
-    color: #b0bec5 !important;
-    font-size: .72rem !important;
-}
+.xl-fb:hover { color: #00b8c9 !important; }
 
 /* ===== FILAS ===== */
 
@@ -277,28 +266,8 @@ body {
     background: #ccf2f6 !important;
 }
 
-/* ── Filtros de columna Tabulator — teal ── */
-.tabulator-header-filter input,
-.tabulator-header-filter select {
-    background: #e6fafb !important;
-    border: 1px solid #00b8c9 !important;
-    border-radius: 4px !important;
-    font-size: .76rem !important;
-    padding: 2px 6px !important;
-    color: #1e293b !important;
-    width: 100% !important;
-}
-.tabulator-header-filter input:focus,
-.tabulator-header-filter select:focus {
-    background: #ccf5f8 !important;
-    border-color: #007d8a !important;
-    outline: none !important;
-    box-shadow: 0 0 0 2px rgba(0,184,201,.2) !important;
-}
-.tabulator-header-filter input::placeholder {
-    color: #9ca3af !important;
-    font-size: .72rem !important;
-}
+/* Tabulator header filter row oculto — filtros via dropdown Excel */
+.tabulator-header-filter { display: none !important; }
 
 /* ── Modal tabs ── */
 #tabsManual .nav-link {

@@ -70,16 +70,12 @@ body { background: var(--dn-bg); }
 .dn-nombre { font-weight:600; color:#0f172a; }
 .badge-origen-gps { background:#0ea5e9; color:#fff; font-size:11px; padding:.2rem .5rem; border-radius:4px; }
 .badge-origen-manual { background:#94a3b8; color:#fff; font-size:11px; padding:.2rem .5rem; border-radius:4px; }
-/* Filtros columna Tabulator — teal */
-.tabulator-header-filter input,
-.tabulator-header-filter select {
-    background:#e6fafb !important; border:1px solid #00b8c9 !important;
-    border-radius:4px !important; font-size:.76rem !important;
-    padding:2px 6px !important; color:#1e293b !important; width:100% !important;
-}
-.tabulator-header-filter input:focus,
-.tabulator-header-filter select:focus { background:#ccf5f8 !important; border-color:#007d8a !important; outline:none !important; box-shadow:0 0 0 2px rgba(0,184,201,.2) !important; }
-.tabulator-header-filter input::placeholder { color:#9ca3af !important; font-size:.72rem !important; }
+/* Filtros via dropdown Excel — ocultar fila de inputs */
+.tabulator-header-filter { display:none !important; }
+/* Botón filtro Excel */
+.xl-title-wrap { display:flex !important; align-items:center !important; justify-content:space-between !important; width:100% !important; gap:4px !important; }
+.xl-fb { background:none !important; border:none !important; cursor:pointer !important; color:#94a3b8 !important; font-size:.68rem !important; padding:0 2px !important; line-height:1 !important; flex-shrink:0 !important; }
+.xl-fb:hover { color:#00b8c9 !important; }
 /* Estilo Excel tabla */
 .tabulator { border:1px solid #b7c9d3 !important; border-radius:4px !important; font-size:.82rem !important; background:#fff !important; }
 .tabulator-header { background:#d6eef2 !important; border-bottom:2px solid #00b8c9 !important; }
