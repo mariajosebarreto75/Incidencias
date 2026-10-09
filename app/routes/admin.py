@@ -1826,7 +1826,7 @@ def api_he_dashboard_data():
         HoraExtra.id, HoraExtra.cedula, HoraExtra.nombre, HoraExtra.fecha_labor,
         HoraExtra.fecha_reporte, HoraExtra.id_concepto, HoraExtra.horas_reportadas,
         HoraExtra.horas_autorizadas, HoraExtra.estado, HoraExtra.autorizacion_sup,
-        HoraExtra.contrato_id, HoraExtra.corte_id,
+        HoraExtra.contrato_id, HoraExtra.corte_id, HoraExtra.recurso,
     ).all()
 
     # ── KPIs — una sola pasada ────────────────────────────────────────────────
