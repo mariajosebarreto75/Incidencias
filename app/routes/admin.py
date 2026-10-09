@@ -1919,7 +1919,7 @@ def api_he_dashboard_data():
     else:
         _periodo_label = None  # se asigna por registro
 
-    he_por_persona_mes = defaultdict(lambda: {"nombre":"","contratos":set(),"horas":0,"periodo":""})
+    he_por_persona_mes = defaultdict(lambda: {"nombre":"","recurso":"","contratos":set(),"horas":0,"periodo":""})
     for r in registros:
         if (r.id_concepto or "").strip().zfill(2) not in CODIGOS_HE: continue
         if not r.fecha_labor: continue
@@ -1930,8 +1930,9 @@ def api_he_dashboard_data():
         hrs = r.horas_reportadas or 0
         if not hrs:
             continue
-        he_por_persona_mes[llave]["nombre"]  = r.nombre or r.cedula
-        he_por_persona_mes[llave]["periodo"] = _periodo_label or r.fecha_labor.strftime("%Y-%m")
+        he_por_persona_mes[llave]["nombre"]   = r.nombre or r.cedula
+        he_por_persona_mes[llave]["recurso"]  = r.recurso or ""
+        he_por_persona_mes[llave]["periodo"]  = _periodo_label or r.fecha_labor.strftime("%Y-%m")
         if r.contrato_id and r.contrato_id in _cmap:
             he_por_persona_mes[llave]["contratos"].add(_cmap[r.contrato_id])
         he_por_persona_mes[llave]["horas"] += hrs
@@ -1950,6 +1951,7 @@ def api_he_dashboard_data():
         limite_legal.append({
             "cedula":   ced,
             "nombre":   info["nombre"],
+            "recurso":  info["recurso"],
             "contrato": " / ".join(sorted(info["contratos"])) if info["contratos"] else "",
             "mes":      info["periodo"] if corte_id else (mes_key or info["periodo"]),
             "horas":    h,
