@@ -1163,6 +1163,14 @@ def api_he_ranking_contratos():
     corte_id    = request.args.get("corte_id", type=int)
     fecha_desde = request.args.get("fecha_desde", "")
     fecha_hasta = request.args.get("fecha_hasta", "")
+    _cids_r     = [int(x) for x in request.args.getlist("contrato_id") if x]
+
+    # Restricción por contratos asignados al usuario (no admin/gerente)
+    _rol_r = current_user.rol.lower()
+    if _rol_r not in ("admin", "gerente"):
+        _noms_r = [uc.contrato for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
+        _ids_r  = {c.id for c in Contrato.query.filter(Contrato.contrato.in_(_noms_r)).all()} if _noms_r else set()
+        _cids_r = [cid for cid in _cids_r if cid in _ids_r] if _cids_r else list(_ids_r)
 
     q = db.session.query(
         HoraExtra.contrato_id,
@@ -1172,6 +1180,9 @@ def api_he_ranking_contratos():
         sa_func.sum(HoraExtra.horas_reportadas).label("hrs"),
         sa_func.sum(HoraExtra.horas_autorizadas).label("hrs_auth"),
     )
+
+    if _cids_r:
+        q = q.filter(HoraExtra.contrato_id.in_(_cids_r))
 
     if corte_id:
         corte_obj = db.session.get(HeCorte, corte_id)
@@ -1512,6 +1523,12 @@ def api_he_valor_extra_nomina():
     params = request.args
     q = HoraExtra.query
     _cids = [int(x) for x in params.getlist("contrato_id") if x]
+    # Restricción por contratos asignados al usuario (no admin/gerente)
+    _rol_v = current_user.rol.lower()
+    if _rol_v not in ("admin", "gerente"):
+        _noms = [uc.contrato for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
+        _ids_p = {c.id for c in Contrato.query.filter(Contrato.contrato.in_(_noms)).all()} if _noms else set()
+        _cids = [cid for cid in _cids if cid in _ids_p] if _cids else list(_ids_p)
     if _cids:
         q = q.filter(HoraExtra.contrato_id.in_(_cids))
     if params.get("corte_id"):

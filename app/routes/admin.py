@@ -1790,6 +1790,16 @@ def api_he_dashboard_data():
     f_tipo       = request.args.get("tipo", "").strip()
     f_fecha      = request.args.get("fecha_drill", "").strip()
 
+    # Restricción por contratos asignados al usuario (no admin/gerente)
+    _rol = current_user.rol.lower()
+    if _rol not in ("admin", "gerente"):
+        _nombres_uc = [uc.contrato for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
+        _ids_perm = {c.id for c in Contrato.query.filter(Contrato.contrato.in_(_nombres_uc)).all()} if _nombres_uc else set()
+        if contrato_ids:
+            contrato_ids = [cid for cid in contrato_ids if cid in _ids_perm]
+        else:
+            contrato_ids = list(_ids_perm)
+
     if contrato_ids:
         q = q.filter(HoraExtra.contrato_id.in_(contrato_ids))
     if corte_id:
