@@ -4,31 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Admin{% endblock %} — Panel Administrador</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admin.css') }}?v=4">
     {% block head %}{% endblock %}
 <style>
 /* ── SIDEBAR TEMA CLARO ── */
 :root {
-  --adm-accent:       #00b8c9;
-  --adm-accent-hover: #0099a8;
-  --adm-accent-light: rgba(0,184,201,.10);
-  --adm-sidebar-w:    252px;
-  --sb-bg:            #ffffff;
-  --sb-border:        #e2e8f0;
-  --sb-text:          #64748b;
-  --sb-group-label:   #94a3b8;
-  --adm-bg:           #f1f5f9;
-  --adm-surface:      #ffffff;
-  --adm-surface-2:    #f8fafc;
-  --adm-border:       #e2e8f0;
-  --adm-border-light: #f1f5f9;
-  --adm-text:         #1e293b;
-  --adm-text-muted:   #64748b;
-  --adm-text-muted2:  #94a3b8;
+  --adm-accent:        #0B6E75;
+  --adm-accent-hover:  #0a5f65;
+  --adm-accent-light:  #E3F3F2;
+  --adm-accent-border: #9CC9C5;
+  --adm-sidebar-w:     252px;
+  --sb-bg:             #ffffff;
+  --sb-border:         #E2E8E7;
+  --sb-text:           #5A6B69;
+  --sb-group-label:    #94a3b8;
+  --adm-bg:            #F3F5F4;
+  --adm-surface:       #ffffff;
+  --adm-surface-2:     #FAFBFB;
+  --adm-border:        #E2E8E7;
+  --adm-border-light:  #F3F5F4;
+  --adm-text:          #10201F;
+  --adm-text-muted:    #5A6B69;
+  --adm-text-muted2:   #94a3b8;
+  --adm-label:         #3E4F4D;
 }
-body { margin:0; background:var(--adm-bg); font-family:'Segoe UI',system-ui,sans-serif; color:var(--adm-text); }
+body { margin:0; background:var(--adm-bg); font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif; color:var(--adm-text); }
 
 /* Sidebar */
 .adm-sidebar {
@@ -75,17 +80,17 @@ body { margin:0; background:var(--adm-bg); font-family:'Segoe UI',system-ui,sans
   border-radius:0 6px 6px 0; margin:1px 6px 1px 0; white-space:nowrap;
 }
 .adm-nav-link i { font-size:.88rem; width:16px; text-align:center; flex-shrink:0; opacity:.6; transition:opacity .12s; }
-.adm-nav-link:hover { background:rgba(0,184,201,.10); color:#0f172a; }
+.adm-nav-link:hover { background:#E3F3F2; color:#10201F; }
 .adm-nav-link:hover i { opacity:1; }
-.adm-nav-link.active { background:rgba(0,184,201,.10); color:#00b8c9; border-left-color:#00b8c9; font-weight:600; }
-.adm-nav-link.active i { opacity:1; color:#00b8c9; }
+.adm-nav-link.active { background:#E3F3F2; color:#0B6E75; border-left-color:#9CC9C5; font-weight:600; }
+.adm-nav-link.active i { opacity:1; color:#0B6E75; }
 
 .sb-sep { height:1px; background:#e2e8f0; margin:5px 14px; }
 
 /* Footer */
 .adm-footer { flex-shrink:0; padding:12px 12px 14px; border-top:1px solid #e2e8f0; background:#f8fafc; }
 .adm-user-chip { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; margin-bottom:8px; }
-.adm-user-chip i { color:#00b8c9; font-size:1.1rem; flex-shrink:0; }
+.adm-user-chip i { color:#0B6E75; font-size:1.1rem; flex-shrink:0; }
 .adm-user-name { color:#1e293b; font-size:.78rem; font-weight:600; line-height:1.2; }
 .adm-user-role { color:#94a3b8; font-size:.65rem; }
 .adm-btn-logout {
