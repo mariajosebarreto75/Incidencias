@@ -412,6 +412,177 @@ function fmtFecha(val) {
     return p.length === 3 ? p[2]+"/"+p[1]+"/"+p[0] : val;
 }
 
+// ===== Filtros estilo Excel =====
+const _xlPending = {};
+const _xlApplied = {};
+let _xlDropdown = null;
+let _xlOpenField = null;
+
+function _xlUniqueVals(field) {
+    const seen = new Map();
+    filas.forEach(function(row) {
+        const raw = String(row[field] == null ? "" : row[field]);
+        const disp = field === "fecha" ? fmtFecha(raw) : raw;
+        if (raw !== "") seen.set(raw, disp);
+    });
+    return [...seen.entries()].sort(function(a,b){ return a[1].localeCompare(b[1],"es"); });
+}
+
+function _xlIsFiltered(field) {
+    const sel = _xlApplied[field];
+    if (!sel) return false;
+    return sel.size < _xlUniqueVals(field).length;
+}
+
+function _xlApplyAll() {
+    const active = Object.keys(_xlApplied).filter(function(f){ return _xlIsFiltered(f); });
+    if (active.length === 0) { tabla.clearFilter(); return; }
+    tabla.setFilter(function(data) {
+        return active.every(function(field) {
+            return _xlApplied[field].has(String(data[field] == null ? "" : data[field]));
+        });
+    });
+}
+
+function _xlUpdateBtnState(field) {
+    document.querySelectorAll('.xl-fb[data-field="'+field+'"]').forEach(function(btn) {
+        var f = _xlIsFiltered(field);
+        btn.style.color = f ? "#007d8a" : "#94a3b8";
+        btn.style.fontWeight = f ? "800" : "400";
+    });
+}
+
+function _xlCloseDropdown() {
+    if (_xlDropdown) { _xlDropdown.remove(); _xlDropdown = null; }
+    _xlOpenField = null;
+}
+
+function _xlOpenDropdown(field, btnEl) {
+    _xlCloseDropdown();
+    _xlOpenField = field;
+    var entries = _xlUniqueVals(field);
+    var allRaws = entries.map(function(e){ return e[0]; });
+    var base = _xlApplied[field] || new Set(allRaws);
+    _xlPending[field] = new Set(base);
+
+    var rect = btnEl.getBoundingClientRect();
+    var div = document.createElement("div");
+    div.className = "xl-dropdown";
+    var left = Math.min(rect.left, window.innerWidth - 250);
+    div.style.cssText = "position:fixed;z-index:10000;top:"+(rect.bottom+4)+"px;left:"+left+"px;"+
+        "width:240px;background:#fff;border:1px solid #d1d5db;border-radius:6px;"+
+        "box-shadow:0 6px 20px rgba(0,0,0,.18);font-size:.82rem;font-family:inherit;overflow:hidden;";
+
+    // Ordenar
+    var sortRow = document.createElement("div");
+    sortRow.style.cssText = "display:flex;gap:1px;padding:6px 6px 4px;border-bottom:1px solid #e5e7eb;";
+    [["▲ Menor a mayor","asc"],["▼ Mayor a menor","desc"]].forEach(function(pair) {
+        var btn = document.createElement("button");
+        btn.textContent = pair[0];
+        btn.style.cssText = "flex:1;font-size:.73rem;padding:4px 2px;border:1px solid #d1d5db;"+
+            "border-radius:4px;cursor:pointer;background:#f9fafb;color:#374151;";
+        btn.onclick = function(){ tabla.setSort(field, pair[1]); _xlCloseDropdown(); };
+        sortRow.appendChild(btn);
+    });
+    div.appendChild(sortRow);
+
+    // Buscador
+    var search = document.createElement("input");
+    search.type = "text"; search.placeholder = "Buscar...";
+    search.style.cssText = "width:calc(100% - 16px);margin:6px 8px 4px;padding:4px 8px;"+
+        "border:1px solid #d1d5db;border-radius:4px;font-size:.8rem;outline:none;"+
+        "background:#f9fafb;box-sizing:border-box;";
+    div.appendChild(search);
+
+    // Lista
+    var list = document.createElement("div");
+    list.style.cssText = "max-height:220px;overflow-y:auto;padding:2px 0;border-top:1px solid #e5e7eb;";
+
+    function renderList(q) {
+        list.innerHTML = "";
+        var filtered = q ? entries.filter(function(e){ return e[1].toLowerCase().includes(q.toLowerCase()); }) : entries;
+        var visRaws = filtered.map(function(e){ return e[0]; });
+
+        // Seleccionar todo
+        var allLbl = document.createElement("label");
+        allLbl.style.cssText = "display:flex;align-items:center;gap:8px;padding:4px 10px;cursor:pointer;font-weight:600;";
+        var allCb = document.createElement("input");
+        allCb.type = "checkbox"; allCb.style.accentColor = "#00b8c9";
+        allCb.checked = visRaws.every(function(r){ return _xlPending[field].has(r); });
+        allCb.indeterminate = !allCb.checked && visRaws.some(function(r){ return _xlPending[field].has(r); });
+        allCb.onchange = function() {
+            visRaws.forEach(function(r){ allCb.checked ? _xlPending[field].add(r) : _xlPending[field].delete(r); });
+            renderList(q);
+        };
+        allLbl.appendChild(allCb);
+        allLbl.appendChild(document.createTextNode("(Seleccionar todo)"));
+        list.appendChild(allLbl);
+        var sep = document.createElement("div");
+        sep.style.cssText = "border-top:1px solid #e5e7eb;margin:2px 0;";
+        list.appendChild(sep);
+
+        filtered.forEach(function(pair) {
+            var raw = pair[0], disp = pair[1];
+            var lbl = document.createElement("label");
+            lbl.style.cssText = "display:flex;align-items:center;gap:8px;padding:3px 10px;cursor:pointer;";
+            lbl.onmouseover = function(){ lbl.style.background="#f0f9fb"; };
+            lbl.onmouseout  = function(){ lbl.style.background=""; };
+            var cb = document.createElement("input");
+            cb.type = "checkbox"; cb.style.accentColor = "#00b8c9";
+            cb.checked = _xlPending[field].has(raw);
+            cb.onchange = function() {
+                cb.checked ? _xlPending[field].add(raw) : _xlPending[field].delete(raw);
+                allCb.checked = visRaws.every(function(r){ return _xlPending[field].has(r); });
+                allCb.indeterminate = !allCb.checked && visRaws.some(function(r){ return _xlPending[field].has(r); });
+            };
+            lbl.appendChild(cb); lbl.appendChild(document.createTextNode(disp || "(vacío)"));
+            list.appendChild(lbl);
+        });
+    }
+
+    renderList(""); search.oninput = function(){ renderList(search.value); };
+    div.appendChild(list);
+
+    // Footer Limpiar / Aplicar
+    var footer = document.createElement("div");
+    footer.style.cssText = "display:flex;gap:6px;padding:8px;border-top:1px solid #e5e7eb;";
+    var btnL = document.createElement("button"); btnL.textContent = "Limpiar";
+    btnL.style.cssText = "flex:1;padding:5px 0;border:1px solid #d1d5db;border-radius:4px;background:#f9fafb;color:#6b7280;cursor:pointer;font-size:.8rem;";
+    btnL.onclick = function() {
+        _xlPending[field] = new Set(allRaws);
+        delete _xlApplied[field];
+        _xlUpdateBtnState(field); _xlApplyAll(); _xlCloseDropdown();
+    };
+    var btnA = document.createElement("button"); btnA.textContent = "Aplicar";
+    btnA.style.cssText = "flex:1;padding:5px 0;border:none;border-radius:4px;background:#00b8c9;color:#fff;cursor:pointer;font-size:.8rem;font-weight:600;";
+    btnA.onclick = function() {
+        _xlApplied[field] = new Set(_xlPending[field]);
+        _xlUpdateBtnState(field); _xlApplyAll(); _xlCloseDropdown();
+    };
+    footer.appendChild(btnL); footer.appendChild(btnA);
+    div.appendChild(footer);
+
+    document.body.appendChild(div);
+    _xlDropdown = div;
+    setTimeout(function() {
+        document.addEventListener("click", function closeDD(e) {
+            if (!div.contains(e.target) && !e.target.classList.contains("xl-fb")) {
+                _xlCloseDropdown();
+                document.removeEventListener("click", closeDD);
+            }
+        });
+    }, 80);
+}
+
+function _xlTitle(cell) {
+    var field = cell.getColumn().getField();
+    var title = cell.getValue();
+    return '<span class="xl-title-wrap" data-field="'+field+'">'+
+        '<span>'+title+'</span>'+
+        '<button class="xl-fb" data-field="'+field+'" title="Filtrar" type="button">▼</button>'+
+        '</span>';
+}
+
 const tabla = new Tabulator("#dnTable", {
     data: filas,
     layout: "fitDataStretch",
@@ -424,49 +595,49 @@ const tabla = new Tabulator("#dnTable", {
     columns: [
         {
             title: "Fecha", field: "fecha", frozen: true, width: 110,
+            titleFormatter: _xlTitle,
             formatter: function(cell) {
                 return '<span class="dn-badge-fecha">' + fmtFecha(cell.getValue()) + '</span>';
             },
-            headerFilter: true,
         },
-        { title: "Contrato",        field: "contrato",       minWidth: 220, headerFilter: true, tooltip: true },
+        { title: "Contrato",        field: "contrato",       minWidth: 220, titleFormatter: _xlTitle, tooltip: true },
         {
-            title: "Recurso", field: "recurso", width: 130,
+            title: "Recurso", field: "recurso", width: 130, titleFormatter: _xlTitle,
             formatter: function(cell) {
-                const v = cell.getValue();
+                var v = cell.getValue();
                 return v ? '<span class="dn-badge-recurso">'+v+'</span>' : '—';
             }
         },
-        { title: "Placa",           field: "placa",          width: 90  },
-        { title: "OT",              field: "orden_trabajo",  width: 110, headerFilter: true },
-        { title: "Tipo Actividad",  field: "tipo_actividad", minWidth: 150, headerFilter: true },
+        { title: "Placa",           field: "placa",          width: 90,  titleFormatter: _xlTitle },
+        { title: "OT",              field: "orden_trabajo",  width: 110, titleFormatter: _xlTitle },
+        { title: "Tipo Actividad",  field: "tipo_actividad", minWidth: 150, titleFormatter: _xlTitle },
         {
-            title: "Tipo Cuadrilla", field: "tipo_cuadrilla", minWidth: 140, headerFilter: true,
-            formatter: function(cell) { const v=cell.getValue(); return v ? '<strong>'+v+'</strong>' : '—'; }
+            title: "Tipo Cuadrilla", field: "tipo_cuadrilla", minWidth: 140, titleFormatter: _xlTitle,
+            formatter: function(cell) { var v=cell.getValue(); return v ? '<strong>'+v+'</strong>' : '—'; }
         },
-        { title: "Cédula 1",  field: "cedula_1",  width: 115, headerFilter: true },
+        { title: "Cédula 1",  field: "cedula_1",  width: 115, titleFormatter: _xlTitle },
         {
-            title: "Nombre", field: "nombre_1", minWidth: 200, headerFilter: true,
-            formatter: function(cell) { const v=cell.getValue(); return v ? '<span class="dn-nombre">'+v+'</span>' : '—'; }
+            title: "Nombre", field: "nombre_1", minWidth: 200, titleFormatter: _xlTitle,
+            formatter: function(cell) { var v=cell.getValue(); return v ? '<span class="dn-nombre">'+v+'</span>' : '—'; }
         },
-        { title: "Cédula 2",  field: "cedula_2",  width: 115 },
-        { title: "Cédula 3",  field: "cedula_3",  width: 115 },
-        { title: "Cédula 4",  field: "cedula_4",  width: 115 },
-        { title: "Cédula 5",  field: "cedula_5",  width: 115 },
+        { title: "Cédula 2",  field: "cedula_2",  width: 115, titleFormatter: _xlTitle },
+        { title: "Cédula 3",  field: "cedula_3",  width: 115, titleFormatter: _xlTitle },
+        { title: "Cédula 4",  field: "cedula_4",  width: 115, titleFormatter: _xlTitle },
+        { title: "Cédula 5",  field: "cedula_5",  width: 115, titleFormatter: _xlTitle },
         {
-            title: "Latitud", field: "latitud", width: 120,
-            formatter: function(cell) { const v=cell.getValue(); return v ? String(v).replace(".", ",") : ""; }
+            title: "Latitud", field: "latitud", width: 120, titleFormatter: _xlTitle,
+            formatter: function(cell) { var v=cell.getValue(); return v ? String(v).replace(".", ",") : ""; }
         },
         {
-            title: "Longitud", field: "longitud", width: 120,
-            formatter: function(cell) { const v=cell.getValue(); return v ? String(v).replace(".", ",") : ""; }
+            title: "Longitud", field: "longitud", width: 120, titleFormatter: _xlTitle,
+            formatter: function(cell) { var v=cell.getValue(); return v ? String(v).replace(".", ",") : ""; }
         },
-        { title: "Duración (min)", field: "duracion_actividad", width: 120, hozAlign: "right" },
-        { title: "Observación",    field: "observacion",        minWidth: 200, tooltip: true },
+        { title: "Duración (min)", field: "duracion_actividad", width: 120, hozAlign: "right", titleFormatter: _xlTitle },
+        { title: "Observación",    field: "observacion",        minWidth: 200, tooltip: true, titleFormatter: _xlTitle },
         {
-            title: "Origen", field: "origen", width: 120,
+            title: "Origen", field: "origen", width: 120, titleFormatter: _xlTitle,
             formatter: function(cell) {
-                const v = (cell.getValue() || "").toLowerCase();
+                var v = (cell.getValue() || "").toLowerCase();
                 return v === "gps_monitor"
                     ? '<span class="badge-origen-gps">GPS Monitor</span>'
                     : '<span class="badge-origen-manual">Manual</span>';
@@ -475,22 +646,36 @@ const tabla = new Tabulator("#dnTable", {
     ]
 });
 
-// Actualizar contador
-tabla.on("dataFiltered", function(filters, rows) {
-    const el = document.getElementById("totalRegistros");
-    if (el) el.textContent = rows.length;
-});
+// Adjuntar listeners ▼ después de que la tabla renderice
 tabla.on("tableBuilt", function() {
-    const el = document.getElementById("totalRegistros");
+    var el = document.getElementById("totalRegistros");
     if (el) el.textContent = tabla.getDataCount();
+    document.querySelectorAll(".xl-fb").forEach(function(btn) {
+        btn.addEventListener("click", function(e) {
+            e.stopPropagation();
+            var field = this.getAttribute("data-field");
+            if (_xlOpenField === field) { _xlCloseDropdown(); return; }
+            _xlOpenDropdown(field, this);
+        });
+    });
 });
 
-// Filtro contrato client-side
+// Actualizar contador
+tabla.on("dataFiltered", function(filters, rows) {
+    var el = document.getElementById("totalRegistros");
+    if (el) el.textContent = rows.length;
+});
+
+// Filtro contrato client-side (complementa el filtro Excel de columnas)
 selContrato.addEventListener('change', function() {
     if (this.value) {
-        tabla.setFilter('contrato', '=', this.value);
+        _xlApplied['contrato'] = new Set([this.value]);
+        _xlUpdateBtnState('contrato');
+        _xlApplyAll();
     } else {
-        tabla.clearFilter();
+        delete _xlApplied['contrato'];
+        _xlUpdateBtnState('contrato');
+        _xlApplyAll();
     }
 });
 
