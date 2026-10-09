@@ -293,6 +293,8 @@ def distribucion_neo():
 @login_required
 def home_neo():
     u = current_user
+    if u.rol.lower() not in ("neo", "admin"):
+        abort(403)
     es_admin = u.rol.lower() == "admin"
     dash = es_admin or u.acceso_dashboard
 
@@ -1371,5 +1373,103 @@ def neo_distribucion_importar_excel():
 @login_required
 def preoperacionales_neo():
     if not current_user.tiene_permiso("preoperacionales"):
-        return redirect(url_for("neo.home"))
+        return redirect(url_for("neo.home_neo"))
     return render_template("coordinador/preoperacionales.html")
+
+
+# =====================================
+# HOME ROLES AUXILIARES
+# =====================================
+
+@neo.route("/home")
+@login_required
+def home_otros():
+    """Home genérico para roles sin dashboard propio (administrativo, analista, sst, etc.)."""
+    u = current_user
+    rol = u.rol.lower()
+    # Si el rol tiene un home específico, redirigir
+    if rol == "admin":
+        return redirect(url_for("admin_bp.dashboard"))
+    if rol == "coordinador":
+        return redirect(url_for("coordinador.dashboard_coordinador"))
+    if rol == "neo":
+        return redirect(url_for("neo.home_neo"))
+    if rol == "director":
+        return redirect(url_for("dashboard.director"))
+    if rol == "supervisor":
+        return redirect(url_for("coordinador.dashboard_supervisor"))
+    if rol == "gerente":
+        return redirect(url_for("dashboard.dashboards_hub"))
+
+    es_admin = False
+    groups = []
+
+    # Módulos según permisos asignados individualmente
+    rep_items = []
+    if u.tiene_permiso("neo_reportes"):
+        rep_items.append({"label": "Panel de Reportes NEO", "icon": "bi-clipboard-data-fill",
+                           "url": url_for("coordinador.panel_reportes"),
+                           "desc": "Valide y gestione reportes operacionales"})
+    if rep_items:
+        groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin",
+                        "tint": "#0891B2", "links": rep_items})
+
+    he_items = []
+    if u.tiene_permiso("horas_extras"):
+        he_items.append({"label": "Registro / Validación", "icon": "bi-pencil-square",
+                          "url": "/horas-extras", "desc": "Ingreso y validación de horas extras"})
+    if u.tiene_permiso("dashboard_he"):
+        he_items.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill",
+                          "url": url_for("he_bp.he_dashboard"),
+                          "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
+    if he_items:
+        groups.append({"name": "Horas Extras", "icon": "bi-clock-history",
+                        "tint": "#8B5CF6", "links": he_items})
+
+    if u.tiene_permiso("indicadores"):
+        groups.append({"name": "Dashboards", "icon": "bi-bar-chart-line-fill",
+                        "tint": "#0891B2", "links": [
+                            {"label": "Indicadores", "icon": "bi-speedometer2",
+                             "url": url_for("dashboard.indicadores"),
+                             "desc": "Dashboard gerencial de KPIs"}
+                        ]})
+
+    seg_items = []
+    if u.tiene_permiso("bi_seguimiento"):
+        seg_items.append({"label": "Archivo de Seguimiento", "icon": "bi-folder2-open",
+                           "url": url_for("coordinador.bi_seguimiento"),
+                           "desc": "Informe operacional de seguimiento (Power BI)"})
+    if u.tiene_permiso("semaforo"):
+        seg_items.append({"label": "Semáforo (calificar)", "icon": "bi-stoplights-fill",
+                           "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Registra calificaciones de actividades por contrato"})
+    if u.tiene_permiso("semaforo_dashboard"):
+        seg_items.append({"label": "Semáforo Dashboard", "icon": "bi-bar-chart-steps",
+                           "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Visualiza el estado del semáforo sin calificar"})
+    if seg_items:
+        groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data",
+                        "tint": "#16A34A", "links": seg_items})
+
+    if u.tiene_permiso("gps"):
+        groups.append({"name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
+                        "links": [{"label": "Rastrear", "icon": "bi-map",
+                                   "url": "https://plataforma.sistemagps.online/ui/map/objects",
+                                   "ext": True, "desc": "Mapa de vehículos en vivo"}]})
+
+    if not groups:
+        groups.append({"name": "Sin módulos asignados", "icon": "bi-info-circle",
+                        "tint": "#6B7280", "links": [
+                            {"label": "Contacte al administrador", "icon": "bi-person-lock",
+                             "url": "#", "desc": "Su cuenta no tiene módulos habilitados aún"}
+                        ]})
+
+    return render_template(
+        "portal/home.html",
+        page_title="Inicio",
+        page_desc="Panel de acceso según permisos asignados",
+        intro_title=f"Hola, {u.nombre_completo}",
+        intro_sub="Tus módulos disponibles",
+        groups=groups,
+        home_endpoint=None,
+    )

@@ -45,12 +45,13 @@ def _redirect_por_rol(user: User):
     if rol == "neo":
         return redirect(url_for("neo.home_neo"))
     if rol == "director":
-        return redirect(url_for("coordinador.dashboard_coordinador"))
+        return redirect(url_for("dashboard.director"))
     if rol == "supervisor":
         return redirect(url_for("coordinador.dashboard_supervisor"))
     if rol == "gerente":
         return redirect(url_for("dashboard.dashboards_hub"))
-    return redirect("/")
+    # Roles auxiliares (administrativo, analista, sst, etc.)
+    return redirect(url_for("neo.home_otros"))
 
 
 # ── LOGIN ─────────────────────────────────────────────────────────────────────

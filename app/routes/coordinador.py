@@ -132,6 +132,8 @@ def formatear_coordenada(valor, posicion_coma):
 @login_required
 def dashboard_coordinador():
     u = current_user
+    if u.rol.lower() not in ("coordinador", "admin"):
+        abort(403)
     es_admin = u.rol.lower() == "admin"
     dash = es_admin or u.acceso_dashboard
     groups = []
