@@ -167,8 +167,13 @@ def dashboard_coordinador():
         seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("coordinador.preoperacionales"),
                            "desc": "Cumplimiento, estado de vehículos y placas"})
     if es_admin or u.tiene_permiso("semaforo"):
-        seg_items.append({"label": "Semáforo", "icon": "bi-stoplights-fill", "url": url_for("coordinador.semaforo_dashboard"),
-                           "desc": "Estado de actividades por contrato"})
+        seg_items.append({"label": "Semáforo (calificar)", "icon": "bi-stoplights-fill",
+                           "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Registra calificaciones de actividades por contrato"})
+    if u.tiene_permiso("semaforo_dashboard"):
+        seg_items.append({"label": "Semáforo Dashboard", "icon": "bi-bar-chart-steps",
+                           "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Visualiza el estado del semáforo sin calificar"})
     if seg_items:
         groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
 
@@ -184,13 +189,14 @@ def dashboard_coordinador():
         ],
     })
 
-    groups.append({
-        "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
-        "links": [
-            {"label": "Rastrear", "icon": "bi-map", "url": "https://plataforma.sistemagps.online/ui/map/objects",
-             "ext": True, "desc": "Mapa de vehículos en vivo"},
-        ],
-    })
+    if es_admin or u.tiene_permiso("gps"):
+        groups.append({
+            "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
+            "links": [
+                {"label": "Rastrear", "icon": "bi-map", "url": "https://plataforma.sistemagps.online/ui/map/objects",
+                 "ext": True, "desc": "Mapa de vehículos en vivo"},
+            ],
+        })
 
     return render_template(
         "portal/home.html",
@@ -237,8 +243,13 @@ def dashboard_supervisor():
         seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("coordinador.preoperacionales"),
                            "desc": "Cumplimiento, estado de vehículos y placas"})
     if u.tiene_permiso("semaforo"):
-        seg_items.append({"label": "Semáforo", "icon": "bi-stoplights-fill", "url": url_for("coordinador.semaforo_dashboard"),
-                           "desc": "Estado de actividades por contrato"})
+        seg_items.append({"label": "Semáforo (calificar)", "icon": "bi-stoplights-fill",
+                           "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Registra calificaciones de actividades por contrato"})
+    if u.tiene_permiso("semaforo_dashboard"):
+        seg_items.append({"label": "Semáforo Dashboard", "icon": "bi-bar-chart-steps",
+                           "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Visualiza el estado del semáforo sin calificar"})
     if seg_items:
         groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
 
@@ -259,6 +270,15 @@ def dashboard_supervisor():
              "desc": "Compromisos pendientes y atrasados"},
         ],
     })
+
+    if u.tiene_permiso("gps"):
+        groups.append({
+            "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
+            "links": [
+                {"label": "Rastrear", "icon": "bi-map", "url": "https://plataforma.sistemagps.online/ui/map/objects",
+                 "ext": True, "desc": "Mapa de vehículos en vivo"},
+            ],
+        })
 
     return render_template(
         "portal/home.html",
@@ -988,8 +1008,10 @@ def marcar_revision_reunion(id):
 @coordinador.route("/coordinador/semaforo-dashboard")
 @login_required
 def semaforo_dashboard():
-    rol = current_user.rol.lower()
-    if rol not in ("admin", "coordinador", "supervisor", "director"):
+    u = current_user
+    rol = u.rol.lower()
+    if rol not in ("admin", "coordinador", "supervisor", "director", "neo") \
+            and not u.tiene_permiso("semaforo") and not u.tiene_permiso("semaforo_dashboard"):
         return redirect(url_for("auth.login"))
     return render_template("coordinador/semaforo_dashboard.html")
 

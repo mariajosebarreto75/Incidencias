@@ -338,8 +338,25 @@ def home_neo():
     if u.tiene_permiso("preoperacionales") or dash:
         seg_items.append({"label": "Preoperacionales", "icon": "bi-clipboard-check-fill", "url": url_for("neo.preoperacionales_neo"),
                            "desc": "Cumplimiento, estado de vehículos y placas"})
+    if u.tiene_permiso("semaforo"):
+        seg_items.append({"label": "Semáforo (calificar)", "icon": "bi-stoplights-fill",
+                           "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Registra calificaciones de actividades por contrato"})
+    if u.tiene_permiso("semaforo_dashboard"):
+        seg_items.append({"label": "Semáforo Dashboard", "icon": "bi-bar-chart-steps",
+                           "url": url_for("coordinador.semaforo_dashboard"),
+                           "desc": "Visualiza el estado del semáforo sin calificar"})
     if seg_items:
         groups.append({"name": "Seguimiento y Calidad", "icon": "bi-clipboard2-data", "tint": "#16A34A", "links": seg_items})
+
+    if u.tiene_permiso("gps") or es_admin:
+        groups.append({
+            "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
+            "links": [
+                {"label": "Rastrear", "icon": "bi-map", "url": "https://plataforma.sistemagps.online/ui/map/objects",
+                 "ext": True, "desc": "Mapa de vehículos en vivo"},
+            ],
+        })
 
     groups.append({
         "name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706",
