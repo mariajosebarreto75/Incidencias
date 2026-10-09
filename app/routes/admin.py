@@ -235,27 +235,32 @@ def api_eliminar_contrato(id):
 # USUARIOS
 # ============================================================
 
+_ROLES_PRINCIPALES = {"neo", "admin", "coordinador", "supervisor", "director", "gerente"}
+_ROLES_OTROS = ["administrativo", "analista", "sst", "auxiliar", "otro"]
+
+
 @admin_bp.route("/usuarios")
 @admin_required
 def usuarios():
-    """Lista todos los usuarios que no son NEO ni admin con sus contratos asignados."""
+    """Otros usuarios: roles administrativos (no operativos)."""
     lista = User.query.filter(
-        ~User.rol.in_(["neo", "admin"])
+        User.rol.in_(_ROLES_OTROS)
     ).order_by(User.rol, User.nombre_completo).all()
     contratos = Contrato.query.order_by(Contrato.contrato).all()
 
-    asignados_por_usuario = {}
-    for u in lista:
-        asignados_por_usuario[u.id] = {
-            uc.contrato for uc in
-            UserContrato.query.filter_by(user_id=u.id).all()
-        }
+    asignados_por_usuario = {
+        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
+        for u in lista
+    }
 
-    roles = ["coordinador", "director", "gerente"]
-    return render_template("admin/usuarios.html",
+    return render_template("admin/usuarios_tipo.html",
                            usuarios=lista, contratos=contratos,
                            asignados_por_usuario=asignados_por_usuario,
-                           roles=roles)
+                           titulo="Otros usuarios",
+                           rol_nuevo="administrativo",
+                           roles_disponibles=_ROLES_OTROS,
+                           icono="bi-people",
+                           color_acento="#64748b")
 
 
 @admin_bp.route("/neo-usuarios")

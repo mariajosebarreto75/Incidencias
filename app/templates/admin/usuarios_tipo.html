@@ -101,7 +101,7 @@
         <h1 class="adm-page-title">
             <i class="bi {{ icono }} me-2" style="color:{{ color_acento }}"></i>{{ titulo }}
         </h1>
-        <p class="adm-page-sub">{{ usuarios|length }} usuario(s) con rol <strong>{{ rol_nuevo }}</strong></p>
+        <p class="adm-page-sub">{{ usuarios|length }} usuario(s){% if roles_disponibles is not defined %} con rol <strong>{{ rol_nuevo }}</strong>{% endif %}</p>
     </div>
 </div>
 
@@ -270,14 +270,14 @@
 {% else %}
 <div style="text-align:center;padding:3rem;color:#475569">
     <i class="bi bi-inbox" style="font-size:2rem"></i>
-    <p class="mt-2">No hay usuarios con rol <strong>{{ rol_nuevo }}</strong> aún</p>
+    <p class="mt-2">No hay usuarios {% if roles_disponibles is defined %}en esta categoría{% else %}con rol <strong>{{ rol_nuevo }}</strong>{% endif %} aún</p>
 </div>
 {% endfor %}
 
 <!-- ───── CREAR USUARIO ───── -->
 <div class="nu-create-card">
     <div class="nu-create-title">
-        <i class="bi bi-person-plus" style="color:{{ color_acento }}"></i> Crear nuevo usuario {{ rol_nuevo }}
+        <i class="bi bi-person-plus" style="color:{{ color_acento }}"></i> Crear nuevo usuario {% if roles_disponibles is not defined %}{{ rol_nuevo }}{% endif %}
     </div>
     <div id="alertaCreate" class="adm-alert"></div>
     <div class="nu-form-grid">
@@ -293,10 +293,19 @@
             <div class="nu-form-label">Contraseña *</div>
             <input id="newPassword" type="password" class="nu-input" placeholder="Mínimo 4 caracteres" autocomplete="new-password">
         </div>
-        <div style="display:flex;align-items:flex-end;">
+        <div>
+            <div class="nu-form-label">Rol *</div>
+            {% if roles_disponibles is defined %}
+            <select id="newRol" class="nu-input">
+                {% for r in roles_disponibles %}
+                <option value="{{ r }}">{{ r | capitalize }}</option>
+                {% endfor %}
+            </select>
+            {% else %}
             <div style="font-size:.75rem;color:#64748b;padding:.5rem .75rem;background:#0f172a;border:1px solid #1e293b;border-radius:8px;width:100%;">
                 Rol: <strong style="color:{{ color_acento }}">{{ rol_nuevo }}</strong>
             </div>
+            {% endif %}
         </div>
         <div class="col-full">
             <div class="nu-form-label">Contratos asignados</div>
@@ -464,10 +473,13 @@ async function crearUsuario() {
         return;
     }
 
+    const selRol = document.getElementById('newRol');
+    const rol = selRol ? selRol.value : ROL_NUEVO;
+
     const r = await apiFetch('/admin/api/usuarios', 'POST', {
         username: username,
         nombre_completo: nombre,
-        rol: ROL_NUEVO,
+        rol: rol,
         password: password,
         contrato: null
     });
