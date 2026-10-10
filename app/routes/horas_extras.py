@@ -670,11 +670,15 @@ def api_he_actualizar_lote():
 @he_bp.route("/api/he/<int:id>", methods=["GET"])
 @login_required
 def api_he_get(id):
-    he = HoraExtra.query.get_or_404(id)
-    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
-        if he.contrato_id not in _ids_contratos_usuario():
-            return jsonify({"ok": False, "msg": "No autorizado"}), 403
-    return jsonify({"ok": True, "registro": he.to_dict()})
+    try:
+        he = HoraExtra.query.get_or_404(id)
+        if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+            if he.contrato_id not in _ids_contratos_usuario():
+                return jsonify({"ok": False, "msg": "No autorizado"}), 403
+        return jsonify({"ok": True, "registro": he.to_dict()})
+    except Exception as e:
+        import traceback
+        return jsonify({"ok": False, "error": str(e), "trace": traceback.format_exc()}), 500
 
 
 # ── API: actualizar registro (coordinador puede editar PENDIENTE) ─────────────

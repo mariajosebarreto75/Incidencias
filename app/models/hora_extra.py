@@ -104,4 +104,5 @@ class HoraExtra(db.Model):
             "retroalimentacion":  self.retroalimentacion or "",
             "evidencia_neo":      self.evidencia_neo or "",
             "evidencia_consiliacion": self.evidencia_consiliacion or "",
+            "corte_id":           self.corte_id,
         }
