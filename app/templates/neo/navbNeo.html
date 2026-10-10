@@ -19,11 +19,217 @@
 
 <body>
 
+    <!-- NAV DRAWER OVERLAY -->
+    <div id="neoNavOverlay" onclick="neoNavClose()"
+         style="display:none;position:fixed;inset:0;z-index:1045;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);"></div>
+
+    <!-- NAV DRAWER PANEL -->
+    <div id="neoNavDrawer" style="
+         position:fixed;top:0;left:-300px;bottom:0;width:280px;z-index:1050;
+         background:#fff;display:flex;flex-direction:column;
+         box-shadow:4px 0 24px rgba(0,0,0,.18);
+         transition:left .26s cubic-bezier(.4,0,.2,1);">
+
+        <!-- Drawer header -->
+        <div style="background:#0D3B3E;padding:16px;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+            <img src="{{ url_for('static', filename='img/img2.png') }}" alt="NEO" height="34"
+                 style="filter:brightness(0) invert(1);opacity:.9;">
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:.9rem;font-weight:800;color:#fff;letter-spacing:.5px;">NEO</div>
+                <div style="font-size:.65rem;color:rgba(255,255,255,.55);">Plataforma Operativa</div>
+            </div>
+            <button onclick="neoNavClose()"
+                    style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.8);
+                           border-radius:8px;padding:5px 8px;cursor:pointer;font-size:.9rem;line-height:1;">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Usuario -->
+        {% if current_user.is_authenticated %}
+        <div style="padding:14px 16px 12px;border-bottom:1px solid #E8EDED;">
+            {% set _p = current_user.nombre_completo.split() %}
+            {% set _av = (_p[0][0] ~ (_p[-1][0] if _p|length > 1 else '')) | upper %}
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:38px;height:38px;border-radius:50%;background:#0B6E75;color:#fff;
+                            font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    {{ _av }}
+                </div>
+                <div style="min-width:0;">
+                    <div style="font-size:.8rem;font-weight:700;color:#1A2E30;line-height:1.2;
+                                overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        {{ current_user.nombre_completo }}
+                    </div>
+                    <span style="display:inline-flex;align-items:center;gap:4px;margin-top:3px;
+                                 padding:2px 7px;background:#E6F4F5;color:#0B6E75;
+                                 border-radius:5px;font-size:.62rem;font-weight:700;text-transform:uppercase;">
+                        <i class="bi bi-shield-fill-check"></i>{{ current_user.rol | upper }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Links de navegación -->
+        <nav style="flex:1;overflow-y:auto;padding:8px 0;">
+            <div style="padding:4px 14px 2px;">
+                <div style="font-size:.62rem;font-weight:800;color:#7A9496;text-transform:uppercase;letter-spacing:.8px;">
+                    Reportar y Operación
+                </div>
+            </div>
+            <a href="{{ url_for('neo.home_neo') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;
+                      transition:background .15s,color .15s;">
+                <i class="bi bi-house" style="font-size:.9rem;color:#0B6E75;"></i>Inicio
+            </a>
+            <a href="{{ url_for('neo.panel_reportes') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;
+                      transition:background .15s,color .15s;">
+                <i class="bi bi-clipboard2-pulse-fill" style="font-size:.9rem;color:#0B6E75;"></i>Reportar
+            </a>
+            <a href="{{ url_for('neo.validar_reportes') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;
+                      transition:background .15s,color .15s;">
+                <i class="bi bi-patch-check-fill" style="font-size:.9rem;color:#0B6E75;"></i>Validar Reportes
+            </a>
+            <a href="{{ url_for('neo.distribucion_neo') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;
+                      transition:background .15s,color .15s;">
+                <i class="bi bi-table" style="font-size:.9rem;color:#0B6E75;"></i>Distribución Operativa
+            </a>
+
+            {% if current_user.tiene_permiso('indicadores') or current_user.rol.lower() in ('neo','admin') %}
+            <a href="{{ url_for('dashboard.indicadores') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;
+                      transition:background .15s,color .15s;">
+                <i class="bi bi-speedometer2" style="font-size:.9rem;color:#0B6E75;"></i>Indicadores
+            </a>
+            {% endif %}
+
+            {% if current_user.tiene_permiso('horas_extras') or current_user.rol.lower() == 'admin' %}
+            <div style="padding:10px 14px 2px;margin-top:4px;border-top:1px solid #E8EDED;">
+                <div style="font-size:.62rem;font-weight:800;color:#7A9496;text-transform:uppercase;letter-spacing:.8px;">
+                    Horas Extras
+                </div>
+            </div>
+            <a href="/horas-extras"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;
+                      transition:background .15s,color .15s;">
+                <i class="bi bi-clock-history" style="font-size:.9rem;color:#7C3AED;"></i>Registro / Validación
+            </a>
+            {% endif %}
+            {% if current_user.tiene_permiso('dashboard_he') or current_user.acceso_dashboard or current_user.rol.lower() in ('neo','admin') %}
+            <a href="{{ url_for('he_bp.he_dashboard') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;
+                      transition:background .15s,color .15s;">
+                <i class="bi bi-bar-chart-line-fill" style="font-size:.9rem;color:#7C3AED;"></i>Dashboard HE
+            </a>
+            {% endif %}
+
+            {% if current_user.tiene_permiso('semaforo') or current_user.tiene_permiso('semaforo_dashboard') or current_user.tiene_permiso('bi_seguimiento') or current_user.tiene_permiso('preoperacionales') %}
+            <div style="padding:10px 14px 2px;margin-top:4px;border-top:1px solid #E8EDED;">
+                <div style="font-size:.62rem;font-weight:800;color:#7A9496;text-transform:uppercase;letter-spacing:.8px;">
+                    Seguimiento y Calidad
+                </div>
+            </div>
+            {% if current_user.tiene_permiso('bi_seguimiento') %}
+            <a href="{{ url_for('coordinador.bi_seguimiento') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;">
+                <i class="bi bi-folder2-open" style="font-size:.9rem;color:#16A34A;"></i>Archivo Seguimiento
+            </a>
+            {% endif %}
+            {% if current_user.tiene_permiso('semaforo') %}
+            <a href="{{ url_for('admin_bp.semaforo') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;">
+                <i class="bi bi-stoplights-fill" style="font-size:.9rem;color:#16A34A;"></i>Semáforo (calificar)
+            </a>
+            {% endif %}
+            {% if current_user.tiene_permiso('semaforo_dashboard') %}
+            <a href="{{ url_for('coordinador.semaforo_dashboard') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;">
+                <i class="bi bi-bar-chart-steps" style="font-size:.9rem;color:#16A34A;"></i>Semáforo Dashboard
+            </a>
+            {% endif %}
+            {% if current_user.tiene_permiso('preoperacionales') %}
+            <a href="{{ url_for('neo.preoperacionales_neo') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;">
+                <i class="bi bi-clipboard-check-fill" style="font-size:.9rem;color:#16A34A;"></i>Preoperacionales
+            </a>
+            {% endif %}
+            {% endif %}
+
+            {% if current_user.tiene_permiso('compromisos_agenda') or current_user.tiene_permiso('compromisos_checklist') or current_user.tiene_permiso('compromisos_reuniones') or current_user.rol.lower() in ('neo','admin') %}
+            <div style="padding:10px 14px 2px;margin-top:4px;border-top:1px solid #E8EDED;">
+                <div style="font-size:.62rem;font-weight:800;color:#7A9496;text-transform:uppercase;letter-spacing:.8px;">
+                    Compromisos
+                </div>
+            </div>
+            {% if current_user.tiene_permiso('compromisos_reuniones') or current_user.rol.lower() in ('neo','admin') %}
+            <a href="{{ url_for('compromisos.reuniones') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;">
+                <i class="bi bi-calendar3" style="font-size:.9rem;color:#D97706;"></i>Reuniones
+            </a>
+            {% endif %}
+            {% if current_user.tiene_permiso('compromisos_checklist') or current_user.rol.lower() in ('neo','admin') %}
+            <a href="{{ url_for('compromisos.checklist') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;">
+                <i class="bi bi-list-check" style="font-size:.9rem;color:#D97706;"></i>Checklist
+            </a>
+            {% endif %}
+            {% if current_user.tiene_permiso('compromisos_agenda') or current_user.rol.lower() in ('neo','admin') %}
+            <a href="{{ url_for('compromisos.lista') }}"
+               style="display:flex;align-items:center;gap:10px;padding:9px 16px;
+                      color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;">
+                <i class="bi bi-journal-check" style="font-size:.9rem;color:#D97706;"></i>Agenda
+            </a>
+            {% endif %}
+            {% endif %}
+        </nav>
+
+        <!-- Logout -->
+        <div style="padding:12px 16px;border-top:1px solid #E8EDED;flex-shrink:0;">
+            <a href="{{ url_for('auth.logout') }}"
+               style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;
+                      color:#c0392b;font-size:.82rem;font-weight:600;text-decoration:none;
+                      transition:background .15s;">
+                <i class="bi bi-box-arrow-right"></i>Cerrar sesión
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <style>
+    #neoNavDrawer a:hover { background:#E6F4F5 !important; color:#0B6E75 !important; }
+    #neoNavDrawer a:hover i { color:#0B6E75 !important; }
+    #neoNavDrawer.open { left:0 !important; }
+    </style>
+
     <!-- NAVBAR NEO -->
 
     <nav class="navbar navbar-expand-lg navbar-neo">
 
         <div class="container-fluid px-4">
+
+            <!-- Botón menú lateral -->
+            <button onclick="neoNavOpen()"
+                    style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+                           border-radius:8px;color:#fff;padding:6px 10px;font-size:1rem;
+                           cursor:pointer;margin-right:8px;transition:background .15s;flex-shrink:0;"
+                    title="Menú de navegación">
+                <i class="bi bi-layout-sidebar"></i>
+            </button>
 
             <!-- BRAND -->
             <a class="navbar-brand d-flex align-items-center gap-2"
@@ -31,8 +237,8 @@
 
                 <div style="background:rgba(255,255,255,.12);border-radius:10px;padding:4px 6px;display:flex;align-items:center;">
                     <img src="{{ url_for('static', filename='img/img2.png') }}"
-                         alt="NEO" height="40"
-                         style="filter:drop-shadow(0 2px 8px rgba(0,184,201,.5));display:block;">
+                         alt="NEO" height="38"
+                         style="filter:brightness(0) invert(1);opacity:.9;display:block;">
                 </div>
 
                 <div style="width:1px;height:32px;background:rgba(255,255,255,.2);margin:0 2px;flex-shrink:0;"></div>
@@ -560,6 +766,21 @@
 
     {% endif %}
 
+    <!-- ══ NAV DRAWER JS ═══════════════════════════════════════ -->
+    <script>
+    function neoNavOpen() {
+        document.getElementById('neoNavDrawer').classList.add('open');
+        document.getElementById('neoNavOverlay').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+    function neoNavClose() {
+        document.getElementById('neoNavDrawer').classList.remove('open');
+        document.getElementById('neoNavOverlay').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    // Cerrar con ESC
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') neoNavClose(); });
+    </script>
 
 </body>
 

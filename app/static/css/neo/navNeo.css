@@ -1,8 +1,8 @@
 /* ===== VARIABLES NEO ===== */
 :root {
-    --neo-teal:  #00b8c9;
-    --neo-dark:  #005f6b;
-    --neo-bg:    #f4f8fa;
+    --neo-teal:  #0B6E75;
+    --neo-dark:  #0D3B3E;
+    --neo-bg:    #F4F6F6;
 }
 
 /* ===== BODY ===== */
@@ -13,9 +13,9 @@ body {
 
 /* ===== NAVBAR ===== */
 .navbar-neo {
-    background: linear-gradient(90deg, #005f6b, #00b8c9);
-    box-shadow: 0 3px 16px rgba(0, 95, 107, 0.35);
-    padding: 10px 0;
+    background: #0D3B3E;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    padding: 8px 0;
 }
 
 /* BRAND */

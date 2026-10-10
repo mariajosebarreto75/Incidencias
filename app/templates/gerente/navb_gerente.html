@@ -9,12 +9,12 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--accent:#0891B2;--accent-2:#0E7490;}
-body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;background:#F5F7FA;}
+:root{--accent:#0B6E75;--accent-2:#0D3B3E;}
+body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;background:#F4F6F6;}
 .ger-topbar{
-  background:linear-gradient(90deg,#005f6b,#00b8c9);
+  background:#0D3B3E;
   padding:0 24px;display:flex;align-items:center;gap:16px;height:56px;
-  box-shadow:0 2px 8px rgba(0,95,107,.35);
+  box-shadow:0 2px 12px rgba(0,0,0,.25);
 }
 .ger-topbar img{height:32px;filter:brightness(0) invert(1);opacity:.9;flex:none;}
 .ger-topbar-title{color:#fff;font-size:1rem;font-weight:700;font-family:"Manrope",system-ui,sans-serif;}
@@ -31,13 +31,15 @@ body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;background:#F5F7F
 <body>
 
 <div class="ger-topbar">
-  <img src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+  <img src="{{ url_for('static', filename='img/img2.png') }}" alt="NEO"
+       style="height:36px;filter:brightness(0) invert(1);opacity:.9;">
+  <div style="width:1px;height:28px;background:rgba(255,255,255,.2);flex-shrink:0;"></div>
   <div style="flex:1;min-width:0;">
-    <div class="ger-topbar-title">{% block topbar_title %}Compromisos{% endblock %}</div>
-    <div class="ger-topbar-sub">{{ current_user.nombre_completo }}</div>
+    <div class="ger-topbar-title">{% block topbar_title %}Panel{% endblock %}</div>
+    <div class="ger-topbar-sub">{{ current_user.nombre_completo }} · {{ current_user.rol | title }}</div>
   </div>
   <a href="{{ url_for('dashboard.dashboards_hub') }}" class="ger-btn">
-    <i class="bi bi-arrow-left"></i> Inicio
+    <i class="bi bi-house"></i> Inicio
   </a>
   <a href="{{ url_for('auth.logout') }}" class="ger-btn">
     <i class="bi bi-box-arrow-right"></i> Salir

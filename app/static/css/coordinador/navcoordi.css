@@ -1,9 +1,9 @@
 /* ===== VARIABLES COORDINADOR ===== */
 :root {
-    --coor-primary:  #00B7C7;
-    --coor-secondary: #007E92;
-    --coor-dark:     #1F2937;
-    --coor-bg:       #F4F7FA;
+    --coor-primary:  #0B6E75;
+    --coor-secondary: #0D3B3E;
+    --coor-dark:     #0D3B3E;
+    --coor-bg:       #F4F6F6;
 }
 
 /* ===== BODY ===== */
@@ -14,9 +14,9 @@ body {
 
 /* ===== NAVBAR ===== */
 .navbar-coor {
-    background: linear-gradient(90deg, #005f6b, #00b8c9);
-    box-shadow: 0 3px 16px rgba(0, 95, 107, 0.35);
-    padding: 10px 0;
+    background: #0D3B3E;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    padding: 8px 0;
 }
 
 /* BRAND */
