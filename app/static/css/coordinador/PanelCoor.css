@@ -8,7 +8,7 @@
     background: #fff;
     border-radius: 14px;
     padding: 22px 28px;
-    border-left: 5px solid #00B7C7;
+    border-left: 5px solid #0B6E75;
     box-shadow: 0 2px 12px rgba(0,0,0,.06);
 }
 
@@ -22,8 +22,8 @@
 .coor-rpt-sub { font-size: .83rem; color: #6c757d; margin: 0; }
 
 .badge-coor-total {
-    background: #e0f8fb;
-    color: #005f6b;
+    background: #E6F4F5;
+    color: #0D3B3E;
     border-radius: 20px;
     padding: 6px 14px;
     font-size: .80rem;
@@ -68,12 +68,12 @@
     display: inline-block;
 }
 
-.btn-contrato:hover  { background: #e0f0f2; border-color: #00B7C7; color: #005f6b; }
-.btn-contrato.active { background: #00B7C7; border-color: #00B7C7; color: #fff; }
+.btn-contrato:hover  { background: #e0f0f2; border-color: #0B6E75; color: #0D3B3E; }
+.btn-contrato.active { background: #0B6E75; border-color: #0B6E75; color: #fff; }
 
 .coor-contrato-unico {
-    background: #e0f8fb;
-    color: #005f6b;
+    background: #E6F4F5;
+    color: #0D3B3E;
     border-radius: 10px;
     padding: 8px 16px;
     font-size: .84rem;
@@ -122,14 +122,14 @@
 
 .filtro-input:focus {
     outline: none;
-    border-color: #00B7C7;
+    border-color: #0B6E75;
     box-shadow: 0 0 0 2px rgba(0,183,199,.12);
 }
 
 .filtro-acciones { display: flex; gap: 6px; align-items: flex-end; }
 
 .btn-filtro-aplicar {
-    background: #00B7C7;
+    background: #0B6E75;
     color: #fff;
     border: none;
     border-radius: 7px;
@@ -142,7 +142,7 @@
     white-space: nowrap;
 }
 
-.btn-filtro-aplicar:hover { background: #007E92; }
+.btn-filtro-aplicar:hover { background: #0D3B3E; }
 
 .btn-filtro-limpiar {
     background: #f0f4f6;
@@ -178,8 +178,8 @@
 
 .btn-filtro:hover,
 .btn-filtro.active {
-    background: #00B7C7;
-    border-color: #00B7C7;
+    background: #0B6E75;
+    border-color: #0B6E75;
     color: #fff;
 }
 
@@ -250,7 +250,7 @@
 .btn-ver-detalle {
     display: inline-flex;
     align-items: center;
-    background: #00B7C7;
+    background: #0B6E75;
     color: #fff;
     border-radius: 8px;
     padding: 5px 14px;
@@ -261,7 +261,7 @@
     white-space: nowrap;
 }
 
-.btn-ver-detalle:hover { background: #007E92; color: #fff; transform: translateY(-1px); }
+.btn-ver-detalle:hover { background: #0D3B3E; color: #fff; transform: translateY(-1px); }
 
 /* EMPTY STATE */
 .coor-empty {

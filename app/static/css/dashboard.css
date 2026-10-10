@@ -1,7 +1,7 @@
 :root {
-    --hesego-primary:   #00b8c9;
-    --hesego-secondary: #007d8a;
-    --hesego-dark:      #005f6b;
+    --hesego-primary:   #0B6E75;
+    --hesego-secondary: #0B6E75;
+    --hesego-dark:      #0D3B3E;
     --hesego-border:    #dce5ea;
     --green-primary:    #2e9e55;
     --green-dark:       #1f7a3e;
@@ -31,7 +31,7 @@
 
 .dash-logo {
     width: 84px;
-    filter: drop-shadow(0 2px 6px rgba(0, 184, 201, 0.2));
+    filter: drop-shadow(0 2px 6px rgba(11, 110, 117, 0.2));
 }
 
 /* ===== CARDS DE MÓDULO ===== */
@@ -52,7 +52,7 @@
 
 .dash-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 20px 50px rgba(0, 184, 201, 0.18);
+    box-shadow: 0 20px 50px rgba(11, 110, 117, 0.18);
     border-color: var(--hesego-primary);
 }
 
@@ -67,7 +67,7 @@
     width: 88px;
     height: 88px;
     border-radius: 22px;
-    background: linear-gradient(135deg, #e0f8fb, #b5eef4);
+    background: linear-gradient(135deg, #E6F4F5, #C5E7EA);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -81,7 +81,7 @@
     background: linear-gradient(135deg, var(--hesego-primary), var(--hesego-secondary));
     color: white;
     transform: scale(1.08);
-    box-shadow: 0 8px 24px rgba(0, 184, 201, 0.35);
+    box-shadow: 0 8px 24px rgba(11, 110, 117, 0.35);
 }
 
 .dash-card-icon--reportes {
@@ -129,7 +129,7 @@
 
 .dash-card:hover .dash-card-btn {
     background: var(--hesego-secondary);
-    box-shadow: 0 6px 16px rgba(0, 184, 201, 0.35);
+    box-shadow: 0 6px 16px rgba(11, 110, 117, 0.35);
     transform: translateY(-1px);
 }
 

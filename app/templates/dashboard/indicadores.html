@@ -17,9 +17,9 @@
   --ink:       #0D1B2E;
   --ink2:      #374B65;
   --muted:     #637794;
-  --cyan:      #0891B2;
+  --cyan:      #0B6E75;
   --cyan-soft: #E0F7FA;
-  --cyan-dk:   #0E7490;
+  --cyan-dk:   #0D3B3E;
   --green:     #059669;
   --green-s:   #D1FAE5;
   --red:       #DC2626;
@@ -54,7 +54,7 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
   cursor:pointer;text-decoration:none;transition:background .15s;white-space:nowrap;flex-shrink:0;
 }
 .hdr-btn:hover{background:rgba(255,255,255,.22);color:#fff}
-.hdr-btn.refresh{background:rgba(0,184,201,.2);border-color:rgba(0,184,201,.4)}
+.hdr-btn.refresh{background:rgba(11,110,117,.2);border-color:rgba(11,110,117,.4)}
 
 /* ─── FILTROS ────────────────────────────────────────────────── */
 .filter-bar{
@@ -131,7 +131,7 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
   font-family:"Inter",sans-serif;font-size:.8rem;font-weight:600;color:var(--muted);
   cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;
 }
-.tab-btn.active{background:var(--cyan);color:#fff;box-shadow:0 2px 8px rgba(8,145,178,.3)}
+.tab-btn.active{background:var(--cyan);color:#fff;box-shadow:0 2px 8px rgba(11,110,117,.3)}
 .tab-btn:hover:not(.active){background:var(--bg);color:var(--ink)}
 .tab-pane{display:none}
 .tab-pane.active{display:block}
@@ -261,8 +261,8 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
 .acc-matrix tr.acc-padre td.grp{font-weight:800;color:var(--ink);padding-top:10px}
 .acc-matrix tr.acc-hijo td.grp{padding-left:18px;font-weight:500;color:var(--ink2)}
 .acc-matrix tr.acc-hijo td{font-size:.72rem;padding:4px}
-#accFiltroBanner{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:8px 12px;border-radius:7px;background:#E0F2FE;color:#0E7490;font-size:.76rem;scroll-margin-top:12px}
-#accFiltroBanner button{margin-left:auto;background:#fff;border:1px solid #0891B2;color:#0891B2;border-radius:5px;padding:3px 10px;font-size:.7rem;font-weight:600;cursor:pointer;font-family:inherit}
+#accFiltroBanner{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:8px 12px;border-radius:7px;background:#E0F2FE;color:#0D3B3E;font-size:.76rem;scroll-margin-top:12px}
+#accFiltroBanner button{margin-left:auto;background:#fff;border:1px solid #0B6E75;color:#0B6E75;border-radius:5px;padding:3px 10px;font-size:.7rem;font-weight:600;cursor:pointer;font-family:inherit}
 
 /* ─── PROGRESS ────────────────────────────────────────────────── */
 .progress-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px}
@@ -1171,7 +1171,7 @@ function buildContratosChart(){
       datasets:[{
         label:'Horas afectadas',
         data: CONTRATOS.map(c=>c.horas),
-        backgroundColor:'rgba(8,145,178,.75)',
+        backgroundColor:'rgba(11,110,117,.75)',
         borderRadius:4,
         borderSkipped:false,
       }]
@@ -1207,7 +1207,7 @@ function openContratoInfo(nombre){
 let chartTiposBuilt = false;
 function buildTiposChart(){
   chartTiposBuilt = true;
-  const COLORS = ['#0891B2','#059669','#D97706','#DC2626','#7C3AED','#0E7490','#16A34A','#B45309'];
+  const COLORS = ['#0B6E75','#059669','#D97706','#DC2626','#7C3AED','#0D3B3E','#16A34A','#B45309'];
   const ctx = document.getElementById('chartTipos').getContext('2d');
   new Chart(ctx,{
     type:'bar',
@@ -1234,7 +1234,7 @@ function buildTiposChart(){
 // ─── ACCIONES CHART ──────────────────────────────────────────
 function buildAccionesChart(){
   const ctx = document.getElementById('chartAcciones').getContext('2d');
-  const COLORS = ['#059669','#0891B2','#D97706','#7C3AED','#DC2626','#16A34A'];
+  const COLORS = ['#059669','#0B6E75','#D97706','#7C3AED','#DC2626','#16A34A'];
   new Chart(ctx,{
     type:'doughnut',
     data:{
@@ -1270,7 +1270,7 @@ function buildEvolChart(){
       datasets:[{
         label:'Reportes',
         data: EVOLUCION.map(e=>e.casos),
-        borderColor:'#0891B2',backgroundColor:'rgba(8,145,178,.1)',
+        borderColor:'#0B6E75',backgroundColor:'rgba(11,110,117,.1)',
         borderWidth:2,pointRadius:4,pointHoverRadius:6,
         fill:true,tension:.35,
       }]

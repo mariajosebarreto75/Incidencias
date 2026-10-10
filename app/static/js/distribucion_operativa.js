@@ -103,7 +103,7 @@ function _xlOpenDropdown(field, btnEl) {
     search.style.cssText = `width:calc(100% - 16px);margin:6px 8px 4px;padding:4px 8px;
         border:1px solid #d1d5db;border-radius:4px;font-size:.8rem;outline:none;
         background:#f9fafb;box-sizing:border-box;`;
-    search.onfocus = () => search.style.borderColor = "#00b8c9";
+    search.onfocus = () => search.style.borderColor = "#0B6E75";
     search.onblur  = () => search.style.borderColor = "#d1d5db";
     div.appendChild(search);
 
@@ -122,7 +122,7 @@ function _xlOpenDropdown(field, btnEl) {
         allLbl.onmouseout  = () => allLbl.style.background = "";
         const allCb = document.createElement("input");
         allCb.type = "checkbox";
-        allCb.style.accentColor = "#00b8c9";
+        allCb.style.accentColor = "#0B6E75";
         const visRaws = filtered.map(e => e[0]);
         allCb.checked = visRaws.every(r => _xlPending[field].has(r));
         allCb.indeterminate = !allCb.checked && visRaws.some(r => _xlPending[field].has(r));
@@ -146,7 +146,7 @@ function _xlOpenDropdown(field, btnEl) {
             lbl.onmouseout  = () => lbl.style.background = "";
             const cb = document.createElement("input");
             cb.type = "checkbox";
-            cb.style.accentColor = "#00b8c9";
+            cb.style.accentColor = "#0B6E75";
             cb.checked = _xlPending[field].has(raw);
             cb.onchange = () => {
                 cb.checked ? _xlPending[field].add(raw) : _xlPending[field].delete(raw);
@@ -181,9 +181,9 @@ function _xlOpenDropdown(field, btnEl) {
     const btnAplicar = document.createElement("button");
     btnAplicar.textContent = "Aplicar";
     btnAplicar.style.cssText = `flex:1;padding:5px 0;border:none;border-radius:4px;
-        background:#00b8c9;color:#fff;cursor:pointer;font-size:.8rem;font-weight:600;`;
+        background:#0B6E75;color:#fff;cursor:pointer;font-size:.8rem;font-weight:600;`;
     btnAplicar.onmouseover = () => btnAplicar.style.background = "#007d8a";
-    btnAplicar.onmouseout  = () => btnAplicar.style.background = "#00b8c9";
+    btnAplicar.onmouseout  = () => btnAplicar.style.background = "#0B6E75";
     btnAplicar.onclick = () => {
         _xlApplied[field] = new Set(_xlPending[field]);
         _xlUpdateBtnState(field);

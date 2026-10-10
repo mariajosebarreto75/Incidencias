@@ -5,8 +5,8 @@
 <link href="https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
 <style>
 :root {
-    --dn-teal:  #00b8c9;
-    --dn-dark:  #005f6b;
+    --dn-teal:  #0B6E75;
+    --dn-dark:  #0D3B3E;
     --dn-bg:    #f0f4f8;
     --dn-card:  #fff;
     --dn-border:#e2e8f0;
@@ -36,7 +36,7 @@ body { background: var(--dn-bg); }
     border:none; border-radius:8px; padding:.48rem 1rem; font-size:.82rem;
     font-weight:700; cursor:pointer; transition:opacity .18s; white-space:nowrap; }
 .dn-btn:hover { opacity:.86; }
-.dn-btn-filter { background:linear-gradient(135deg,#005f6b,#00b8c9); color:#fff; }
+.dn-btn-filter { background:linear-gradient(135deg,#0D3B3E,#0B6E75); color:#fff; }
 .dn-btn-clear  { background:#f1f5f9; color:var(--dn-muted); border:1.5px solid var(--dn-border); text-decoration:none; }
 .dn-btn-clear:hover { background:#e2e8f0; color:var(--dn-text); }
 .dn-btn-export { background:#f0fdf4; color:#15803d; border:1.5px solid #bbf7d0; }
@@ -65,7 +65,7 @@ body { background: var(--dn-bg); }
     padding:.18rem .55rem; border-radius:5px; font-size:.78rem; font-weight:700; white-space:nowrap; }
 .dn-badge-recurso { font-family:monospace; background:#f0fdf4; color:#15803d;
     border:1px solid #bbf7d0; padding:.18rem .55rem; border-radius:5px; font-size:.82rem; font-weight:700; }
-.dn-badge-meta { background:#e0f2fe; color:#005f6b; padding:.18rem .55rem;
+.dn-badge-meta { background:#e0f2fe; color:#0D3B3E; padding:.18rem .55rem;
     border-radius:5px; font-size:.82rem; font-weight:800; }
 .dn-nombre { font-weight:600; color:#0f172a; }
 .badge-origen-gps { background:#0ea5e9; color:#fff; font-size:11px; padding:.2rem .5rem; border-radius:4px; }
@@ -75,10 +75,10 @@ body { background: var(--dn-bg); }
 /* Botón filtro Excel */
 .xl-title-wrap { display:flex !important; align-items:center !important; justify-content:space-between !important; width:100% !important; gap:4px !important; }
 .xl-fb { background:none !important; border:none !important; cursor:pointer !important; color:#94a3b8 !important; font-size:.68rem !important; padding:0 2px !important; line-height:1 !important; flex-shrink:0 !important; }
-.xl-fb:hover { color:#00b8c9 !important; }
+.xl-fb:hover { color:#0B6E75 !important; }
 /* Estilo Excel tabla */
 .tabulator { border:1px solid #b7c9d3 !important; border-radius:4px !important; font-size:.82rem !important; background:#fff !important; }
-.tabulator-header { background:#d6eef2 !important; border-bottom:2px solid #00b8c9 !important; }
+.tabulator-header { background:#d6eef2 !important; border-bottom:2px solid #0B6E75 !important; }
 .tabulator .tabulator-header .tabulator-col { background:#d6eef2 !important; border-right:1px solid #b0d8e0 !important; }
 .tabulator-col-title { color:#1a4a52 !important; font-size:.68rem !important; font-weight:700 !important; text-transform:uppercase !important; letter-spacing:.07em !important; padding:5px 8px 3px !important; }
 .tabulator-row { border-bottom:1px solid #d0dfe4 !important; }
@@ -88,7 +88,7 @@ body { background: var(--dn-bg); }
 .tabulator-row .tabulator-cell { padding:3px 8px !important; border-right:1px solid #d0dfe4 !important; font-size:.82rem !important; line-height:1.4 !important; }
 /* Tabs modal */
 #tabsManual .nav-link { color:#64748b; font-size:.84rem; border-bottom:2px solid transparent; }
-#tabsManual .nav-link.active { color:#005f6b; border-bottom-color:#005f6b; font-weight:600; }
+#tabsManual .nav-link.active { color:#0D3B3E; border-bottom-color:#0D3B3E; font-weight:600; }
 </style>
 {% endblock %}
 
@@ -128,7 +128,7 @@ body { background: var(--dn-bg); }
 <div class="modal fade" id="mdlManual" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-scrollable">
     <div class="modal-content">
-      <div class="modal-header" style="background:linear-gradient(135deg,#005f6b,#00b8c9);color:#fff;border-radius:0">
+      <div class="modal-header" style="background:linear-gradient(135deg,#0D3B3E,#0B6E75);color:#fff;border-radius:0">
         <h5 class="modal-title fw-semibold"><i class="bi bi-plus-circle me-2"></i>Agregar registro</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
@@ -507,7 +507,7 @@ function _xlOpenDropdown(field, btnEl) {
         var allLbl = document.createElement("label");
         allLbl.style.cssText = "display:flex;align-items:center;gap:8px;padding:4px 10px;cursor:pointer;font-weight:600;";
         var allCb = document.createElement("input");
-        allCb.type = "checkbox"; allCb.style.accentColor = "#00b8c9";
+        allCb.type = "checkbox"; allCb.style.accentColor = "#0B6E75";
         allCb.checked = visRaws.every(function(r){ return _xlPending[field].has(r); });
         allCb.indeterminate = !allCb.checked && visRaws.some(function(r){ return _xlPending[field].has(r); });
         allCb.onchange = function() {
@@ -528,7 +528,7 @@ function _xlOpenDropdown(field, btnEl) {
             lbl.onmouseover = function(){ lbl.style.background="#f0f9fb"; };
             lbl.onmouseout  = function(){ lbl.style.background=""; };
             var cb = document.createElement("input");
-            cb.type = "checkbox"; cb.style.accentColor = "#00b8c9";
+            cb.type = "checkbox"; cb.style.accentColor = "#0B6E75";
             cb.checked = _xlPending[field].has(raw);
             cb.onchange = function() {
                 cb.checked ? _xlPending[field].add(raw) : _xlPending[field].delete(raw);
@@ -554,7 +554,7 @@ function _xlOpenDropdown(field, btnEl) {
         _xlUpdateBtnState(field); _xlApplyAll(); _xlCloseDropdown();
     };
     var btnA = document.createElement("button"); btnA.textContent = "Aplicar";
-    btnA.style.cssText = "flex:1;padding:5px 0;border:none;border-radius:4px;background:#00b8c9;color:#fff;cursor:pointer;font-size:.8rem;font-weight:600;";
+    btnA.style.cssText = "flex:1;padding:5px 0;border:none;border-radius:4px;background:#0B6E75;color:#fff;cursor:pointer;font-size:.8rem;font-weight:600;";
     btnA.onclick = function() {
         _xlApplied[field] = new Set(_xlPending[field]);
         _xlUpdateBtnState(field); _xlApplyAll(); _xlCloseDropdown();

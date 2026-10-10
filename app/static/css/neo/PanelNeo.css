@@ -1,21 +1,21 @@
 /* ===== VARIABLES ===== */
 :root {
-    --neo-teal:    #00b8c9;
-    --neo-dark:    #005f6b;
+    --neo-teal:    #0B6E75;
+    --neo-dark:    #0D3B3E;
     --neo-green:   #2e9e55;
     --neo-orange:  #f4811f;
     --neo-border:  #dce5ea;
-    --neo-bg:      #f4f8fa;
+    --neo-bg:      #F4F6F6;
     --step-size:   44px;
 }
 
 /* ===== HEADER ===== */
 .rpt-header {
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdfe 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #E6F4F5 100%);
     border-radius: 14px;
     padding: 22px 30px;
     border-left: 5px solid var(--neo-teal);
-    box-shadow: 0 2px 12px rgba(0,184,201,.08);
+    box-shadow: 0 2px 12px rgba(11,110,117,.08);
 }
 .rpt-header h2 { color: #1a2e35; font-weight: 700; font-size: 1.45rem; }
 .rpt-header p  { color: #6c757d; font-size: .88rem; margin: 0; }
@@ -54,7 +54,7 @@
 .rpt-step.active .rpt-step-num {
     background: var(--neo-teal);
     color: #fff;
-    box-shadow: 0 4px 14px rgba(0,184,201,.35);
+    box-shadow: 0 4px 14px rgba(11,110,117,.35);
 }
 .rpt-step-label { font-size: .82rem; font-weight: 600; color: #888; line-height: 1.2; }
 .rpt-step.active .rpt-step-label { color: var(--neo-dark); }
@@ -79,7 +79,7 @@
     align-items: center;
     gap: 14px;
     padding: 16px 24px;
-    background: linear-gradient(90deg, #f0fdfe, #fff);
+    background: linear-gradient(90deg, #E6F4F5, #fff);
     border-bottom: 1px solid var(--neo-border);
 }
 .rpt-section-badge {
@@ -126,7 +126,7 @@
 .rpt-field .form-control:focus,
 .rpt-field .form-select:focus {
     border-color: var(--neo-teal);
-    box-shadow: 0 0 0 3px rgba(0,184,201,.12);
+    box-shadow: 0 0 0 3px rgba(11,110,117,.12);
 }
 .rpt-field .form-control[readonly] {
     background: var(--neo-bg);
@@ -136,7 +136,7 @@
 /* BADGE AUTO */
 .badge-auto {
     font-size: .68rem;
-    background: #e0f8fb;
+    background: #C5E7EA;
     color: var(--neo-dark);
     border-radius: 6px;
     padding: 1px 6px;
@@ -202,7 +202,7 @@
     transition: background .15s, color .15s;
 }
 .rpt-hora-group .rpt-copy-btn:hover {
-    background: #e0f8fb;
+    background: #C5E7EA;
     color: var(--neo-teal);
 }
 .rpt-hora-group .rpt-copy-btn.copiado {
@@ -216,7 +216,7 @@
 
 /* ===== DURACIÓN CHIP ===== */
 .duracion-chip {
-    background: linear-gradient(135deg, #e0f8fb, #b5eef4);
+    background: linear-gradient(135deg, #C5E7EA, #9AD4D8);
     border-radius: 10px;
     padding: 10px 14px;
     text-align: center;
@@ -246,12 +246,12 @@
     font-size: 1rem;
     font-weight: 700;
     letter-spacing: .3px;
-    box-shadow: 0 6px 20px rgba(0,184,201,.35);
+    box-shadow: 0 6px 20px rgba(11,110,117,.35);
     transition: all .25s;
 }
 .btn-guardar-rpt:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 28px rgba(0,184,201,.45);
+    box-shadow: 0 10px 28px rgba(11,110,117,.45);
     color: #fff;
 }
 .btn-guardar-rpt:active { transform: translateY(0); }

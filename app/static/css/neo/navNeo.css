@@ -78,7 +78,7 @@ body {
 /* DROPDOWN */
 .dropdown-menu-neo {
     background: #0a1f2e;
-    border: 1px solid rgba(0,184,201,.25);
+    border: 1px solid rgba(11,110,117,.25);
     border-radius: 10px;
     padding: 6px;
     margin-top: 6px !important;
@@ -98,12 +98,12 @@ body {
 }
 
 .dropdown-item-neo:hover {
-    background: rgba(0,184,201,.18) !important;
+    background: rgba(11,110,117,.18) !important;
     color: #fff !important;
 }
 
 .dropdown-item-neo i:first-child {
-    color: #00b8c9;
+    color: #0B6E75;
     font-size: .92rem;
 }
 

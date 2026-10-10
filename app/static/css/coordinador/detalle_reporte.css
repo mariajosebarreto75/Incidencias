@@ -18,8 +18,8 @@
     gap: 8px;
 }
 
-.det-card-header.neo-color  { background: linear-gradient(90deg, #005f6b, #00b8c9); }
-.det-card-header.coor-color { background: linear-gradient(90deg, #1e293b, #007E92); }
+.det-card-header.neo-color  { background: linear-gradient(90deg, #0D3B3E, #0B6E75); }
+.det-card-header.coor-color { background: linear-gradient(90deg, #1e293b, #0D3B3E); }
 
 .det-respondido-by {
     font-size: .75rem;
@@ -57,7 +57,7 @@
     padding: 8px 10px;
     font-size: .84rem;
     color: #3a4d55;
-    border-left: 3px solid #00b8c9;
+    border-left: 3px solid #0B6E75;
 }
 
 /* ===== MINIATURAS EVIDENCIA ===== */
@@ -73,7 +73,7 @@
     display: block;
 }
 
-.det-thumb:hover { border-color: #00b8c9; transform: scale(1.04); }
+.det-thumb:hover { border-color: #0B6E75; transform: scale(1.04); }
 
 .det-thumb-label {
     display: block;
@@ -104,7 +104,7 @@
 
 .rpt-field .form-control:focus,
 .rpt-field .form-select:focus {
-    border-color: #00B7C7;
+    border-color: #0B6E75;
     box-shadow: 0 0 0 3px rgba(0,183,199,.12);
 }
 
@@ -122,7 +122,7 @@
 
 .upload-area-coor:hover,
 .upload-area-coor.drag-over {
-    border-color: #00B7C7;
+    border-color: #0B6E75;
     background: #e8fafc;
 }
 
@@ -144,7 +144,7 @@
     font-size: .83rem;
 }
 
-.upload-ph-coor i { font-size: 1.8rem; color: #00B7C7; }
+.upload-ph-coor i { font-size: 1.8rem; color: #0B6E75; }
 
 .upload-prev-coor {
     width: 100%;
@@ -152,7 +152,7 @@
     object-fit: cover;
     border-radius: 10px;
     display: none;
-    border: 2px solid #00B7C7;
+    border: 2px solid #0B6E75;
 }
 
 .upload-prev-coor.visible { display: block; }
@@ -176,7 +176,7 @@
 
 /* ===== BTN GUARDAR ===== */
 .btn-coor-guardar {
-    background: linear-gradient(135deg, #00B7C7, #007E92);
+    background: linear-gradient(135deg, #0B6E75, #0D3B3E);
     color: #fff;
     border: none;
     border-radius: 12px;

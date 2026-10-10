@@ -5,16 +5,16 @@
    ============================================================ */
 
 :root{
-  --portal-bg:#F7F8FA;
+  --portal-bg:#F4F6F6;
   --portal-surface:#FFFFFF;
   --portal-border:#EAEDF1;
   --portal-border-strong:#DCE1E8;
   --portal-ink:#12161F;
   --portal-ink-muted:#667085;
   --portal-ink-faint:#9AA1AE;
-  --portal-accent:#0891B2;
-  --portal-accent-ink:#0E7490;
-  --portal-ring:rgba(8,145,178,.14);
+  --portal-accent:#0B6E75;
+  --portal-accent-ink:#0D3B3E;
+  --portal-ring:rgba(11,110,117,.14);
   --portal-shadow-rest:0 1px 2px rgba(16,24,40,.04);
   --portal-shadow-hover:0 12px 28px -14px rgba(16,24,40,.18), 0 2px 6px -2px rgba(16,24,40,.06);
 }

@@ -1,11 +1,11 @@
 /* ===== VARIABLES (compartidas con PanelNeo) ===== */
 :root {
-    --neo-teal:   #00b8c9;
-    --neo-dark:   #005f6b;
+    --neo-teal:   #0B6E75;
+    --neo-dark:   #0D3B3E;
     --neo-green:  #2e9e55;
     --neo-orange: #f4811f;
     --neo-border: #dce5ea;
-    --neo-bg:     #f4f8fa;
+    --neo-bg:     #F4F6F6;
 }
 
 /* ===== CONTENEDOR GENERAL ===== */
@@ -29,7 +29,7 @@
     background: #fff;
     border-radius: 18px;
     padding: 28px 32px;
-    box-shadow: 0 4px 24px rgba(0,184,201,.10);
+    box-shadow: 0 4px 24px rgba(11,110,117,.10);
     border-left: 5px solid var(--neo-teal);
     margin-bottom: 28px;
     flex-wrap: wrap;
@@ -72,7 +72,7 @@
 }
 
 .neo-fecha-chip {
-    background: linear-gradient(135deg, #e0f8fb, #b5eef4);
+    background: linear-gradient(135deg, #E6F4F5, #C5E7EA);
     border-radius: 12px;
     padding: 10px 18px;
     font-size: .82rem;
@@ -126,7 +126,7 @@
 }
 
 /* REPORTAR */
-.neo-card-reportar { border-color: rgba(0,184,201,.2); }
+.neo-card-reportar { border-color: rgba(11,110,117,.2); }
 .neo-card-reportar::before { background: linear-gradient(135deg, #e8fafc, #fff); }
 .neo-card-reportar:hover { border-color: var(--neo-teal); }
 .neo-card-reportar:hover::before { opacity: 1; }
