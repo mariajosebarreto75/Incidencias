@@ -1527,12 +1527,19 @@ def home_otros():
                              "url": "#", "desc": "Su cuenta no tiene módulos habilitados aún"}
                         ]})
 
+    from datetime import date as _date, datetime as _dt
+    hoy = _date.today()
+    hora_real = _dt.now().hour
+    greeting = "Buenos días" if hora_real < 12 else ("Buenas tardes" if hora_real < 18 else "Buenas noches")
+    today_str = hoy.strftime("%A, %d de %B de %Y").capitalize()
     return render_template(
-        "portal/home.html",
+        "shared/home_universal.html",
         page_title="Inicio",
-        page_desc="Panel de acceso según permisos asignados",
-        intro_title=f"Hola, {u.nombre_completo}",
-        intro_sub="Tus módulos disponibles",
+        home_url=url_for("neo.home_otros"),
+        role_sub=u.rol.title(),
+        welcome_sub="Módulos disponibles según tus permisos",
+        greeting=greeting,
+        today_str=today_str,
         groups=groups,
-        home_endpoint=None,
+        kpi_tiles=[],
     )

@@ -112,14 +112,35 @@ def director():
                                    "url": "https://plataforma.sistemagps.online/ui/map/objects",
                                    "ext": True, "desc": "Mapa de vehículos en vivo"}]})
 
+    from datetime import datetime as _dt
+    hoy = date.today()
+    hora_real = _dt.now().hour
+    greeting = "Buenos días" if hora_real < 12 else ("Buenas tardes" if hora_real < 18 else "Buenas noches")
+    today_str = hoy.strftime("%A, %d de %B de %Y").capitalize()
+    mes_ini = hoy.replace(day=1)
+    he_mes_raw = db.session.query(func.sum(HoraExtra.horas_reportadas)).filter(
+        HoraExtra.fecha_labor >= mes_ini, HoraExtra.fecha_labor <= hoy
+    ).scalar()
+    kpi_tiles = [
+        {"icon": "bi-file-earmark-text-fill", "bg": "#E0F2FE", "color": "#0369a1",
+         "label": "Reportes totales", "value": ReporteOperacional.query.count(), "sub": "en el sistema"},
+        {"icon": "bi-clock-history", "bg": "#EDE9FE", "color": "#7C3AED",
+         "label": "HE del mes", "value": round(he_mes_raw or 0, 1), "sub": "horas extras registradas"},
+        {"icon": "bi-x-circle", "bg": "#FEF3C7", "color": "#D97706",
+         "label": "No conformes", "value": ReporteOperacional.query.filter_by(conformidad_neo="No conforme").count(), "sub": "reportes no conformes"},
+        {"icon": "bi-journal-check", "bg": "#DCFCE7", "color": "#16A34A",
+         "label": "Compromisos", "value": Compromiso.query.filter(Compromiso.estado.in_(["Pendiente", "Reprogramado"])).count(), "sub": "pendientes / vencidos"},
+    ]
     return render_template(
-        "portal/home.html",
+        "shared/home_universal.html",
         page_title="Director",
-        page_desc="Panel directivo — supervisión estratégica y operativa",
-        intro_title=f"Hola, {u.nombre_completo}",
-        intro_sub="Panel de Director — módulos disponibles según permisos",
+        home_url=url_for("dashboard.director"),
+        role_sub="Panel Directivo",
+        welcome_sub="Supervisión estratégica y operativa",
+        greeting=greeting,
+        today_str=today_str,
         groups=groups,
-        home_endpoint=None,
+        kpi_tiles=kpi_tiles,
     )
 
 
