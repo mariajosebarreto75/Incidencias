@@ -13,8 +13,8 @@ body {
 
 /* ===== NAVBAR ===== */
 .navbar-neo {
-    background: #0D3B3E;
-    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    background: #0D3B3E !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25) !important;
     padding: 8px 0;
 }
 
