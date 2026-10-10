@@ -267,6 +267,10 @@ def he_hub():
 @he_bp.route("/coordinador/horas-extras")
 @login_required
 def he_coordinador():
+    rol = current_user.rol.lower()
+    if rol not in ("admin", "neo", "coordinador", "director", "supervisor") \
+            and not current_user.tiene_permiso("horas_extras"):
+        abort(403)
     contratos = _contratos_del_usuario()
     return render_template(
         "coordinador/horas_extras.html",
@@ -285,7 +289,17 @@ def api_he_guardar():
     if not filas:
         return jsonify({"ok": False, "msg": "Sin filas"}), 400
 
-    ids_permitidos = _ids_contratos_usuario() if current_user.rol.lower() in ("coordinador", "director", "supervisor") else None
+    rol = current_user.rol.lower()
+    puede_guardar = rol in ("admin", "neo", "coordinador", "director", "supervisor") \
+                    or current_user.tiene_permiso("horas_extras")
+    if not puede_guardar:
+        return jsonify({"ok": False, "msg": "Sin permiso para registrar horas extras"}), 403
+
+    # Roles que tienen vista restringida de contratos (no ven todos)
+    ids_permitidos = _ids_contratos_usuario() if rol in ("coordinador", "director", "supervisor") else None
+    # Usuarios con permiso explícito también restringidos a sus contratos asignados
+    if ids_permitidos is None and rol not in ("admin", "neo") and current_user.tiene_permiso("horas_extras"):
+        ids_permitidos = _ids_contratos_usuario()
 
     # Pre-cargar contratos y cortes en memoria (evita N+1 queries)
     _contratos_lista = Contrato.query.all()
@@ -559,7 +573,15 @@ def api_he_actualizar_lote():
     if not filas:
         return jsonify({"ok": False, "msg": "Sin filas"}), 400
 
-    ids_permitidos = _ids_contratos_usuario() if current_user.rol.lower() in ("coordinador", "director", "supervisor") else None
+    rol = current_user.rol.lower()
+    puede_editar = rol in ("admin", "neo", "coordinador", "director", "supervisor") \
+                   or current_user.tiene_permiso("horas_extras")
+    if not puede_editar:
+        return jsonify({"ok": False, "msg": "Sin permiso para editar horas extras"}), 403
+
+    ids_permitidos = _ids_contratos_usuario() if rol in ("coordinador", "director", "supervisor") else None
+    if ids_permitidos is None and rol not in ("admin", "neo") and current_user.tiene_permiso("horas_extras"):
+        ids_permitidos = _ids_contratos_usuario()
     actualizados = 0
 
     for f in filas:
