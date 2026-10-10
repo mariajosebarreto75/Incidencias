@@ -373,14 +373,59 @@ def home_neo():
     if comp_items_n:
         groups.append({"name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706", "links": comp_items_n})
 
+    # ── KPIs rápidos ──────────────────────────────────────────
+    from datetime import date as _date
+    hoy = _date.today()
+    mes_ini = hoy.replace(day=1)
+
+    reportes_hoy = ReporteOperacional.query.filter(ReporteOperacional.fecha_reporte == hoy).count()
+    por_validar   = ReporteOperacional.query.filter(ReporteOperacional.estado == "Abierto").count()
+
+    he_mes = 0
+    try:
+        from app.models.hora_extra import HoraExtra as _HE
+        from app.extensions import db as _db
+        he_mes_raw = _db.session.query(_db.func.sum(_HE.horas_reportadas)).filter(
+            _HE.fecha_labor >= mes_ini,
+            _HE.fecha_labor <= hoy,
+        ).scalar()
+        he_mes = round(he_mes_raw or 0, 1)
+    except Exception:
+        pass
+
+    comp_pendientes = 0
+    try:
+        from app.models.compromiso import Compromiso as _Comp
+        comp_pendientes = _Comp.query.filter(
+            _Comp.estado.in_(["Pendiente", "Reprogramado"])
+        ).count()
+    except Exception:
+        pass
+
+    from datetime import datetime as _dt
+    hora_real = _dt.now().hour
+    if hora_real < 12:
+        greeting = "Buenos días"
+    elif hora_real < 18:
+        greeting = "Buenas tardes"
+    else:
+        greeting = "Buenas noches"
+
+    meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"]
+    dias  = ["lunes","martes","miércoles","jueves","viernes","sábado","domingo"]
+    today_str = f"{dias[hoy.weekday()].capitalize()}, {hoy.day} de {meses[hoy.month-1]} de {hoy.year}"
+
     return render_template(
-        "portal/home.html",
-        page_title="NEO",
-        page_desc="Módulo NEO — gestión de incidencias operativas de campo",
-        intro_title=f"Hola, {current_user.nombre_completo.title()}",
-        intro_sub="Módulo NEO — Gestión de incidencias operativas de campo",
+        "neo/home_neo.html",
         groups=groups,
-        home_endpoint=None,
+        kpi={
+            "reportes_hoy": reportes_hoy,
+            "por_validar": por_validar,
+            "he_mes": he_mes,
+            "compromisos_pendientes": comp_pendientes,
+        },
+        greeting=greeting,
+        today_str=today_str,
     )
 
 

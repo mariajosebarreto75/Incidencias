@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEO — Inicio</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* ── Tokens ───────────────────────────────────────────────── */
+:root {
+  --teal:        #0B6E75;
+  --teal-dark:   #0D3B3E;
+  --teal-mid:    #0a5c63;
+  --teal-light:  #E6F4F5;
+  --teal-soft:   #C5E7EA;
+  --app-bg:      #F4F6F6;
+  --surface:     #FFFFFF;
+  --surface-2:   #F0F3F3;
+  --border:      #D8E2E3;
+  --text-main:   #1A2E30;
+  --text-sub:    #4A6668;
+  --text-muted:  #7A9496;
+  --sidebar-w:   264px;
+  --header-h:    60px;
+  --radius:      12px;
+  --shadow:      0 1px 4px rgba(11,110,117,.08), 0 4px 16px rgba(11,110,117,.06);
+  --trans:        .2s ease;
+}
+
+/* ── Reset & base ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  background: var(--app-bg);
+  color: var(--text-main);
+  min-height: 100vh;
+}
+a { text-decoration: none; color: inherit; }
+
+/* ── Header ───────────────────────────────────────────────── */
+.nh-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--header-h);
+  background: var(--teal-dark);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.25);
+}
+.nh-logo {
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none; flex-shrink: 0;
+}
+.nh-logo img { height: 36px; filter: brightness(0) invert(1); }
+.nh-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+.nh-logo-title { font-size: .9rem; font-weight: 800; color: #fff; letter-spacing: 1px; }
+.nh-logo-sub   { font-size: .62rem; color: rgba(255,255,255,.55); }
+.nh-divider    { width: 1px; height: 28px; background: rgba(255,255,255,.15); flex-shrink: 0; margin: 0 4px; }
+.nh-spacer     { flex: 1; }
+.nh-sidebar-toggle {
+  display: none; background: none; border: none;
+  color: rgba(255,255,255,.8); font-size: 1.2rem;
+  cursor: pointer; padding: 4px 8px; border-radius: 8px;
+  transition: background var(--trans);
+}
+.nh-sidebar-toggle:hover { background: rgba(255,255,255,.1); }
+.nh-notif-btn {
+  position: relative; background: none; border: none;
+  color: #f5a623; font-size: 1.1rem; cursor: pointer;
+  padding: 4px 8px; border-radius: 8px;
+  transition: background var(--trans);
+}
+.nh-notif-btn:hover { background: rgba(255,255,255,.1); }
+.nh-notif-badge {
+  position: absolute; top: -2px; right: 0;
+  background: #e53935; color: #fff; border-radius: 10px;
+  font-size: .58rem; font-weight: 800;
+  min-width: 16px; height: 16px;
+  display: none; align-items: center; justify-content: center; padding: 0 4px;
+}
+.nh-user-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 24px; padding: 5px 12px 5px 5px;
+  color: #fff; font-size: .78rem; font-weight: 600;
+  white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis;
+}
+.nh-user-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--teal); color: #fff;
+  font-size: .7rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.nh-logout {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 8px; padding: 6px 12px;
+  color: rgba(255,255,255,.85); font-size: .78rem; font-weight: 600;
+  cursor: pointer; transition: background var(--trans);
+  white-space: nowrap;
+}
+.nh-logout:hover { background: rgba(255,255,255,.16); color: #fff; }
+
+/* ── Layout: sidebar + main ───────────────────────────────── */
+.nh-layout {
+  display: flex;
+  padding-top: var(--header-h);
+  min-height: 100vh;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.nh-sidebar {
+  position: fixed; top: var(--header-h); left: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column;
+  transition: transform var(--trans);
+  z-index: 90;
+}
+.nh-sidebar::-webkit-scrollbar { width: 4px; }
+.nh-sidebar::-webkit-scrollbar-thumb { background: var(--teal-soft); border-radius: 4px; }
+
+.nh-sidebar-user {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.nh-sidebar-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--teal); color: #fff;
+  font-size: .9rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+.nh-sidebar-name  { font-size: .82rem; font-weight: 700; color: var(--text-main); line-height: 1.3; }
+.nh-sidebar-role  {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 5px; padding: 2px 8px;
+  background: var(--teal-light); color: var(--teal);
+  border-radius: 6px; font-size: .68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+
+/* Secciones del sidebar */
+.nh-sidebar-nav { padding: 12px 0; flex: 1; }
+.nh-sidebar-section { margin-bottom: 4px; }
+.nh-sidebar-section-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 9px 16px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-sub); font-size: .8rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .5px;
+  transition: color var(--trans);
+}
+.nh-sidebar-section-btn:hover { color: var(--teal); }
+.nh-sidebar-section-btn .s-ico {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--surface-2); color: var(--text-sub);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .9rem; flex-shrink: 0;
+  transition: background var(--trans), color var(--trans);
+}
+.nh-sidebar-section-btn:hover .s-ico,
+.nh-sidebar-section-btn.open .s-ico {
+  background: var(--teal-light); color: var(--teal);
+}
+.nh-sidebar-section-btn .s-chevron {
+  margin-left: auto; font-size: .7rem; color: var(--text-muted);
+  transition: transform var(--trans);
+}
+.nh-sidebar-section-btn.open .s-chevron { transform: rotate(180deg); }
+
+.nh-sidebar-links { display: none; padding: 0 8px 4px 8px; }
+.nh-sidebar-links.open { display: block; }
+.nh-sidebar-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 12px; border-radius: 8px;
+  color: var(--text-sub); font-size: .8rem; font-weight: 500;
+  transition: background var(--trans), color var(--trans);
+  margin-bottom: 1px;
+}
+.nh-sidebar-link:hover { background: var(--teal-light); color: var(--teal); }
+.nh-sidebar-link i { font-size: .9rem; flex-shrink: 0; }
+
+.nh-sidebar-footer {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+.nh-sidebar-logout {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  color: var(--text-sub); font-size: .8rem; font-weight: 600;
+  transition: background var(--trans), color var(--trans); cursor: pointer;
+}
+.nh-sidebar-logout:hover { background: #fee2e2; color: #c0392b; }
+
+/* ── Main content ─────────────────────────────────────────── */
+.nh-main {
+  flex: 1; margin-left: var(--sidebar-w);
+  min-height: calc(100vh - var(--header-h));
+  display: flex; flex-direction: column;
+}
+
+/* ── Welcome block ────────────────────────────────────────── */
+.nh-welcome {
+  background: var(--teal-dark);
+  padding: 28px 32px 24px;
+  position: relative; overflow: hidden;
+}
+.nh-welcome::before {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 260px; height: 260px; border-radius: 50%;
+  background: rgba(255,255,255,.04);
+}
+.nh-welcome::after {
+  content: '';
+  position: absolute; bottom: -80px; right: 140px;
+  width: 180px; height: 180px; border-radius: 50%;
+  background: rgba(255,255,255,.03);
+}
+.nh-welcome-greeting {
+  font-size: 1.45rem; font-weight: 800; color: #fff;
+  line-height: 1.2; margin-bottom: 6px;
+  position: relative; z-index: 1;
+}
+.nh-welcome-sub {
+  font-size: .82rem; color: rgba(255,255,255,.65);
+  margin-bottom: 14px; position: relative; z-index: 1;
+}
+.nh-welcome-chips {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  position: relative; z-index: 1;
+}
+.nh-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: .7rem; font-weight: 700;
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.9);
+  border: 1px solid rgba(255,255,255,.18);
+}
+.nh-chip-role {
+  background: rgba(11,110,117,.4);
+  border-color: rgba(11,220,235,.25);
+  color: #7fecf5;
+}
+
+/* ── KPI tiles ────────────────────────────────────────────── */
+.nh-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 24px 32px 0;
+}
+.nh-kpi {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 4px;
+  border: 1px solid var(--border);
+  transition: transform var(--trans), box-shadow var(--trans);
+}
+.nh-kpi:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(11,110,117,.12); }
+.nh-kpi-label {
+  font-size: .7rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.nh-kpi-value {
+  font-size: 1.8rem; font-weight: 800; color: var(--teal-dark);
+  line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.nh-kpi-sub {
+  font-size: .72rem; color: var(--text-sub);
+}
+.nh-kpi-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; margin-bottom: 6px;
+}
+
+/* ── Module section ───────────────────────────────────────── */
+.nh-modules {
+  flex: 1; padding: 24px 32px 32px;
+}
+.nh-section-title {
+  font-size: .72rem; font-weight: 800; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .7px;
+  margin-bottom: 16px;
+}
+.nh-search-wrap {
+  position: relative; margin-bottom: 20px;
+}
+.nh-search {
+  width: 100%; padding: 10px 14px 10px 38px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  background: var(--surface); color: var(--text-main);
+  font-size: .82rem; font-family: inherit;
+  transition: border-color var(--trans), box-shadow var(--trans);
+  outline: none;
+}
+.nh-search:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(11,110,117,.1); }
+.nh-search-ico {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: .9rem; pointer-events: none;
+}
+.nh-no-results {
+  text-align: center; padding: 32px 0; color: var(--text-muted);
+  font-size: .85rem; display: none;
+}
+
+/* Tabs */
+.nh-tabs {
+  display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.nh-tab {
+  padding: 6px 14px; border-radius: 8px; cursor: pointer;
+  font-size: .78rem; font-weight: 700; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--text-sub);
+  transition: all var(--trans);
+}
+.nh-tab:hover  { border-color: var(--teal); color: var(--teal); }
+.nh-tab.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+
+/* Module groups */
+.nh-group { margin-bottom: 24px; }
+.nh-group-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .8rem; font-weight: 700; color: var(--text-sub);
+  margin-bottom: 12px;
+}
+.nh-group-title-ico {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .8rem;
+}
+.nh-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.nh-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 16px; display: flex; flex-direction: column; gap: 8px;
+  transition: border-color var(--trans), transform var(--trans), box-shadow var(--trans);
+  cursor: pointer;
+}
+.nh-card:hover {
+  border-color: var(--teal); transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(11,110,117,.12);
+}
+.nh-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+}
+.nh-card-ico {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+}
+.nh-card-arrow {
+  color: var(--text-muted); font-size: .85rem;
+  opacity: 0; transition: opacity var(--trans);
+}
+.nh-card:hover .nh-card-arrow { opacity: 1; }
+.nh-card-label {
+  font-size: .82rem; font-weight: 700; color: var(--text-main); line-height: 1.3;
+}
+.nh-card-desc {
+  font-size: .72rem; color: var(--text-muted); line-height: 1.4;
+}
+
+/* ── Mobile overlay ───────────────────────────────────────── */
+.nh-overlay {
+  display: none; position: fixed; inset: 0; z-index: 85;
+  background: rgba(0,0,0,.4); backdrop-filter: blur(2px);
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .nh-kpi-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 860px) {
+  .nh-sidebar {
+    transform: translateX(-100%);
+  }
+  .nh-sidebar.open { transform: translateX(0); }
+  .nh-overlay.open { display: block; }
+  .nh-main { margin-left: 0; }
+  .nh-sidebar-toggle { display: flex; }
+  .nh-welcome, .nh-kpi-row, .nh-modules { padding-left: 20px; padding-right: 20px; }
+}
+@media (max-width: 560px) {
+  .nh-kpi-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .nh-kpi-value { font-size: 1.4rem; }
+  .nh-welcome-greeting { font-size: 1.15rem; }
+  .nh-user-chip { display: none; }
+  .nh-cards { grid-template-columns: 1fr 1fr; }
+}
+
+/* Notif panel (reuse de navbNeo) */
+#nhNotifPanel {
+  display: none; position: absolute; right: 0; top: calc(100% + 8px);
+  width: 340px; max-height: 480px; flex-direction: column;
+  background: #0d1b2a; border: 1px solid #1e3a5f;
+  border-radius: 10px; box-shadow: 0 8px 32px #0008; z-index: 9999;
+}
+</style>
+</head>
+<body>
+
+{% set _parts = current_user.nombre_completo.split() %}
+{% set _initials = (_parts[0][0] ~ (_parts[-1][0] if _parts|length > 1 else "")) | upper %}
+
+<!-- ══ HEADER ═══════════════════════════════════════════════ -->
+<header class="nh-header">
+
+  <button class="nh-sidebar-toggle" id="nhSidebarToggle" aria-label="Menú">
+    <i class="bi bi-list"></i>
+  </button>
+
+  <a class="nh-logo" href="{{ url_for('neo.home_neo') }}">
+    <img src="{{ url_for('static', filename='img/img2.png') }}" alt="NEO">
+    <div class="nh-logo-text">
+      <span class="nh-logo-title">NEO</span>
+      <span class="nh-logo-sub">Plataforma Operativa</span>
+    </div>
+  </a>
+
+  <div class="nh-divider"></div>
+  <div class="nh-spacer"></div>
+
+  <!-- Notificaciones -->
+  <div style="position:relative;">
+    <button class="nh-notif-btn" id="nhNotifBtn" onclick="nhNotifToggle()" title="Notificaciones">
+      <i class="bi bi-bell-fill"></i>
+      <span class="nh-notif-badge" id="nhNotifBadge">0</span>
+    </button>
+    <div id="nhNotifPanel">
+      <div style="padding:10px 14px 8px;font-size:.8rem;color:#7eb3d8;border-bottom:1px solid #1e3a5f;font-weight:600">NOTIFICACIONES</div>
+      <div id="nhNotifList" style="overflow-y:auto;max-height:360px;padding:4px 0;">
+        <div style="padding:20px;text-align:center;color:#7eb3d8;font-size:.8rem">Cargando…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nh-divider"></div>
+
+  <div class="nh-user-chip">
+    <div class="nh-user-avatar">{{ _initials }}</div>
+    <span style="overflow:hidden;text-overflow:ellipsis;">{{ current_user.nombre_completo }}</span>
+  </div>
+
+  <a href="{{ url_for('auth.logout') }}" class="nh-logout">
+    <i class="bi bi-box-arrow-right"></i>
+    <span>Salir</span>
+  </a>
+
+</header>
+
+<!-- ══ OVERLAY ══════════════════════════════════════════════ -->
+<div class="nh-overlay" id="nhOverlay" onclick="nhSidebarClose()"></div>
+
+<!-- ══ LAYOUT ═══════════════════════════════════════════════ -->
+<div class="nh-layout">
+
+  <!-- ── SIDEBAR ───────────────────────────────────────────── -->
+  <aside class="nh-sidebar" id="nhSidebar">
+
+    <div class="nh-sidebar-user">
+      <div class="nh-sidebar-avatar">{{ _initials }}</div>
+      <div class="nh-sidebar-name">{{ current_user.nombre_completo }}</div>
+      <span class="nh-sidebar-role"><i class="bi bi-shield-fill-check"></i>{{ current_user.rol | upper }}</span>
+    </div>
+
+    <nav class="nh-sidebar-nav">
+
+      {% for group in groups %}
+      <div class="nh-sidebar-section">
+        <button class="nh-sidebar-section-btn" onclick="nhSidebarToggleSection(this)">
+          <span class="s-ico"><i class="bi {{ group.icon }}"></i></span>
+          {{ group.name }}
+          <i class="bi bi-chevron-down s-chevron"></i>
+        </button>
+        <div class="nh-sidebar-links">
+          {% for item in group.links %}
+          <a class="nh-sidebar-link" href="{{ item.url }}" {% if item.ext %}target="_blank" rel="noopener"{% endif %}>
+            <i class="bi {{ item.icon }}"></i>
+            {{ item.label }}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+
+    </nav>
+
+    <div class="nh-sidebar-footer">
+      <a href="{{ url_for('auth.logout') }}" class="nh-sidebar-logout">
+        <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN ──────────────────────────────────────────────── -->
+  <main class="nh-main">
+
+    <!-- Welcome -->
+    <div class="nh-welcome">
+      <div class="nh-welcome-greeting">{{ greeting }}, {{ current_user.nombre_completo.title().split()[0] }} 👋</div>
+      <div class="nh-welcome-sub">{{ today_str }} · Módulo NEO — Gestión operativa de campo</div>
+      <div class="nh-welcome-chips">
+        <span class="nh-chip"><i class="bi bi-calendar3"></i>{{ today_str }}</span>
+        <span class="nh-chip nh-chip-role"><i class="bi bi-shield-fill-check"></i>{{ current_user.rol | upper }}</span>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="nh-kpi-row">
+      <div class="nh-kpi">
+        <div class="nh-kpi-icon" style="background:#E0F2FE;color:#0369a1;">
+          <i class="bi bi-file-earmark-text-fill"></i>
+        </div>
+        <div class="nh-kpi-label">Reportes hoy</div>
+        <div class="nh-kpi-value">{{ kpi.reportes_hoy }}</div>
+        <div class="nh-kpi-sub">registrados hoy</div>
+      </div>
+      <div class="nh-kpi">
+        <div class="nh-kpi-icon" style="background:#FEF3C7;color:#D97706;">
+          <i class="bi bi-hourglass-split"></i>
+        </div>
+        <div class="nh-kpi-label">Por validar</div>
+        <div class="nh-kpi-value">{{ kpi.por_validar }}</div>
+        <div class="nh-kpi-sub">reportes pendientes</div>
+      </div>
+      <div class="nh-kpi">
+        <div class="nh-kpi-icon" style="background:#EDE9FE;color:#7C3AED;">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <div class="nh-kpi-label">HE del mes</div>
+        <div class="nh-kpi-value">{{ kpi.he_mes }}</div>
+        <div class="nh-kpi-sub">horas extras registradas</div>
+      </div>
+      <div class="nh-kpi">
+        <div class="nh-kpi-icon" style="background:#DCFCE7;color:#16A34A;">
+          <i class="bi bi-journal-check"></i>
+        </div>
+        <div class="nh-kpi-label">Compromisos</div>
+        <div class="nh-kpi-value">{{ kpi.compromisos_pendientes }}</div>
+        <div class="nh-kpi-sub">pendientes / vencidos</div>
+      </div>
+    </div>
+
+    <!-- Modules -->
+    <div class="nh-modules">
+      <div class="nh-section-title">Tus módulos</div>
+
+      <!-- Search -->
+      <div class="nh-search-wrap">
+        <i class="bi bi-search nh-search-ico"></i>
+        <input class="nh-search" id="nhSearch" type="search"
+               placeholder="Buscar módulo…" oninput="nhFilter(this.value)" autocomplete="off">
+      </div>
+
+      <!-- Tabs -->
+      <div class="nh-tabs" id="nhTabs">
+        <button class="nh-tab active" data-tab="all" onclick="nhSetTab(this)">Todos</button>
+        {% for group in groups %}
+        <button class="nh-tab" data-tab="{{ loop.index }}" onclick="nhSetTab(this)">{{ group.name }}</button>
+        {% endfor %}
+      </div>
+
+      <!-- Groups grid -->
+      <div id="nhGrid">
+        {% for group in groups %}
+        <div class="nh-group" data-group="{{ loop.index }}">
+          <div class="nh-group-title">
+            <span class="nh-group-title-ico" style="background:{{ group.tint }}20;color:{{ group.tint }};">
+              <i class="bi {{ group.icon }}"></i>
+            </span>
+            {{ group.name }}
+          </div>
+          <div class="nh-cards">
+            {% for item in group.links %}
+            <a class="nh-card" href="{{ item.url }}" {% if item.ext %}target="_blank" rel="noopener"{% endif %}
+               data-label="{{ item.label | lower }}">
+              <div class="nh-card-top">
+                <div class="nh-card-ico" style="background:{{ group.tint }}18;color:{{ group.tint }};">
+                  <i class="bi {{ item.icon }}"></i>
+                </div>
+                <i class="bi bi-arrow-right nh-card-arrow"></i>
+              </div>
+              <div class="nh-card-label">{{ item.label }}</div>
+              <div class="nh-card-desc">{{ item.desc }}</div>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="nh-no-results" id="nhNoResults">
+        <i class="bi bi-search" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+        Sin resultados para tu búsqueda
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══ NOTIF DRAWER (igual que navbNeo) ══════════════════════ -->
+<style>
+#ndBtnWrap { position:fixed;bottom:16px;left:16px;z-index:1040; }
+#btnNotifDrawer {
+  background:#0d1b2a;color:#e53935;border:2px solid #e53935;border-radius:50px;
+  padding:7px 14px;font-size:.76rem;font-weight:800;
+  display:flex;align-items:center;gap:6px;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);cursor:pointer;
+  transition:background .15s,color .15s;max-width:180px;overflow:hidden;white-space:nowrap;
+}
+#btnNotifDrawer:hover { background:#e53935;color:#fff; }
+#btnNotifDrawer .nd-badge { background:#e53935;color:#fff;border-radius:20px;padding:1px 7px;font-size:.68rem;font-weight:900;display:none; }
+#btnNotifDrawer:hover .nd-badge { background:#fff;color:#e53935; }
+#ndBtnWrap.collapsed #btnNotifDrawer { padding:7px 10px;max-width:44px;border-radius:50%; }
+#ndBtnWrap.collapsed #ndBtnLabel { display:none; }
+#ndBtnToggle {
+  width:20px;height:20px;border-radius:50%;background:#1e3a52;border:1px solid #e53935;
+  color:#e53935;font-size:.62rem;font-weight:900;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);transition:background .15s;
+  position:absolute;top:-5px;left:-5px;z-index:2;
+}
+#ndBtnToggle:hover { background:#e53935;color:#fff; }
+#ndOverlay { display:none;position:fixed;inset:0;z-index:1045;background:rgba(0,0,0,.45);backdrop-filter:blur(2px); }
+#ndDrawer {
+  position:fixed;top:0;left:-480px;bottom:0;width:400px;
+  z-index:1050;background:#0d1b2a;display:flex;flex-direction:column;
+  box-shadow:4px 0 30px rgba(0,0,0,.5);transition:left .28s cubic-bezier(.4,0,.2,1);
+}
+#ndDrawer.open { left:0; }
+@media(max-width:520px){#ndDrawer{width:100%;left:-100%;}}
+.nd-card{padding:12px 14px;border-bottom:1px solid rgba(30,58,82,.6);transition:background .1s;}
+.nd-card:hover{background:#162d44;}
+.nd-card.gestionada{opacity:.45;}
+.nd-msg{font-size:.78rem;font-weight:700;color:#e2e8f0;line-height:1.3;margin-bottom:3px;}
+.nd-meta{font-size:.7rem;color:#7a97b0;}
+.nd-tag{font-size:.68rem;border-radius:4px;padding:1px 7px;font-weight:700;display:inline-block;margin-top:5px;}
+.nd-btn-gestionar{font-size:.72rem;padding:4px 12px;border-radius:6px;border:none;cursor:pointer;font-weight:700;margin-top:6px;}
+.nd-btn-visualizado{font-size:.72rem;padding:4px 12px;border-radius:6px;border:1px solid #557a9a;background:none;color:#7a97b0;cursor:pointer;margin-top:6px;}
+.nd-btn-visualizado:hover{background:#162d44;color:#e2e8f0;}
+.ad-header{padding:14px 16px 0;flex-shrink:0;}
+.ad-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ad-title{display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:800;color:#e2e8f0;}
+.ad-total-badge{background:#e53935;color:#fff;border-radius:12px;padding:1px 8px;font-size:.72rem;font-weight:900;}
+.ad-close{background:none;border:none;color:#557a9a;font-size:1rem;cursor:pointer;padding:4px;}
+.ad-close:hover{color:#e2e8f0;}
+.ad-tabs{display:flex;gap:6px;padding-bottom:12px;border-bottom:1px solid #1e3a5f;}
+.ad-tab{flex:1;padding:6px 0;border-radius:8px;font-size:.76rem;font-weight:700;background:transparent;color:#7a97b0;border:1px solid #1e3a5f;cursor:pointer;}
+.ad-tab.active{background:#e53935;color:#fff;border-color:#e53935;}
+.ad-list{flex:1;overflow-y:auto;}
+.ad-empty{padding:24px;text-align:center;color:#557a9a;font-size:.82rem;display:flex;flex-direction:column;align-items:center;gap:8px;}
+</style>
+
+<div id="ndBtnWrap" style="position:relative;">
+  <button id="ndBtnToggle" onclick="ndToggleBtn()" title="Minimizar">×</button>
+  <button id="btnNotifDrawer" onclick="ndAbrir()">
+    <i class="bi bi-bell-fill"></i>
+    <span id="ndBtnLabel">Notificaciones</span>
+    <span class="nd-badge" id="ndBadge">0</span>
+  </button>
+</div>
+<div id="ndOverlay" onclick="ndCerrar()"></div>
+<div id="ndDrawer">
+  <div class="ad-header">
+    <div class="ad-title-row">
+      <div class="ad-title"><i class="bi bi-bell-fill" style="color:#e53935"></i>Notificaciones<span class="ad-total-badge" id="ndTotal">0</span></div>
+      <button class="ad-close" onclick="ndCerrar()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="ad-tabs">
+      <button class="ad-tab active" data-nd="pendiente" onclick="ndSetTab(this)">Pendientes</button>
+      <button class="ad-tab" data-nd="cerradas" onclick="ndSetTab(this)">Cerradas</button>
+    </div>
+  </div>
+  <div class="ad-list" id="ndList">
+    <div class="ad-empty"><i class="bi bi-arrow-up-circle"></i>Abre el panel</div>
+  </div>
+</div>
+
+<script>
+// ── Sidebar ────────────────────────────────────────────────
+function nhSidebarOpen() {
+  document.getElementById('nhSidebar').classList.add('open');
+  document.getElementById('nhOverlay').classList.add('open');
+}
+function nhSidebarClose() {
+  document.getElementById('nhSidebar').classList.remove('open');
+  document.getElementById('nhOverlay').classList.remove('open');
+}
+document.getElementById('nhSidebarToggle').addEventListener('click', () => {
+  const sb = document.getElementById('nhSidebar');
+  sb.classList.contains('open') ? nhSidebarClose() : nhSidebarOpen();
+});
+
+function nhSidebarToggleSection(btn) {
+  btn.classList.toggle('open');
+  const links = btn.nextElementSibling;
+  links.classList.toggle('open');
+}
+// Open first section by default
+const firstBtn = document.querySelector('.nh-sidebar-section-btn');
+if (firstBtn) { firstBtn.classList.add('open'); firstBtn.nextElementSibling.classList.add('open'); }
+
+// ── Module tabs & search ───────────────────────────────────
+let nhActiveTab = 'all';
+
+function nhSetTab(btn) {
+  document.querySelectorAll('.nh-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  nhActiveTab = btn.dataset.tab;
+  nhFilter(document.getElementById('nhSearch').value);
+}
+
+function nhFilter(q) {
+  q = q.trim().toLowerCase();
+  let anyVisible = false;
+  document.querySelectorAll('.nh-group').forEach(group => {
+    const gIdx = group.dataset.group;
+    const tabOk = nhActiveTab === 'all' || nhActiveTab === gIdx;
+    let groupVisible = false;
+    group.querySelectorAll('.nh-card').forEach(card => {
+      const match = !q || card.dataset.label.includes(q)
+                       || card.querySelector('.nh-card-desc').textContent.toLowerCase().includes(q);
+      const show = tabOk && match;
+      card.style.display = show ? '' : 'none';
+      if (show) groupVisible = true;
+    });
+    group.style.display = groupVisible ? '' : 'none';
+    if (groupVisible) anyVisible = true;
+  });
+  document.getElementById('nhNoResults').style.display = anyVisible ? 'none' : 'block';
+}
+
+// ── Notif panel (header bell) ──────────────────────────────
+const NH_ICONOS  = { "nuevo_reporte":"bi-file-earmark-text", "reporte_respondido":"bi-chat-left-text-fill", "no_conforme":"bi-x-circle-fill" };
+const NH_COLORES = { "nuevo_reporte":"#f5a623", "reporte_respondido":"#4fc3f7", "no_conforme":"#e53935" };
+const NH_LABELS  = { "nuevo_reporte":"Nuevo reporte", "reporte_respondido":"Respondido", "no_conforme":"No conforme" };
+let nhPanelOpen = false;
+
+function nhNotifToggle() {
+  nhPanelOpen = !nhPanelOpen;
+  const panel = document.getElementById('nhNotifPanel');
+  panel.style.display = nhPanelOpen ? 'flex' : 'none';
+  if (nhPanelOpen) nhLoadNotif();
+}
+document.addEventListener('click', e => {
+  const btn = document.getElementById('nhNotifBtn');
+  const panel = document.getElementById('nhNotifPanel');
+  if (!btn || !panel) return;
+  if (!btn.contains(e.target) && !panel.contains(e.target)) {
+    panel.style.display = 'none'; nhPanelOpen = false;
+  }
+});
+
+async function nhPollBadge() {
+  try {
+    const r = await fetch('/notificaciones/badge');
+    const d = await r.json();
+    const b = document.getElementById('nhNotifBadge');
+    if (b) { b.textContent = d.pendientes; b.style.display = d.pendientes > 0 ? 'flex' : 'none'; }
+  } catch(_) {}
+}
+nhPollBadge(); setInterval(nhPollBadge, 30000);
+
+async function nhLoadNotif() {
+  try {
+    const r = await fetch('/notificaciones');
+    const lista = (await r.json()).filter(n => !n.gestionada);
+    const c = document.getElementById('nhNotifList');
+    if (!lista.length) { c.innerHTML = '<div style="padding:20px;text-align:center;color:#7eb3d8;font-size:.8rem">Sin notificaciones pendientes</div>'; return; }
+    c.innerHTML = lista.slice(0, 8).map(n => {
+      const color = NH_COLORES[n.tipo] || '#f5a623';
+      const ico   = NH_ICONOS[n.tipo]  || 'bi-bell';
+      const label = NH_LABELS[n.tipo]  || '';
+      return `<div style="padding:10px 14px;border-bottom:1px solid #1e3a5f">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <i class="bi ${ico}" style="color:${color};font-size:.95rem;margin-top:2px;flex-shrink:0"></i>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.76rem;color:#fff;font-weight:700;line-height:1.3;margin-bottom:2px">${n.mensaje}</div>
+            <div style="font-size:.66rem;color:#557a9a">${n.fecha}</div>
+            <span style="font-size:.62rem;border-radius:4px;padding:1px 6px;font-weight:700;background:${color}20;color:${color};border:1px solid ${color}50;display:inline-block;margin-top:2px">${label}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(_) {}
+}
+
+// ── Notif drawer (floating button) ────────────────────────
+const ND_ICONOS  = { "nuevo_reporte":"bi-file-earmark-text", "reporte_respondido":"bi-chat-left-text-fill", "no_conforme":"bi-x-circle-fill" };
+const ND_COLORES = { "nuevo_reporte":"#f5a623", "reporte_respondido":"#4fc3f7", "no_conforme":"#e53935" };
+const ND_LABELS  = { "nuevo_reporte":"Nuevo reporte", "reporte_respondido":"Respondido", "no_conforme":"No conforme" };
+let ndTabActual = "pendiente";
+
+function ndRefreshBadge() {
+  fetch("/notificaciones/badge").then(r => r.json()).then(d => {
+    const b = document.getElementById("ndBadge");
+    if (!b) return;
+    b.textContent = d.pendientes; b.style.display = d.pendientes > 0 ? "" : "none";
+  }).catch(() => {});
+}
+ndRefreshBadge(); setInterval(ndRefreshBadge, 30000);
+
+let ndCollapsed = JSON.parse(localStorage.getItem("nd_collapsed") || "false");
+function ndToggleBtn() {
+  ndCollapsed = !ndCollapsed;
+  document.getElementById("ndBtnWrap").classList.toggle("collapsed", ndCollapsed);
+  document.getElementById("ndBtnToggle").textContent = ndCollapsed ? "+" : "×";
+  localStorage.setItem("nd_collapsed", ndCollapsed);
+}
+if (ndCollapsed) { document.getElementById("ndBtnWrap").classList.add("collapsed"); document.getElementById("ndBtnToggle").textContent = "+"; }
+
+function ndAbrir() { document.getElementById("ndOverlay").style.display = "block"; document.getElementById("ndDrawer").classList.add("open"); ndCargar(); }
+function ndCerrar() { document.getElementById("ndOverlay").style.display = "none"; document.getElementById("ndDrawer").classList.remove("open"); }
+function ndSetTab(btn) {
+  document.querySelectorAll(".ad-tab[data-nd]").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active"); ndTabActual = btn.dataset.nd; ndCargar();
+}
+async function ndCargar() {
+  const list = document.getElementById("ndList");
+  list.innerHTML = '<div class="ad-empty"><div class="spinner-border spinner-border-sm text-danger"></div><br>Cargando…</div>';
+  try {
+    const r = await fetch("/notificaciones");
+    let lista = await r.json();
+    lista = ndTabActual === "pendiente" ? lista.filter(n => !n.gestionada) : lista.filter(n => n.gestionada);
+    document.getElementById("ndTotal").textContent = lista.length;
+    if (!lista.length) { list.innerHTML = `<div class="ad-empty"><i class="bi bi-bell-slash"></i>${ndTabActual === "pendiente" ? "Sin notificaciones pendientes" : "Sin notificaciones cerradas"}</div>`; return; }
+    list.innerHTML = lista.map(n => {
+      const ico = ND_ICONOS[n.tipo] || "bi-bell";
+      const color = ND_COLORES[n.tipo] || "#f5a623";
+      const label = ND_LABELS[n.tipo] || n.tipo;
+      const esNc = n.tipo === "no_conforme";
+      const boton = n.gestionada ? "" : esNc
+        ? `<button class="nd-btn-visualizado" onclick="ndVisualizado(${n.id})"><i class="bi bi-eye me-1"></i>Visualizado</button>`
+        : `<button class="nd-btn-gestionar" style="background:${color};color:#0d1b2a" onclick="ndGestionar(${n.id},${n.reporte_id})"><i class="bi bi-arrow-right-circle me-1"></i>Gestionar</button>`;
+      return `<div class="nd-card${n.gestionada ? ' gestionada' : ''}" id="ndCard-${n.id}">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <i class="bi ${ico}" style="color:${color};font-size:1.05rem;margin-top:2px;flex-shrink:0"></i>
+          <div style="flex:1;min-width:0">
+            <div class="nd-msg">${n.mensaje}</div>
+            ${n.tipo_incidencia ? `<div class="nd-meta">${n.tipo_incidencia}</div>` : ""}
+            ${n.contrato ? `<div class="nd-meta" style="color:#4fc3f7">${n.contrato}${n.recurso ? " · "+n.recurso : ""}</div>` : ""}
+            <div class="nd-meta">${n.fecha}</div>
+            <span class="nd-tag" style="background:${color}20;color:${color};border:1px solid ${color}50">${label}</span>
+            <div>${boton}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  } catch(e) { list.innerHTML = `<div class="ad-empty"><i class="bi bi-exclamation-triangle"></i>Error: ${e.message}</div>`; }
+}
+function ndGestionar(nid, repId) {
+  fetch(`/notificaciones/${nid}/gestionar`, {method:"POST"}).then(r => r.json()).then(d => { if (d.ok) { ndCargar(); ndRefreshBadge(); window.open(`/neo/reporte/${repId}`, "_blank"); } });
+}
+function ndVisualizado(nid) {
+  fetch(`/notificaciones/${nid}/visualizado`, {method:"POST"}).then(r => r.json()).then(d => { if (d.ok) { ndCargar(); ndRefreshBadge(); } });
+}
+</script>
+
+</body>
+</html>
