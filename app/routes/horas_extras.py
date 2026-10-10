@@ -243,8 +243,11 @@ def he_dashboard():
 @login_required
 def he_hub():
     rol = current_user.rol.lower()
-    puede_ingresar = rol in ("coordinador", "director", "supervisor", "admin") \
-                     or current_user.tiene_permiso("horas_extras")
+    # NEO nunca ingresa horas (solo valida); coordinador/supervisor/director nunca validan
+    puede_ingresar = rol != "neo" and (
+        rol in ("coordinador", "director", "supervisor", "admin")
+        or current_user.tiene_permiso("horas_extras")
+    )
     puede_validar  = rol in ("neo", "admin")
     if rol in ("coordinador", "director", "supervisor"):
         base_template = "coordinador/navbarcoor.html"
@@ -268,8 +271,10 @@ def he_hub():
 @login_required
 def he_coordinador():
     rol = current_user.rol.lower()
-    if rol not in ("admin", "neo", "coordinador", "director", "supervisor") \
-            and not current_user.tiene_permiso("horas_extras"):
+    if rol == "neo" or (
+        rol not in ("admin", "coordinador", "director", "supervisor")
+        and not current_user.tiene_permiso("horas_extras")
+    ):
         abort(403)
     contratos = _contratos_del_usuario()
     return render_template(
@@ -290,8 +295,11 @@ def api_he_guardar():
         return jsonify({"ok": False, "msg": "Sin filas"}), 400
 
     rol = current_user.rol.lower()
-    puede_guardar = rol in ("admin", "neo", "coordinador", "director", "supervisor") \
-                    or current_user.tiene_permiso("horas_extras")
+    # NEO no registra, solo valida
+    puede_guardar = rol != "neo" and (
+        rol in ("admin", "coordinador", "director", "supervisor")
+        or current_user.tiene_permiso("horas_extras")
+    )
     if not puede_guardar:
         return jsonify({"ok": False, "msg": "Sin permiso para registrar horas extras"}), 403
 
@@ -574,8 +582,11 @@ def api_he_actualizar_lote():
         return jsonify({"ok": False, "msg": "Sin filas"}), 400
 
     rol = current_user.rol.lower()
-    puede_editar = rol in ("admin", "neo", "coordinador", "director", "supervisor") \
-                   or current_user.tiene_permiso("horas_extras")
+    # NEO no edita registros de coordinador
+    puede_editar = rol != "neo" and (
+        rol in ("admin", "coordinador", "director", "supervisor")
+        or current_user.tiene_permiso("horas_extras")
+    )
     if not puede_editar:
         return jsonify({"ok": False, "msg": "Sin permiso para editar horas extras"}), 403
 
