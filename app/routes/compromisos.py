@@ -268,7 +268,8 @@ def nuevo():
             for e in errores:
                 flash(e, "danger")
             return render_template("compromisos/form.html", contratos=contratos,
-                                   form=request.form)
+                                   form=request.form,
+                                   base_template="neo/navbNeo.html")
 
         comp = Compromiso(
             contrato_id=contrato_id,
@@ -282,7 +283,8 @@ def nuevo():
         flash("Compromiso creado.", "success")
         return redirect(url_for("compromisos.lista"))
 
-    return render_template("compromisos/form.html", contratos=contratos, form={})
+    return render_template("compromisos/form.html", contratos=contratos, form={},
+                           base_template="neo/navbNeo.html")
 
 
 
@@ -451,6 +453,8 @@ def ver_evidencia(comp_id):
 @compromisos_bp.route("/<int:comp_id>/evidencia/eliminar", methods=["POST"])
 @login_required
 def eliminar_evidencia(comp_id):
+    if not _es_neo():
+        abort(403)
     comp = Compromiso.query.get_or_404(comp_id)
     if not _puede_ver_contrato(comp.contrato_id):
         abort(403)
@@ -569,7 +573,7 @@ def exportar_excel():
         import io
     except ImportError:
         flash("Instala openpyxl para exportar Excel.", "danger")
-        return redirect(url_for("compromisos.index"))
+        return redirect(url_for("compromisos.lista"))
 
     contratos = _contratos_usuario()
     contrato_id = request.args.get("contrato_id", type=int)
@@ -715,7 +719,7 @@ def importar_excel():
         fecha_real     = _parse_date(row.get("fecha_entrega_real"))
 
         estado = str(row.get("estado", "") or "Pendiente").strip()
-        if estado not in ("Pendiente", "En proceso", "Cerrado"):
+        if estado not in ("Pendiente", "Reprogramado", "Cerrado"):
             estado = "Pendiente"
 
         try:
