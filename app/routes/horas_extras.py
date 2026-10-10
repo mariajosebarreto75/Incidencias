@@ -703,7 +703,12 @@ def api_he_actualizar(id):
                 return jsonify({"ok": True})
         concepto = str(f.get("id_concepto") or he.id_concepto or "").strip()
         concepto = concepto.zfill(2) if concepto else concepto
-        he.fecha_labor        = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else he.fecha_labor
+        if f.get("fecha_labor"):
+            fl = str(f["fecha_labor"]).strip()
+            try:
+                he.fecha_labor = date.fromisoformat(fl)          # YYYY-MM-DD
+            except ValueError:
+                he.fecha_labor = datetime.strptime(fl, "%d/%m/%Y").date()  # DD/MM/YYYY
         if "corte_id" in f:
             he.corte_id = int(f["corte_id"]) if f["corte_id"] else None
         he.cedula             = f.get("cedula", he.cedula)
