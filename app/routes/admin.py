@@ -2352,11 +2352,17 @@ def api_semaforo_dashboard():
         return jsonify({"ok": False, "msg": "Fechas inválidas"}), 400
 
     rol = current_user.rol.lower()
-    if rol == "admin":
+    if rol in ("admin", "neo"):
         contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     else:
-        ids_uc = [uc.contrato_id for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
-        contratos = Contrato.query.filter(Contrato.id.in_(ids_uc), Contrato.activo == True).order_by(Contrato.contrato).all()
+        nombres_uc = [uc.contrato for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
+        if nombres_uc:
+            contratos = Contrato.query.filter(
+                Contrato.contrato.in_(nombres_uc), Contrato.activo == True
+            ).order_by(Contrato.contrato).all()
+        else:
+            # Sin contratos asignados: coordinador/supervisor/director ven todos
+            contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     contratos = _filtrar_semaforo(contratos)
 
     contrato_ids = [c.id for c in contratos]

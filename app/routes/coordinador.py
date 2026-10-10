@@ -1018,7 +1018,13 @@ def semaforo_dashboard():
     if rol not in ("admin", "coordinador", "supervisor", "director", "neo") \
             and not u.tiene_permiso("semaforo") and not u.tiene_permiso("semaforo_dashboard"):
         return redirect(url_for("auth.login"))
-    return render_template("coordinador/semaforo_dashboard.html")
+    if rol in ("neo", "admin"):
+        base_tpl = "neo/navbNeo.html"
+    elif rol == "gerente":
+        base_tpl = "gerente/navb_gerente.html"
+    else:
+        base_tpl = "coordinador/navbarcoor.html"
+    return render_template("coordinador/semaforo_dashboard.html", base_template=base_tpl)
 
 
 @coordinador.route("/coordinador/bi-seguimiento")
@@ -1027,7 +1033,14 @@ def semaforo_dashboard():
 def bi_seguimiento():
     if not current_user.tiene_permiso("bi_seguimiento"):
         return redirect(url_for("coordinador.dashboard_coordinador"))
-    return render_template("coordinador/bi_seguimiento.html")
+    rol = current_user.rol.lower()
+    if rol in ("neo", "admin"):
+        base_tpl = "neo/navbNeo.html"
+    elif rol == "gerente":
+        base_tpl = "gerente/navb_gerente.html"
+    else:
+        base_tpl = "coordinador/navbarcoor.html"
+    return render_template("coordinador/bi_seguimiento.html", base_template=base_tpl)
 
 
 @coordinador.route("/coordinador/seguimiento/inspecciones")
@@ -1035,7 +1048,14 @@ def bi_seguimiento():
 def bi_inspecciones():
     if not current_user.tiene_permiso("bi_inspecciones"):
         return redirect(url_for("coordinador.dashboard_coordinador"))
-    return render_template("coordinador/bi_inspecciones.html")
+    rol = current_user.rol.lower()
+    if rol in ("neo", "admin"):
+        base_tpl = "neo/navbNeo.html"
+    elif rol == "gerente":
+        base_tpl = "gerente/navb_gerente.html"
+    else:
+        base_tpl = "coordinador/navbarcoor.html"
+    return render_template("coordinador/bi_inspecciones.html", base_template=base_tpl)
 
 
 @coordinador.route("/coordinador/evidencia-coor/<path:ruta>")
