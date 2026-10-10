@@ -722,6 +722,7 @@ body.sidebar-collapsed .nh-main   { margin-left: 0; }
 <script>
 // ── Sidebar toggle (desktop + mobile) ─────────────────────
 const _isMobile = () => window.innerWidth <= 860;
+const _SB_KEY   = 'nh_sidebar_collapsed_neo';
 
 function nhSidebarOpen() {
   document.getElementById('nhSidebar').classList.add('open');
@@ -737,12 +738,12 @@ function nhSidebarToggle() {
     sb.classList.contains('open') ? nhSidebarClose() : nhSidebarOpen();
   } else {
     document.body.classList.toggle('sidebar-collapsed');
-    try { localStorage.setItem('nh_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed') ? '1' : '0'); } catch(_){}
+    try { localStorage.setItem(_SB_KEY, document.body.classList.contains('sidebar-collapsed') ? '1' : '0'); } catch(_){}
   }
 }
 document.getElementById('nhSidebarToggle').addEventListener('click', nhSidebarToggle);
 // Restore desktop state
-try { if (localStorage.getItem('nh_sidebar_collapsed') === '1') document.body.classList.add('sidebar-collapsed'); } catch(_){}
+try { if (localStorage.getItem(_SB_KEY) === '1') document.body.classList.add('sidebar-collapsed'); } catch(_){}
 
 function nhSidebarToggleSection(btn) {
   btn.classList.toggle('open');

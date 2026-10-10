@@ -474,7 +474,7 @@ body.sidebar-collapsed .nh-main   { margin-left: 0; }
 
 <script>
 const _isMobile = () => window.innerWidth <= 860;
-const _SB_KEY   = 'nh_sidebar_collapsed';
+const _SB_KEY   = 'nh_sidebar_collapsed_{{ current_user.rol | lower }}';
 
 function nhSidebarOpen()  { document.getElementById('nhSidebar').classList.add('open');    document.getElementById('nhOverlay').classList.add('open'); }
 function nhSidebarClose() { document.getElementById('nhSidebar').classList.remove('open'); document.getElementById('nhOverlay').classList.remove('open'); }

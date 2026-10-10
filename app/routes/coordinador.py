@@ -191,6 +191,12 @@ def dashboard_coordinador():
     if comp_items:
         groups.append({"name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706", "links": comp_items})
 
+    if es_admin or u.tiene_permiso("indicadores") or dash:
+        groups.append({"name": "Indicadores", "icon": "bi-speedometer2", "tint": "#0891B2", "links": [
+            {"label": "Indicadores Gerenciales", "icon": "bi-speedometer2", "url": url_for("dashboard.indicadores"),
+             "desc": "KPIs gerenciales de reportes, horas extras y compromisos"},
+        ]})
+
     if es_admin or u.tiene_permiso("gps"):
         groups.append({
             "name": "GPS", "icon": "bi-geo-alt-fill", "tint": "#DC2626",
