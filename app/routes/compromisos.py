@@ -40,16 +40,21 @@ def _allowed(filename):
 
 def _contratos_usuario():
     """Contratos que el usuario actual puede ver."""
-    if current_user.rol in ("admin", "neo", "gerente"):
+    rol = current_user.rol.lower()
+    if rol in ("admin", "neo", "gerente"):
         return Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
-    # coordinador/director: solo sus contratos asignados
     asignados = (UserContrato.query
                  .filter_by(user_id=current_user.id)
                  .with_entities(UserContrato.contrato).all())
     nombres = [a.contrato for a in asignados]
-    return (Contrato.query
-            .filter(Contrato.contrato.in_(nombres), Contrato.activo == True)
-            .order_by(Contrato.contrato).all())
+    if nombres:
+        return (Contrato.query
+                .filter(Contrato.contrato.in_(nombres), Contrato.activo == True)
+                .order_by(Contrato.contrato).all())
+    # Sin contratos asignados: coordinador/supervisor/director ven todos
+    if rol in ("coordinador", "supervisor", "director"):
+        return Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    return []
 
 
 def _puede_ver_contrato(contrato_id):
