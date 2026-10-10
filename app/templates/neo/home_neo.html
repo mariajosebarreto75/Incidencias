@@ -147,45 +147,67 @@ a { text-decoration: none; color: inherit; }
 }
 
 /* Secciones del sidebar */
-.nh-sidebar-nav { padding: 12px 0; flex: 1; }
-.nh-sidebar-section { margin-bottom: 4px; }
+.nh-sidebar-nav { padding: 8px 0; flex: 1; }
+.nh-sidebar-section { margin-bottom: 2px; }
+
 .nh-sidebar-section-btn {
   display: flex; align-items: center; gap: 10px;
-  width: 100%; padding: 9px 16px;
+  width: 100%; padding: 10px 14px;
   background: none; border: none; cursor: pointer;
-  color: var(--text-sub); font-size: .8rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .5px;
-  transition: color var(--trans);
+  text-align: left;
+  transition: background var(--trans), color var(--trans);
+  border-radius: 0;
 }
-.nh-sidebar-section-btn:hover { color: var(--teal); }
+.nh-sidebar-section-btn:hover { background: var(--surface-2); }
+.nh-sidebar-section-btn.open   { background: var(--teal-light); }
+
 .nh-sidebar-section-btn .s-ico {
-  width: 30px; height: 30px; border-radius: 8px;
-  background: var(--surface-2); color: var(--text-sub);
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: var(--surface-2); color: var(--text-muted);
   display: flex; align-items: center; justify-content: center;
-  font-size: .9rem; flex-shrink: 0;
+  font-size: .9rem;
   transition: background var(--trans), color var(--trans);
 }
-.nh-sidebar-section-btn:hover .s-ico,
-.nh-sidebar-section-btn.open .s-ico {
-  background: var(--teal-light); color: var(--teal);
+.nh-sidebar-section-btn:hover .s-ico { background: var(--teal-soft); color: var(--teal); }
+.nh-sidebar-section-btn.open   .s-ico { background: var(--teal); color: #fff; }
+
+.nh-sidebar-section-btn .s-label {
+  flex: 1; min-width: 0;
+  font-size: .75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+  color: var(--text-sub); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+  line-height: 1;
 }
+.nh-sidebar-section-btn:hover .s-label { color: var(--teal); }
+.nh-sidebar-section-btn.open   .s-label { color: var(--teal); }
+
 .nh-sidebar-section-btn .s-chevron {
-  margin-left: auto; font-size: .7rem; color: var(--text-muted);
+  flex-shrink: 0; font-size: .68rem; color: var(--text-muted);
   transition: transform var(--trans);
 }
-.nh-sidebar-section-btn.open .s-chevron { transform: rotate(180deg); }
+.nh-sidebar-section-btn.open .s-chevron { transform: rotate(180deg); color: var(--teal); }
 
-.nh-sidebar-links { display: none; padding: 0 8px 4px 8px; }
+/* Links dentro de cada sección */
+.nh-sidebar-links {
+  display: none;
+  padding: 4px 10px 8px 10px;
+  border-left: 2px solid var(--teal-soft);
+  margin: 0 14px 4px 28px;
+  animation: sbSlide .18s ease;
+}
+@keyframes sbSlide { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
 .nh-sidebar-links.open { display: block; }
+
 .nh-sidebar-link {
   display: flex; align-items: center; gap: 8px;
-  padding: 7px 12px; border-radius: 8px;
+  padding: 7px 10px; border-radius: 7px;
   color: var(--text-sub); font-size: .8rem; font-weight: 500;
   transition: background var(--trans), color var(--trans);
-  margin-bottom: 1px;
+  margin-bottom: 1px; white-space: nowrap;
 }
 .nh-sidebar-link:hover { background: var(--teal-light); color: var(--teal); }
-.nh-sidebar-link i { font-size: .9rem; flex-shrink: 0; }
+.nh-sidebar-link i { font-size: .85rem; flex-shrink: 0; }
 
 .nh-sidebar-footer {
   padding: 14px 16px;
@@ -483,9 +505,9 @@ a { text-decoration: none; color: inherit; }
 
       {% for group in groups %}
       <div class="nh-sidebar-section">
-        <button class="nh-sidebar-section-btn" onclick="nhSidebarToggleSection(this)">
+        <button class="nh-sidebar-section-btn" onclick="nhSidebarToggleSection(this)" title="{{ group.name }}">
           <span class="s-ico"><i class="bi {{ group.icon }}"></i></span>
-          {{ group.name }}
+          <span class="s-label">{{ group.name }}</span>
           <i class="bi bi-chevron-down s-chevron"></i>
         </button>
         <div class="nh-sidebar-links">
