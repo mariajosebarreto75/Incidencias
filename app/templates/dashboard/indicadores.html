@@ -37,30 +37,53 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
 
 /* ─── HEADER ─────────────────────────────────────────────────── */
 .hdr{
-  background:linear-gradient(90deg,#004c59 0%,#006880 50%,#007a8a 100%);
-  height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;
+  background:#0D3B3E;
+  height:60px;display:flex;align-items:center;gap:10px;padding:0 20px;
   position:sticky;top:0;z-index:100;
   box-shadow:0 2px 12px rgba(0,0,0,.25);
 }
-.hdr-logo{height:26px;filter:brightness(0)invert(1);opacity:.9;flex-shrink:0}
-.hdr-divider{width:1px;height:20px;background:rgba(255,255,255,.2);flex-shrink:0}
+.hdr-logo{height:32px;filter:brightness(0)invert(1);opacity:.9;flex-shrink:0}
+.hdr-divider{width:1px;height:24px;background:rgba(255,255,255,.2);flex-shrink:0;margin:0 2px;}
 .hdr-title{color:#fff;font-family:"Manrope",sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.2px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hdr-meta{color:rgba(255,255,255,.55);font-size:.72rem;white-space:nowrap}
+.hdr-menu-btn{background:none;border:none;color:rgba(255,255,255,.8);font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:8px;transition:background .15s;flex-shrink:0;}
+.hdr-menu-btn:hover{background:rgba(255,255,255,.1);}
 .hdr-btn{
   display:flex;align-items:center;gap:5px;
-  background:rgba(255,255,255,.12);color:#fff;
-  border:1px solid rgba(255,255,255,.2);border-radius:6px;
+  background:rgba(255,255,255,.1);color:#fff;
+  border:1px solid rgba(255,255,255,.18);border-radius:6px;
   padding:5px 11px;font-size:.75rem;font-weight:600;
   cursor:pointer;text-decoration:none;transition:background .15s;white-space:nowrap;flex-shrink:0;
 }
 .hdr-btn:hover{background:rgba(255,255,255,.22);color:#fff}
 .hdr-btn.refresh{background:rgba(11,110,117,.2);border-color:rgba(11,110,117,.4)}
+/* ─── NAV DRAWER ─────────────────────────────────────────────── */
+#indNavOverlay{display:none;position:fixed;inset:0;z-index:1045;background:rgba(0,0,0,.45);backdrop-filter:blur(2px);}
+#indNavDrawer{
+  position:fixed;top:0;left:-300px;bottom:0;width:280px;z-index:1050;
+  background:#fff;display:flex;flex-direction:column;
+  box-shadow:4px 0 24px rgba(0,0,0,.18);
+  transition:left .26s cubic-bezier(.4,0,.2,1);
+}
+#indNavDrawer.open{left:0;}
+.ind-drawer-hdr{background:#0D3B3E;padding:16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.ind-drawer-hdr img{height:32px;filter:brightness(0)invert(1);opacity:.9;}
+.ind-drawer-close{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.8);border-radius:8px;padding:5px 8px;cursor:pointer;font-size:.9rem;line-height:1;margin-left:auto;}
+.ind-drawer-user{padding:14px 16px 12px;border-bottom:1px solid #E8EDED;}
+.ind-drawer-av{width:36px;height:36px;border-radius:50%;background:#0B6E75;color:#fff;font-size:.76rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ind-drawer-section-lbl{font-size:.62rem;font-weight:800;color:#7A9496;text-transform:uppercase;letter-spacing:.8px;padding:10px 16px 2px;}
+.ind-drawer-link{display:flex;align-items:center;gap:10px;padding:9px 16px;color:#4A6668;font-size:.82rem;font-weight:500;text-decoration:none;transition:background .15s,color .15s;}
+.ind-drawer-link:hover,.ind-drawer-link.active{background:#E6F4F5;color:#0B6E75;}
+.ind-drawer-link i{font-size:.9rem;flex-shrink:0;}
+.ind-drawer-footer{margin-top:auto;padding:14px 16px;border-top:1px solid #E8EDED;}
+.ind-drawer-logout{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;color:#7A9496;font-size:.8rem;font-weight:600;text-decoration:none;transition:background .15s,color .15s;}
+.ind-drawer-logout:hover{background:#fee2e2;color:#c0392b;}
 
 /* ─── FILTROS ────────────────────────────────────────────────── */
 .filter-bar{
   background:var(--surf);border-bottom:1px solid var(--border);
   padding:8px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  position:sticky;top:52px;z-index:90;
+  position:sticky;top:60px;z-index:90;
   box-shadow:0 1px 4px rgba(13,27,46,.06);
 }
 .filter-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
@@ -294,17 +317,96 @@ body{background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-se
 </head>
 <body>
 
+{% set _p = current_user.nombre_completo.split() %}
+{% set _av = (_p[0][0] ~ (_p[-1][0] if _p|length > 1 else '')) | upper %}
+
+<!-- ═══════════ NAV DRAWER ═══════════ -->
+<div id="indNavOverlay" onclick="indNavClose()"></div>
+<div id="indNavDrawer">
+  <div class="ind-drawer-hdr">
+    <img src="{{ url_for('static', filename='img/img2.png') }}" alt="NEO">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:.88rem;font-weight:800;color:#fff;">NEO</div>
+      <div style="font-size:.65rem;color:rgba(255,255,255,.55);">{{ current_user.rol | title }}</div>
+    </div>
+    <button class="ind-drawer-close" onclick="indNavClose()"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="ind-drawer-user">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="ind-drawer-av">{{ _av }}</div>
+      <div style="min-width:0;">
+        <div style="font-size:.8rem;font-weight:700;color:#1A2E30;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ current_user.nombre_completo }}</div>
+        <span style="font-size:.66rem;font-weight:700;background:#E6F4F5;color:#0B6E75;border-radius:4px;padding:1px 7px;text-transform:uppercase;">{{ current_user.rol }}</span>
+      </div>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;">
+    <div class="ind-drawer-section-lbl">Navegación</div>
+    <a class="ind-drawer-link" href="{{ home_url }}">
+      <i class="bi bi-house-fill" style="color:#0B6E75;"></i>Inicio
+    </a>
+    <a class="ind-drawer-link active" href="{{ url_for('dashboard.indicadores') }}">
+      <i class="bi bi-speedometer2" style="color:#0B6E75;"></i>Indicadores
+    </a>
+
+    {% set rol = current_user.rol | lower %}
+    {% if current_user.tiene_permiso('neo_reportes') or rol in ('neo','admin','coordinador') %}
+    <div class="ind-drawer-section-lbl">Reportes</div>
+    {% if rol in ('neo','admin') %}
+    <a class="ind-drawer-link" href="{{ url_for('neo.panel_reportes') }}">
+      <i class="bi bi-clipboard-data-fill" style="color:#0369a1;"></i>Validar Reportes
+    </a>
+    {% endif %}
+    {% if rol in ('coordinador','admin') %}
+    <a class="ind-drawer-link" href="{{ url_for('coordinador.panel_reportes') }}">
+      <i class="bi bi-clipboard-data-fill" style="color:#0369a1;"></i>Panel de Reportes
+    </a>
+    <a class="ind-drawer-link" href="{{ url_for('coordinador.distribucion_operativa') }}">
+      <i class="bi bi-diagram-3-fill" style="color:#0369a1;"></i>Distribución Operativa
+    </a>
+    {% endif %}
+    {% endif %}
+
+    {% if current_user.tiene_permiso('horas_extras') or rol in ('neo','admin','coordinador','supervisor') %}
+    <div class="ind-drawer-section-lbl">Horas Extras</div>
+    <a class="ind-drawer-link" href="/horas-extras">
+      <i class="bi bi-clock-history" style="color:#7C3AED;"></i>Registro / Validación
+    </a>
+    {% if current_user.tiene_permiso('dashboard_he') or current_user.acceso_dashboard or rol in ('admin','gerente') %}
+    <a class="ind-drawer-link" href="{{ url_for('he_bp.he_dashboard') }}">
+      <i class="bi bi-bar-chart-line-fill" style="color:#7C3AED;"></i>Dashboard HE
+    </a>
+    {% endif %}
+    {% endif %}
+
+    {% if current_user.tiene_permiso('compromisos_agenda') or rol == 'admin' %}
+    <div class="ind-drawer-section-lbl">Compromisos</div>
+    <a class="ind-drawer-link" href="{{ url_for('compromisos.lista') }}">
+      <i class="bi bi-journal-check" style="color:#D97706;"></i>Agenda
+    </a>
+    {% endif %}
+  </div>
+  <div class="ind-drawer-footer">
+    <a class="ind-drawer-logout" href="{{ url_for('auth.logout') }}">
+      <i class="bi bi-box-arrow-left"></i>Cerrar sesión
+    </a>
+  </div>
+</div>
+
 <!-- ═══════════ HEADER ═══════════ -->
 <header class="hdr">
-  <img class="hdr-logo" src="{{ url_for('static', filename='img/logo_hesego.png') }}" alt="Hesego">
+  <button class="hdr-menu-btn" onclick="indNavOpen()" aria-label="Menú">
+    <i class="bi bi-list"></i>
+  </button>
+  <img class="hdr-logo" src="{{ url_for('static', filename='img/img2.png') }}" alt="NEO">
   <div class="hdr-divider"></div>
   <span class="hdr-title">Centro de Operaciones NEO</span>
   <span class="hdr-meta">{{ current_user.nombre_completo }} &nbsp;·&nbsp; {{ stats.general.hoy }}</span>
   <button class="hdr-btn refresh" onclick="window.location.reload()">
     <i class="bi bi-arrow-clockwise"></i> Actualizar
   </button>
-  <a href="{{ url_for('dashboard.dashboards_hub') }}" class="hdr-btn">
-    <i class="bi bi-grid-1x2"></i> Portal
+  <a href="{{ home_url }}" class="hdr-btn">
+    <i class="bi bi-house"></i> Inicio
   </a>
   <a href="{{ url_for('auth.logout') }}" class="hdr-btn">
     <i class="bi bi-box-arrow-right"></i> Salir
@@ -1465,6 +1567,11 @@ function escHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
 
 // ─── INIT ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', ()=>{});
+
+// ─── NAV DRAWER ──────────────────────────────────────────────
+function indNavOpen()  { document.getElementById('indNavDrawer').classList.add('open');    document.getElementById('indNavOverlay').style.display='block'; }
+function indNavClose() { document.getElementById('indNavDrawer').classList.remove('open'); document.getElementById('indNavOverlay').style.display='none'; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') indNavClose(); });
 </script>
 </body>
 </html>

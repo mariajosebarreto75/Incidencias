@@ -470,6 +470,20 @@ def indicadores():
         "count": sum(1 for v in [f_contrato, f_tipo, f_conformidad, f_recurso, f_anio, f_mes, f_dia, f_semana] if v),
     }
 
+    rol = current_user.rol.lower()
+    if rol == "neo":
+        _home_url = url_for("neo.home_neo")
+    elif rol in ("coordinador",):
+        _home_url = url_for("coordinador.dashboard_coordinador")
+    elif rol == "supervisor":
+        _home_url = url_for("coordinador.dashboard_supervisor")
+    elif rol == "gerente":
+        _home_url = url_for("dashboard.dashboards_hub")
+    elif rol == "admin":
+        _home_url = url_for("admin_bp.dashboard")
+    else:
+        _home_url = url_for("dashboard.dashboards_hub")
+
     return render_template(
         "dashboard/indicadores.html",
         stats=stats,
@@ -486,6 +500,7 @@ def indicadores():
         filtros_activos=filtros_activos,
         fechas_disponibles=fechas_disponibles,
         anios_disponibles=anios_disponibles,
+        home_url=_home_url,
     )
 
 
