@@ -58,17 +58,15 @@ def director():
         groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin",
                         "tint": "#0891B2", "links": rep_items})
 
-    he_items = []
-    if es_admin or u.tiene_permiso("horas_extras"):
-        he_items.append({"label": "Registro / Validación", "icon": "bi-pencil-square",
-                          "url": "/horas-extras", "desc": "Ingreso y validación de horas extras"})
+    # Directores siempre pueden ingresar HE — es parte de su rol
+    he_items = [{"label": "Registro / Validación", "icon": "bi-pencil-square",
+                 "url": "/horas-extras", "desc": "Ingreso y validación de horas extras"}]
     if es_admin or u.tiene_permiso("dashboard_he"):
         he_items.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill",
                           "url": url_for("he_bp.he_dashboard"),
                           "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
-    if he_items:
-        groups.append({"name": "Horas Extras", "icon": "bi-clock-history",
-                        "tint": "#8B5CF6", "links": he_items})
+    groups.append({"name": "Horas Extras", "icon": "bi-clock-history",
+                    "tint": "#8B5CF6", "links": he_items})
 
     seg_items = []
     if u.tiene_permiso("bi_seguimiento"):

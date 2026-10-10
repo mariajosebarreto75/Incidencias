@@ -148,14 +148,13 @@ def dashboard_coordinador():
         groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "links": rep_items})
 
     he_items = []
-    if es_admin or u.tiene_permiso("horas_extras"):
-        he_items.append({"label": "Registro / Validación", "icon": "bi-pencil-square", "url": "/horas-extras",
-                          "desc": "Ingreso y validación de horas extras"})
+    # Coordinadores siempre pueden ingresar/validar HE — es parte central de su rol
+    he_items.append({"label": "Registro / Validación", "icon": "bi-pencil-square", "url": "/horas-extras",
+                      "desc": "Ingreso y validación de horas extras"})
     if es_admin or u.tiene_permiso("dashboard_he") or dash:
         he_items.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill", "url": url_for("he_bp.he_dashboard"),
                           "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
-    if he_items:
-        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items})
+    groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items})
 
     seg_items = []
     if u.tiene_permiso("bi_seguimiento"):
@@ -228,15 +227,13 @@ def dashboard_supervisor():
     if rep_items:
         groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "links": rep_items})
 
-    he_items_s = []
-    if u.tiene_permiso("horas_extras"):
-        he_items_s.append({"label": "Registro / Validación", "icon": "bi-pencil-square", "url": url_for("he_bp.he_hub"),
-                            "desc": "Ingreso y validación de horas extras"})
+    # Supervisores siempre pueden ingresar HE — es parte de su rol
+    he_items_s = [{"label": "Registro / Validación", "icon": "bi-pencil-square", "url": url_for("he_bp.he_hub"),
+                   "desc": "Ingreso y validación de horas extras"}]
     if u.tiene_permiso("dashboard_he"):
         he_items_s.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill", "url": url_for("he_bp.he_dashboard"),
                             "desc": "KPIs, tipos de HE, límite legal y valor de nómina"})
-    if he_items_s:
-        groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items_s})
+    groups.append({"name": "Horas Extras", "icon": "bi-clock-history", "tint": "#8B5CF6", "links": he_items_s})
 
     seg_items = []
     if u.tiene_permiso("bi_seguimiento"):

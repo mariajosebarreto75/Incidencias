@@ -69,16 +69,27 @@ def permiso_requerido(permiso):
 
 
 def _contratos_del_usuario():
-    if current_user.rol.lower() in ("admin", "neo"):
+    rol = current_user.rol.lower()
+    if rol in ("admin", "neo"):
         return Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     nombres = [uc.contrato for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
-    return Contrato.query.filter(Contrato.contrato.in_(nombres), Contrato.activo == True).order_by(Contrato.contrato).all()
+    if nombres:
+        return Contrato.query.filter(Contrato.contrato.in_(nombres), Contrato.activo == True).order_by(Contrato.contrato).all()
+    # Coordinadores/supervisores/directores sin contratos asignados explícitamente → ven todos
+    if rol in ("coordinador", "director", "supervisor"):
+        return Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
+    return []
 
 
 def _ids_contratos_usuario():
-    """Devuelve set de contrato_id permitidos para el usuario actual (coordinadores)."""
+    """Devuelve set de contrato_id permitidos para el usuario actual."""
     nombres = [uc.contrato for uc in UserContrato.query.filter_by(user_id=current_user.id).all()]
-    return {c.id for c in Contrato.query.filter(Contrato.contrato.in_(nombres)).all()}
+    if nombres:
+        return {c.id for c in Contrato.query.filter(Contrato.contrato.in_(nombres)).all()}
+    # Sin contratos asignados → todos (para coordinador/director/supervisor sin asignación explícita)
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor", "admin", "neo"):
+        return {c.id for c in Contrato.query.filter_by(activo=True).all()}
+    return set()
 
 
 # ── API: supervisores por contrato ───────────────────────────────────────────
@@ -135,7 +146,9 @@ def api_personas_nombres():
 @login_required
 def api_he_registros():
     q = HoraExtra.query
-    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+    rol = current_user.rol.lower()
+    if rol in ("coordinador", "director", "supervisor") or \
+       (rol not in ("admin", "neo") and current_user.tiene_permiso("horas_extras")):
         ids = _ids_contratos_usuario()
         q = q.filter(HoraExtra.contrato_id.in_(ids))
 
@@ -230,14 +243,15 @@ def he_dashboard():
 @login_required
 def he_hub():
     rol = current_user.rol.lower()
-    puede_ingresar = rol in ("coordinador", "director", "supervisor", "admin")
+    puede_ingresar = rol in ("coordinador", "director", "supervisor", "admin") \
+                     or current_user.tiene_permiso("horas_extras")
     puede_validar  = rol in ("neo", "admin")
     if rol in ("coordinador", "director", "supervisor"):
         base_template = "coordinador/navbarcoor.html"
     elif rol == "neo":
         base_template = "neo/navbNeo.html"
     else:
-        base_template = "neo/navbNeo.html"
+        base_template = "coordinador/navbarcoor.html"
     contratos = _contratos_del_usuario() if puede_ingresar else []
     return render_template(
         "horas_extras/hub.html",
