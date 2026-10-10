@@ -685,48 +685,50 @@ def api_he_get(id):
 @he_bp.route("/api/he/<int:id>", methods=["PUT"])
 @login_required
 def api_he_actualizar(id):
-    he = HoraExtra.query.get_or_404(id)
-    f = request.get_json(silent=True) or {}
-    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
-        if he.contrato_id not in _ids_contratos_usuario():
-            return jsonify({"ok": False, "msg": "No autorizado"}), 403
-        # Coordinadores pueden editar todos los campos excepto los campos NEO
-        NEO_FIELDS = {"autorizacion_neo", "horas_autorizadas", "obs_neo", "estado"}
-        if any(k in NEO_FIELDS for k in f):
-            return jsonify({"ok": False, "msg": "No puede modificar campos de validación NEO"}), 403
-        # Retroalimentación solo cuando NEO ya validó
+    import traceback as _tb
+    try:
+        he = HoraExtra.query.get_or_404(id)
+        f = request.get_json(silent=True) or {}
+        if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+            if he.contrato_id not in _ids_contratos_usuario():
+                return jsonify({"ok": False, "msg": "No autorizado"}), 403
+            NEO_FIELDS = {"autorizacion_neo", "horas_autorizadas", "obs_neo", "estado"}
+            if any(k in NEO_FIELDS for k in f):
+                return jsonify({"ok": False, "msg": "No puede modificar campos de validación NEO"}), 403
+            if "retroalimentacion" in f:
+                if not he.autorizacion_neo:
+                    return jsonify({"ok": False, "msg": "Solo puede retroalimentar registros ya validados por NEO"}), 403
+                he.retroalimentacion = f["retroalimentacion"]
+                db.session.commit()
+                return jsonify({"ok": True})
+        concepto = str(f.get("id_concepto") or he.id_concepto or "").strip()
+        concepto = concepto.zfill(2) if concepto else concepto
+        he.fecha_labor        = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else he.fecha_labor
+        if "corte_id" in f:
+            he.corte_id = int(f["corte_id"]) if f["corte_id"] else None
+        he.cedula             = f.get("cedula", he.cedula)
+        he.nombre             = f.get("nombre", he.nombre)
+        he.recurso            = f.get("recurso", he.recurso)
+        he.placa              = f.get("placa", he.placa)
+        he.id_concepto        = concepto
+        he.tipo_he            = CONCEPTOS_HE.get(concepto, he.tipo_he)
+        he.horas_reportadas   = float(f.get("horas_reportadas") or he.horas_reportadas)
+        he.horas_compensadas  = float(f.get("horas_compensadas") or 0)
+        he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
+        he.justificacion      = f.get("justificacion", he.justificacion)
+        he.observacion        = f.get("observacion", he.observacion)
         if "retroalimentacion" in f:
-            if not he.autorizacion_neo:
-                return jsonify({"ok": False, "msg": "Solo puede retroalimentar registros ya validados por NEO"}), 403
             he.retroalimentacion = f["retroalimentacion"]
-            db.session.commit()
-            return jsonify({"ok": True})
-    concepto = str(f.get("id_concepto") or he.id_concepto or "").strip()
-    concepto = concepto.zfill(2) if concepto else concepto
-    he.fecha_labor        = date.fromisoformat(f["fecha_labor"]) if f.get("fecha_labor") else he.fecha_labor
-    if "corte_id" in f:
-        he.corte_id = int(f["corte_id"]) if f["corte_id"] else None
-    he.cedula             = f.get("cedula", he.cedula)
-    he.nombre             = f.get("nombre", he.nombre)
-    he.recurso            = f.get("recurso", he.recurso)
-    he.placa              = f.get("placa", he.placa)
-    he.id_concepto        = concepto
-    he.tipo_he            = CONCEPTOS_HE.get(concepto, he.tipo_he)
-    he.horas_reportadas   = float(f.get("horas_reportadas") or he.horas_reportadas)
-    he.horas_compensadas  = float(f.get("horas_compensadas") or 0)
-    he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
-    he.justificacion      = f.get("justificacion", he.justificacion)
-    he.observacion        = f.get("observacion", he.observacion)
-    if "retroalimentacion" in f:
-        he.retroalimentacion = f["retroalimentacion"]
-    if f.get("valor_hora")  is not None: he.valor_hora  = f["valor_hora"]
-    if f.get("valor_extra") is not None: he.valor_extra = f["valor_extra"]
-    # Auto-calcular valor_extra_nomina con horas reportadas
-    val_nom = _calc_valor_nomina(he.cedula, he.id_concepto, he.horas_reportadas)
-    if val_nom is not None:
-        he.valor_extra_nomina = val_nom
-    db.session.commit()
-    return jsonify({"ok": True})
+        if f.get("valor_hora")  is not None: he.valor_hora  = f["valor_hora"]
+        if f.get("valor_extra") is not None: he.valor_extra = f["valor_extra"]
+        val_nom = _calc_valor_nomina(he.cedula, he.id_concepto, he.horas_reportadas)
+        if val_nom is not None:
+            he.valor_extra_nomina = val_nom
+        db.session.commit()
+        return jsonify({"ok": True})
+    except Exception as _e:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": str(_e), "trace": _tb.format_exc()}), 500
 
 
 # ── API: eliminar registro (coordinador solo PENDIENTE) ───────────────────────
