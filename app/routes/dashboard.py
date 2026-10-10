@@ -83,7 +83,7 @@ def director():
                            "desc": "Cumplimiento, estado de vehículos y placas"})
     if es_admin or u.tiene_permiso("semaforo"):
         seg_items.append({"label": "Semáforo (calificar)", "icon": "bi-stoplights-fill",
-                           "url": url_for("coordinador.semaforo_dashboard"),
+                           "url": url_for("admin_bp.semaforo"),
                            "desc": "Registra calificaciones de actividades por contrato"})
     if u.tiene_permiso("semaforo_dashboard"):
         seg_items.append({"label": "Semáforo Dashboard", "icon": "bi-bar-chart-steps",

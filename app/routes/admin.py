@@ -71,6 +71,18 @@ def admin_required(f):
     return decorated
 
 
+def semaforo_required(f):
+    """Permite acceso a admin y a usuarios NEO con permiso semaforo."""
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        rol = current_user.rol.lower()
+        if rol not in ("admin", "neo") and not current_user.tiene_permiso("semaforo"):
+            return redirect(url_for("auth.login"))
+        return f(*args, **kwargs)
+    return decorated
+
+
 # ============================================================
 # DASHBOARD
 # ============================================================
@@ -2263,15 +2275,17 @@ def _filtrar_semaforo(contratos):
 
 
 @admin_bp.route("/semaforo")
-@admin_required
+@semaforo_required
 def semaforo():
     contratos = _filtrar_semaforo(Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all())
     contratos_json = [{"id": c.id, "contrato": c.contrato, "coordinador": c.coordinador or ""} for c in contratos]
-    return render_template("admin/semaforo.html", contratos=contratos, contratos_json=contratos_json)
+    rol = current_user.rol.lower()
+    base_tpl = "neo/navbNeo.html" if rol in ("neo", "admin") else "coordinador/navbarcoor.html"
+    return render_template("admin/semaforo.html", contratos=contratos, contratos_json=contratos_json, base_template=base_tpl)
 
 
 @admin_bp.route("/api/semaforo", methods=["GET"])
-@admin_required
+@semaforo_required
 def api_semaforo_get():
     fecha_str = request.args.get("fecha", "")
     try:
@@ -2283,7 +2297,7 @@ def api_semaforo_get():
 
 
 @admin_bp.route("/api/semaforo", methods=["POST"])
-@admin_required
+@semaforo_required
 def api_semaforo_guardar():
     d = request.get_json(silent=True) or {}
     fecha_str   = d.get("fecha", "")
@@ -2321,7 +2335,7 @@ def api_semaforo_guardar():
 
 
 @admin_bp.route("/api/semaforo/rango", methods=["GET"])
-@admin_required
+@semaforo_required
 def api_semaforo_rango():
     desde_str = request.args.get("desde", "")
     hasta_str = request.args.get("hasta", "")
