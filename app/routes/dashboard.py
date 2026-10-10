@@ -521,12 +521,31 @@ def dashboards_hub():
                               "desc": "Compromisos pendientes y atrasados"})
     if comp_items_g:
         groups.append({"name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706", "links": comp_items_g})
+    from datetime import date as _date, datetime as _dt
+    _Rep = ReporteOperacional
+    _HE  = HoraExtra
+    _Comp = Compromiso
+    hoy = _date.today()
+    mes_ini = hoy.replace(day=1)
+    hora_real = _dt.now().hour
+    greeting = "Buenos días" if hora_real < 12 else ("Buenas tardes" if hora_real < 18 else "Buenas noches")
+    today_str = hoy.strftime("%A, %d de %B de %Y").capitalize()
+    he_mes_raw = db.session.query(db.func.sum(_HE.horas_reportadas)).filter(_HE.fecha_labor >= mes_ini, _HE.fecha_labor <= hoy).scalar()
+    kpi_tiles = [
+        {"icon":"bi-file-earmark-bar-graph","bg":"#E0F2FE","color":"#0369a1","label":"Reportes totales","value":_Rep.query.count(),"sub":"en el sistema"},
+        {"icon":"bi-clock-history","bg":"#EDE9FE","color":"#7C3AED","label":"HE del mes","value":round(he_mes_raw or 0,1),"sub":"horas extras registradas"},
+        {"icon":"bi-x-circle","bg":"#FEF3C7","color":"#D97706","label":"No conformes","value":_Rep.query.filter(_Rep.conformidad_neo=="No conforme").count(),"sub":"reportes no conformes"},
+        {"icon":"bi-journal-check","bg":"#DCFCE7","color":"#16A34A","label":"Compromisos","value":_Comp.query.filter(_Comp.estado.in_(["Pendiente","Reprogramado"])).count(),"sub":"pendientes / vencidos"},
+    ]
     return render_template(
-        "portal/home.html",
+        "shared/home_universal.html",
         page_title="Gerencia",
-        page_desc="Portal ejecutivo de gerencia",
-        intro_title=f"Hola, {current_user.nombre_completo}",
-        intro_sub="Elige un dashboard o módulo para continuar",
+        home_url=url_for("dashboard.dashboards_hub"),
+        role_sub="Portal Ejecutivo",
+        welcome_sub="Portal ejecutivo de gerencia",
+        greeting=greeting,
+        today_str=today_str,
         groups=groups,
+        kpi_tiles=kpi_tiles,
         home_endpoint=None,
     )

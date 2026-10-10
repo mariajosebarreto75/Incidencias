@@ -268,13 +268,6 @@
                         </a>
                     </li>
 
-                    {% if current_user.tiene_permiso('indicadores') %}
-                    <li class="nav-item">
-                        <a class="nav-link neo-nav-link" href="{{ url_for('dashboard.indicadores') }}">
-                            <i class="bi bi-speedometer2"></i>Indicadores
-                        </a>
-                    </li>
-                    {% endif %}
 
                     {% endif %}
 

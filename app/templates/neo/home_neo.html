@@ -60,7 +60,7 @@ a { text-decoration: none; color: inherit; }
 .nh-divider    { width: 1px; height: 28px; background: rgba(255,255,255,.15); flex-shrink: 0; margin: 0 4px; }
 .nh-spacer     { flex: 1; }
 .nh-sidebar-toggle {
-  display: none; background: none; border: none;
+  display: flex; background: none; border: none;
   color: rgba(255,255,255,.8); font-size: 1.2rem;
   cursor: pointer; padding: 4px 8px; border-radius: 8px;
   transition: background var(--trans);
@@ -226,7 +226,11 @@ a { text-decoration: none; color: inherit; }
   flex: 1; margin-left: var(--sidebar-w);
   min-height: calc(100vh - var(--header-h));
   display: flex; flex-direction: column;
+  transition: margin-left var(--trans);
 }
+/* Sidebar collapsed state (desktop toggle) */
+body.sidebar-collapsed .nh-sidebar { transform: translateX(-100%); }
+body.sidebar-collapsed .nh-main   { margin-left: 0; }
 
 /* ── Welcome block ────────────────────────────────────────── */
 .nh-welcome {
@@ -716,7 +720,9 @@ a { text-decoration: none; color: inherit; }
 </div>
 
 <script>
-// ── Sidebar ────────────────────────────────────────────────
+// ── Sidebar toggle (desktop + mobile) ─────────────────────
+const _isMobile = () => window.innerWidth <= 860;
+
 function nhSidebarOpen() {
   document.getElementById('nhSidebar').classList.add('open');
   document.getElementById('nhOverlay').classList.add('open');
@@ -725,10 +731,18 @@ function nhSidebarClose() {
   document.getElementById('nhSidebar').classList.remove('open');
   document.getElementById('nhOverlay').classList.remove('open');
 }
-document.getElementById('nhSidebarToggle').addEventListener('click', () => {
-  const sb = document.getElementById('nhSidebar');
-  sb.classList.contains('open') ? nhSidebarClose() : nhSidebarOpen();
-});
+function nhSidebarToggle() {
+  if (_isMobile()) {
+    const sb = document.getElementById('nhSidebar');
+    sb.classList.contains('open') ? nhSidebarClose() : nhSidebarOpen();
+  } else {
+    document.body.classList.toggle('sidebar-collapsed');
+    try { localStorage.setItem('nh_sidebar_collapsed', document.body.classList.contains('sidebar-collapsed') ? '1' : '0'); } catch(_){}
+  }
+}
+document.getElementById('nhSidebarToggle').addEventListener('click', nhSidebarToggle);
+// Restore desktop state
+try { if (localStorage.getItem('nh_sidebar_collapsed') === '1') document.body.classList.add('sidebar-collapsed'); } catch(_){}
 
 function nhSidebarToggleSection(btn) {
   btn.classList.toggle('open');

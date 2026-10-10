@@ -200,14 +200,31 @@ def dashboard_coordinador():
             ],
         })
 
+    from datetime import date as _date, datetime as _dt
+    from app.models.hora_extra import HoraExtra as _HE
+    from app.models.compromiso import Compromiso as _Comp
+    hoy = _date.today()
+    mes_ini = hoy.replace(day=1)
+    hora_real = _dt.now().hour
+    greeting = "Buenos días" if hora_real < 12 else ("Buenas tardes" if hora_real < 18 else "Buenas noches")
+    today_str = hoy.strftime("%A, %d de %B de %Y").capitalize()
+    he_mes_raw = db.session.query(db.func.sum(_HE.horas_reportadas)).filter(_HE.fecha_labor >= mes_ini, _HE.fecha_labor <= hoy).scalar()
+    kpi_tiles = [
+        {"icon":"bi-clipboard-data-fill","bg":"#E0F2FE","color":"#0369a1","label":"Reportes hoy","value":ReporteOperacional.query.filter(ReporteOperacional.fecha_reporte==hoy).count(),"sub":"registrados hoy"},
+        {"icon":"bi-hourglass-split","bg":"#FEF3C7","color":"#D97706","label":"Por validar","value":ReporteOperacional.query.filter(ReporteOperacional.estado=="Abierto").count(),"sub":"reportes pendientes"},
+        {"icon":"bi-clock-history","bg":"#EDE9FE","color":"#7C3AED","label":"HE del mes","value":round(he_mes_raw or 0,1),"sub":"horas extras registradas"},
+        {"icon":"bi-journal-check","bg":"#DCFCE7","color":"#16A34A","label":"Compromisos","value":_Comp.query.filter(_Comp.estado.in_(["Pendiente","Reprogramado"])).count(),"sub":"pendientes / vencidos"},
+    ]
     return render_template(
-        "portal/home.html",
+        "shared/home_universal.html",
         page_title="Panel de Gestión",
-        page_desc="Panel de coordinación y gestión operativa",
-        intro_title=f"Hola, {u.nombre_completo}",
-        intro_sub="Elige el módulo que deseas gestionar",
+        home_url=url_for("coordinador.dashboard_coordinador"),
+        role_sub="Coordinación Operativa",
+        welcome_sub="Panel de coordinación y gestión operativa",
+        greeting=greeting,
+        today_str=today_str,
         groups=groups,
-        home_endpoint=None,
+        kpi_tiles=kpi_tiles,
     )
 
 
@@ -285,14 +302,31 @@ def dashboard_supervisor():
             ],
         })
 
+    from datetime import date as _date, datetime as _dt
+    from app.models.hora_extra import HoraExtra as _HE
+    from app.models.compromiso import Compromiso as _Comp
+    hoy = _date.today()
+    mes_ini = hoy.replace(day=1)
+    hora_real = _dt.now().hour
+    greeting = "Buenos días" if hora_real < 12 else ("Buenas tardes" if hora_real < 18 else "Buenas noches")
+    today_str = hoy.strftime("%A, %d de %B de %Y").capitalize()
+    he_mes_raw = db.session.query(db.func.sum(_HE.horas_reportadas)).filter(_HE.fecha_labor >= mes_ini, _HE.fecha_labor <= hoy).scalar()
+    kpi_tiles = [
+        {"icon":"bi-clipboard-data-fill","bg":"#E0F2FE","color":"#0369a1","label":"Reportes hoy","value":ReporteOperacional.query.filter(ReporteOperacional.fecha_reporte==hoy).count(),"sub":"registrados hoy"},
+        {"icon":"bi-hourglass-split","bg":"#FEF3C7","color":"#D97706","label":"Por validar","value":ReporteOperacional.query.filter(ReporteOperacional.estado=="Abierto").count(),"sub":"reportes pendientes"},
+        {"icon":"bi-clock-history","bg":"#EDE9FE","color":"#7C3AED","label":"HE del mes","value":round(he_mes_raw or 0,1),"sub":"horas extras registradas"},
+        {"icon":"bi-journal-check","bg":"#DCFCE7","color":"#16A34A","label":"Compromisos","value":_Comp.query.filter(_Comp.estado.in_(["Pendiente","Reprogramado"])).count(),"sub":"pendientes / vencidos"},
+    ]
     return render_template(
-        "portal/home.html",
+        "shared/home_universal.html",
         page_title="Panel Supervisor",
-        page_desc="Panel de inicio del rol supervisor",
-        intro_title=f"Hola, {u.nombre_completo}",
-        intro_sub="Elige el módulo que deseas gestionar",
+        home_url=url_for("coordinador.dashboard_supervisor"),
+        role_sub="Supervisión Operativa",
+        welcome_sub="Panel de inicio del rol supervisor",
+        greeting=greeting,
+        today_str=today_str,
         groups=groups,
-        home_endpoint=None,
+        kpi_tiles=kpi_tiles,
     )
 
 
