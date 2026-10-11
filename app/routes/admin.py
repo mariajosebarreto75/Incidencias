@@ -112,7 +112,7 @@ def dashboard():
     groups = [
         {"name":"Catálogos","icon":"bi-database-fill","tint":"#0B6E75","links":[
             {"label":"Contratos","icon":"bi-building","url":url_for("admin_bp.contratos"),"desc":"Gestión de contratos activos"},
-            {"label":"Usuarios","icon":"bi-people-fill","url":url_for("admin_bp.usuarios"),"desc":"Alta, edición y permisos de usuarios"},
+            {"label":"Usuarios","icon":"bi-people-fill","url":url_for("admin_bp.neo_usuarios"),"desc":"Alta, edición y permisos de usuarios"},
             {"label":"Placas","icon":"bi-truck","url":url_for("admin_bp.placas"),"desc":"Registro de placas por contrato"},
             {"label":"Evidencias","icon":"bi-image","url":url_for("admin_bp.evidencias_compromisos"),"desc":"Gestión de evidencias de compromisos"},
         ]},
