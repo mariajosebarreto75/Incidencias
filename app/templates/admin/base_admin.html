@@ -142,7 +142,7 @@ body { margin:0; background:var(--adm-bg); font-family:'Plus Jakarta Sans','Sego
     <!-- ── USUARIOS ── -->
     <div class="sb-direct">
       <a href="{{ url_for('admin_bp.neo_usuarios') }}"
-         class="adm-nav-link {% if ep in ['admin_bp.neo_usuarios','admin_bp.supervisor_usuarios','admin_bp.coordinador_usuarios','admin_bp.director_usuarios','admin_bp.gerente_usuarios','admin_bp.usuarios'] %}active{% endif %}">
+         class="adm-nav-link {% if ep == 'admin_bp.neo_usuarios' %}active{% endif %}">
         <i class="bi bi-people-fill"></i> Usuarios
       </a>
     </div>

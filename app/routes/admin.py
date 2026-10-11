@@ -253,25 +253,7 @@ _ROLES_OTROS = ["administrativo", "analista", "sst", "auxiliar", "otro"]
 @admin_bp.route("/usuarios")
 @admin_required
 def usuarios():
-    """Otros usuarios: roles administrativos (no operativos)."""
-    lista = User.query.filter(
-        User.rol.in_(_ROLES_OTROS)
-    ).order_by(User.rol, User.nombre_completo).all()
-    contratos = Contrato.query.order_by(Contrato.contrato).all()
-
-    asignados_por_usuario = {
-        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
-        for u in lista
-    }
-
-    return render_template("admin/usuarios_tipo.html",
-                           usuarios=lista, contratos=contratos,
-                           asignados_por_usuario=asignados_por_usuario,
-                           titulo="Otros usuarios",
-                           rol_nuevo="administrativo",
-                           roles_disponibles=_ROLES_OTROS,
-                           icono="bi-people",
-                           color_acento="#64748b")
+    return redirect(url_for("admin_bp.neo_usuarios"))
 
 
 @admin_bp.route("/neo-usuarios")
@@ -310,77 +292,25 @@ def neo_usuarios():
 @admin_bp.route("/coordinador-usuarios")
 @admin_required
 def coordinador_usuarios():
-    """Muestra la página de gestión de usuarios coordinadores."""
-    lista = User.query.filter_by(rol="coordinador").order_by(User.nombre_completo).all()
-    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
-    asignados_por_usuario = {
-        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
-        for u in lista
-    }
-    return render_template("admin/usuarios_tipo.html",
-                           usuarios=lista, contratos=contratos,
-                           asignados_por_usuario=asignados_por_usuario,
-                           titulo="Usuarios Coordinador",
-                           rol_nuevo="coordinador",
-                           icono="bi-person-workspace",
-                           color_acento="#0ea5e9")
+    return redirect(url_for("admin_bp.neo_usuarios"))
 
 
 @admin_bp.route("/supervisor-usuarios")
 @admin_required
 def supervisor_usuarios():
-    """Muestra la página de gestión de usuarios supervisores."""
-    lista = User.query.filter_by(rol="supervisor").order_by(User.nombre_completo).all()
-    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
-    asignados_por_usuario = {
-        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
-        for u in lista
-    }
-    return render_template("admin/usuarios_tipo.html",
-                           usuarios=lista, contratos=contratos,
-                           asignados_por_usuario=asignados_por_usuario,
-                           titulo="Usuarios Supervisor",
-                           rol_nuevo="supervisor",
-                           icono="bi-person-check",
-                           color_acento="#22c55e")
+    return redirect(url_for("admin_bp.neo_usuarios"))
 
 
 @admin_bp.route("/director-usuarios")
 @admin_required
 def director_usuarios():
-    """Muestra la página de gestión de usuarios directores."""
-    lista = User.query.filter_by(rol="director").order_by(User.nombre_completo).all()
-    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
-    asignados_por_usuario = {
-        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
-        for u in lista
-    }
-    return render_template("admin/usuarios_tipo.html",
-                           usuarios=lista, contratos=contratos,
-                           asignados_por_usuario=asignados_por_usuario,
-                           titulo="Usuarios Director",
-                           rol_nuevo="director",
-                           icono="bi-briefcase",
-                           color_acento="#f59e0b")
+    return redirect(url_for("admin_bp.neo_usuarios"))
 
 
 @admin_bp.route("/gerente-usuarios")
 @admin_required
 def gerente_usuarios():
-    """Muestra la página de gestión de usuarios gerentes."""
-    lista = User.query.filter_by(rol="gerente").order_by(User.nombre_completo).all()
-    contratos = Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
-    asignados_por_usuario = {
-        u.id: {uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()}
-        for u in lista
-    }
-    return render_template("admin/usuarios_tipo.html",
-                           usuarios=lista, contratos=contratos,
-                           asignados_por_usuario=asignados_por_usuario,
-                           titulo="Usuarios Gerente",
-                           rol_nuevo="gerente",
-                           icono="bi-person-badge-fill",
-                           color_acento="#8b5cf6")
+    return redirect(url_for("admin_bp.neo_usuarios"))
 
 
 @admin_bp.route("/api/usuarios", methods=["POST"])
