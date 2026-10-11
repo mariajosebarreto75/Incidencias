@@ -132,9 +132,16 @@ def formatear_coordenada(valor, posicion_coma):
 @login_required
 def dashboard_coordinador():
     u = current_user
-    if u.rol.lower() not in ("coordinador", "admin"):
-        abort(403)
-    es_admin = u.rol.lower() == "admin"
+    rol = u.rol.lower()
+    if rol not in ("coordinador", "admin"):
+        # Redirigir al home correcto en vez de 403
+        destinos = {
+            "neo": "neo.home_neo", "gerente": "dashboard.dashboards_hub",
+            "supervisor": "coordinador.dashboard_supervisor",
+            "director": "dashboard.director", "admin": "admin_bp.dashboard",
+        }
+        return redirect(url_for(destinos.get(rol, "neo.home_otros")))
+    es_admin = rol == "admin"
     dash = es_admin or u.acceso_dashboard
     groups = []
 
@@ -238,9 +245,15 @@ def dashboard_coordinador():
 @login_required
 def dashboard_supervisor():
     """Panel de inicio para usuarios con rol supervisor."""
-    if current_user.rol.lower() not in ("supervisor", "admin"):
-        abort(403)
     u = current_user
+    rol = u.rol.lower()
+    if rol not in ("supervisor", "admin"):
+        destinos = {
+            "neo": "neo.home_neo", "gerente": "dashboard.dashboards_hub",
+            "coordinador": "coordinador.dashboard_coordinador",
+            "director": "dashboard.director", "admin": "admin_bp.dashboard",
+        }
+        return redirect(url_for(destinos.get(rol, "neo.home_otros")))
     groups = []
 
     rep_items = []
