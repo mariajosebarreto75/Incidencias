@@ -258,8 +258,8 @@ def dashboard_supervisor():
 
     rep_items = []
     if u.tiene_permiso("neo_reportes"):
-        rep_items.append({"label": "Reportes NEO", "icon": "bi-broadcast-pin", "url": url_for("neo.panel_reportes"),
-                           "desc": "Panel de reportes operacionales del equipo"})
+        rep_items.append({"label": "Validar Reportes NEO", "icon": "bi-patch-check-fill", "url": url_for("coordinador.panel_reportes"),
+                           "desc": "Revisar y calificar reportes operacionales del equipo"})
     if rep_items:
         groups.append({"name": "Reportar y Operación", "icon": "bi-broadcast-pin", "tint": "#0891B2", "links": rep_items})
 

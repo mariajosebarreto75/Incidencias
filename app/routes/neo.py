@@ -757,6 +757,8 @@ def editar_reporte(id):
 @neo.route("/neo/panelReportes")
 @login_required
 def panel_reportes():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        abort(403)
 
     tipos_desvio   = TipoDesvio.query.order_by(TipoDesvio.tipo_desvio).all()
     parametros_neo = ParametroNeo.query.order_by(ParametroNeo.parametroNeo).all()
@@ -1007,6 +1009,8 @@ def descargar_evidencia(ruta):
 @neo.route("/neo/guardar-reporte", methods=["POST"])
 @login_required
 def guardar_reporte():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"success": False, "mensaje": "Sin permiso para reportar."}), 403
 
     datos = request.get_json()
 
