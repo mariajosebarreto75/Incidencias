@@ -540,11 +540,25 @@ def eliminar_reportes():
     if not ids:
         return jsonify({"ok": False, "error": "No se seleccionaron reportes"}), 400
 
+    # Determinar contratos visibles del usuario (solo para rol neo)
+    es_admin = current_user.rol.lower() == "admin"
+    contratos_visibles = None
+    if not es_admin:
+        _uc = UserContrato.query.filter_by(user_id=current_user.id).all()
+        contratos_visibles = [uc.contrato for uc in _uc] if _uc else []
+
     eliminados = 0
     for rid in ids:
         reporte = ReporteOperacional.query.get(rid)
         if not reporte:
             continue
+        # Verificar ownership: el reporte debe pertenecer al contrato o al usuario
+        if not es_admin:
+            if contratos_visibles:
+                if reporte.contrato not in contratos_visibles:
+                    continue
+            elif reporte.reportado_por != current_user.username:
+                continue
         # Eliminar archivos físicos de evidencias NEO
         for campo in ("evidencia_1", "evidencia_2"):
             ruta = getattr(reporte, campo, None)
@@ -558,8 +572,12 @@ def eliminar_reportes():
         db.session.delete(reporte)
         eliminados += 1
 
-    db.session.commit()
-    return jsonify({"ok": True, "eliminados": eliminados})
+    try:
+        db.session.commit()
+        return jsonify({"ok": True, "eliminados": eliminados})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 # =====================================
@@ -655,13 +673,14 @@ def editar_reporte(id):
     from datetime import timedelta, date as _date
 
     reporte = ReporteOperacional.query.get_or_404(id)
-    asignados = UserContrato.query.filter_by(user_id=current_user.id).all()
-    if asignados:
-        contratos_visibles = [uc.contrato for uc in asignados]
-        if reporte.contrato not in contratos_visibles:
+    if current_user.rol.lower() != "admin":
+        asignados = UserContrato.query.filter_by(user_id=current_user.id).all()
+        if asignados:
+            contratos_visibles = [uc.contrato for uc in asignados]
+            if reporte.contrato not in contratos_visibles:
+                abort(403)
+        elif reporte.reportado_por != current_user.username:
             abort(403)
-    elif reporte.reportado_por != current_user.username:
-        abort(403)
 
     if request.method == "POST":
         if reporte.estado == "Cerrado":
@@ -742,8 +761,12 @@ def editar_reporte(id):
         reporte.editado_por = current_user.username
         reporte.fecha_edicion = datetime.now()
 
-        db.session.commit()
-        return jsonify({"ok": True})
+        try:
+            db.session.commit()
+            return jsonify({"ok": True})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"ok": False, "error": str(e)}), 500
 
     # GET
     tipos_desvio  = TipoDesvio.query.order_by(TipoDesvio.tipo_desvio).all()
@@ -1098,7 +1121,7 @@ def guardar_reporte():
             hora_fin            = hora_fin,
             # Guardamos el texto histórico, no el ID del catálogo
             tipo_incidencia     = datos.get("tipo_incidencia_nombre") or datos["tipo_incidencia"],
-            parametro_neo       = datos.get("parametro_neo_nombre")   or "",
+            parametro_neo       = datos.get("parametro_neo_nombre")   or None,
             observacion         = datos.get("observacion")            or "",
             duracion            = duracion_val,
             impacto             = datos.get("impacto") or _calcular_impacto(
