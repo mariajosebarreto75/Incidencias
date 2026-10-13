@@ -1053,10 +1053,11 @@ def api_he_resumen():
     # Total aprobadas = autorizado conforme + autorizado descontado
     hrs_autorizadas    = hrs_auth_conf + hrs_auth_desc
     hrs_no_autorizadas = _sum_rep(q_noconf)
-    # Descontadas = horas autorizadas en estado DESCONTADA
-    hrs_descontadas    = hrs_auth_desc
-    # Pendientes = horas reportadas de registros aún no revisados
     hrs_pendientes     = _sum_rep(q_pend)
+    # Reportadas de registros ya revisados (excluye pendientes)
+    hrs_rep_revisadas  = _sum_rep(q_conf) + _sum_rep(q_noconf) + _sum_rep(q_desc)
+    # Descontadas = reportadas revisadas - autorizadas (lo que no se aprobó)
+    hrs_descontadas    = max(0, round(hrs_rep_revisadas - hrs_autorizadas, 1))
 
     # Normalizar codigo: "3" → "03" para display consistente
     codigos_db = [
@@ -1097,6 +1098,7 @@ def api_he_resumen():
             "hrs_auth_conf":      hrs_auth_conf,
             "hrs_no_autorizadas": hrs_no_autorizadas,
             "hrs_descontadas":    hrs_descontadas,
+            "hrs_rep_revisadas":  hrs_rep_revisadas,
             "hrs_pendientes":     hrs_pendientes,
             "por_concepto":       por_concepto,
         })
@@ -1190,6 +1192,7 @@ def api_he_kpis():
         hrs_desc_auth    = float(row.hrs_desc_auth)
         hrs_rep_revisadas = float(row.hrs_rep_revisadas)
         hrs_autorizadas  = hrs_conf_auth + hrs_desc_auth
+        hrs_descontadas  = max(0, round(hrs_rep_revisadas - hrs_autorizadas, 1))
         return jsonify({
             "total":              row.total,
             "pendientes":         row.pendientes,
@@ -1199,7 +1202,7 @@ def api_he_kpis():
             "hrs_reportadas":     float(row.hrs_rep),
             "hrs_conformes":      float(row.hrs_conf),
             "hrs_no_conformes":   float(row.hrs_noconf),
-            "hrs_descontadas":    float(row.hrs_desc),
+            "hrs_descontadas":    hrs_descontadas,
             "hrs_pendientes":     float(row.hrs_pend),
             "hrs_autorizadas":    hrs_autorizadas,
             "hrs_conf_auth":      hrs_conf_auth,
