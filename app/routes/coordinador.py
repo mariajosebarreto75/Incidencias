@@ -379,6 +379,10 @@ def _ext_ok_coor(filename):
 @coordinador.route("/coordinador/panelReportes")
 @login_required
 def panel_reportes():
+    u = current_user
+    _roles_validos = ("coordinador", "supervisor", "admin", "director")
+    if u.rol.lower() not in _roles_validos and not u.tiene_permiso("neo_reportes"):
+        abort(403)
 
     _uc = UserContrato.query.filter_by(user_id=current_user.id).all()
     if _uc:
@@ -763,6 +767,9 @@ def crear_persona():
 @coordinador.route("/coordinador/reporte/<int:id>")
 @login_required
 def detalle_reporte(id):
+    _roles_validos = ("coordinador", "supervisor", "admin", "director")
+    if current_user.rol.lower() not in _roles_validos and not current_user.tiene_permiso("neo_reportes"):
+        abort(403)
 
     reporte = ReporteOperacional.query.get_or_404(id)
 
@@ -790,6 +797,9 @@ def detalle_reporte(id):
 @coordinador.route("/coordinador/reporte/<int:id>/responder", methods=["POST"])
 @login_required
 def responder_reporte(id):
+    _roles_validos = ("coordinador", "supervisor", "admin", "director")
+    if current_user.rol.lower() not in _roles_validos and not current_user.tiene_permiso("neo_reportes"):
+        return jsonify({"ok": False, "error": "Sin permiso."}), 403
 
     reporte = ReporteOperacional.query.get_or_404(id)
     datos   = request.get_json()

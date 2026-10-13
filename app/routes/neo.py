@@ -210,6 +210,8 @@ def _buscar_meta_operativa(contrato, tipo_cuadrilla):
 @neo.route("/neo/distribucion-operativa")
 @login_required
 def distribucion_neo():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        abort(403)
     import json as _json
     from app.models.persona import Persona
 
@@ -426,6 +428,8 @@ def home_neo():
 @neo.route("/neo/validar-reportes")
 @login_required
 def validar_reportes():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        abort(403)
     from datetime import date as _date
 
     # Filtrar por contratos asignados al usuario; si no tiene asignados, solo los suyos
@@ -528,6 +532,8 @@ def validar_reportes():
 @neo.route("/neo/eliminar-reportes", methods=["POST"])
 @login_required
 def eliminar_reportes():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "error": "Sin permiso."}), 403
     d   = request.get_json(silent=True) or {}
     ids = [int(i) for i in (d.get("ids") or []) if str(i).isdigit()]
 
@@ -924,6 +930,8 @@ def datos_operativos():
 @neo.route("/neo/subir-evidencia", methods=["POST"])
 @login_required
 def subir_evidencia():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "error": "Sin permiso."}), 403
 
     archivo = request.files.get("archivo")
 
@@ -1176,6 +1184,8 @@ def _codigos_contrato_usuario():
 def api_actualizar_cuadrilla():
     """Recibe JSON con lista de {id, tipo_cuadrilla}, actualiza cada reporte,
     busca la meta operativa y recalcula horas_afectadas y afectacion_economica."""
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "msg": "Sin permiso."}), 403
     from datetime import timedelta, date as _date
     datos = request.get_json() or {}
     filas = datos.get("filas", [])
@@ -1241,6 +1251,8 @@ def api_actualizar_cuadrilla():
 @neo.route("/neo/distribucion-operativa/manual", methods=["POST"])
 @login_required
 def neo_distribucion_manual_crear():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "error": "Sin permiso."}), 403
     d = request.get_json(silent=True) or {}
     try:
         from datetime import datetime as _dt, time as _time
@@ -1287,6 +1299,8 @@ def neo_distribucion_manual_crear():
 @neo.route("/neo/distribucion-operativa/manual/<int:rid>", methods=["DELETE"])
 @login_required
 def neo_distribucion_manual_eliminar(rid):
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "error": "Sin permiso."}), 403
     reg = DistribucionOperativa.query.get_or_404(rid)
     if reg.origen == "gps_monitor":
         return jsonify({"ok": False, "error": "No se pueden eliminar registros de GPS Monitor"}), 403
@@ -1298,6 +1312,8 @@ def neo_distribucion_manual_eliminar(rid):
 @neo.route("/neo/distribucion-operativa/importar-excel", methods=["POST"])
 @login_required
 def neo_distribucion_importar_excel():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "error": "Sin permiso."}), 403
     import pandas as pd
     from datetime import datetime as _dt
 
@@ -1413,7 +1429,7 @@ def neo_distribucion_importar_excel():
 @login_required
 def preoperacionales_neo():
     if not (current_user.tiene_permiso("preoperacionales") or current_user.tiene_permiso("preoperacionales_dashboard")):
-        return redirect(url_for("neo.home_neo"))
+        return redirect(url_for("neo.home_otros"))
     return render_template("coordinador/preoperacionales.html")
 
 
