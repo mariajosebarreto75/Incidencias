@@ -1414,7 +1414,7 @@ async function cargarKpis() {
             _set("rs-pendientes", (d.pendientes || 0).toLocaleString("es-CO"));
             _set("rs-hrs-rep",    hrsRep.toFixed(0));
             _set("rs-hrs-auth",   hrsAuth.toFixed(0));
-            _set("rs-hrs-desc",   Math.max(0, (hrsRep - hrsPend) - hrsAuth).toFixed(0));
+            _set("rs-hrs-desc",   ((+d.hrs_descontadas || 0) + (+d.hrs_no_autorizadas || 0)).toFixed(0));
             // Mostrar contenido si estaba oculto
             const vacio    = document.getElementById("resumenVacio");
             const contenido= document.getElementById("resumenContenido");
@@ -2532,16 +2532,17 @@ function _applyAllFiltersCoor() {
 
 // Actualiza las tarjetas KPI del panel de registro a partir de los registros filtrados
 function _actualizarKpisCoorReg(registros) {
-    let total = registros.length, pend = 0, hrsPend = 0, hrsRep = 0, hrsAuth = 0, hrsNoAuth = 0, hrsRepRevisadas = 0;
+    let total = registros.length, pend = 0, hrsPend = 0, hrsRep = 0, hrsAuth = 0, hrsNoAuth = 0, hrsDesc = 0;
     for (const r of registros) {
         const est  = (r.estado || "").trim().toUpperCase();
         hrsRep  += r.horas_reportadas || 0;
-        if (est === "CONFORME" || est === "DESCONTADA") {
-            hrsAuth        += r.horas_autorizadas || 0;
-            hrsRepRevisadas += r.horas_reportadas || 0;
+        if (est === "CONFORME") {
+            hrsAuth += r.horas_autorizadas || 0;
+        } else if (est === "DESCONTADA") {
+            hrsAuth += r.horas_autorizadas || 0;
+            hrsDesc += r.horas_reportadas  || 0;
         } else if (est === "NO CONFORME") {
-            hrsNoAuth      += r.horas_reportadas || 0;
-            hrsRepRevisadas += r.horas_reportadas || 0;
+            hrsNoAuth += r.horas_reportadas || 0;
         } else { pend++; hrsPend += r.horas_reportadas || 0; }
     }
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -2555,7 +2556,7 @@ function _actualizarKpisCoorReg(registros) {
     set("rs-pendientes", pend.toLocaleString("es-CO"));
     set("rs-hrs-rep",    hrsRep.toFixed(0));
     set("rs-hrs-auth",   hrsAuth.toFixed(0));
-    set("rs-hrs-desc",   Math.max(0, hrsRepRevisadas - hrsAuth).toFixed(0));
+    set("rs-hrs-desc",   (hrsDesc + hrsNoAuth).toFixed(0));
 }
 
 function _actualizarKpisCoor(rows) {

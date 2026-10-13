@@ -528,7 +528,7 @@ function renderKpis(k) {
     document.getElementById('k_rep').textContent    = fmtHrs(_rep) + 'h';
     document.getElementById('k_auth').textContent   = fmtHrs(_auth) + 'h';
     document.getElementById('k_noconf').textContent = fmtHrs(k.hrs_no_conforme) + 'h';
-    document.getElementById('k_desc').textContent   = fmtHrs(Math.max(0, (_rep - _pend) - _auth)) + 'h';
+    document.getElementById('k_desc').textContent   = fmtHrs((+k.hrs_descontadas || 0) + (+k.hrs_no_conformes || 0)) + 'h';
 }
 
 // Plugin inline: dibuja el valor al final de cada barra horizontal

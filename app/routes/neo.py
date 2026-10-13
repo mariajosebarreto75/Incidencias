@@ -393,15 +393,6 @@ def home_neo():
     except Exception:
         pass
 
-    comp_pendientes = 0
-    try:
-        from app.models.compromiso import Compromiso as _Comp
-        comp_pendientes = _Comp.query.filter(
-            _Comp.estado.in_(["Pendiente", "Reprogramado"])
-        ).count()
-    except Exception:
-        pass
-
     from datetime import datetime as _dt
     hora_real = _dt.now().hour
     if hora_real < 12:
@@ -422,7 +413,6 @@ def home_neo():
             "reportes_hoy": reportes_hoy,
             "por_validar": por_validar,
             "he_mes": he_mes,
-            "compromisos_pendientes": comp_pendientes,
         },
         greeting=greeting,
         today_str=today_str,
