@@ -124,6 +124,10 @@ def dashboard():
         {"name":"Horas Extras","icon":"bi-clock-history","tint":"#8B5CF6","links":[
             {"label":"Registro / Validación","icon":"bi-pencil-square","url":"/horas-extras","desc":"Ingreso y validación de horas extras"},
             {"label":"Dashboard HE","icon":"bi-bar-chart-line-fill","url":url_for("he_bp.he_dashboard"),"desc":"KPIs, tipos de HE, límite legal y nómina"},
+            {"label":"Cortes","icon":"bi-scissors","url":url_for("admin_bp.he_cortes"),"desc":"Abrir y cerrar períodos de liquidación"},
+            {"label":"Registros HE","icon":"bi-table","url":url_for("admin_bp.he_registros"),"desc":"Ver y gestionar todos los registros"},
+            {"label":"Auditoría HE","icon":"bi-shield-check","url":url_for("admin_bp.he_auditoria"),"desc":"Historial de creaciones, cambios y eliminaciones"},
+            {"label":"Configuración HE","icon":"bi-gear","url":url_for("admin_bp.he_configuracion"),"desc":"Parámetros del módulo horas extras"},
         ]},
         {"name":"Semáforo","icon":"bi-stoplights-fill","tint":"#DC2626","links":[
             {"label":"Calificar","icon":"bi-stoplights-fill","url":url_for("admin_bp.semaforo"),"desc":"Registra calificaciones por contrato"},
@@ -135,6 +139,10 @@ def dashboard():
         ]},
         {"name":"Administración","icon":"bi-gear-fill","tint":"#64748B","links":[
             {"label":"Reportes Admin","icon":"bi-file-earmark-bar-graph","url":url_for("admin_bp.reportes"),"desc":"Reportes y exportaciones del sistema"},
+            {"label":"Parámetros NEO","icon":"bi-sliders","url":url_for("admin_bp.parametros"),"desc":"Configuración de parámetros operativos NEO"},
+            {"label":"Parámetros Coord.","icon":"bi-sliders2","url":url_for("admin_bp.parametros_coordinador"),"desc":"Parámetros de coordinación"},
+            {"label":"Usuarios","icon":"bi-people-fill","url":url_for("admin_bp.neo_usuarios"),"desc":"Alta, edición y permisos de usuarios"},
+            {"label":"Supervisores","icon":"bi-person-check","url":url_for("admin_bp.supervisores"),"desc":"Gestión de supervisores por contrato"},
         ]},
     ]
 
