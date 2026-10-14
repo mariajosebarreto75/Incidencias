@@ -945,7 +945,12 @@ def api_he_validar(id):
         return jsonify({"ok": False, "msg": "Autorización inválida"}), 400
 
     he.autorizacion_neo  = None if autorizacion == "PENDIENTE" else autorizacion
-    he.horas_autorizadas = int(float(horas_auth)) if horas_auth is not None else he.horas_reportadas
+    if horas_auth is not None:
+        he.horas_autorizadas = int(float(horas_auth))
+    elif autorizacion == "PENDIENTE":
+        he.horas_autorizadas = None          # celda borrada → limpiar
+    else:
+        he.horas_autorizadas = he.horas_reportadas  # validación real sin especificar → usar reportadas
     he.obs_neo           = obs
     he.estado            = autorizacion
     if autorizacion in ("CONFORME", "NO CONFORME", "DESCONTADA"):
