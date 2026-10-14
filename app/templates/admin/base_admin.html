@@ -208,7 +208,7 @@ body { margin:0; background:var(--adm-bg); font-family:'Plus Jakarta Sans','Sego
     </div>
 
     <!-- ── HORAS EXTRAS ── -->
-    {% set he_active = ep in ['he_bp.he_dashboard','admin_bp.he_dashboard_acceso','admin_bp.he_kpis','admin_bp.he_cortes','admin_bp.he_configuracion','admin_bp.he_auditoria'] %}
+    {% set he_active = ep in ['he_bp.he_dashboard','admin_bp.he_dashboard_acceso','admin_bp.he_kpis','admin_bp.he_cortes','admin_bp.he_configuracion','admin_bp.he_auditoria','admin_bp.he_registros'] %}
     <div class="sb-group">
       <div class="sb-group-hdr {% if he_active %}open{% endif %}" onclick="toggleGroup(this)">
         <i class="bi bi-clock-history sb-group-hdr-icon"></i>
@@ -219,6 +219,10 @@ body { margin:0; background:var(--adm-bg); font-family:'Plus Jakarta Sans','Sego
         <a href="{{ url_for('admin_bp.he_cortes') }}"
            class="adm-nav-link {% if ep == 'admin_bp.he_cortes' %}active{% endif %}">
           <i class="bi bi-scissors"></i> Cortes
+        </a>
+        <a href="{{ url_for('admin_bp.he_registros') }}"
+           class="adm-nav-link {% if ep == 'admin_bp.he_registros' %}active{% endif %}">
+          <i class="bi bi-table"></i> Registros HE
         </a>
         <a href="{{ url_for('admin_bp.he_configuracion') }}"
            class="adm-nav-link {% if ep == 'admin_bp.he_configuracion' %}active{% endif %}">

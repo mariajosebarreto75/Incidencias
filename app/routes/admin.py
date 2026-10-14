@@ -2116,7 +2116,8 @@ def he_configuracion():
 def he_auditoria():
     """Muestra el log de auditoría de operaciones sobre horas extras."""
     contratos = Contrato.query.order_by(Contrato.contrato).all()
-    return render_template("admin/he_auditoria.html", contratos=contratos)
+    cortes    = HeCorte.query.order_by(HeCorte.fecha_inicio.desc()).all()
+    return render_template("admin/he_auditoria.html", contratos=contratos, cortes=cortes)
 
 
 @admin_bp.route("/api/he/auditoria")
@@ -2128,6 +2129,7 @@ def api_he_auditoria():
     operacion    = request.args.get("operacion", "")
     fecha_desde  = request.args.get("fecha_desde", "")
     fecha_hasta  = request.args.get("fecha_hasta", "")
+    corte_id     = request.args.get("corte_id", type=int)
     usuario_nom  = request.args.get("usuario", "").strip()
     limit        = min(int(request.args.get("limit", 200)), 500)
 
@@ -2136,6 +2138,11 @@ def api_he_auditoria():
         q = q.filter(HeAuditLog.contrato_id == contrato_id)
     if operacion:
         q = q.filter(HeAuditLog.operacion == operacion)
+    if corte_id:
+        co = HeCorte.query.get(corte_id)
+        if co:
+            q = q.filter(HeAuditLog.fecha_labor >= co.fecha_inicio,
+                         HeAuditLog.fecha_labor <= co.fecha_fin)
     if fecha_desde:
         try:
             from datetime import date as _date

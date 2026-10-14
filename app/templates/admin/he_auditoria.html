@@ -5,25 +5,35 @@
 <div class="adm-page-header">
     <div>
         <h1 class="adm-page-title"><i class="bi bi-shield-check me-2" style="color:var(--adm-accent)"></i>Auditoría — Horas Extras</h1>
-        <p class="adm-page-sub" id="subHeader">Historial de creaciones, modificaciones y eliminaciones</p>
+        <p class="adm-page-sub">Historial de creaciones, modificaciones y eliminaciones</p>
     </div>
 </div>
 
 <div id="alerta" class="adm-alert"></div>
 
+<!-- TARJETAS DE RESUMEN RÁPIDO -->
+<div id="resumenCards" style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem"></div>
+
 <!-- FILTROS -->
 <div class="adm-card" style="margin-bottom:1rem">
     <div style="padding:14px 20px;display:flex;gap:.8rem;flex-wrap:wrap;align-items:flex-end">
         <div>
-            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Contrato</label>
-            <select id="fContrato" class="form-select form-select-sm" style="min-width:200px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+            <label style="font-size:.75rem;color:var(--adm-text-muted2);display:block;margin-bottom:3px">Contrato</label>
+            <select id="fContrato" class="form-select form-select-sm" style="min-width:200px">
                 <option value="">Todos</option>
                 {% for c in contratos %}<option value="{{ c.id }}">{{ c.contrato }}</option>{% endfor %}
             </select>
         </div>
         <div>
-            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Operación</label>
-            <select id="fOp" class="form-select form-select-sm" style="min-width:130px;background:#0f172a;color:#e2e8f0;border-color:#334155">
+            <label style="font-size:.75rem;color:var(--adm-text-muted2);display:block;margin-bottom:3px">Corte</label>
+            <select id="fCorte" class="form-select form-select-sm" style="min-width:180px" onchange="sincCorteAFechas()">
+                <option value="">Todos los cortes</option>
+                {% for co in cortes %}<option value="{{ co.id }}" data-inicio="{{ co.fecha_inicio }}" data-fin="{{ co.fecha_fin }}">{{ co.nombre }}</option>{% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size:.75rem;color:var(--adm-text-muted2);display:block;margin-bottom:3px">Operación</label>
+            <select id="fOp" class="form-select form-select-sm" style="min-width:130px">
                 <option value="">Todas</option>
                 <option value="INSERT">Creación</option>
                 <option value="UPDATE">Modificación</option>
@@ -31,70 +41,83 @@
             </select>
         </div>
         <div>
-            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Fecha labor desde</label>
-            <input type="date" id="fDesde" class="form-control form-control-sm" style="background:#0f172a;color:#e2e8f0;border-color:#334155;width:145px">
+            <label style="font-size:.75rem;color:var(--adm-text-muted2);display:block;margin-bottom:3px">Fecha labor desde</label>
+            <input type="date" id="fDesde" class="form-control form-control-sm" style="width:145px">
         </div>
         <div>
-            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Fecha labor hasta</label>
-            <input type="date" id="fHasta" class="form-control form-control-sm" style="background:#0f172a;color:#e2e8f0;border-color:#334155;width:145px">
+            <label style="font-size:.75rem;color:var(--adm-text-muted2);display:block;margin-bottom:3px">Fecha labor hasta</label>
+            <input type="date" id="fHasta" class="form-control form-control-sm" style="width:145px">
         </div>
         <div>
-            <label style="font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px">Usuario</label>
-            <input type="text" id="fUsuario" class="form-control form-control-sm" placeholder="Nombre..." style="background:#0f172a;color:#e2e8f0;border-color:#334155;width:160px">
+            <label style="font-size:.75rem;color:var(--adm-text-muted2);display:block;margin-bottom:3px">Usuario</label>
+            <input type="text" id="fUsuario" class="form-control form-control-sm" placeholder="Nombre..." style="width:160px">
         </div>
-        <button onclick="cargar()" class="btn btn-sm btn-primary" style="height:31px">
-            <i class="bi bi-search me-1"></i>Buscar
+        <div style="display:flex;gap:.5rem">
+            <button onclick="cargar()" class="btn btn-sm btn-primary" style="height:31px">
+                <i class="bi bi-search me-1"></i>Buscar
+            </button>
+            <button onclick="limpiarFiltros()" class="btn btn-sm btn-outline-secondary" style="height:31px" title="Limpiar filtros">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+    <!-- Accesos rápidos por corte -->
+    <div style="padding:0 20px 14px;display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <span style="font-size:.72rem;color:var(--adm-text-muted2);margin-right:.3rem">Acceso rápido:</span>
+        {% for co in cortes %}
+        <button onclick="filtrarPorCorte({{ co.id }},'{{ co.nombre }}')" class="btn btn-sm btn-outline-secondary" style="font-size:.72rem;padding:2px 10px">
+            {{ co.nombre }}
         </button>
+        {% endfor %}
     </div>
 </div>
 
 <!-- TABLA -->
 <div class="adm-card">
     <div style="overflow-x:auto">
-        <table class="table table-sm table-dark table-hover mb-0" id="tbl" style="font-size:.78rem;min-width:1100px">
+        <table class="adm-table" id="tbl" style="min-width:1100px">
             <thead>
-                <tr style="color:#94a3b8;border-color:#1e293b">
+                <tr>
                     <th>Fecha/Hora</th>
                     <th>Operación</th>
                     <th>Contrato</th>
                     <th>Fecha Labor</th>
                     <th>Cédula</th>
-                    <th>Nombre</th>
+                    <th>Nombre trabajador</th>
                     <th>Hrs</th>
                     <th>Concepto</th>
                     <th>Estado antes</th>
                     <th>Estado desp.</th>
-                    <th>Usuario</th>
+                    <th>Hecho por</th>
                     <th>Rol</th>
-                    <th>IP</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody id="tbody">
-                <tr><td colspan="14" class="text-center text-secondary py-4">Use los filtros y presione Buscar</td></tr>
+                <tr><td colspan="13" class="adm-empty">Use los filtros y presione Buscar</td></tr>
             </tbody>
         </table>
     </div>
-    <div id="pie" style="padding:8px 16px;color:#64748b;font-size:.75rem"></div>
+    <div id="pie" style="padding:8px 16px;color:var(--adm-text-muted2);font-size:.75rem"></div>
 </div>
 
 <!-- MODAL detalle -->
 <div class="modal fade" id="mdlDetalle" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content" style="background:#1e293b;color:#e2e8f0;border-color:#334155">
-            <div class="modal-header" style="border-color:#334155">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5 class="modal-title" id="mdlTitulo">Detalle de cambio</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="row g-3">
                     <div class="col-6">
-                        <h6 style="color:#94a3b8">Datos ANTES</h6>
-                        <pre id="preAntes" style="background:#0f172a;padding:12px;border-radius:6px;font-size:.72rem;max-height:400px;overflow:auto;color:#cbd5e1"></pre>
+                        <h6 class="text-muted">Datos ANTES</h6>
+                        <pre id="preAntes" style="background:var(--adm-bg);padding:12px;border-radius:6px;font-size:.72rem;max-height:400px;overflow:auto;border:1px solid var(--adm-border)"></pre>
                     </div>
                     <div class="col-6">
-                        <h6 style="color:#94a3b8">Datos DESPUÉS</h6>
-                        <pre id="preDespues" style="background:#0f172a;padding:12px;border-radius:6px;font-size:.72rem;max-height:400px;overflow:auto;color:#cbd5e1"></pre>
+                        <h6 class="text-muted">Datos DESPUÉS</h6>
+                        <pre id="preDespues" style="background:var(--adm-bg);padding:12px;border-radius:6px;font-size:.72rem;max-height:400px;overflow:auto;border:1px solid var(--adm-border)"></pre>
                     </div>
                 </div>
             </div>
@@ -103,64 +126,120 @@
 </div>
 
 <script>
-const OP_COLOR = { INSERT: '#22c55e', UPDATE: '#f59e0b', DELETE: '#ef4444' };
-const OP_LABEL = { INSERT: 'Creación', UPDATE: 'Modificación', DELETE: 'Eliminación' };
+const OP_COLOR  = { INSERT: '#16a34a', UPDATE: '#d97706', DELETE: '#dc2626' };
+const OP_BG     = { INSERT: '#f0fdf4', UPDATE: '#fffbeb', DELETE: '#fef2f2' };
+const OP_LABEL  = { INSERT: 'Creación', UPDATE: 'Modificación', DELETE: 'Eliminación' };
+const EST_COLOR = { PENDIENTE:'#64748b', CONFORME:'#16a34a', 'NO CONFORME':'#dc2626', DESCONTADA:'#d97706' };
 let _rows = [];
 
+function sincCorteAFechas() {
+    const sel = document.getElementById('fCorte');
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.dataset.inicio) {
+        document.getElementById('fDesde').value = opt.dataset.inicio;
+        document.getElementById('fHasta').value = opt.dataset.fin;
+    }
+}
+
+function filtrarPorCorte(corteId, nombre) {
+    document.getElementById('fCorte').value = corteId;
+    sincCorteAFechas();
+    cargar();
+}
+
+function limpiarFiltros() {
+    document.getElementById('fContrato').value = '';
+    document.getElementById('fCorte').value    = '';
+    document.getElementById('fOp').value       = '';
+    document.getElementById('fDesde').value    = '';
+    document.getElementById('fHasta').value    = '';
+    document.getElementById('fUsuario').value  = '';
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="adm-empty">Use los filtros y presione Buscar</td></tr>';
+    document.getElementById('pie').textContent = '';
+    document.getElementById('resumenCards').innerHTML = '';
+}
+
 async function cargar() {
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="adm-empty"><i class="bi bi-hourglass-split me-2"></i>Cargando...</td></tr>';
     const params = new URLSearchParams({
         contrato_id: document.getElementById('fContrato').value,
         operacion:   document.getElementById('fOp').value,
         fecha_desde: document.getElementById('fDesde').value,
         fecha_hasta: document.getElementById('fHasta').value,
+        corte_id:    document.getElementById('fCorte').value,
         usuario:     document.getElementById('fUsuario').value,
         limit:       500,
     });
     const r = await fetch('/admin/api/he/auditoria?' + params);
     _rows = await r.json();
+    renderResumen();
     renderTabla();
+}
+
+function renderResumen() {
+    const cards = document.getElementById('resumenCards');
+    if (!_rows.length) { cards.innerHTML = ''; return; }
+
+    const dels    = _rows.filter(r => r.operacion === 'DELETE');
+    const upds    = _rows.filter(r => r.operacion === 'UPDATE');
+    const ins     = _rows.filter(r => r.operacion === 'INSERT');
+    const hrsElim = dels.reduce((s,r) => s + (parseFloat(r.horas_rep)||0), 0);
+    const usuarios = [...new Set(_rows.map(r=>r.usuario))];
+
+    const card = (icon, label, val, sub, color) => `
+        <div style="background:var(--adm-surface);border:1px solid var(--adm-border);border-radius:10px;padding:14px 18px;min-width:150px;flex:1;max-width:220px">
+            <div style="font-size:.72rem;color:var(--adm-text-muted2);margin-bottom:4px;display:flex;align-items:center;gap:5px">
+                <i class="bi ${icon}" style="color:${color}"></i> ${label}
+            </div>
+            <div style="font-size:1.5rem;font-weight:700;color:${color};line-height:1">${val}</div>
+            ${sub ? `<div style="font-size:.72rem;color:var(--adm-text-muted2);margin-top:3px">${sub}</div>` : ''}
+        </div>`;
+
+    cards.innerHTML =
+        card('bi-list-check',   'Total registros', _rows.length.toLocaleString('es-CO'), `${usuarios.length} usuario(s)`, 'var(--adm-accent)') +
+        (ins.length  ? card('bi-plus-circle',  'Creaciones',      ins.length.toLocaleString('es-CO'),  '', '#16a34a') : '') +
+        (upds.length ? card('bi-pencil-square','Modificaciones',  upds.length.toLocaleString('es-CO'), '', '#d97706') : '') +
+        (dels.length ? card('bi-trash-fill',   'Eliminaciones',   dels.length.toLocaleString('es-CO'), `${hrsElim.toLocaleString('es-CO')} hrs eliminadas`, '#dc2626') : '');
 }
 
 function renderTabla() {
     const tbody = document.getElementById('tbody');
     if (!_rows.length) {
-        tbody.innerHTML = '<tr><td colspan="14" class="text-center text-secondary py-4">Sin resultados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13" class="adm-empty"><i class="bi bi-inbox me-2"></i>Sin resultados para los filtros aplicados</td></tr>';
         document.getElementById('pie').textContent = '';
         return;
     }
     tbody.innerHTML = _rows.map((r, i) => `
-        <tr>
-            <td style="white-space:nowrap">${r.fecha}</td>
-            <td><span style="background:${OP_COLOR[r.operacion]}22;color:${OP_COLOR[r.operacion]};padding:2px 8px;border-radius:4px;font-weight:600">${OP_LABEL[r.operacion] || r.operacion}</span></td>
-            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.contrato}">${r.contrato}</td>
-            <td>${r.fecha_labor}</td>
-            <td>${r.cedula}</td>
-            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.nombre}">${r.nombre}</td>
-            <td>${r.horas_rep ?? ''}</td>
-            <td>${r.id_concepto} ${r.tipo_he ? '- ' + r.tipo_he.substring(0,20) : ''}</td>
+        <tr style="${r.operacion==='DELETE' ? 'background:rgba(220,38,38,.04)' : ''}">
+            <td style="white-space:nowrap;font-size:.77rem">${r.fecha}</td>
+            <td><span style="background:${OP_BG[r.operacion]};color:${OP_COLOR[r.operacion]};padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;border:1px solid ${OP_COLOR[r.operacion]}33">${OP_LABEL[r.operacion]||r.operacion}</span></td>
+            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem" title="${r.contrato}">${r.contrato}</td>
+            <td style="font-size:.78rem">${r.fecha_labor}</td>
+            <td style="font-size:.78rem">${r.cedula}</td>
+            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem" title="${r.nombre}">${r.nombre}</td>
+            <td style="font-weight:600;color:${r.operacion==='DELETE'?'#dc2626':'inherit'}">${r.horas_rep ?? ''}</td>
+            <td style="font-size:.78rem">${r.id_concepto}${r.tipo_he ? ' · '+r.tipo_he.substring(0,20) : ''}</td>
             <td>${badge(r.estado_antes)}</td>
             <td>${badge(r.estado_desp)}</td>
-            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.usuario}</td>
-            <td>${r.rol}</td>
-            <td>${r.ip}</td>
-            <td><button class="btn btn-xs btn-outline-secondary" style="font-size:.7rem;padding:2px 6px" onclick="verDetalle(${i})"><i class="bi bi-eye"></i></button></td>
+            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem">${r.usuario}</td>
+            <td style="font-size:.75rem;color:var(--adm-text-muted2)">${r.rol}</td>
+            <td><button class="btn-edit" style="padding:2px 8px;font-size:.72rem" onclick="verDetalle(${i})"><i class="bi bi-eye"></i></button></td>
         </tr>
     `).join('');
-    document.getElementById('pie').textContent = `${_rows.length} registro(s)`;
+    document.getElementById('pie').textContent = `${_rows.length} registro(s) mostrados`;
 }
 
 function badge(estado) {
-    if (!estado) return '';
-    const map = { PENDIENTE:'#64748b', CONFORME:'#22c55e', 'NO CONFORME':'#ef4444', DESCONTADA:'#f59e0b' };
-    const col = map[estado] || '#64748b';
-    return `<span style="background:${col}22;color:${col};padding:2px 7px;border-radius:4px;font-size:.7rem">${estado}</span>`;
+    if (!estado) return '<span style="color:var(--adm-text-muted2);font-size:.72rem">—</span>';
+    const col = EST_COLOR[estado] || '#64748b';
+    return `<span style="background:${col}18;color:${col};padding:2px 7px;border-radius:4px;font-size:.72rem;font-weight:600;border:1px solid ${col}33">${estado}</span>`;
 }
 
 function verDetalle(i) {
     const r = _rows[i];
-    document.getElementById('mdlTitulo').textContent = `${OP_LABEL[r.operacion] || r.operacion} — ID #${r.registro_id || ''}  (${r.fecha})`;
-    document.getElementById('preAntes').textContent   = r.estado_antes ? JSON.stringify(JSON.parse(r.datos_antes || '{}'), null, 2) : '(sin datos previos)';
-    document.getElementById('preDespues').textContent = r.estado_desp  ? JSON.stringify(JSON.parse(r.datos_desp  || '{}'), null, 2) : '(sin datos posteriores)';
+    document.getElementById('mdlTitulo').textContent = `${OP_LABEL[r.operacion]||r.operacion} — ${r.nombre} (${r.fecha})`;
+    try { document.getElementById('preAntes').textContent    = r.datos_antes ? JSON.stringify(JSON.parse(r.datos_antes), null, 2) : '(sin datos previos)'; } catch(e) { document.getElementById('preAntes').textContent = r.datos_antes || '(vacío)'; }
+    try { document.getElementById('preDespues').textContent  = r.datos_desp  ? JSON.stringify(JSON.parse(r.datos_desp),  null, 2) : '(sin datos posteriores)'; } catch(e) { document.getElementById('preDespues').textContent = r.datos_desp || '(vacío)'; }
     new bootstrap.Modal(document.getElementById('mdlDetalle')).show();
 }
 </script>
