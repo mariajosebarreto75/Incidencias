@@ -1,0 +1,94 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<div class="adm-page-header">
+    <div>
+        <h1 class="adm-page-title">{{ greeting }}, {{ current_user.nombre_completo.split()[0] }}</h1>
+        <p class="adm-page-sub">{{ today_str }}</p>
+    </div>
+</div>
+
+<!-- KPIs -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem">
+
+    <a href="{{ url_for('admin_bp.neo_usuarios') }}" style="text-decoration:none">
+    <div class="adm-card" style="padding:20px 24px;display:flex;align-items:center;gap:16px;transition:box-shadow .15s;cursor:pointer" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow=''">
+        <div style="width:48px;height:48px;border-radius:12px;background:#E0F2FE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="bi bi-people-fill" style="font-size:1.3rem;color:#0369a1"></i>
+        </div>
+        <div>
+            <div style="font-size:1.8rem;font-weight:800;color:var(--adm-text);line-height:1">{{ kpis.usuarios_activos }}</div>
+            <div style="font-size:.75rem;color:var(--adm-text-muted2);margin-top:2px">Usuarios activos</div>
+        </div>
+    </div>
+    </a>
+
+    <a href="{{ url_for('coordinador.panel_reportes') }}" style="text-decoration:none">
+    <div class="adm-card" style="padding:20px 24px;display:flex;align-items:center;gap:16px;transition:box-shadow .15s;cursor:pointer" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow=''">
+        <div style="width:48px;height:48px;border-radius:12px;background:#FEF3C7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="bi bi-file-earmark-text-fill" style="font-size:1.3rem;color:#D97706"></i>
+        </div>
+        <div>
+            <div style="font-size:1.8rem;font-weight:800;color:var(--adm-text);line-height:1">{{ kpis.reportes_totales }}</div>
+            <div style="font-size:.75rem;color:var(--adm-text-muted2);margin-top:2px">Reportes NEO</div>
+        </div>
+    </div>
+    </a>
+
+    <a href="{{ url_for('he_bp.he_dashboard') }}" style="text-decoration:none">
+    <div class="adm-card" style="padding:20px 24px;display:flex;align-items:center;gap:16px;transition:box-shadow .15s;cursor:pointer" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow=''">
+        <div style="width:48px;height:48px;border-radius:12px;background:#EDE9FE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="bi bi-clock-history" style="font-size:1.3rem;color:#7C3AED"></i>
+        </div>
+        <div>
+            <div style="font-size:1.8rem;font-weight:800;color:var(--adm-text);line-height:1">{{ kpis.he_mes }}</div>
+            <div style="font-size:.75rem;color:var(--adm-text-muted2);margin-top:2px">HE del mes (hrs)</div>
+        </div>
+    </div>
+    </a>
+
+    <a href="{{ url_for('admin_bp.contratos') }}" style="text-decoration:none">
+    <div class="adm-card" style="padding:20px 24px;display:flex;align-items:center;gap:16px;transition:box-shadow .15s;cursor:pointer" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow=''">
+        <div style="width:48px;height:48px;border-radius:12px;background:#DCFCE7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="bi bi-building" style="font-size:1.3rem;color:#16A34A"></i>
+        </div>
+        <div>
+            <div style="font-size:1.8rem;font-weight:800;color:var(--adm-text);line-height:1">{{ kpis.contratos }}</div>
+            <div style="font-size:.75rem;color:var(--adm-text-muted2);margin-top:2px">Contratos</div>
+        </div>
+    </div>
+    </a>
+
+</div>
+
+<!-- Accesos rápidos -->
+<h2 style="font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--adm-text-muted2);margin-bottom:.8rem">Accesos rápidos</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem">
+
+    {% set shortcuts = [
+        ("bi-scissors",       "#0B6E75", "Cortes HE",          url_for("admin_bp.he_cortes")),
+        ("bi-shield-check",   "#0B6E75", "Auditoría HE",       url_for("admin_bp.he_auditoria")),
+        ("bi-table",          "#0B6E75", "Registros HE",       url_for("admin_bp.he_registros")),
+        ("bi-clipboard-data-fill", "#0891B2", "Panel Reportes", url_for("coordinador.panel_reportes")),
+        ("bi-people-fill",    "#7C3AED", "Usuarios",           url_for("admin_bp.neo_usuarios")),
+        ("bi-building",       "#16A34A", "Contratos",          url_for("admin_bp.contratos")),
+        ("bi-traffic-light",  "#DC2626", "Semáforo",           url_for("admin_bp.semaforo")),
+        ("bi-bar-chart-line-fill","#7C3AED","Dashboard HE",    url_for("he_bp.he_dashboard")),
+        ("bi-diagram-3-fill", "#0891B2", "Distribución Op.",   url_for("coordinador.distribucion_operativa")),
+        ("bi-speedometer2",   "#0891B2", "Indicadores",        url_for("dashboard.indicadores")),
+        ("bi-sliders",        "#64748B", "Parámetros NEO",     url_for("admin_bp.parametros")),
+        ("bi-person-check",   "#64748B", "Supervisores",       url_for("admin_bp.supervisores")),
+    ] %}
+
+    {% for icon, color, label, url in shortcuts %}
+    <a href="{{ url }}" style="text-decoration:none">
+        <div class="adm-card" style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s;cursor:pointer;height:100%" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow=''">
+            <i class="bi {{ icon }}" style="font-size:1.2rem;color:{{ color }}"></i>
+            <span style="font-size:.8rem;font-weight:600;color:var(--adm-text);line-height:1.3">{{ label }}</span>
+        </div>
+    </a>
+    {% endfor %}
+
+</div>
+{% endblock %}

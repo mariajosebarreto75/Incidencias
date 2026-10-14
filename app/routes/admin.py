@@ -102,60 +102,18 @@ def dashboard():
         HoraExtra.fecha_labor >= mes_ini, HoraExtra.fecha_labor <= hoy
     ).scalar()
 
-    kpi_tiles = [
-        {"icon":"bi-people-fill","bg":"#E0F2FE","color":"#0369a1","label":"Usuarios activos","value":User.query.filter_by(activo=True).count(),"sub":"cuentas habilitadas"},
-        {"icon":"bi-file-earmark-text-fill","bg":"#FEF3C7","color":"#D97706","label":"Reportes totales","value":ReporteOperacional.query.count(),"sub":"en el sistema"},
-        {"icon":"bi-clock-history","bg":"#EDE9FE","color":"#7C3AED","label":"HE del mes","value":round(he_mes_raw or 0,1),"sub":"horas extras registradas"},
-        {"icon":"bi-building","bg":"#DCFCE7","color":"#16A34A","label":"Contratos","value":Contrato.query.count(),"sub":"contratos registrados"},
-    ]
-
-    groups = [
-        {"name":"Catálogos","icon":"bi-database-fill","tint":"#0B6E75","links":[
-            {"label":"Contratos","icon":"bi-building","url":url_for("admin_bp.contratos"),"desc":"Gestión de contratos activos"},
-            {"label":"Usuarios","icon":"bi-people-fill","url":url_for("admin_bp.neo_usuarios"),"desc":"Alta, edición y permisos de usuarios"},
-            {"label":"Placas","icon":"bi-truck","url":url_for("admin_bp.placas"),"desc":"Registro de placas por contrato"},
-            {"label":"Evidencias","icon":"bi-image","url":url_for("admin_bp.evidencias_compromisos"),"desc":"Gestión de evidencias de compromisos"},
-        ]},
-        {"name":"Reportes NEO","icon":"bi-broadcast-pin","tint":"#0891B2","links":[
-            {"label":"Panel de Reportes","icon":"bi-clipboard-data-fill","url":url_for("coordinador.panel_reportes"),"desc":"Valide y gestione reportes operacionales"},
-            {"label":"Distribución Operativa","icon":"bi-diagram-3-fill","url":url_for("coordinador.distribucion_operativa"),"desc":"Recursos, cuadrillas y órdenes de trabajo"},
-            {"label":"Indicadores","icon":"bi-speedometer2","url":url_for("dashboard.indicadores"),"desc":"KPIs gerenciales en tiempo real"},
-        ]},
-        {"name":"Horas Extras","icon":"bi-clock-history","tint":"#8B5CF6","links":[
-            {"label":"Registro / Validación","icon":"bi-pencil-square","url":"/horas-extras","desc":"Ingreso y validación de horas extras"},
-            {"label":"Dashboard HE","icon":"bi-bar-chart-line-fill","url":url_for("he_bp.he_dashboard"),"desc":"KPIs, tipos de HE, límite legal y nómina"},
-            {"label":"Cortes","icon":"bi-scissors","url":url_for("admin_bp.he_cortes"),"desc":"Abrir y cerrar períodos de liquidación"},
-            {"label":"Registros HE","icon":"bi-table","url":url_for("admin_bp.he_registros"),"desc":"Ver y gestionar todos los registros"},
-            {"label":"Auditoría HE","icon":"bi-shield-check","url":url_for("admin_bp.he_auditoria"),"desc":"Historial de creaciones, cambios y eliminaciones"},
-            {"label":"Configuración HE","icon":"bi-gear","url":url_for("admin_bp.he_configuracion"),"desc":"Parámetros del módulo horas extras"},
-        ]},
-        {"name":"Semáforo","icon":"bi-stoplights-fill","tint":"#DC2626","links":[
-            {"label":"Calificar","icon":"bi-stoplights-fill","url":url_for("admin_bp.semaforo"),"desc":"Registra calificaciones por contrato"},
-        ]},
-        {"name":"Compromisos","icon":"bi-calendar-check","tint":"#D97706","links":[
-            {"label":"Reuniones","icon":"bi-calendar3","url":url_for("compromisos.reuniones"),"desc":"Programación de reuniones"},
-            {"label":"Checklist","icon":"bi-list-check","url":url_for("compromisos.checklist"),"desc":"Checklist de reuniones realizadas"},
-            {"label":"Agenda","icon":"bi-journal-check","url":url_for("compromisos.lista"),"desc":"Compromisos pendientes y atrasados"},
-        ]},
-        {"name":"Administración","icon":"bi-gear-fill","tint":"#64748B","links":[
-            {"label":"Reportes Admin","icon":"bi-file-earmark-bar-graph","url":url_for("admin_bp.reportes"),"desc":"Reportes y exportaciones del sistema"},
-            {"label":"Parámetros NEO","icon":"bi-sliders","url":url_for("admin_bp.parametros"),"desc":"Configuración de parámetros operativos NEO"},
-            {"label":"Parámetros Coord.","icon":"bi-sliders2","url":url_for("admin_bp.parametros_coordinador"),"desc":"Parámetros de coordinación"},
-            {"label":"Usuarios","icon":"bi-people-fill","url":url_for("admin_bp.neo_usuarios"),"desc":"Alta, edición y permisos de usuarios"},
-            {"label":"Supervisores","icon":"bi-person-check","url":url_for("admin_bp.supervisores"),"desc":"Gestión de supervisores por contrato"},
-        ]},
-    ]
+    kpis = {
+        "usuarios_activos": User.query.filter_by(activo=True).count(),
+        "reportes_totales": ReporteOperacional.query.count(),
+        "he_mes":           round(he_mes_raw or 0, 1),
+        "contratos":        Contrato.query.count(),
+    }
 
     return render_template(
-        "shared/home_universal.html",
-        page_title="Panel Admin",
-        home_url=url_for("admin_bp.dashboard"),
-        role_sub="Administración del Sistema",
-        welcome_sub="Panel de administración y control del sistema",
+        "admin/dashboard.html",
         greeting=greeting,
         today_str=today_str,
-        groups=groups,
-        kpi_tiles=kpi_tiles,
+        kpis=kpis,
     )
 
 
