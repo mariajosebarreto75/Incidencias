@@ -688,8 +688,9 @@ const CONCEPTO_KEYS = Object.keys(CONCEPTOS);
 // Índices columnas registro (entrada)
 const C_FECHA=0, C_CED=1, C_NOM=2, C_REC=3, C_PLACA=4, C_HRS=5,
       C_HINICIO=6, C_HFIN=7, C_COD=8, C_TIPO=9,
-      C_COMP=10, C_SUP=11, C_JUST=12, C_OBS=13;
-const N_COLS = 14;
+      C_COMP=10, C_SUP=11, C_JUST=12, C_OBS=13,
+      C_HAUTH_REG=14, C_NEOAUTH_REG=15, C_OBSNEO_REG=16, C_VALBY_REG=17, C_RETRO_REG=18;
+const N_COLS = 19;
 // Índices columnas validación (historial)
 // +1 por columna checkbox al inicio
 const V_CHK=0,
@@ -847,7 +848,8 @@ function iniciarGrid() {
             "Fecha Labor","Cédula","Nombre","Recurso",
             "Placa","#Hrs Reportadas","Hora Inicio","Hora Fin",
             "Id Concepto","Tipo HE","#Hrs Compensadas",
-            "Autorización(supervisor)","Justificación","Observación"
+            "Autorización(supervisor)","Justificación","Observación",
+            "Hrs Autorizadas (NEO)","Estado NEO","Obs NEO","Validado Por","Retroalimentación"
         ],
         columns: [
             { type:"date",         dateFormat:"DD/MM/YYYY", correctFormat:true },
@@ -864,8 +866,13 @@ function iniciarGrid() {
             { type:"autocomplete", source: function(q, cb){ cb(supervisoresActuales); }, strict:false, allowInvalid:true },
             { type:"dropdown", source: ["Lluvia","Desplazamiento","Programacion","Atención Emergencia","Actividad Compleja","Capacitación","Vehículos","Materiales","Maniobras","Disponibilidad","Porteria"], strict:true, allowInvalid:false },
             { type:"text" },
+            { type:"numeric",      readOnly:true },    // 14 horas_autorizadas (NEO)
+            { type:"text",         readOnly:true },    // 15 autorizacion_neo (Estado NEO)
+            { type:"text",         readOnly:true },    // 16 obs_neo
+            { type:"text",         readOnly:true },    // 17 validado_por
+            { type:"text" },                           // 18 retroalimentacion (editable solo si NEO validó)
         ],
-        colWidths: [115,105,185,135, 90,105,90,90, 110,200,110, 175,175,175],
+        colWidths: [115,105,185,135, 90,105,90,90, 110,200,110, 175,175,175, 105,120,155,145,185],
         fixedColumnsLeft: 0,
         rowHeights: 28,
         autoRowSize: false,
@@ -878,17 +885,24 @@ function iniciarGrid() {
         copyPaste: true,
         undo: true,
         licenseKey: "non-commercial-and-evaluation",
-        cells: function(row) {
-            if (_rowIds[row]) return { className: 'row-guardada' };
-            return {};
+        cells: function(row, col) {
+            const base = _rowIds[row] ? { className: 'row-guardada' } : {};
+            if (col === C_RETRO_REG) {
+                const neoAuth = hot ? (hot.getDataAtCell(row, C_NEOAUTH_REG) || "") : "";
+                if (!neoAuth) return { ...base, readOnly: true };
+            }
+            return base;
         },
         afterGetColHeader: function(col, TH) { _showFilterBtnC(hot, col, TH, false); _colorearHeaderCoor(hot, col, TH, false); },
         afterChange: function(changes, source) {
             if (!changes || source === "loadData" || source === "auto") return;
-            changes.forEach(([row, col, , newVal]) => {
-                if (_rowIds[row]) _modifiedRowSet.add(row); // marcar fila existente como modificada
+            changes.forEach(([row, col, oldVal, newVal]) => {
+                if (_rowIds[row]) _modifiedRowSet.add(row);
                 if (col === C_CED) onCedulaCambia(row, newVal);
                 if (col === C_COD) onConceptoCambia(row, newVal);
+                if (col === C_RETRO_REG && _rowIds[row] && newVal !== oldVal) {
+                    guardarRetroalimentacionReg(_rowIds[row], newVal);
+                }
             });
         },
         afterPaste: function(data, coords) {
@@ -926,6 +940,16 @@ async function autoFillNombre(row, cedula) {
         const r = await fetch(`/api/he/persona?cedula=${encodeURIComponent(cedula)}`);
         const d = await r.json();
         hot.setDataAtCell(row, C_NOM, d.ok ? d.nombre : "", "auto");
+    } catch(e) {}
+}
+
+async function guardarRetroalimentacionReg(id, valor) {
+    try {
+        await fetch(`/api/he/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ retroalimentacion: valor || "" })
+        });
     } catch(e) {}
 }
 
@@ -982,6 +1006,11 @@ async function cargarRegistrosCorteActual(corteId) {
         reg.autorizacion_sup || "",
         reg.justificacion || "",
         reg.observacion   || "",
+        reg.horas_autorizadas != null ? reg.horas_autorizadas : "",
+        reg.autorizacion_neo  || "",
+        reg.obs_neo           || "",
+        reg.validado_por      || "",
+        reg.retroalimentacion || "",
     ]);
 
     // Fuente de verdad para filtros teal y KPIs
@@ -1038,6 +1067,11 @@ async function cargarRegistrosPorPeriodo(desde, hasta) {
         reg.autorizacion_sup || "",
         reg.justificacion || "",
         reg.observacion   || "",
+        reg.horas_autorizadas != null ? reg.horas_autorizadas : "",
+        reg.autorizacion_neo  || "",
+        reg.obs_neo           || "",
+        reg.validado_por      || "",
+        reg.retroalimentacion || "",
     ]);
 
     _fullRegData    = filasSalvadas;

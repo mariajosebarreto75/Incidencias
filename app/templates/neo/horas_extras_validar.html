@@ -661,7 +661,8 @@ const C_FECHA=0, C_CONTRATO=1, C_REC=2, C_PLACA=3, C_HRS=4,
       C_HINICIO=5, C_HFIN=6, C_CED=7, C_NOM=8, C_COD=9, C_TIPO=10,
       C_COMP=11, C_SUP=12, C_JUST=13, C_OBS=14,
       C_HAUTH=15, C_ESTADO=16, C_OBSNEO=17,
-      C_FREPORTE=18, C_VALBY=19, C_VALFECHA=20;
+      C_FREPORTE=18, C_VALBY=19, C_VALFECHA=20,
+      C_RETRO=21, C_REPBY=22;
 
 const ESTADOS_NEO = ["CONFORME", "NO CONFORME", "DESCONTADA"];
 
@@ -908,7 +909,7 @@ function iniciarGrid() {
             "Justificación","Observación",
             "Hrs Autorizadas","Estado Neo","Obs Neo",
             "Fecha Reporte","Validado Por","Fecha Validación",
-            "Retroalimentación Coordinador"
+            "Retroalimentación Coordinador","Reportado Por"
         ],
         columns: [
             { type:"text" },                  // 0  fecha_labor
@@ -933,8 +934,9 @@ function iniciarGrid() {
             { type:"text", readOnly:true },   // 19 validado_por
             { type:"text", readOnly:true },   // 20 fecha_validacion
             { type:"text", readOnly:true, renderer: retroRendererNeo }, // 21 retroalimentacion (read-only)
+            { type:"text", readOnly:true },   // 22 reportado_por
         ],
-        colWidths: [105,155,125,80,110, 90,80,100,160,95,190, 115,165, 155,155, 110,120,170, 140,140,130,200],
+        colWidths: [105,155,125,80,110, 90,80,100,160,95,190, 115,165, 155,155, 110,120,170, 140,140,130,200,180],
         height: 520,
         renderAllRows: false,
         stretchH: "none",
@@ -1119,6 +1121,7 @@ async function recargar() {
         reg.validado_por || "",            // 19 Validado Por
         reg.fecha_validacion || "",        // 20 Fecha Validación
         reg.retroalimentacion || "",       // 21 Retroalimentación (read-only)
+        reg.reportado_por || "",           // 22 Reportado Por
     ]);
     // Guardar copia completa para filtros de columna y exportar
     _fullData    = filas;
