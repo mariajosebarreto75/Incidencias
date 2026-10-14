@@ -1134,6 +1134,8 @@ async function recargar() {
     // Guardar filtros actuales y sincronizar chip visual
     _guardarFiltrosNeo();
     sincronizarChip(document.getElementById("fEstado")?.value || "");
+    // Reenviar cambios que quedaron pendientes antes de una caída
+    setTimeout(_replayPendingLS, 500);
 }
 
 // ── KPIs historial ────────────────────────────────────────────────────────────
@@ -1823,7 +1825,41 @@ function fmtFecha(v) {
 // Timer por fila (clave: id del registro) para no cancelar guardados de otras filas
 const _saveTimers = {};
 // Filas con cambios pendientes de confirmar guardado exitoso
-const _dirtyRows = new Map(); // id → {row, estado, hrs, obs}
+const _dirtyRows = new Map(); // id → {row, payload}
+
+// ── localStorage como respaldo inmediato ──────────────────────────────────────
+const _LS_KEY = "neo_he_pending_v1";
+function _lsPendingSet(id, payload) {
+    try {
+        const p = JSON.parse(localStorage.getItem(_LS_KEY) || "{}");
+        p[id] = { payload, ts: Date.now() };
+        localStorage.setItem(_LS_KEY, JSON.stringify(p));
+    } catch(e) {}
+}
+function _lsPendingClear(id) {
+    try {
+        const p = JSON.parse(localStorage.getItem(_LS_KEY) || "{}");
+        delete p[id];
+        localStorage.setItem(_LS_KEY, JSON.stringify(p));
+    } catch(e) {}
+}
+// Reenvía al servidor los cambios que quedaron en localStorage (caída/recarga)
+async function _replayPendingLS() {
+    try {
+        const p = JSON.parse(localStorage.getItem(_LS_KEY) || "{}");
+        const ids = Object.keys(p);
+        if (!ids.length) return;
+        const ind = document.getElementById("saving-indicator");
+        if (ind) ind.style.display = "inline";
+        for (const sid of ids) {
+            const id = parseInt(sid);
+            const { payload } = p[sid];
+            const row = registrosIds.indexOf(id);
+            await _guardarFila(id, payload, row >= 0 ? row : null);
+        }
+        if (ind && Object.keys(_saveTimers).length === 0) ind.style.display = "none";
+    } catch(e) {}
+}
 
 async function _guardarFila(id, payload, row) {
     try {
@@ -1834,7 +1870,8 @@ async function _guardarFila(id, payload, row) {
         });
         const d = await r.json();
         if (d.ok) {
-            _dirtyRows.delete(id); // guardado confirmado
+            _dirtyRows.delete(id);
+            _lsPendingClear(id); // confirmado: borrar respaldo local
             if (hot && row != null) {
                 hot.setDataAtCell(row, C_VALBY,    d.validado_por    || "", "auto");
                 hot.setDataAtCell(row, C_VALFECHA, d.fecha_validacion || "", "auto");
@@ -1847,7 +1884,7 @@ async function _guardarFila(id, payload, row) {
             cargarKpis();
         }
     } catch(e) {
-        // Red caída: queda en _dirtyRows para el guardado periódico
+        // Red caída: queda en _dirtyRows y en localStorage para reintento
     }
 }
 
@@ -1862,10 +1899,10 @@ function autoGuardar(row) {
 
     const payload = { autorizacion_neo: estadoFinal, horas_autorizadas: (hrs !== "" && hrs != null) ? parseInt(hrs) : null, obs_neo: obs };
 
-    // Marcar como pendiente inmediatamente
+    // Persistir en localStorage INMEDIATAMENTE (antes del timer)
+    _lsPendingSet(id, payload);
     _dirtyRows.set(id, { row, payload });
 
-    // Cancelar solo el timer de ESTA fila, no el de otras
     clearTimeout(_saveTimers[id]);
     document.getElementById("saving-indicator").style.display = "inline";
     _saveTimers[id] = setTimeout(async () => {
@@ -1874,10 +1911,10 @@ function autoGuardar(row) {
         if (Object.keys(_saveTimers).length === 0) {
             document.getElementById("saving-indicator").style.display = "none";
         }
-    }, 600);
+    }, 300); // 300ms: suficiente para agrupar cambios rápidos en la misma fila
 }
 
-// Guardado periódico cada 60s: re-intenta filas que no se confirmaron
+// Guardado periódico cada 30s: re-intenta filas que no se confirmaron
 setInterval(async () => {
     if (_dirtyRows.size === 0) return;
     const ind = document.getElementById("saving-indicator");
@@ -1886,7 +1923,7 @@ setInterval(async () => {
         await _guardarFila(id, payload, row);
     }
     if (ind && Object.keys(_saveTimers).length === 0) ind.style.display = "none";
-}, 60000);
+}, 30000);
 
 // ── KPIs ──────────────────────────────────────────────────────────────────────
 async function rellenarNombres() {
