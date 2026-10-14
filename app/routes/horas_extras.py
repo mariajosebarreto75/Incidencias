@@ -948,14 +948,19 @@ def api_he_validar(id):
     he.horas_autorizadas = int(float(horas_auth)) if horas_auth is not None else he.horas_reportadas
     he.obs_neo           = obs
     he.estado            = autorizacion
-    he.validado_por_id   = current_user.id
-    he.fecha_validacion  = datetime.now()
+    if autorizacion in ("CONFORME", "NO CONFORME", "DESCONTADA"):
+        he.validado_por_id  = current_user.id
+        he.fecha_validacion = datetime.now()
+    else:
+        # PENDIENTE = sin validación → limpiar quién validó
+        he.validado_por_id  = None
+        he.fecha_validacion = None
     db.session.commit()
     return jsonify({
         "ok": True,
         "estado": he.estado,
-        "validado_por":    current_user.nombre_completo,
-        "fecha_validacion": he.fecha_validacion.strftime("%Y-%m-%d %H:%M"),
+        "validado_por":     current_user.nombre_completo if autorizacion != "PENDIENTE" else "",
+        "fecha_validacion": he.fecha_validacion.strftime("%Y-%m-%d %H:%M") if he.fecha_validacion else "",
     })
 
 

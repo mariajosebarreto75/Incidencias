@@ -1828,7 +1828,7 @@ const _saveTimers = {};
 const _dirtyRows = new Map(); // id → {row, payload}
 
 // ── localStorage como respaldo inmediato ──────────────────────────────────────
-const _LS_KEY = "neo_he_pending_v1";
+const _LS_KEY = "neo_he_pending_v2";
 function _lsPendingSet(id, payload) {
     try {
         const p = JSON.parse(localStorage.getItem(_LS_KEY) || "{}");
@@ -1844,18 +1844,28 @@ function _lsPendingClear(id) {
     } catch(e) {}
 }
 // Reenvía al servidor los cambios que quedaron en localStorage (caída/recarga)
+// Solo entradas de menos de 30 minutos y cuyos IDs siguen existiendo en la vista actual
 async function _replayPendingLS() {
     try {
         const p = JSON.parse(localStorage.getItem(_LS_KEY) || "{}");
         const ids = Object.keys(p);
         if (!ids.length) return;
+        const now = Date.now();
+        const STALE_MS = 30 * 60 * 1000; // 30 minutos
         const ind = document.getElementById("saving-indicator");
-        if (ind) ind.style.display = "inline";
+        let replayed = 0;
         for (const sid of ids) {
             const id = parseInt(sid);
-            const { payload } = p[sid];
+            const { payload, ts } = p[sid];
+            // Descartar si es muy antiguo o si el registro ya no existe en la vista actual
+            if (now - (ts || 0) > STALE_MS || !registrosIds.includes(id)) {
+                _lsPendingClear(id);
+                continue;
+            }
+            if (ind) ind.style.display = "inline";
             const row = registrosIds.indexOf(id);
             await _guardarFila(id, payload, row >= 0 ? row : null);
+            replayed++;
         }
         if (ind && Object.keys(_saveTimers).length === 0) ind.style.display = "none";
     } catch(e) {}
@@ -2663,9 +2673,13 @@ async function eliminarSeleccion() {
     const d = await r.json();
     if (d.ok) {
         _toastHist(`${d.eliminados} registro${d.eliminados>1?"s":""} eliminado${d.eliminados>1?"s":""}`, "success");
+        // Borrar del localStorage los IDs eliminados para que no se re-validen
+        _histSelectedIds.forEach(id => _lsPendingClear(id));
         historialCargado = false;
         const corteActual = document.getElementById("hCorte") ? document.getElementById("hCorte").value : "";
         await cargarHistorial(corteActual || undefined);
+        // Refrescar también el grid de validación principal si está visible
+        recargar();
         _histSelectedIds = [];
         _actualizarBarraAcciones();
     } else {
