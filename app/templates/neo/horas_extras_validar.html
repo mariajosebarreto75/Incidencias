@@ -1149,14 +1149,14 @@ async function cargarKpisHistorial() {
         if (d.error) throw new Error(d.error);
         // Chips
         document.getElementById("hk-total").textContent      = d.total      ?? "—";
-        document.getElementById("hk-pend").textContent       = d.pendientes ?? "—";
+        document.getElementById("hk-pend").textContent       = (+d.hrs_pendientes||0).toFixed(0)+'h';
         document.getElementById("hk-conf").textContent       = d.conformes  ?? "—";
         document.getElementById("hk-noconf").textContent     = d.no_conformes ?? "—";
         document.getElementById("hk-desc").textContent       = d.descontadas ?? "—";
         // Tarjetas grandes historial (eliminadas del DOM; safe-set por si acaso)
         const _hset = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         _hset("hkv-total",      (d.total || 0).toLocaleString("es-CO"));
-        _hset("hkv-pendientes", (d.pendientes || 0).toLocaleString("es-CO"));
+        _hset("hkv-pendientes", (+d.hrs_pendientes||0).toLocaleString("es-CO")+'h');
         _hset("hk-hrs-rep",     (+d.hrs_reportadas   || 0).toFixed(0));
         _hset("hk-hrs-auth",    (+d.hrs_autorizadas  || 0).toFixed(0));
         _hset("hk-hrs-desc",    (+d.hrs_desc_auth    || 0).toFixed(0));

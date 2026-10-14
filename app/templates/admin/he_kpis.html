@@ -57,7 +57,7 @@
                     <th style="text-align:right">Conformes</th>
                     <th style="text-align:right">No Conformes</th>
                     <th style="text-align:right">Descontadas</th>
-                    <th style="text-align:right">Pendientes</th>
+                    <th style="text-align:right">Hrs Pendientes</th>
                 </tr>
             </thead>
             <tbody id="tbodyResumen"><tr><td colspan="8" class="adm-empty"><i class="bi bi-hourglass"></i>Cargando...</td></tr></tbody>
@@ -130,7 +130,7 @@ function renderKpis(k) {
         { label:'Conformes',              val: fmt(k.conformes),        icon:'bi-patch-check-fill', color:'#4ade80' },
         { label:'No conformes',           val: fmt(k.no_conformes),     icon:'bi-x-circle-fill',    color:'#f87171' },
         { label:'Descontadas',            val: fmt(k.descontadas),      icon:'bi-dash-circle-fill', color:'#fcd34d' },
-        { label:'Pendientes',             val: fmt(k.pendientes),       icon:'bi-hourglass-split',  color:'#94a3b8' },
+        { label:'Hrs pendientes',          val: fmt(k.hrs_pendientes)+'h', icon:'bi-hourglass-split',  color:'#94a3b8' },
     ];
     document.getElementById('kpiCards').innerHTML = cards.map(c=>`
         <div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:16px 20px">
@@ -152,7 +152,7 @@ function renderResumen(data) {
             <td style="text-align:right;color:#4ade80">${fmt(r.conformes)}</td>
             <td style="text-align:right;color:#f87171">${fmt(r.no_conformes)}</td>
             <td style="text-align:right;color:#fcd34d">${fmt(r.descontadas)}</td>
-            <td style="text-align:right;color:#94a3b8">${fmt(r.pendientes)}</td>
+            <td style="text-align:right;color:#94a3b8">${fmt(r.hrs_pendientes)}h</td>
         </tr>`).join('');
 }
 
