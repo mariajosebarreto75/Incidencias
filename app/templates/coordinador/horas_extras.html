@@ -1630,20 +1630,19 @@ async function cargarHistorial(corteId) {
                 },
             });
         } else {
-            hotVal.loadData(_fullValData);
+            // Aplicar chip activo inmediatamente al recargar datos (evita flash sin filtro)
+            const _chA = document.querySelector('.he-chip.active:not(.ch-all)');
+            const _chM = _chA ? (_chA.getAttribute('onclick')||'').match(/filtrarChip\('([^']+)'/) : null;
+            _htValFilters = _chM ? { [V_ESTADO]: new Set([_chM[1]]) } : {};
+            _applyAllFiltersCoor();
+            setTimeout(() => _refreshFilterBtnsC(hotVal), 0);
+            return;
         }
+        // Primera creación de hotVal: mostrar todo y restaurar chip desde sessionStorage
         _currentValIds = [..._fullValIds];
         _actualizarKpisCoor(_fullValData);
         setTimeout(() => {
             _refreshFilterBtnsC(hotVal);
-            // Re-aplicar chip activo desde DOM (evita flash cuando cargarHistorial
-            // se llama concurrentemente y borra _htValFilters mientras el usuario
-            // ya había seleccionado un chip). Solo si no es el chip "Todos".
-            const _chipActivo = document.querySelector('.he-chip.active:not(.ch-all)');
-            if (_chipActivo) {
-                const _m = (_chipActivo.getAttribute('onclick') || '').match(/filtrarChip\('([^']+)'/);
-                if (_m) { _htValFilters = { [V_ESTADO]: new Set([_m[1]]) }; _applyAllFiltersCoor(); return; }
-            }
             _restaurarChip();
         }, 0);
     } catch(e) { console.error("cargarHistorial:", e); }
