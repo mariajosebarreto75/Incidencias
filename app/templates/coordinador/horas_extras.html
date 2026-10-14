@@ -1400,18 +1400,18 @@ async function cargarKpis() {
         const _set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         // Chips del panel validación
         _set("k-total",   d.total        ?? "—");
-        _set("k-pend",    d.pendientes   ?? "—");
+        _set("k-pend",    (+d.hrs_pendientes||0).toFixed(0)+'h');
         _set("k-conf",    d.conformes    ?? "—");
         _set("k-noconf",  d.no_conformes ?? "—");
         _set("k-desc",    d.descontadas  ?? "—");
-        _set("tb-pend",   d.pendientes   ?? "—");
+        _set("tb-pend",   (+d.hrs_pendientes||0).toFixed(0)+'h');
         // Tarjetas grandes del resumen dashboard
         if (cid) {
             const hrsRep      = +d.hrs_reportadas    || 0;
             const hrsAuth     = +d.hrs_autorizadas   || 0;
             const hrsPend     = +d.hrs_pendientes    || 0;
             _set("rs-total",      (d.total      || 0).toLocaleString("es-CO"));
-            _set("rs-pendientes", (d.pendientes || 0).toLocaleString("es-CO"));
+            _set("rs-pendientes", hrsPend.toLocaleString("es-CO")+'h');
             _set("rs-hrs-rep",    hrsRep.toFixed(0));
             _set("rs-hrs-auth",   hrsAuth.toFixed(0));
             _set("rs-hrs-desc",   (+d.hrs_descontadas || 0).toFixed(0));
@@ -2001,7 +2001,7 @@ async function cargarKpisCortesCoor() {
         const url = cid ? `/api/he/kpis?contrato_id=${cid}` : "/api/he/kpis";
         const d = await (await fetch(url)).json();
         document.getElementById("coor-ck-total").textContent  = (d.total||0).toLocaleString("es-CO");
-        document.getElementById("coor-ck-pend").textContent   = (d.pendientes||0).toLocaleString("es-CO");
+        document.getElementById("coor-ck-pend").textContent   = (+d.hrs_pendientes||0).toFixed(0)+'h';
         document.getElementById("coor-ck-rep").textContent    = (+d.hrs_reportadas||0).toFixed(0);
         document.getElementById("coor-ck-auth").textContent   = (+d.hrs_autorizadas||0).toFixed(0);
         document.getElementById("coor-ck-noauth").textContent = (+d.hrs_no_conformes||0).toFixed(0);
@@ -2547,13 +2547,13 @@ function _actualizarKpisCoorReg(registros) {
     }
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     set("coor-ck-total",  total.toLocaleString("es-CO"));
-    set("coor-ck-pend",   hrsPend.toLocaleString("es-CO"));
+    set("coor-ck-pend",   hrsPend.toLocaleString("es-CO")+'h');
     set("coor-ck-rep",    hrsRep.toFixed(0));
     set("coor-ck-auth",   hrsAuth.toFixed(0));
     set("coor-ck-noauth", hrsNoAuth.toFixed(0));
     // Tarjetas grandes del resumen dashboard
     set("rs-total",      total.toLocaleString("es-CO"));
-    set("rs-pendientes", pend.toLocaleString("es-CO"));
+    set("rs-pendientes", hrsPend.toLocaleString("es-CO")+'h');
     set("rs-hrs-rep",    hrsRep.toFixed(0));
     set("rs-hrs-auth",   hrsAuth.toFixed(0));
     set("rs-hrs-desc",   Math.max(0, hrsRepRevisadas - hrsAuth).toFixed(0));
@@ -2577,15 +2577,15 @@ function _actualizarKpisCoor(rows) {
     // Chips y métricas del panel validación
     const _sk = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     _sk("k-total",     total);
-    _sk("k-pend",      pend);
+    _sk("k-pend",      hrsPend.toFixed(0)+'h');
     _sk("k-conf",      conf);
     _sk("k-noconf",    noconf);
     _sk("k-desc",      desc);
-    _sk("tb-pend",     pend);
-    _sk("kv-pend-val", hrsPend.toLocaleString("es-CO"));
+    _sk("tb-pend",     hrsPend.toFixed(0)+'h');
+    _sk("kv-pend-val", hrsPend.toLocaleString("es-CO")+'h');
     // Tarjetas grandes del resumen dashboard
     _sk("rs-total",      total.toLocaleString("es-CO"));
-    _sk("rs-pendientes", pend.toLocaleString("es-CO"));
+    _sk("rs-pendientes", hrsPend.toLocaleString("es-CO")+'h');
     _sk("rs-hrs-rep",    hrsRep.toFixed(0));
     _sk("rs-hrs-auth",   hrsAuth.toFixed(0));
     _sk("rs-hrs-desc",   Math.max(0, hrsRepRevisadas - hrsAuth).toFixed(0));

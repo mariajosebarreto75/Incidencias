@@ -712,10 +712,10 @@ async function cargarKpisCortesNeo() {
         const _ckAuth = +d.hrs_autorizadas || 0;
         const _ckPend = +d.hrs_pendientes  || 0;
         document.getElementById("ck-total").textContent      = (d.total||0).toLocaleString("es-CO");
-        document.getElementById("ck-pendientes").textContent = (d.pendientes||0).toLocaleString("es-CO");
+        document.getElementById("ck-pendientes").textContent = (+d.hrs_pendientes||0).toFixed(0)+'h';
         document.getElementById("ck-hrs-rep").textContent    = _ckRep.toFixed(0);
         document.getElementById("ck-hrs-auth").textContent   = _ckAuth.toFixed(0);
-        document.getElementById("ck-hrs-desc").textContent   = Math.max(0, (_ckRep - _ckPend) - _ckAuth).toFixed(0);
+        document.getElementById("ck-hrs-desc").textContent   = (+d.hrs_descontadas||0).toFixed(0);
     } catch(e) {}
 }
 
@@ -1754,13 +1754,13 @@ function _actualizarKpisDesdeFiltered(rows) {
     }
     const hrsAuth = hrsConf + hrsDesc;
     document.getElementById("k-total").textContent       = total;
-    document.getElementById("k-pend").textContent        = pend;
+    document.getElementById("k-pend").textContent        = hrsPend.toFixed(0)+'h';
     document.getElementById("k-conf").textContent        = conf;
     document.getElementById("k-noconf").textContent      = noconf;
     document.getElementById("k-desc").textContent        = desc;
-    document.getElementById("tb-pend").textContent       = pend;
+    document.getElementById("tb-pend").textContent       = hrsPend.toFixed(0)+'h';
     document.getElementById("kv-total").textContent      = total.toLocaleString("es-CO");
-    document.getElementById("kv-pendientes").textContent = pend.toLocaleString("es-CO");
+    document.getElementById("kv-pendientes").textContent = hrsPend.toLocaleString("es-CO")+'h';
     document.getElementById("kv-hrs-rep").textContent    = hrsRep.toFixed(0);
     document.getElementById("kv-hrs-auth").textContent   = hrsAuth.toFixed(0);
     document.getElementById("kv-hrs-desc").textContent   = Math.max(0, (hrsRep - hrsPend) - hrsAuth).toFixed(0);
@@ -1788,12 +1788,12 @@ function _actualizarKpisHistorialDesdeFiltered(rows) {
     const hrsAuth = hrsConf + hrsDesc;
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     set("hk-total",    total);
-    set("hk-pend",     pend);
+    set("hk-pend",     hrsPend.toFixed(0)+'h');
     set("hk-conf",     conf);
     set("hk-noconf",   noconf);
     set("hk-desc",     desc);
     set("hkv-total",      total.toLocaleString("es-CO"));
-    set("hkv-pendientes", pend.toLocaleString("es-CO"));
+    set("hkv-pendientes", hrsPend.toLocaleString("es-CO")+'h');
     set("hk-hrs-rep",     hrsRep.toFixed(0));
     set("hk-hrs-auth",    hrsAuth.toFixed(0));
     set("hk-hrs-desc",    Math.max(0, (hrsRep - hrsPend) - hrsAuth).toFixed(0));
@@ -1934,21 +1934,17 @@ async function cargarKpis() {
         if (d.error) throw new Error(d.error);
         // Chips
         document.getElementById("k-total").textContent      = d.total      ?? "—";
-        document.getElementById("k-pend").textContent       = d.pendientes ?? "—";
+        document.getElementById("k-pend").textContent       = (+d.hrs_pendientes||0).toFixed(0)+'h';
         document.getElementById("k-conf").textContent       = d.conformes  ?? "—";
         document.getElementById("k-noconf").textContent     = d.no_conformes ?? "—";
         document.getElementById("k-desc").textContent       = d.descontadas ?? "—";
-        document.getElementById("tb-pend").textContent      = d.pendientes ?? "—";
+        document.getElementById("tb-pend").textContent      = (+d.hrs_pendientes||0).toFixed(0)+'h';
         // Tarjetas grandes
         document.getElementById("kv-total").textContent      = (d.total || 0).toLocaleString("es-CO");
-        document.getElementById("kv-pendientes").textContent = (d.pendientes || 0).toLocaleString("es-CO");
+        document.getElementById("kv-pendientes").textContent = (+d.hrs_pendientes||0).toLocaleString("es-CO")+'h';
         document.getElementById("kv-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
         document.getElementById("kv-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
-        const hrsReportadas  = +d.hrs_reportadas  || 0;
-        const hrsAprobadas   = +d.hrs_autorizadas || 0;
-        const hrsPendientes  = +d.hrs_pendientes  || 0;
-        const hrsDescontadas = Math.max(0, (hrsReportadas - hrsPendientes) - hrsAprobadas);
-        document.getElementById("kv-hrs-desc").textContent   = hrsDescontadas.toFixed(0);
+        document.getElementById("kv-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
         // Desglose por concepto (solo si hay contrato_id)
         if (cid) {
             try {

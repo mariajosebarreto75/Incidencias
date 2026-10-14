@@ -1767,7 +1767,7 @@ def api_he_dashboard_data():
     ).all()
 
     # ── KPIs — una sola pasada ────────────────────────────────────────────────
-    total = hrs_reportadas = hrs_autorizadas = hrs_descontadas = 0
+    total = hrs_reportadas = hrs_autorizadas = hrs_rep_revisadas = 0
     hrs_no_conforme = hrs_conformes = pendientes = hrs_pendientes = 0
     for r in registros:
         total += 1
@@ -1775,13 +1775,14 @@ def api_he_dashboard_data():
         ha = float(r.horas_autorizadas or 0)
         est = (r.estado or "").upper()
         hrs_reportadas += hr
-        if est in ("CONFORME", "DESCONTADA"): hrs_autorizadas += ha
-        if est == "DESCONTADA":               hrs_descontadas += ha
-        if est == "NO CONFORME":              hrs_no_conforme += hr
-        if est == "CONFORME":                 hrs_conformes   += ha
+        if est in ("CONFORME", "DESCONTADA"):                hrs_autorizadas  += ha
+        if est in ("CONFORME", "NO CONFORME", "DESCONTADA"): hrs_rep_revisadas += hr
+        if est == "NO CONFORME":                             hrs_no_conforme  += hr
+        if est == "CONFORME":                                hrs_conformes    += ha
         if est == "PENDIENTE":
             pendientes     += 1
             hrs_pendientes += hr
+    hrs_descontadas = max(0, round(hrs_rep_revisadas - hrs_autorizadas, 1))
 
     # ── Por tipo de HE ───────────────────────────────────────────────────────
     por_tipo = {}
