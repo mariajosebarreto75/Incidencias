@@ -377,7 +377,12 @@ body { background:var(--c-bg); }
                 <span style="font-size:.71rem;color:#6c757d;margin-left:6px;">
                     <i class="bi bi-funnel me-1"></i>Usa el menú de cada columna para filtrar · Las columnas verdes son editables
                 </span>
-                <div style="margin-left:auto;display:flex;gap:6px;">
+                <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+                    <span id="neoSelLabel" style="font-size:.72rem;color:#6c757d;display:none;"></span>
+                    <button id="btnNeoEliminarSel" class="btn btn-sm btn-outline-danger" style="font-size:.72rem;border-radius:6px;display:none;"
+                            onclick="eliminarSeleccionNeo()">
+                        <i class="bi bi-trash me-1"></i>Eliminar seleccionados
+                    </button>
                     <button class="btn btn-sm btn-outline-info" style="font-size:.72rem;border-radius:6px;"
                             onclick="rellenarNombres()" title="Rellenar nombre de colaboradores que ya están registrados en Personas">
                         <i class="bi bi-person-fill-check me-1"></i>Rellenar Nombres
@@ -988,7 +993,64 @@ function iniciarGrid() {
             rows.forEach(row => autoGuardar(row));
         },
         afterGetColHeader: function(col, TH) { _showFilterBtn(col, TH); _colorearHeaderNeo(this, col, TH); },
+        afterSelection: function() { _actualizarBarraNeo(); },
+        afterDeselect:  function() { _actualizarBarraNeo(); },
     });
+}
+
+function _actualizarBarraNeo() {
+    const sel = hot ? hot.getSelectedRange() : null;
+    const ids = new Set();
+    if (sel) {
+        sel.forEach(r => {
+            const from = Math.min(r.from.row, r.to.row);
+            const to   = Math.max(r.from.row, r.to.row);
+            for (let i = from; i <= to; i++) {
+                const id = registrosIds[i];
+                if (id) ids.add(id);
+            }
+        });
+    }
+    const btn = document.getElementById("btnNeoEliminarSel");
+    const lbl = document.getElementById("neoSelLabel");
+    if (!btn || !lbl) return;
+    if (ids.size > 0) {
+        btn.style.display = "inline-flex";
+        lbl.style.display = "inline";
+        lbl.textContent   = `${ids.size} seleccionado${ids.size > 1 ? "s" : ""}`;
+    } else {
+        btn.style.display = "none";
+        lbl.style.display = "none";
+    }
+}
+
+async function eliminarSeleccionNeo() {
+    const sel = hot ? hot.getSelectedRange() : null;
+    if (!sel) return;
+    const ids = new Set();
+    sel.forEach(r => {
+        const from = Math.min(r.from.row, r.to.row);
+        const to   = Math.max(r.from.row, r.to.row);
+        for (let i = from; i <= to; i++) {
+            const id = registrosIds[i];
+            if (id) ids.add(id);
+        }
+    });
+    if (!ids.size) return;
+    if (!confirm(`¿Eliminar ${ids.size} registro${ids.size > 1 ? "s" : ""}? Esta acción no se puede deshacer.`)) return;
+    const idArr = [...ids];
+    const r = await fetch("/api/he/bulk-delete", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(idArr)
+    });
+    const d = await r.json();
+    if (d.ok) {
+        idArr.forEach(id => _lsPendingClear(id));
+        await recargar();
+        _actualizarBarraNeo();
+    } else {
+        alert(d.msg || "Error al eliminar");
+    }
 }
 
 // ── Filtro por corte ─────────────────────────────────────────────────────────
