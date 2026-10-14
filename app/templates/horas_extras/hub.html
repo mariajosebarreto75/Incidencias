@@ -378,6 +378,9 @@ body { background: linear-gradient(135deg,#f0f4fb 0%,#e8eef8 100%); min-height:1
         <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #0d3b66;">
             <div class="val" id="hs-total">—</div><div class="lbl">Total Registros</div>
         </div>
+        <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #f59e0b;background:#fffbeb;">
+            <div class="val" style="color:#b45309;" id="hs-pend">—</div><div class="lbl">Pendientes por revisar</div>
+        </div>
         <div class="coor-stat-box" style="flex:1;min-width:150px;border-radius:14px;border:1px solid #e2e8f0;border-top:4px solid #0ea5e9;">
             <div class="val blue" id="hs-hrs">—</div><div class="lbl">Hrs Reportadas</div>
         </div>
@@ -466,6 +469,7 @@ const contratosData = [
         const _auth = +d.hrs_autorizadas || 0;
         const _pend = +d.hrs_pendientes  || 0;
         document.getElementById("hs-total").textContent   = (d.total||0).toLocaleString("es-CO");
+        document.getElementById("hs-pend").textContent    = _pend.toLocaleString("es-CO")+'h';
         document.getElementById("hs-hrs").textContent     = _rep.toFixed(0);
         document.getElementById("hs-auth").textContent    = _auth.toFixed(0);
         document.getElementById("hs-noconf").textContent  = (+d.hrs_no_conformes ||0).toFixed(0);
