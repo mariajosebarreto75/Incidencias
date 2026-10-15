@@ -131,7 +131,9 @@ body{background:var(--bg);font-family:'Inter',system-ui,sans-serif;color:var(--i
 .tw{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;}
 .tw-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .ag-tbl{width:100%;border-collapse:collapse;font-size:.82rem;}
-.ag-tbl thead th{background:var(--surf2);color:var(--ink3);font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:.6rem .85rem;border-bottom:1px solid var(--bd);white-space:nowrap;vertical-align:middle;}
+.ag-tbl thead th{background:var(--surf2);color:var(--ink3);font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:.6rem .85rem;border-bottom:1px solid var(--bd);white-space:nowrap;vertical-align:middle;position:relative;user-select:none;}
+.col-rh{position:absolute;right:0;top:0;bottom:0;width:5px;cursor:col-resize;z-index:2;background:transparent;transition:background .15s;}
+.col-rh:hover,.col-rh.dragging{background:var(--teal);opacity:.5;}
 .ag-tbl thead th.sortable{cursor:pointer;user-select:none;position:relative;padding-right:1.3rem;}
 .ag-tbl thead th.sortable::after{content:'\F282';font-family:'bootstrap-icons';position:absolute;right:.45rem;top:50%;transform:translateY(-50%);font-size:.62rem;color:var(--bd2);font-style:normal;}
 .ag-tbl thead th.sortable:hover{background:#EFF6FF;color:var(--ink2);}
@@ -1002,6 +1004,58 @@ function crearContratoRapido(){
       document.getElementById('inputNuevoContrato').value='';
     }).catch(()=>alert('Error de red.'));
 }
+
+// ── redimensionamiento de columnas ──
+(function(){
+  const LS_KEY = 'cmp_col_widths';
+  const tbl = document.querySelector('.ag-tbl');
+  if(!tbl) return;
+  const ths = [...tbl.querySelectorAll('thead th')];
+
+  // cargar anchos guardados
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e){}
+
+  ths.forEach((th, i) => {
+    // aplicar ancho guardado
+    if(saved[i]) th.style.width = saved[i] + 'px';
+
+    // crear handle
+    const handle = document.createElement('div');
+    handle.className = 'col-rh';
+    th.appendChild(handle);
+
+    let startX, startW;
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      startX = e.clientX;
+      startW = th.offsetWidth;
+      handle.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      function onMove(e2) {
+        const newW = Math.max(60, startW + e2.clientX - startX);
+        th.style.width = newW + 'px';
+      }
+      function onUp() {
+        handle.classList.remove('dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        // guardar
+        try {
+          const ws = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+          ws[i] = th.offsetWidth;
+          localStorage.setItem(LS_KEY, JSON.stringify(ws));
+        } catch(e){}
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+})();
 
 // ── importar excel ──
 async function importarCompromisos(input){
