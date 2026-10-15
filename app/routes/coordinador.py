@@ -1149,9 +1149,18 @@ def distribucion_manual_crear():
             except Exception:
                 return None
 
+        # Normalizar contrato al nombre completo de display
+        _contrato_raw = str(d.get("contrato") or "").strip()
+        if _contrato_raw:
+            from app.models.contrato import Contrato as _CM
+            _cc = (_CM.query.filter_by(contrato=_contrato_raw, activo=True).first()
+                   or _CM.query.filter(db.func.lower(_CM.codigo) == _contrato_raw.lower(), _CM.activo == True).first()
+                   or _CM.query.filter(_CM.contrato.ilike(f'%({_contrato_raw})%'), _CM.activo == True).first())
+            _contrato_raw = _cc.contrato if _cc else _contrato_raw
+
         reg = DistribucionOperativa(
             fecha              = _dt.strptime(d["fecha"], "%Y-%m-%d").date() if d.get("fecha") else None,
-            contrato           = str(d.get("contrato") or "").strip() or None,
+            contrato           = _contrato_raw or None,
             sede               = str(d.get("sede") or "").strip() or None,
             recurso            = str(d.get("recurso") or "").strip() or None,
             placa              = str(d.get("placa") or "").strip() or None,
