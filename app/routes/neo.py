@@ -825,7 +825,28 @@ def contratos_distribucion():
         .order_by(DistribucionOperativa.contrato)
         .all()
     )
-    return jsonify([r[0] for r in filas if r[0]])
+    codigos = [r[0] for r in filas if r[0]]
+
+    # Resolver cada código al nombre completo de display del catálogo de contratos
+    from app.models.contrato import Contrato as ContratoModel
+    resultado = []
+    for cod in codigos:
+        # 1. Buscar por nombre exacto (ya es nombre completo)
+        c = ContratoModel.query.filter_by(contrato=cod, activo=True).first()
+        if not c:
+            # 2. Buscar por código corto
+            c = ContratoModel.query.filter(
+                db.func.lower(ContratoModel.codigo) == cod.lower(),
+                ContratoModel.activo == True
+            ).first()
+        if not c:
+            # 3. Buscar por código dentro del nombre (ej. "2876" en "Valle Norte (2876)...")
+            c = ContratoModel.query.filter(
+                ContratoModel.contrato.ilike(f'%({cod})%'),
+                ContratoModel.activo == True
+            ).first()
+        resultado.append(c.contrato if c else cod)
+    return jsonify(sorted(set(resultado)))
 
 
 # =====================================
@@ -1077,6 +1098,14 @@ def guardar_reporte():
             "success": False,
             "mensaje": f"Formato de fecha u hora inválido: {e}"
         }), 400
+
+    # Normalizar contrato al nombre completo de display
+    contrato_raw = datos.get("contrato", "")
+    from app.models.contrato import Contrato as ContratoModel
+    _c = (ContratoModel.query.filter_by(contrato=contrato_raw, activo=True).first()
+          or ContratoModel.query.filter(db.func.lower(ContratoModel.codigo) == contrato_raw.lower(), ContratoModel.activo == True).first()
+          or ContratoModel.query.filter(ContratoModel.contrato.ilike(f'%({contrato_raw})%'), ContratoModel.activo == True).first())
+    datos["contrato"] = _c.contrato if _c else contrato_raw
 
     numero_recursos_val = int(datos["numero_recursos"]) if datos.get("numero_recursos") else None
     meta_promedio_val   = _parsear_float(datos.get("meta_promedio"))
