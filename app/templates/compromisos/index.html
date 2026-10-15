@@ -1012,15 +1012,23 @@ function crearContratoRapido(){
   if(!tbl) return;
   const ths = [...tbl.querySelectorAll('thead th')];
 
-  // cargar anchos guardados
+  // 1. Capturar anchos reales ANTES de fijar el layout
+  const naturalW = ths.map(th => th.getBoundingClientRect().width);
+
+  // 2. Cambiar a fixed layout para que width sea respetado
+  tbl.style.tableLayout = 'fixed';
+
+  // 3. Cargar anchos guardados o usar los naturales
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e){}
 
   ths.forEach((th, i) => {
-    // aplicar ancho guardado
-    if(saved[i]) th.style.width = saved[i] + 'px';
+    const w = saved[i] ? Number(saved[i]) : naturalW[i];
+    th.style.width = w + 'px';
+    th.style.overflow = 'hidden';
+    th.style.textOverflow = 'ellipsis';
 
-    // crear handle
+    // handle de arrastre
     const handle = document.createElement('div');
     handle.className = 'col-rh';
     th.appendChild(handle);
@@ -1028,6 +1036,7 @@ function crearContratoRapido(){
     let startX, startW;
     handle.addEventListener('mousedown', e => {
       e.preventDefault();
+      e.stopPropagation();
       startX = e.clientX;
       startW = th.offsetWidth;
       handle.classList.add('dragging');
@@ -1035,14 +1044,16 @@ function crearContratoRapido(){
       document.body.style.userSelect = 'none';
 
       function onMove(e2) {
-        const newW = Math.max(60, startW + e2.clientX - startX);
+        const newW = Math.max(50, startW + e2.clientX - startX);
         th.style.width = newW + 'px';
+        // actualizar min-width de la tabla para que el scroll funcione
+        const total = ths.reduce((s, h) => s + h.offsetWidth, 0);
+        tbl.style.minWidth = total + 'px';
       }
       function onUp() {
         handle.classList.remove('dragging');
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
-        // guardar
         try {
           const ws = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
           ws[i] = th.offsetWidth;
@@ -1055,6 +1066,10 @@ function crearContratoRapido(){
       document.addEventListener('mouseup', onUp);
     });
   });
+
+  // fijar min-width inicial
+  const total = ths.reduce((s, th) => s + th.offsetWidth, 0);
+  tbl.style.minWidth = total + 'px';
 })();
 
 // ── importar excel ──
