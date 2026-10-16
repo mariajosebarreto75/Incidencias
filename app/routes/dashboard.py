@@ -219,6 +219,18 @@ def indicadores():
     neo_no_conf     = _neo_row.no_conf     or 0
     neo_hoy         = _neo_row.hoy         or 0
 
+    # ── Totales de impacto (con filtros activos) ─────────────────
+    _imp_row = db.session.query(
+        func.sum(ReporteOperacional.horas_afectadas).label("horas"),
+        func.sum(ReporteOperacional.afectacion_economica).label("afectacion"),
+        func.count(func.distinct(ReporteOperacional.fecha_reporte)).label("dias"),
+    ).filter(*extra).one()
+    impacto_total = {
+        "horas":      round(float(_imp_row.horas      or 0), 1),
+        "afectacion": int(_imp_row.afectacion or 0),
+        "dias":       int(_imp_row.dias       or 0),
+    }
+
     # ── Horas extras — una sola query ────────────────────────────
     _he_row = db.session.query(
         func.count(HoraExtra.id).label("total"),
@@ -524,6 +536,7 @@ def indicadores():
         evolucion_data=evolucion_data,
         casos_atencion=casos_atencion,
         reincidentes=reincidentes,
+        impacto_total=impacto_total,
         filtros_activos=filtros_activos,
         fechas_disponibles=fechas_disponibles,
         anios_disponibles=anios_disponibles,
