@@ -725,6 +725,24 @@ function clearAllFilters() {
           <div class="mc-lbl">Hoy</div>
           <div class="mc-sub">Reportes de hoy</div>
         </div>
+        <div class="mc" style="border-left:3px solid var(--red)">
+          <div class="mc-icon" style="background:var(--red-s);color:var(--red)"><i class="bi bi-currency-dollar"></i></div>
+          <div class="mc-val" style="font-size:1.1rem;color:var(--red)">${{ "{:,.0f}".format(impacto_total.afectacion) }}</div>
+          <div class="mc-lbl">Impacto económico</div>
+          <div class="mc-sub">acumulado en el período</div>
+        </div>
+        <div class="mc" style="border-left:3px solid var(--amber)">
+          <div class="mc-icon" style="background:var(--amber-s);color:var(--amber)"><i class="bi bi-clock"></i></div>
+          <div class="mc-val" style="color:var(--amber)">{{ impacto_total.horas }}h</div>
+          <div class="mc-lbl">Horas afectadas</div>
+          <div class="mc-sub">con incidencias</div>
+        </div>
+        <div class="mc" style="border-left:3px solid var(--blue)">
+          <div class="mc-icon" style="background:var(--blue-s,#EFF6FF);color:var(--blue)"><i class="bi bi-calendar-event"></i></div>
+          <div class="mc-val" style="color:var(--blue)">{{ impacto_total.dias }}</div>
+          <div class="mc-lbl">Días afectados</div>
+          <div class="mc-sub">con desviaciones</div>
+        </div>
       </div>
     </div>
 
@@ -738,41 +756,6 @@ function clearAllFilters() {
         </div>
       </div>
       <div style="position:relative;width:100%;height:340px"><canvas id="cLineInd"></canvas></div>
-    </div>
-
-    <!-- TARJETA IMPACTO TOTAL -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
-
-      <div class="mc" style="border-left:3px solid var(--red);padding:16px 18px">
-        <div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px">
-          <i class="bi bi-currency-dollar me-1" style="color:var(--red)"></i>Impacto económico
-        </div>
-        <div style="font-family:'Manrope',sans-serif;font-size:1.6rem;font-weight:800;color:var(--red);line-height:1;margin-bottom:2px">
-          ${{ "{:,.0f}".format(impacto_total.afectacion) }}
-        </div>
-        <div style="font-size:.7rem;color:var(--muted)">acumulado en el período</div>
-      </div>
-
-      <div class="mc" style="border-left:3px solid var(--amber);padding:16px 18px">
-        <div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px">
-          <i class="bi bi-clock me-1" style="color:var(--amber)"></i>Horas afectadas
-        </div>
-        <div style="font-family:'Manrope',sans-serif;font-size:1.6rem;font-weight:800;color:var(--amber);line-height:1;margin-bottom:2px">
-          {{ impacto_total.horas }}h
-        </div>
-        <div style="font-size:.7rem;color:var(--muted)">horas con incidencias reportadas</div>
-      </div>
-
-      <div class="mc" style="border-left:3px solid var(--blue);padding:16px 18px">
-        <div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px">
-          <i class="bi bi-calendar-event me-1" style="color:var(--blue)"></i>Días afectados
-        </div>
-        <div style="font-family:'Manrope',sans-serif;font-size:1.6rem;font-weight:800;color:var(--blue);line-height:1;margin-bottom:2px">
-          {{ impacto_total.dias }}
-        </div>
-        <div style="font-size:.7rem;color:var(--muted)">días con al menos una desviación</div>
-      </div>
-
     </div>
 
     <!-- CONFORMIDAD -->
