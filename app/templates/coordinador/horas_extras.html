@@ -584,6 +584,10 @@ body { background:var(--c-bg); }
     <button class="fp-sort-btn" id="fpSortDateAscC"  onclick="_sortColumnCoor('asc')">&#128336; Más antiguo</button>
     <button class="fp-sort-btn" id="fpSortDateDescC" onclick="_sortColumnCoor('desc')">&#9889; Más nuevo</button>
   </div>
+  <div class="fp-sort-row" id="fpDateGroupRowC" style="display:none;gap:4px;margin-bottom:0">
+    <button class="fp-sort-btn active" id="fpGrpDayC"   onclick="_fpSetGroupC('day')">📅 Por día</button>
+    <button class="fp-sort-btn"        id="fpGrpMonthC" onclick="_fpSetGroupC('month')">🗓️ Por mes</button>
+  </div>
   <hr class="fp-sort-sep" style="margin:6px 10px 4px;">
   <input class="fp-search" id="fpSearchC" type="text" placeholder="Buscar…">
   <div class="fp-list" id="fpListC"></div>
@@ -2441,8 +2445,11 @@ function _openFilterPopupC(htInst, col, anchorBtn, isVal) {
 
     // Mostrar fila de sort según tipo de columna (fecha vs numérica)
     const isDateCol = !isVal && col === C_FECHA;
-    document.getElementById('fpSortNumRow').style.display  = isDateCol ? 'none'  : '';
-    document.getElementById('fpSortDateRow').style.display = isDateCol ? ''      : 'none';
+    document.getElementById('fpSortNumRow').style.display      = isDateCol ? 'none' : '';
+    document.getElementById('fpSortDateRow').style.display     = isDateCol ? ''     : 'none';
+    document.getElementById('fpDateGroupRowC').style.display   = isDateCol ? ''     : 'none';
+    // Aplicar agrupación vigente si es fecha
+    if (isDateCol) _fpApplyGroupC();
 
     // Marcar botón de orden activo
     const sortSt = isVal ? _valSortState : _regSortState;
@@ -2452,6 +2459,56 @@ function _openFilterPopupC(htInst, col, anchorBtn, isVal) {
     document.getElementById('fpSortDescC').classList.toggle('active',     isDesc);
     document.getElementById('fpSortDateAscC').classList.toggle('active',  isAsc);
     document.getElementById('fpSortDateDescC').classList.toggle('active', isDesc);
+}
+
+let _fpDateGroupC = 'day'; // 'day' | 'month'
+
+function _fpSetGroupC(mode) {
+    _fpDateGroupC = mode;
+    document.getElementById('fpGrpDayC').classList.toggle('active',   mode === 'day');
+    document.getElementById('fpGrpMonthC').classList.toggle('active', mode === 'month');
+    _fpApplyGroupC();
+}
+
+function _fpApplyGroupC() {
+    const src    = _fpCIsVal ? _fullValData : _fullRegData;
+    const fmap   = _fpCIsVal ? _htValFilters : _htRegFilters;
+    const otherCols = Object.keys(fmap).map(Number).filter(c => c !== _fpCCol);
+    const filteredSrc = otherCols.length === 0 ? src : src.filter(r =>
+        otherCols.every(c => {
+            const v = r[c]; const sv = (v === null || v === undefined) ? '' : String(v);
+            return fmap[c].has(sv);
+        })
+    );
+    let allVals;
+    if (_fpDateGroupC === 'month') {
+        // Agrupar por YYYY-MM
+        const months = [...new Set(filteredSrc.map(r => {
+            const v = r[_fpCCol]; if (!v) return '';
+            const s = String(v); return s.length >= 7 ? s.slice(0,7) : s;
+        }))].sort();
+        allVals = months;
+        // Cuando el filtro activo tiene fechas individuales, convertir a meses seleccionados
+        if (fmap[_fpCCol]) {
+            const selMonths = new Set([...fmap[_fpCCol]].map(d => d.length >= 7 ? d.slice(0,7) : d));
+            _fpCSelected = new Set(months.filter(m => selMonths.has(m)));
+            if (_fpCSelected.size === 0) _fpCSelected = new Set(months);
+        } else {
+            _fpCSelected = new Set(months);
+        }
+    } else {
+        allVals = [...new Set(filteredSrc.map(r => {
+            const v = r[_fpCCol]; return (v === null || v === undefined) ? '' : String(v);
+        }))].sort((a,b) => a.localeCompare(b, 'es', {sensitivity:'base'}));
+        if (fmap[_fpCCol]) {
+            _fpCSelected = new Set([...fmap[_fpCCol]].filter(v => allVals.includes(v)));
+            if (_fpCSelected.size === 0) _fpCSelected = new Set(allVals);
+        } else {
+            _fpCSelected = new Set(allVals);
+        }
+    }
+    document.getElementById('htFilterPopupC')._allVals = allVals;
+    _renderPopupListC(allVals);
 }
 
 function _sortColumnCoor(dir) {
@@ -2494,8 +2551,14 @@ function _applyFilterC() {
     const src  = _fpCIsVal ? _fullValData : _fullRegData;
     const fmap = _fpCIsVal ? _htValFilters : _htRegFilters;
     const allVals = [...new Set(src.map(r => String(r[_fpCCol] ?? '')))];
-    const allSelected = allVals.length === 0 || allVals.every(v => _fpCSelected.has(v));
-    if (allSelected) delete fmap[_fpCCol]; else fmap[_fpCCol] = new Set(_fpCSelected);
+    let selected = _fpCSelected;
+    // Si estamos en modo mes, expandir meses a fechas individuales
+    if (_fpCCol === C_FECHA && _fpDateGroupC === 'month') {
+        const selMonths = _fpCSelected;
+        selected = new Set(allVals.filter(d => selMonths.has(d.length >= 7 ? d.slice(0,7) : d)));
+    }
+    const allSelected = allVals.length === 0 || allVals.every(v => selected.has(v));
+    if (allSelected) delete fmap[_fpCCol]; else fmap[_fpCCol] = selected;
     document.getElementById('htFilterPopupC').style.display = 'none';
     _applyAllFiltersCoor();
 }
