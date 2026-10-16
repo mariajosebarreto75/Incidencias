@@ -331,12 +331,42 @@ def indicadores():
     tipos_rows = tip_q.group_by(ReporteOperacional.tipo_incidencia)\
         .order_by(func.count(ReporteOperacional.id).desc()).all()
 
+    # Para cada tipo, buscar el parametro_neo más frecuente (causa principal)
+    causa_q = db.session.query(
+        ReporteOperacional.tipo_incidencia,
+        ReporteOperacional.parametro_neo,
+        func.count(ReporteOperacional.id).label("n"),
+    ).filter(
+        ReporteOperacional.parametro_neo.isnot(None),
+        ReporteOperacional.parametro_neo != "",
+    )
+    if extra:
+        causa_q = causa_q.filter(*extra)
+    causa_rows = causa_q.group_by(
+        ReporteOperacional.tipo_incidencia,
+        ReporteOperacional.parametro_neo,
+    ).all()
+
+    # construir dict: tipo -> (parametro_principal, conteo, pct)
+    from collections import defaultdict as _dd
+    _causa_map: dict = _dd(list)
+    for r in causa_rows:
+        _causa_map[r.tipo_incidencia].append((r.parametro_neo, r.n))
+    causa_principal: dict = {}
+    for tipo, items in _causa_map.items():
+        items.sort(key=lambda x: x[1], reverse=True)
+        total_tipo = sum(x[1] for x in items)
+        top_param, top_n = items[0]
+        pct = round(top_n / total_tipo * 100, 1) if total_tipo else 0
+        causa_principal[tipo] = {"param": top_param, "n": top_n, "pct": pct}
+
     tipos_data = [
         {
             "tipo": r.tipo_incidencia,
             "casos": r.casos,
             "horas": round(float(r.horas or 0), 1),
             "afectacion": int(r.afectacion or 0),
+            "causa": causa_principal.get(r.tipo_incidencia, {}),
         }
         for r in tipos_rows
     ]
