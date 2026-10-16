@@ -1067,6 +1067,18 @@ function clearAllFilters() {
             </tr>
             {% endfor %}
           </tbody>
+          <tfoot>
+            {% set t_casos = tipos_data | sum(attribute='casos') %}
+            {% set t_horas = tipos_data | sum(attribute='horas') %}
+            {% set t_afect = tipos_data | sum(attribute='afectacion') %}
+            <tr style="background:var(--surf2);font-weight:700;border-top:2px solid var(--border)">
+              <td colspan="2" style="color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.4px">TOTAL</td>
+              <td>{{ t_casos }}</td>
+              <td>100%</td>
+              <td>{{ "%.1f"|format(t_horas) }}h</td>
+              <td><strong style="color:var(--red)">${{ "{:,.0f}".format(t_afect) }}</strong></td>
+            </tr>
+          </tfoot>
         </table>
       </div>
     </div>
