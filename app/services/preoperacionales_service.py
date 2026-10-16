@@ -288,7 +288,7 @@ def datos_dashboard(filtros: dict | None = None) -> dict:
 
     # ── Una sola pasada sobre filtrados para todos los agregados ──
     total = cumple = incumple = sin_mov = sin_gps = 0
-    serie: dict        = defaultdict(lambda: {"total": 0, "cumple": 0, "incumple": 0})
+    serie: dict        = defaultdict(lambda: {"total": 0, "cumple": 0, "incumple": 0, "sin_mov": 0})
     estados_cnt        = Counter()
     inc_contrato       = Counter()
     sedes_data: dict   = defaultdict(lambda: {"total": 0, "cumple": 0, "sin_mov": 0, "incumple": 0})
@@ -306,8 +306,9 @@ def datos_dashboard(filtros: dict | None = None) -> dict:
 
         d = r["fecha_str"] or "sin fecha"
         serie[d]["total"] += 1
-        if c: serie[d]["cumple"]   += 1
-        if i: serie[d]["incumple"] += 1
+        if c:  serie[d]["cumple"]   += 1
+        if i:  serie[d]["incumple"] += 1
+        if sm: serie[d]["sin_mov"]  += 1
 
         estados_cnt[r["estado"]] += 1
         if i: inc_contrato[r["contrato"]] += 1
