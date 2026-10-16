@@ -84,7 +84,8 @@
                     <th>Fecha Labor</th>
                     <th>Cédula</th>
                     <th>Nombre trabajador</th>
-                    <th>Hrs</th>
+                    <th>Hrs reportadas</th>
+                    <th>Hrs modificadas</th>
                     <th>Concepto</th>
                     <th>Estado antes</th>
                     <th>Estado desp.</th>
@@ -94,7 +95,7 @@
                 </tr>
             </thead>
             <tbody id="tbody">
-                <tr><td colspan="13" class="adm-empty">Use los filtros y presione Buscar</td></tr>
+                <tr><td colspan="14" class="adm-empty">Use los filtros y presione Buscar</td></tr>
             </tbody>
         </table>
     </div>
@@ -154,13 +155,13 @@ function limpiarFiltros() {
     document.getElementById('fDesde').value    = '';
     document.getElementById('fHasta').value    = '';
     document.getElementById('fUsuario').value  = '';
-    document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="adm-empty">Use los filtros y presione Buscar</td></tr>';
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="14" class="adm-empty">Use los filtros y presione Buscar</td></tr>';
     document.getElementById('pie').textContent = '';
     document.getElementById('resumenCards').innerHTML = '';
 }
 
 async function cargar() {
-    document.getElementById('tbody').innerHTML = '<tr><td colspan="13" class="adm-empty"><i class="bi bi-hourglass-split me-2"></i>Cargando...</td></tr>';
+    document.getElementById('tbody').innerHTML = '<tr><td colspan="14" class="adm-empty"><i class="bi bi-hourglass-split me-2"></i>Cargando...</td></tr>';
     const params = new URLSearchParams({
         contrato_id: document.getElementById('fContrato').value,
         operacion:   document.getElementById('fOp').value,
@@ -205,11 +206,27 @@ function renderResumen() {
 function renderTabla() {
     const tbody = document.getElementById('tbody');
     if (!_rows.length) {
-        tbody.innerHTML = '<tr><td colspan="13" class="adm-empty"><i class="bi bi-inbox me-2"></i>Sin resultados para los filtros aplicados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14" class="adm-empty"><i class="bi bi-inbox me-2"></i>Sin resultados para los filtros aplicados</td></tr>';
         document.getElementById('pie').textContent = '';
         return;
     }
-    tbody.innerHTML = _rows.map((r, i) => `
+    tbody.innerHTML = _rows.map((r, i) => {
+        // Extraer horas antes/después de los JSON de auditoría
+        let hrsAntes = null, hrsDespues = null;
+        try { if (r.datos_antes) hrsAntes  = JSON.parse(r.datos_antes).horas_reportadas ?? null; } catch(e){}
+        try { if (r.datos_desp)  hrsDespues = JSON.parse(r.datos_desp).horas_reportadas  ?? null; } catch(e){}
+        // Celda "Hrs modificadas": solo visible en UPDATE cuando cambió el valor
+        let hrsModCell = '<td style="color:var(--adm-text-muted2);font-size:.78rem">—</td>';
+        if (r.operacion === 'UPDATE' && hrsAntes !== null && hrsDespues !== null && hrsAntes !== hrsDespues) {
+            hrsModCell = `<td style="white-space:nowrap;font-size:.78rem">
+                <span style="color:#dc2626;font-weight:600;text-decoration:line-through">${hrsAntes}</span>
+                <span style="color:#64748b;margin:0 3px">→</span>
+                <span style="color:#059669;font-weight:600">${hrsDespues}</span>
+            </td>`;
+        } else if (r.operacion === 'UPDATE') {
+            hrsModCell = '<td style="color:var(--adm-text-muted2);font-size:.78rem;text-align:center">sin cambio</td>';
+        }
+        return `
         <tr style="${r.operacion==='DELETE' ? 'background:rgba(220,38,38,.04)' : ''}">
             <td style="white-space:nowrap;font-size:.77rem">${r.fecha}</td>
             <td><span style="background:${OP_BG[r.operacion]};color:${OP_COLOR[r.operacion]};padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;border:1px solid ${OP_COLOR[r.operacion]}33">${OP_LABEL[r.operacion]||r.operacion}</span></td>
@@ -218,14 +235,15 @@ function renderTabla() {
             <td style="font-size:.78rem">${r.cedula}</td>
             <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem" title="${r.nombre}">${r.nombre}</td>
             <td style="font-weight:600;color:${r.operacion==='DELETE'?'#dc2626':'inherit'}">${r.horas_rep ?? ''}</td>
+            ${hrsModCell}
             <td style="font-size:.78rem">${r.id_concepto}${r.tipo_he ? ' · '+r.tipo_he.substring(0,20) : ''}</td>
             <td>${badge(r.estado_antes)}</td>
             <td>${badge(r.estado_desp)}</td>
             <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem">${r.usuario}</td>
             <td style="font-size:.75rem;color:var(--adm-text-muted2)">${r.rol}</td>
             <td><button class="btn-edit" style="padding:2px 8px;font-size:.72rem" onclick="verDetalle(${i})"><i class="bi bi-eye"></i></button></td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
     document.getElementById('pie').textContent = `${_rows.length} registro(s) mostrados`;
 }
 

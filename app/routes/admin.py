@@ -2143,6 +2143,8 @@ def api_he_auditoria():
         "rol":          r.usuario_rol or "",
         "ip":           r.ip or "",
         "fecha":        r.fecha.strftime("%Y-%m-%d %H:%M:%S") if r.fecha else "",
+        "datos_antes":  r.datos_antes or "",
+        "datos_desp":   r.datos_desp  or "",
     } for r in rows])
 
 
