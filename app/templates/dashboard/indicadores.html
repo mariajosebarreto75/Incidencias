@@ -766,13 +766,20 @@ function clearAllFilters() {
         </div>
         {% set max_rein = reincidentes[0].casos if reincidentes else 1 %}
         {% for r in reincidentes %}
-        <div style="margin-bottom:8px">
+        {% set color = 'var(--red)' if loop.index == 1 else ('var(--amber)' if loop.index <= 3 else 'var(--cyan)') %}
+        <div style="margin-bottom:10px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
             <span style="font-size:.78rem;font-weight:600;color:var(--ink2)">{{ r.recurso }}</span>
-            <span style="font-size:.72rem;font-weight:700;color:{% if loop.index == 1 %}var(--red){% elif loop.index <= 3 %}var(--amber){% else %}var(--muted){% endif %}">{{ r.casos }} casos</span>
+            <span style="font-size:.72rem;font-weight:700;color:{{ color }}">{{ r.casos }} casos</span>
           </div>
-          <div class="ctr-bar-bg">
-            <div class="ctr-bar-fill" style="width:{{ (r.casos / max_rein * 100)|int }}%;background:{% if loop.index == 1 %}var(--red){% elif loop.index <= 3 %}var(--amber){% else %}var(--cyan){% endif %}"></div>
+          <div class="ctr-bar-bg" style="margin-bottom:3px">
+            <div class="ctr-bar-fill" style="width:{{ (r.casos / max_rein * 100)|int }}%;background:{{ color }}"></div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <span style="font-size:.68rem;color:var(--muted)"><i class="bi bi-clock" style="margin-right:2px"></i>{{ r.horas }}h</span>
+            {% if r.afectacion > 0 %}
+            <span style="font-size:.68rem;color:var(--red);font-weight:600"><i class="bi bi-currency-dollar" style="margin-right:1px"></i>${{ "{:,.0f}".format(r.afectacion) }}</span>
+            {% endif %}
           </div>
         </div>
         {% endfor %}

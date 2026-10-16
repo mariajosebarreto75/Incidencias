@@ -441,6 +441,7 @@ def indicadores():
         ReporteOperacional.recurso,
         func.count(ReporteOperacional.id).label("casos"),
         func.sum(ReporteOperacional.horas_afectadas).label("horas"),
+        func.sum(ReporteOperacional.afectacion_economica).label("afectacion"),
     )
     if extra:
         rein_q = rein_q.filter(*extra)
@@ -452,7 +453,12 @@ def indicadores():
      .limit(8).all()
 
     reincidentes = [
-        {"recurso": r.recurso, "casos": r.casos, "horas": round(float(r.horas or 0), 1)}
+        {
+            "recurso":    r.recurso,
+            "casos":      r.casos,
+            "horas":      round(float(r.horas or 0), 1),
+            "afectacion": int(r.afectacion or 0),
+        }
         for r in rein_rows
     ]
 
