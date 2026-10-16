@@ -1002,6 +1002,7 @@ def api_he_validar(id):
     return jsonify({
         "ok": True,
         "estado": he.estado,
+        "horas_autorizadas": he.horas_autorizadas,
         "validado_por":     current_user.nombre_completo if autorizacion != "PENDIENTE" else "",
         "fecha_validacion": he.fecha_validacion.strftime("%Y-%m-%d %H:%M") if he.fecha_validacion else "",
     })
