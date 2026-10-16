@@ -975,12 +975,12 @@ def api_he_validar(id):
     he = HoraExtra.query.get_or_404(id)
     d = request.get_json(silent=True) or {}
 
-    autorizacion = d.get("autorizacion_neo", "").upper()
+    autorizacion = (d.get("autorizacion_neo") or "PENDIENTE").strip().upper()
     horas_auth   = d.get("horas_autorizadas")
     obs          = d.get("obs_neo", "").strip()
 
     if autorizacion not in ("CONFORME", "NO CONFORME", "DESCONTADA", "PENDIENTE"):
-        return jsonify({"ok": False, "msg": "Autorización inválida"}), 400
+        autorizacion = "PENDIENTE"
 
     he.autorizacion_neo  = None if autorizacion == "PENDIENTE" else autorizacion
     if horas_auth is not None:
