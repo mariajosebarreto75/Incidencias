@@ -1642,13 +1642,22 @@ function escHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
   function _load(){
     const anio = (document.getElementById('fAnio')?.value || '').trim();
     const mes  = (document.getElementById('fMes')?.value  || '').trim();
-    const qs   = new URLSearchParams();
-    if(anio) qs.set('año', anio);
-    if(mes)  qs.set('mes', mes);
-    fetch('/coordinador/preoperacionales/datos?' + qs)
+    // Pedir todos los datos y filtrar por fecha en el cliente
+    // (evita dependencia del formato del campo "mes" del Excel)
+    fetch('/coordinador/preoperacionales/datos')
       .then(r => r.json())
       .then(data => {
-        _serie = data.serie_temporal || [];
+        let serie = data.serie_temporal || [];
+        if(anio || mes){
+          serie = serie.filter(s => {
+            if(!s.fecha) return false;
+            const [y, m] = s.fecha.split('-');
+            if(anio && y !== anio) return false;
+            if(mes  && parseInt(m,10) !== parseInt(mes,10)) return false;
+            return true;
+          });
+        }
+        _serie = serie;
         if(document.getElementById('cLineInd')) _build(_serie, _mode);
       })
       .catch(() => {});
