@@ -2470,6 +2470,27 @@ function _fpSetGroupC(mode) {
     _fpApplyGroupC();
 }
 
+// Convierte "DD/MM/YYYY" → "YYYY-MM" para agrupar por mes
+function _fechaToYearMonth(v) {
+    if (!v) return '';
+    const s = String(v);
+    // Formato DD/MM/YYYY
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2]}`;
+    // Formato YYYY-MM-DD
+    if (s.length >= 7 && s[4] === '-') return s.slice(0,7);
+    return s;
+}
+
+function _yearMonthToLabel(ym) {
+    if (!ym) return ym;
+    const [y, m] = ym.split('-');
+    if (!y || !m) return ym;
+    const nombre = new Date(parseInt(y), parseInt(m)-1, 1)
+        .toLocaleString('es', {month:'long', year:'numeric'});
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+}
+
 function _fpApplyGroupC() {
     const src    = _fpCIsVal ? _fullValData : _fullRegData;
     const fmap   = _fpCIsVal ? _htValFilters : _htRegFilters;
@@ -2482,24 +2503,29 @@ function _fpApplyGroupC() {
     );
     let allVals;
     if (_fpDateGroupC === 'month') {
-        // Agrupar por YYYY-MM
-        const months = [...new Set(filteredSrc.map(r => {
-            const v = r[_fpCCol]; if (!v) return '';
-            const s = String(v); return s.length >= 7 ? s.slice(0,7) : s;
-        }))].sort();
-        allVals = months;
-        // Cuando el filtro activo tiene fechas individuales, convertir a meses seleccionados
+        // Agrupar por YYYY-MM, mostrar como "Octubre 2026"
+        const ymSet = [...new Set(filteredSrc.map(r => _fechaToYearMonth(r[_fpCCol])).filter(Boolean))].sort();
+        // Guardamos el YYYY-MM como clave interna, mostramos el label legible
+        allVals = ymSet; // valores internos YYYY-MM
+        // _renderPopupListC usará estos para mostrar; sobreescribimos el label en render
         if (fmap[_fpCCol]) {
-            const selMonths = new Set([...fmap[_fpCCol]].map(d => d.length >= 7 ? d.slice(0,7) : d));
-            _fpCSelected = new Set(months.filter(m => selMonths.has(m)));
-            if (_fpCSelected.size === 0) _fpCSelected = new Set(months);
+            // El filtro activo tiene fechas DD/MM/YYYY → convertir a YYYY-MM para comparar
+            const selYM = new Set([...fmap[_fpCCol]].map(_fechaToYearMonth));
+            _fpCSelected = new Set(ymSet.filter(m => selYM.has(m)));
+            if (_fpCSelected.size === 0) _fpCSelected = new Set(ymSet);
         } else {
-            _fpCSelected = new Set(months);
+            _fpCSelected = new Set(ymSet);
         }
     } else {
         allVals = [...new Set(filteredSrc.map(r => {
             const v = r[_fpCCol]; return (v === null || v === undefined) ? '' : String(v);
-        }))].sort((a,b) => a.localeCompare(b, 'es', {sensitivity:'base'}));
+        }))].sort((a,b) => {
+            // Ordenar DD/MM/YYYY cronológicamente
+            const pa = a.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            const pb = b.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (pa && pb) return `${pa[3]}-${pa[2]}-${pa[1]}`.localeCompare(`${pb[3]}-${pb[2]}-${pb[1]}`);
+            return a.localeCompare(b, 'es', {sensitivity:'base'});
+        });
         if (fmap[_fpCCol]) {
             _fpCSelected = new Set([...fmap[_fpCCol]].filter(v => allVals.includes(v)));
             if (_fpCSelected.size === 0) _fpCSelected = new Set(allVals);
@@ -2508,7 +2534,12 @@ function _fpApplyGroupC() {
         }
     }
     document.getElementById('htFilterPopupC')._allVals = allVals;
-    _renderPopupListC(allVals);
+    // Render con labels legibles en modo mes
+    if (_fpDateGroupC === 'month') {
+        _renderPopupListCWithLabels(allVals, allVals.map(_yearMonthToLabel));
+    } else {
+        _renderPopupListC(allVals);
+    }
 }
 
 function _sortColumnCoor(dir) {
@@ -2517,6 +2548,34 @@ function _sortColumnCoor(dir) {
     if (_fpCIsVal) _valSortState = next; else _regSortState = next;
     document.getElementById('htFilterPopupC').style.display = 'none';
     _applyAllFiltersCoor();
+}
+
+function _renderPopupListCWithLabels(vals, labels) {
+    const list = document.getElementById('fpListC');
+    const allChecked = vals.length > 0 && vals.every(v => _fpCSelected.has(String(v)));
+    list.innerHTML = `
+        <div class="fp-item" id="fpSelAllC">
+            <input type="checkbox" id="fpChkAllC" ${allChecked ? 'checked' : ''}>
+            <label for="fpChkAllC"><strong>(Seleccionar todo)</strong></label>
+        </div>
+        ${vals.map((v,i) => `
+        <div class="fp-item">
+            <input type="checkbox" id="fpcC${i}" ${_fpCSelected.has(String(v)) ? 'checked' : ''} data-idx="${i}">
+            <label for="fpcC${i}">${(labels[i] || v) === '' ? '(Vacías)' : String(labels[i] || v).replace(/</g,'&lt;')}</label>
+        </div>`).join('')}`;
+    list._fpVals = vals.map(String);
+    list.onchange = function(e) {
+        const chk = e.target; if (!chk || chk.type !== 'checkbox') return;
+        if (chk.id === 'fpChkAllC') {
+            list.querySelectorAll('input[data-idx]').forEach(c => { c.checked = chk.checked; });
+            _fpCSelected = chk.checked ? new Set(list._fpVals) : new Set();
+        } else {
+            const val = list._fpVals[parseInt(chk.dataset.idx)];
+            if (chk.checked) _fpCSelected.add(val); else _fpCSelected.delete(val);
+            const ca = list.querySelector('#fpChkAllC');
+            if (ca) ca.checked = list._fpVals.every(v => _fpCSelected.has(v));
+        }
+    };
 }
 
 function _renderPopupListC(vals) {
@@ -2552,10 +2611,10 @@ function _applyFilterC() {
     const fmap = _fpCIsVal ? _htValFilters : _htRegFilters;
     const allVals = [...new Set(src.map(r => String(r[_fpCCol] ?? '')))];
     let selected = _fpCSelected;
-    // Si estamos en modo mes, expandir meses a fechas individuales
+    // Si estamos en modo mes, expandir meses YYYY-MM a fechas individuales DD/MM/YYYY
     if (_fpCCol === C_FECHA && _fpDateGroupC === 'month') {
-        const selMonths = _fpCSelected;
-        selected = new Set(allVals.filter(d => selMonths.has(d.length >= 7 ? d.slice(0,7) : d)));
+        const selMonths = _fpCSelected; // Set de YYYY-MM
+        selected = new Set(allVals.filter(d => selMonths.has(_fechaToYearMonth(d))));
     }
     const allSelected = allVals.length === 0 || allVals.every(v => selected.has(v));
     if (allSelected) delete fmap[_fpCCol]; else fmap[_fpCCol] = selected;
