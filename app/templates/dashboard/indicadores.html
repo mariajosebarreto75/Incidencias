@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons.min.css') }}">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
 /* ─── TOKENS ─────────────────────────────────────────────────── */
 :root {
@@ -1723,14 +1724,20 @@ function escHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
         { label:'% Cumplimiento', data:pcts,
           borderColor:'#2E75B6', backgroundColor:'rgba(46,117,182,.15)',
           fill:true, tension:.3, pointRadius:5, pointHoverRadius:7,
-          pointBackgroundColor:'#fff', pointBorderColor:'#2E75B6', pointBorderWidth:2 },
+          pointBackgroundColor:'#fff', pointBorderColor:'#2E75B6', pointBorderWidth:2,
+          datalabels:{ display:true, align:'top', anchor:'end',
+            formatter: v => v+'%',
+            color:'#2E75B6', font:{ size: labels.length > 20 ? 9 : 11, weight:'600' },
+            padding:{ bottom:2 } } },
         { label:'Meta (80%)', data: Array(labels.length).fill(80),
           borderColor:'rgba(220,38,38,.7)', borderDash:[6,4],
-          borderWidth:2, pointRadius:0, fill:false }
+          borderWidth:2, pointRadius:0, fill:false,
+          datalabels:{ display:false } }
       ]},
       options: {
         responsive:true, maintainAspectRatio:false,
         interaction:{ mode:'index', intersect:false },
+        layout:{ padding:{ top:20 } },
         plugins:{
           legend:{ display:true, position:'top',
             labels:{ color:ink2, font:{size:12}, boxWidth:24, padding:16 }},
@@ -1738,7 +1745,8 @@ function escHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
             callbacks:{
               label: ctx => ctx.dataset.label === 'Meta (80%)' ? 'Meta: 80%' : `${ctx.parsed.y}%`
             }
-          }
+          },
+          datalabels:{ display:false }
         },
         scales:{
           x:{ ticks:{ color:muted, maxRotation:45 }, grid:{ color:'rgba(148,163,184,.1)' }},
@@ -1746,7 +1754,8 @@ function escHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
               ticks:{ color:muted, callback: v => v+'%' },
               grid:{ color:'rgba(148,163,184,.15)' }}
         }
-      }
+      },
+      plugins:[ ChartDataLabels ]
     });
   }
 
