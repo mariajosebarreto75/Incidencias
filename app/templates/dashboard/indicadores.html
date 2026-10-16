@@ -1640,7 +1640,12 @@ function escHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>'
 
   // cargar datos al entrar en tab resumen (o al iniciar si ya está activo)
   function _load(){
-    fetch('/coordinador/preoperacionales/datos')
+    const anio = (document.getElementById('fAnio')?.value || '').trim();
+    const mes  = (document.getElementById('fMes')?.value  || '').trim();
+    const qs   = new URLSearchParams();
+    if(anio) qs.set('año', anio);
+    if(mes)  qs.set('mes', mes);
+    fetch('/coordinador/preoperacionales/datos?' + qs)
       .then(r => r.json())
       .then(data => {
         _serie = data.serie_temporal || [];
