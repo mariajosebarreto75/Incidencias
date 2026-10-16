@@ -746,6 +746,9 @@ def api_he_eliminar(id):
             return jsonify({"ok": False, "msg": "Solo se pueden eliminar registros pendientes"}), 403
         if he.contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    elif current_user.rol.lower() in ("neo", "admin"):
+        if he.estado == "CONFORME":
+            return jsonify({"ok": False, "msg": "No se pueden eliminar registros CONFORMES"}), 403
     _datos = he.to_dict()
     _estado = he.estado
     _cid = he.contrato_id
@@ -802,6 +805,11 @@ def api_he_bulk_delete():
         if not ids:
             return jsonify({"ok": False, "msg": "No hay registros seleccionados"}), 400
     registros_a_eliminar = HoraExtra.query.filter(HoraExtra.id.in_(ids)).all()
+    # NEO/admin no pueden eliminar registros CONFORMES
+    if rol in ("neo", "admin"):
+        conformes = [r.id for r in registros_a_eliminar if r.estado == "CONFORME"]
+        if conformes:
+            return jsonify({"ok": False, "msg": f"No se pueden eliminar {len(conformes)} registro(s) en estado CONFORME"}), 403
     _snapshots = [(r.estado, r.to_dict(), r.contrato_id, r.fecha_labor, r.cedula,
                    r.horas_reportadas, r.id_concepto, r.tipo_he, r.nombre)
                   for r in registros_a_eliminar]
