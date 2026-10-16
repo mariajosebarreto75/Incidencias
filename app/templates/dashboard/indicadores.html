@@ -900,7 +900,7 @@ function clearAllFilters() {
           <button class="sort-btn" onclick="sortContratos('casos',this)">Más casos</button>
         </div>
       </div>
-      <div class="chart-wrap" style="height:280px;margin-bottom:20px">
+      <div class="chart-wrap" style="height:380px;margin-bottom:20px">
         <canvas id="chartContratos"></canvas>
       </div>
       <div style="overflow-x:auto">
@@ -916,6 +916,7 @@ function clearAllFilters() {
             </tr>
           </thead>
           <tbody id="contratosBody"></tbody>
+          <tfoot id="contratosFoot"></tfoot>
         </table>
       </div>
     </div>
@@ -1229,6 +1230,17 @@ let contratosChart = null;
 let chartContratosBuilt = false;
 const maxHoras = Math.max(...CONTRATOS.map(c=>c.horas),1);
 
+// Divide un label largo en 2 líneas en el último espacio antes de maxLen
+function splitLabel(s, maxLen=22){
+  if(s.length <= maxLen) return s;
+  const mid = Math.floor(s.length / 2);
+  // buscar espacio cercano al medio
+  let idx = s.lastIndexOf(' ', mid + 6);
+  if(idx < 4) idx = s.indexOf(' ', mid - 6);
+  if(idx < 4) return [s.slice(0, maxLen), s.slice(maxLen).trim()];
+  return [s.slice(0, idx), s.slice(idx + 1)];
+}
+
 function sortContratos(key, btn){
   document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -1238,6 +1250,7 @@ function sortContratos(key, btn){
 }
 function renderContratosTable(){
   const body = document.getElementById('contratosBody');
+  const mxH  = Math.max(...contratosData.map(c=>c.horas), 1);
   body.innerHTML = contratosData.map((c,i)=>`
     <tr onclick="openContratoInfo('${escHtml(c.contrato)}')" style="cursor:pointer">
       <td style="color:var(--muted);font-size:.72rem">${i+1}</td>
@@ -1247,10 +1260,23 @@ function renderContratosTable(){
       <td><strong style="color:var(--red)">${c.afectacion>0?'$'+c.afectacion.toLocaleString('es-CO'):'—'}</strong></td>
       <td class="ctr-bar-wrap" style="width:140px">
         <div class="ctr-bar-bg" style="width:140px">
-          <div class="ctr-bar-fill" style="width:${Math.min(c.horas/maxHoras*100,100)}%"></div>
+          <div class="ctr-bar-fill" style="width:${Math.min(c.horas/mxH*100,100)}%"></div>
         </div>
       </td>
     </tr>`).join('');
+  // fila de totales
+  const totCasos = contratosData.reduce((s,c)=>s+c.casos,0);
+  const totHoras = contratosData.reduce((s,c)=>s+c.horas,0);
+  const totAfe   = contratosData.reduce((s,c)=>s+c.afectacion,0);
+  const foot = document.getElementById('contratosFoot');
+  if(foot) foot.innerHTML = `
+    <tr style="background:var(--bg);font-weight:700;border-top:2px solid var(--bd2)">
+      <td colspan="2" style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Total</td>
+      <td><strong>${totCasos}</strong></td>
+      <td>${totHoras.toFixed(1)}h</td>
+      <td><strong style="color:var(--red)">${totAfe>0?'$'+totAfe.toLocaleString('es-CO'):'—'}</strong></td>
+      <td></td>
+    </tr>`;
 }
 function buildContratosChart(){
   chartContratosBuilt = true;
@@ -1258,7 +1284,7 @@ function buildContratosChart(){
   contratosChart = new Chart(ctx,{
     type:'bar',
     data:{
-      labels: CONTRATOS.map(c=>c.contrato.length>28?c.contrato.slice(0,28)+'…':c.contrato),
+      labels: CONTRATOS.map(c=>splitLabel(c.contrato)),
       datasets:[{
         label:'Horas afectadas',
         data: CONTRATOS.map(c=>c.horas),
@@ -1272,11 +1298,14 @@ function buildContratosChart(){
       responsive:true,maintainAspectRatio:false,
       plugins:{
         legend:{display:false},
-        tooltip:{callbacks:{label:ctx=>`${ctx.parsed.x.toFixed(1)}h`}},
+        tooltip:{callbacks:{
+          title: items => (Array.isArray(items[0]?.label) ? items[0].label.join(' ') : items[0]?.label) || '',
+          label: ctx=>`${ctx.parsed.x.toFixed(1)}h`
+        }},
       },
       scales:{
         x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#637794',font:{size:10}}},
-        y:{grid:{display:false},ticks:{color:'#374B65',font:{size:10}}},
+        y:{grid:{display:false},ticks:{color:'#374B65',font:{size:10},maxTicksLimit:20}},
       }
     }
   });
@@ -1284,7 +1313,7 @@ function buildContratosChart(){
 }
 function updateContratosChart(){
   if(!contratosChart) return;
-  contratosChart.data.labels = contratosData.map(c=>c.contrato.length>28?c.contrato.slice(0,28)+'…':c.contrato);
+  contratosChart.data.labels = contratosData.map(c=>splitLabel(c.contrato));
   contratosChart.data.datasets[0].data = contratosData.map(c=>c.horas);
   contratosChart.update();
 }
