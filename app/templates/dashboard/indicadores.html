@@ -728,6 +728,18 @@ function clearAllFilters() {
       </div>
     </div>
 
+    <!-- TENDENCIA PREOPERACIONALES -->
+    <div class="chart-card" style="padding:16px;margin-bottom:20px">
+      <div class="chart-card-hdr" style="margin-bottom:14px">
+        <span class="chart-card-title"><i class="bi bi-graph-up-arrow" style="color:var(--blue)"></i> Tendencia de Cumplimiento Preoperacionales</span>
+        <div style="display:flex;gap:4px">
+          <button class="acc-toggle active" id="indTrendDia" onclick="indSetTrend('dia')">Por Día</button>
+          <button class="acc-toggle" id="indTrendMes" onclick="indSetTrend('mes')">Por Mes</button>
+        </div>
+      </div>
+      <div style="position:relative;width:100%;height:340px"><canvas id="cLineInd"></canvas></div>
+    </div>
+
     <!-- CONFORMIDAD -->
     <div class="grid-2" style="margin-bottom:20px">
 
@@ -1541,6 +1553,114 @@ function aplicarFiltroTabla(){
 
 // ─── UTILS ──────────────────────────────────────────────────
 function escHtml(s){ return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ─── TENDENCIA PREOPERACIONALES ─────────────────────────────
+(function(){
+  let _serie = [], _mode = 'dia', _chart = null;
+
+  function _build(serie, mode){
+    const ctx = document.getElementById('cLineInd');
+    if(!ctx) return;
+    if(_chart){ _chart.destroy(); _chart = null; }
+
+    let labels, pcts;
+    if(mode === 'mes'){
+      const byMonth = {};
+      serie.forEach(s => {
+        const k = s.fecha ? s.fecha.slice(0,7) : null;
+        if(!k) return;
+        if(!byMonth[k]) byMonth[k] = {cumple:0, total:0};
+        byMonth[k].cumple += s.cumple || 0;
+        byMonth[k].total  += s.total  || 0;
+      });
+      labels = Object.keys(byMonth).sort();
+      pcts   = labels.map(k => {
+        const m = byMonth[k];
+        const cm = m.total - 0; // sin_mov no disponible en este ctx
+        return cm ? +(m.cumple/m.total*100).toFixed(1) : 0;
+      });
+      labels = labels.map(k => {
+        const [y,m] = k.split('-');
+        return new Date(y,m-1).toLocaleString('es',{month:'short',year:'2-digit'});
+      });
+    } else {
+      labels = serie.map(s => {
+        if(!s.fecha) return '';
+        const [y,m,d] = s.fecha.split('-');
+        return `${d}/${m}/${y}`;
+      });
+      pcts = serie.map(s => {
+        const cm = s.total - (s.sin_mov || 0);
+        return cm ? +(s.cumple/cm*100).toFixed(1) : 0;
+      });
+    }
+
+    const ink2 = getComputedStyle(document.documentElement).getPropertyValue('--ink2').trim() || '#475569';
+    const muted = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#94A3B8';
+
+    _chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [
+        { label:'% Cumplimiento', data:pcts,
+          borderColor:'#2E75B6', backgroundColor:'rgba(46,117,182,.15)',
+          fill:true, tension:.3, pointRadius:5, pointHoverRadius:7,
+          pointBackgroundColor:'#fff', pointBorderColor:'#2E75B6', pointBorderWidth:2 },
+        { label:'Meta (80%)', data: Array(labels.length).fill(80),
+          borderColor:'rgba(220,38,38,.7)', borderDash:[6,4],
+          borderWidth:2, pointRadius:0, fill:false }
+      ]},
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction:{ mode:'index', intersect:false },
+        plugins:{
+          legend:{ display:true, position:'top',
+            labels:{ color:ink2, font:{size:12}, boxWidth:24, padding:16 }},
+          tooltip:{
+            callbacks:{
+              label: ctx => ctx.dataset.label === 'Meta (80%)' ? 'Meta: 80%' : `${ctx.parsed.y}%`
+            }
+          }
+        },
+        scales:{
+          x:{ ticks:{ color:muted, maxRotation:45 }, grid:{ color:'rgba(148,163,184,.1)' }},
+          y:{ min:0, max:100,
+              ticks:{ color:muted, callback: v => v+'%' },
+              grid:{ color:'rgba(148,163,184,.15)' }}
+        }
+      }
+    });
+  }
+
+  window.indSetTrend = function(mode){
+    _mode = mode;
+    document.getElementById('indTrendDia').classList.toggle('active', mode==='dia');
+    document.getElementById('indTrendMes').classList.toggle('active', mode==='mes');
+    if(_serie.length) _build(_serie, mode);
+  };
+
+  // cargar datos al entrar en tab resumen (o al iniciar si ya está activo)
+  function _load(){
+    fetch('/coordinador/preoperacionales/datos')
+      .then(r => r.json())
+      .then(data => {
+        _serie = data.serie_temporal || [];
+        if(document.getElementById('cLineInd')) _build(_serie, _mode);
+      })
+      .catch(() => {});
+  }
+
+  // disparar cuando el tab resumen quede visible
+  document.addEventListener('DOMContentLoaded', () => {
+    const pane = document.getElementById('tab-resumen');
+    if(pane && pane.classList.contains('active')) _load();
+    // hook en switchTab para recargar si vuelven al resumen
+    const _origSwitch = window.switchTab;
+    window.switchTab = function(id, btn){
+      if(_origSwitch) _origSwitch(id, btn);
+      if(id === 'resumen' && !_serie.length) _load();
+    };
+  });
+})();
 
 // ─── INIT ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', ()=>{});
