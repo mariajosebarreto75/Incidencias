@@ -746,8 +746,38 @@ def api_he_eliminar(id):
             return jsonify({"ok": False, "msg": "Solo se pueden eliminar registros pendientes"}), 403
         if he.contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    _datos = he.to_dict()
+    _estado = he.estado
+    _cid = he.contrato_id
+    _fl  = he.fecha_labor
+    _ced = he.cedula
+    _hrs = he.horas_reportadas
+    _conc = he.id_concepto
+    _tipo = he.tipo_he
+    _nom  = he.nombre
     db.session.delete(he)
     db.session.commit()
+    try:
+        db.session.add(HeAuditLog(
+            operacion    = "DELETE",
+            contrato_id  = _cid,
+            fecha_labor  = _fl,
+            cedula       = _ced,
+            nombre       = _nom,
+            horas_rep    = _hrs,
+            id_concepto  = _conc,
+            tipo_he      = _tipo,
+            estado_antes = _estado,
+            datos_antes  = json.dumps(_datos, default=str),
+            usuario_id   = current_user.id,
+            usuario_nom  = current_user.nombre_completo,
+            usuario_rol  = current_user.rol,
+            ip           = request.remote_addr,
+            fecha        = datetime.now(),
+        ))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
     return jsonify({"ok": True})
 
 
