@@ -319,6 +319,32 @@ def indicadores():
         for r in contratos_rows
     ]
 
+    # ── Conformidad por contrato ──────────────────────────────────
+    conf_q = db.session.query(
+        ReporteOperacional.contrato,
+        func.count(ReporteOperacional.id).label("total"),
+        func.sum(func.cast(ReporteOperacional.estado == "Abierto",     db.Integer)).label("sin_respuesta"),
+        func.sum(func.cast(ReporteOperacional.estado != "Abierto",     db.Integer)).label("con_respuesta"),
+        func.sum(func.cast(ReporteOperacional.conformidad_neo == "Conforme",    db.Integer)).label("conformes"),
+        func.sum(func.cast(ReporteOperacional.conformidad_neo == "No conforme", db.Integer)).label("no_conformes"),
+    )
+    if extra:
+        conf_q = conf_q.filter(*extra)
+    conf_rows = conf_q.group_by(ReporteOperacional.contrato)\
+        .order_by(func.count(ReporteOperacional.id).desc()).all()
+
+    contratos_conformidad = [
+        {
+            "contrato": r.contrato,
+            "total": r.total or 0,
+            "sin_respuesta": int(r.sin_respuesta or 0),
+            "con_respuesta": int(r.con_respuesta or 0),
+            "conformes": int(r.conformes or 0),
+            "no_conformes": int(r.no_conformes or 0),
+        }
+        for r in conf_rows
+    ]
+
     # ── Por tipo de incidencia ────────────────────────────────────
     tip_q = db.session.query(
         ReporteOperacional.tipo_incidencia,
@@ -530,6 +556,7 @@ def indicadores():
         todos_tipos=todos_tipos,
         todos_recursos=todos_recursos,
         contratos_data=contratos_data,
+        contratos_conformidad=contratos_conformidad,
         tipos_data=tipos_data,
         acciones_data=acciones_data,
         acciones_por=acciones_por,

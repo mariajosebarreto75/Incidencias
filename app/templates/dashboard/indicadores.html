@@ -945,6 +945,71 @@ function clearAllFilters() {
         </table>
       </div>
     </div>
+
+    <!-- Tabla de conformidad por contrato -->
+    <div class="chart-card" style="margin-top:20px">
+      <div class="chart-card-hdr">
+        <span class="chart-card-title">Conformidad por contrato</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="ctr-table" id="conformidadTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Contrato</th>
+              <th style="text-align:center">Sin respuesta</th>
+              <th style="text-align:center">Con respuesta</th>
+              <th style="text-align:center">Conformes</th>
+              <th style="text-align:center">No conformes</th>
+              <th style="text-align:center">Total reportes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set conf_total = namespace(sin=0, con=0, conf=0, no_conf=0, tot=0) %}
+            {% for row in contratos_conformidad %}
+            {% set conf_total.sin = conf_total.sin + row.sin_respuesta %}
+            {% set conf_total.con = conf_total.con + row.con_respuesta %}
+            {% set conf_total.conf = conf_total.conf + row.conformes %}
+            {% set conf_total.no_conf = conf_total.no_conf + row.no_conformes %}
+            {% set conf_total.tot = conf_total.tot + row.total %}
+            <tr>
+              <td style="color:var(--muted)">{{ loop.index }}</td>
+              <td><strong>{{ row.contrato or '—' }}</strong></td>
+              <td style="text-align:center">
+                {% if row.sin_respuesta > 0 %}
+                <span style="background:var(--amber-s);color:var(--amber);padding:2px 8px;border-radius:10px;font-weight:600;font-size:.78rem">{{ row.sin_respuesta }}</span>
+                {% else %}<span style="color:var(--muted)">0</span>{% endif %}
+              </td>
+              <td style="text-align:center">
+                <span style="background:var(--cyan-soft);color:var(--cyan);padding:2px 8px;border-radius:10px;font-weight:600;font-size:.78rem">{{ row.con_respuesta }}</span>
+              </td>
+              <td style="text-align:center">
+                <span style="background:var(--green-s);color:var(--green);padding:2px 8px;border-radius:10px;font-weight:600;font-size:.78rem">{{ row.conformes }}</span>
+              </td>
+              <td style="text-align:center">
+                {% if row.no_conformes > 0 %}
+                <span style="background:var(--red-s);color:var(--red);padding:2px 8px;border-radius:10px;font-weight:600;font-size:.78rem">{{ row.no_conformes }}</span>
+                {% else %}<span style="color:var(--muted)">0</span>{% endif %}
+              </td>
+              <td style="text-align:center;font-weight:700">{{ row.total }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Sin datos</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr style="background:var(--surf2);font-weight:700;border-top:2px solid var(--border)">
+              <td colspan="2" style="color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.4px">TOTAL</td>
+              <td style="text-align:center;color:var(--amber)">{{ conf_total.sin }}</td>
+              <td style="text-align:center;color:var(--cyan)">{{ conf_total.con }}</td>
+              <td style="text-align:center;color:var(--green)">{{ conf_total.conf }}</td>
+              <td style="text-align:center;color:var(--red)">{{ conf_total.no_conf }}</td>
+              <td style="text-align:center">{{ conf_total.tot }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
   </div><!-- /tab-contratos -->
 
 
