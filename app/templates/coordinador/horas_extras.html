@@ -338,6 +338,10 @@ body { background:var(--c-bg); }
                     <div class="he-stat-val" id="rs-hrs-desc" style="color:#5b21b6;">—</div>
                     <div class="he-stat-lbl">Hrs Descontadas</div>
                 </div>
+                <div class="he-stat-card" style="border-top-color:#7c3aed;">
+                    <div class="he-stat-val" id="rs-hrs-comp" style="color:#5b21b6;">—</div>
+                    <div class="he-stat-lbl">Hrs Compensadas</div>
+                </div>
             </div>
             <!-- Tarjetas por concepto -->
             <div style="font-size:.72rem;font-weight:700;color:#6c757d;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">
@@ -1452,7 +1456,8 @@ async function cargarKpis() {
             _set("rs-pendientes", hrsPend.toLocaleString("es-CO")+'h');
             _set("rs-hrs-rep",    hrsRep.toFixed(0));
             _set("rs-hrs-auth",   hrsAuth.toFixed(0));
-            _set("rs-hrs-desc",   (+d.hrs_descontadas || 0).toFixed(0));
+            _set("rs-hrs-desc",   (+d.hrs_descontadas  || 0).toFixed(0));
+            _set("rs-hrs-comp",   (+d.hrs_compensadas  || 0).toFixed(0));
             // Mostrar contenido si estaba oculto
             const vacio    = document.getElementById("resumenVacio");
             const contenido= document.getElementById("resumenContenido");
@@ -2687,10 +2692,11 @@ function _applyAllFiltersCoor() {
 
 // Actualiza las tarjetas KPI del panel de registro a partir de los registros filtrados
 function _actualizarKpisCoorReg(registros) {
-    let total = registros.length, pend = 0, hrsPend = 0, hrsRep = 0, hrsAuth = 0, hrsNoAuth = 0, hrsRepRevisadas = 0;
+    let total = registros.length, pend = 0, hrsPend = 0, hrsRep = 0, hrsAuth = 0, hrsNoAuth = 0, hrsRepRevisadas = 0, hrsComp = 0;
     for (const r of registros) {
         const est  = (r.estado || "").trim().toUpperCase();
-        hrsRep  += r.horas_reportadas || 0;
+        hrsRep  += r.horas_reportadas  || 0;
+        hrsComp += r.horas_compensadas || 0;
         if (est === "CONFORME" || est === "NO CONFORME" || est === "DESCONTADA") {
             hrsRepRevisadas += r.horas_reportadas || 0;
         }
@@ -2712,16 +2718,19 @@ function _actualizarKpisCoorReg(registros) {
     set("rs-hrs-rep",    hrsRep.toFixed(0));
     set("rs-hrs-auth",   hrsAuth.toFixed(0));
     set("rs-hrs-desc",   Math.max(0, hrsRepRevisadas - hrsAuth).toFixed(0));
+    set("rs-hrs-comp",   hrsComp.toFixed(0));
 }
 
 function _actualizarKpisCoor(rows) {
     let total = rows.length, pend = 0, conf = 0, noconf = 0, desc = 0;
-    let hrsRep = 0, hrsConf = 0, hrsNoconfRep = 0, hrsDesc = 0, hrsPend = 0;
+    let hrsRep = 0, hrsConf = 0, hrsNoconfRep = 0, hrsDesc = 0, hrsPend = 0, hrsComp = 0;
     for (const r of rows) {
         const est  = (r[V_ESTADO] || "").trim().toUpperCase();
         const rep  = parseFloat(r[V_HRS])   || 0;
         const auth = parseFloat(r[V_HAUTH]) || 0;
-        hrsRep += rep;
+        const comp = parseFloat(r[V_COMP])  || 0;
+        hrsRep  += rep;
+        hrsComp += comp;
         if (est === "CONFORME")        { conf++;   hrsConf      += auth; }
         else if (est === "NO CONFORME"){ noconf++; hrsNoconfRep += rep;  }
         else if (est === "DESCONTADA") { desc++;   hrsDesc      += auth; }
@@ -2744,6 +2753,7 @@ function _actualizarKpisCoor(rows) {
     _sk("rs-hrs-rep",    hrsRep.toFixed(0));
     _sk("rs-hrs-auth",   hrsAuth.toFixed(0));
     _sk("rs-hrs-desc",   Math.max(0, hrsRepRevisadas - hrsAuth).toFixed(0));
+    _sk("rs-hrs-comp",   hrsComp.toFixed(0));
     // Mostrar el contenido del resumen si estaba oculto
     const vacio    = document.getElementById("resumenVacio");
     const contenido= document.getElementById("resumenContenido");

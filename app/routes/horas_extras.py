@@ -641,15 +641,19 @@ def api_he_actualizar_lote():
         ]:
             if campo in f:
                 setattr(reg, attr, str(f[campo] or "").strip())
-        for campo, attr in [
-            ("horas_reportadas",  "horas_reportadas"),
-            ("horas_compensadas", "horas_compensadas"),
-        ]:
-            if campo in f:
-                try:
-                    setattr(reg, attr, int(float(f[campo] or 0)))
-                except Exception:
-                    pass
+        if "horas_compensadas" in f:
+            try:
+                new_comp = max(0, int(float(f["horas_compensadas"] or 0)))
+                original = float(reg.horas_reportadas or 0) + float(reg.horas_compensadas or 0)
+                reg.horas_compensadas = new_comp
+                reg.horas_reportadas  = max(0, round(original - new_comp))
+            except Exception:
+                pass
+        elif "horas_reportadas" in f:
+            try:
+                reg.horas_reportadas = int(float(f["horas_reportadas"] or 0))
+            except Exception:
+                pass
         concepto = getattr(reg, "id_concepto", "")
         if concepto:
             reg.tipo_he = CONCEPTOS_HE.get(str(concepto).strip().zfill(2), reg.tipo_he or "")
@@ -717,8 +721,13 @@ def api_he_actualizar(id):
         he.placa              = f.get("placa", he.placa)
         he.id_concepto        = concepto
         he.tipo_he            = CONCEPTOS_HE.get(concepto, he.tipo_he)
-        he.horas_reportadas   = float(f.get("horas_reportadas") or he.horas_reportadas)
-        he.horas_compensadas  = float(f.get("horas_compensadas") or 0)
+        if "horas_compensadas" in f:
+            new_comp = max(0, float(f.get("horas_compensadas") or 0))
+            original = float(he.horas_reportadas or 0) + float(he.horas_compensadas or 0)
+            he.horas_compensadas = new_comp
+            he.horas_reportadas  = max(0, round(original - new_comp, 2))
+        else:
+            he.horas_reportadas = float(f.get("horas_reportadas") or he.horas_reportadas)
         he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
         he.justificacion      = f.get("justificacion", he.justificacion)
         he.observacion        = f.get("observacion", he.observacion)
@@ -730,7 +739,11 @@ def api_he_actualizar(id):
         if val_nom is not None:
             he.valor_extra_nomina = val_nom
         db.session.commit()
-        return jsonify({"ok": True})
+        return jsonify({
+            "ok": True,
+            "horas_reportadas":  float(he.horas_reportadas or 0),
+            "horas_compensadas": float(he.horas_compensadas or 0),
+        })
     except Exception as _e:
         db.session.rollback()
         return jsonify({"ok": False, "error": str(_e), "trace": _tb.format_exc()}), 500
@@ -978,9 +991,17 @@ def api_he_validar(id):
     autorizacion = (d.get("autorizacion_neo") or "PENDIENTE").strip().upper()
     horas_auth   = d.get("horas_autorizadas")
     obs          = d.get("obs_neo", "").strip()
+    horas_comp   = d.get("horas_compensadas")
 
     if autorizacion not in ("CONFORME", "NO CONFORME", "DESCONTADA", "PENDIENTE"):
         autorizacion = "PENDIENTE"
+
+    # Horas compensadas: ajusta horas_reportadas automáticamente
+    if horas_comp is not None:
+        new_comp = max(0, int(float(horas_comp)))
+        original = float(he.horas_reportadas or 0) + float(he.horas_compensadas or 0)
+        he.horas_compensadas = new_comp
+        he.horas_reportadas  = max(0, round(original - new_comp))
 
     he.autorizacion_neo  = None if autorizacion == "PENDIENTE" else autorizacion
     if horas_auth is not None:
@@ -1002,9 +1023,11 @@ def api_he_validar(id):
     return jsonify({
         "ok": True,
         "estado": he.estado,
-        "horas_autorizadas": he.horas_autorizadas,
-        "validado_por":     current_user.nombre_completo if autorizacion != "PENDIENTE" else "",
-        "fecha_validacion": he.fecha_validacion.strftime("%Y-%m-%d %H:%M") if he.fecha_validacion else "",
+        "horas_autorizadas":  he.horas_autorizadas,
+        "horas_compensadas":  float(he.horas_compensadas or 0),
+        "horas_reportadas":   float(he.horas_reportadas or 0),
+        "validado_por":       current_user.nombre_completo if autorizacion != "PENDIENTE" else "",
+        "fecha_validacion":   he.fecha_validacion.strftime("%Y-%m-%d %H:%M") if he.fecha_validacion else "",
     })
 
 
@@ -1235,6 +1258,7 @@ def api_he_kpis():
                 (HoraExtra.estado.in_(["CONFORME", "NO CONFORME", "DESCONTADA"]), HoraExtra.horas_reportadas),
                 else_=0
             )), 0).label("hrs_rep_revisadas"),
+            sa_func.coalesce(sa_func.sum(HoraExtra.horas_compensadas), 0).label("hrs_comp"),
         ).one()
         # Total aprobadas = autorizado conforme + autorizado descontado
         hrs_conf_auth    = float(row.hrs_conf_auth)
@@ -1257,6 +1281,7 @@ def api_he_kpis():
             "hrs_conf_auth":      hrs_conf_auth,
             "hrs_desc_auth":      hrs_desc_auth,
             "hrs_rep_revisadas":  hrs_rep_revisadas,
+            "hrs_compensadas":    float(row.hrs_comp),
         })
     except Exception as e:
         import traceback

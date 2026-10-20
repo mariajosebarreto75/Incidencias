@@ -290,6 +290,10 @@ body { background:var(--c-bg); }
                 <div class="he-kpi-val" id="kv-hrs-desc">—</div>
                 <div class="he-kpi-lbl">Hrs Descontadas</div>
             </div>
+            <div class="he-kpi-card" style="border-top-color:#8b5cf6;">
+                <div class="he-kpi-val" id="kv-hrs-comp" style="color:#6d28d9;">—</div>
+                <div class="he-kpi-lbl">Hrs Compensadas</div>
+            </div>
         </div>
         <!-- Desglose por concepto -->
         <div class="he-conc-section" id="neoConceptoSection" style="display:none;">
@@ -983,8 +987,20 @@ function iniciarGrid() {
                     method:"PUT", headers:{"Content-Type":"application/json"},
                     body: JSON.stringify({ [campo]: valor })
                 }).then(r=>r.json()).then(d => {
-                    if (!d.ok) hot.setDataAtCell(row, col, oldVal, "revert");
-                }).catch(() => hot.setDataAtCell(row, col, oldVal, "revert"));
+                    if (!d.ok) {
+                        hot.setDataAtCell(row, col, oldVal, "confirmed");
+                    } else if (campo === "horas_compensadas") {
+                        // El servidor ajustó horas_reportadas automáticamente
+                        hot.setDataAtCell(row, C_HRS,  d.horas_reportadas  ?? "", "confirmed");
+                        hot.setDataAtCell(row, C_COMP, d.horas_compensadas ?? "", "confirmed");
+                        const _fi = _fullIds.indexOf(id);
+                        if (_fi !== -1) {
+                            _fullData[_fi][C_HRS]  = d.horas_reportadas  ?? "";
+                            _fullData[_fi][C_COMP] = d.horas_compensadas ?? "";
+                        }
+                        cargarKpis();
+                    }
+                }).catch(() => hot.setDataAtCell(row, col, oldVal, "confirmed"));
             });
             // autoGuardar para columnas NEO (horas_autorizadas, estado, obs_neo)
             // source "confirmed" es el ACK del servidor — no re-disparar guardado
@@ -1810,12 +1826,14 @@ function _applyAllFilters(htInst) {
 function _actualizarKpisDesdeFiltered(rows) {
     const total      = rows.length;
     let pend = 0, conf = 0, noconf = 0, desc = 0;
-    let hrsRep = 0, hrsConf = 0, hrsNoconfRep = 0, hrsDesc = 0, hrsPend = 0;
+    let hrsRep = 0, hrsConf = 0, hrsNoconfRep = 0, hrsDesc = 0, hrsPend = 0, hrsComp = 0;
     for (const r of rows) {
         const est  = (r[C_ESTADO] || "").trim().toUpperCase();
         const rep  = parseFloat(r[C_HRS])   || 0;
         const auth = parseFloat(r[C_HAUTH]) || 0;
-        hrsRep += rep;
+        const comp = parseFloat(r[C_COMP])  || 0;
+        hrsRep  += rep;
+        hrsComp += comp;
         if (est === "CONFORME")        { conf++;   hrsConf      += auth; }
         else if (est === "NO CONFORME"){ noconf++; hrsNoconfRep += rep;  }
         else if (est === "DESCONTADA") { desc++;   hrsDesc      += auth; }
@@ -1833,6 +1851,7 @@ function _actualizarKpisDesdeFiltered(rows) {
     document.getElementById("kv-hrs-rep").textContent    = hrsRep.toFixed(0);
     document.getElementById("kv-hrs-auth").textContent   = hrsAuth.toFixed(0);
     document.getElementById("kv-hrs-desc").textContent   = Math.max(0, (hrsRep - hrsPend) - hrsAuth).toFixed(0);
+    document.getElementById("kv-hrs-comp").textContent   = hrsComp.toFixed(0);
 }
 
 function _actualizarKpisHistorialDesdeFiltered(rows) {
@@ -2064,6 +2083,7 @@ async function cargarKpis() {
         document.getElementById("kv-hrs-rep").textContent    = (+d.hrs_reportadas   || 0).toFixed(0);
         document.getElementById("kv-hrs-auth").textContent   = (+d.hrs_autorizadas  || 0).toFixed(0);
         document.getElementById("kv-hrs-desc").textContent   = (+d.hrs_descontadas  || 0).toFixed(0);
+        document.getElementById("kv-hrs-comp").textContent   = (+d.hrs_compensadas  || 0).toFixed(0);
         // Desglose por concepto (solo si hay contrato_id)
         if (cid) {
             try {
