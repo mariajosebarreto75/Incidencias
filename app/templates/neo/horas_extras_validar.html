@@ -961,7 +961,7 @@ function iniciarGrid() {
             return {};
         },
         afterChange: function(changes, source) {
-            if (!changes || source === "loadData") return;
+            if (!changes || source === "loadData" || source === "confirmed" || source === "revert") return;
             // Sync edits back to _fullData so column filters don't overwrite user input
             changes.forEach(([row, col, , newVal]) => {
                 const id = registrosIds[row];
@@ -988,7 +988,7 @@ function iniciarGrid() {
                     body: JSON.stringify({ [campo]: valor })
                 }).then(r=>r.json()).then(d => {
                     if (!d.ok) {
-                        hot.setDataAtCell(row, col, oldVal, "confirmed");
+                        hot.setDataAtCell(row, col, oldVal, "revert");
                     } else if (campo === "horas_compensadas") {
                         // El servidor ajustó horas_reportadas automáticamente
                         hot.setDataAtCell(row, C_HRS,  d.horas_reportadas  ?? "", "confirmed");
@@ -1000,11 +1000,9 @@ function iniciarGrid() {
                         }
                         cargarKpis();
                     }
-                }).catch(() => hot.setDataAtCell(row, col, oldVal, "confirmed"));
+                }).catch(() => hot.setDataAtCell(row, col, oldVal, "revert"));
             });
             // autoGuardar para columnas NEO (horas_autorizadas, estado, obs_neo)
-            // source "confirmed" es el ACK del servidor — no re-disparar guardado
-            if (source === "confirmed") return;
             const EDIT_COLS = new Set([C_HAUTH, C_ESTADO, C_OBSNEO]);
             const rows = new Set();
             changes.forEach(([row, col]) => { if (EDIT_COLS.has(col)) rows.add(row); });
