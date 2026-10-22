@@ -649,7 +649,7 @@ def api_he_actualizar_lote():
                 try:
                     setattr(reg, attr, int(float(f[campo] or 0)))
                 except Exception:
-                pass
+                    pass
         concepto = getattr(reg, "id_concepto", "")
         if concepto:
             reg.tipo_he = CONCEPTOS_HE.get(str(concepto).strip().zfill(2), reg.tipo_he or "")
