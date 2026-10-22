@@ -295,9 +295,8 @@ def api_he_guardar():
         return jsonify({"ok": False, "msg": "Sin filas"}), 400
 
     rol = current_user.rol.lower()
-    # NEO no registra, solo valida
-    puede_guardar = rol != "neo" and (
-        rol in ("admin", "coordinador", "director", "supervisor", "analista")
+    puede_guardar = (
+        rol in ("admin", "neo", "coordinador", "director", "supervisor", "analista")
         or current_user.tiene_permiso("horas_extras")
     )
     if not puede_guardar:
