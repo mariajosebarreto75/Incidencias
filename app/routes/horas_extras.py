@@ -76,7 +76,7 @@ def _contratos_del_usuario():
     if nombres:
         return Contrato.query.filter(Contrato.contrato.in_(nombres), Contrato.activo == True).order_by(Contrato.contrato).all()
     # Coordinadores/supervisores/directores sin contratos asignados explícitamente → ven todos
-    if rol in ("coordinador", "director", "supervisor"):
+    if rol in ("coordinador", "director", "supervisor", "analista"):
         return Contrato.query.filter_by(activo=True).order_by(Contrato.contrato).all()
     return []
 
@@ -147,7 +147,7 @@ def api_personas_nombres():
 def api_he_registros():
     q = HoraExtra.query
     rol = current_user.rol.lower()
-    if rol in ("coordinador", "director", "supervisor") or \
+    if rol in ("coordinador", "director", "supervisor", "analista") or \
        (rol not in ("admin", "neo") and current_user.tiene_permiso("horas_extras")):
         ids = _ids_contratos_usuario()
         q = q.filter(HoraExtra.contrato_id.in_(ids))
@@ -245,11 +245,11 @@ def he_hub():
     rol = current_user.rol.lower()
     # NEO nunca ingresa horas (solo valida); coordinador/supervisor/director nunca validan
     puede_ingresar = rol != "neo" and (
-        rol in ("coordinador", "director", "supervisor", "admin")
+        rol in ("coordinador", "director", "supervisor", "admin", "analista")
         or current_user.tiene_permiso("horas_extras")
     )
     puede_validar  = rol in ("neo", "admin")
-    if rol in ("coordinador", "director", "supervisor"):
+    if rol in ("coordinador", "director", "supervisor", "analista"):
         base_template = "coordinador/navbarcoor.html"
     elif rol == "neo":
         base_template = "neo/navbNeo.html"
@@ -272,7 +272,7 @@ def he_hub():
 def he_coordinador():
     rol = current_user.rol.lower()
     if rol == "neo" or (
-        rol not in ("admin", "coordinador", "director", "supervisor")
+        rol not in ("admin", "coordinador", "director", "supervisor", "analista")
         and not current_user.tiene_permiso("horas_extras")
     ):
         abort(403)
@@ -297,14 +297,14 @@ def api_he_guardar():
     rol = current_user.rol.lower()
     # NEO no registra, solo valida
     puede_guardar = rol != "neo" and (
-        rol in ("admin", "coordinador", "director", "supervisor")
+        rol in ("admin", "coordinador", "director", "supervisor", "analista")
         or current_user.tiene_permiso("horas_extras")
     )
     if not puede_guardar:
         return jsonify({"ok": False, "msg": "Sin permiso para registrar horas extras"}), 403
 
     # Roles que tienen vista restringida de contratos (no ven todos)
-    ids_permitidos = _ids_contratos_usuario() if rol in ("coordinador", "director", "supervisor") else None
+    ids_permitidos = _ids_contratos_usuario() if rol in ("coordinador", "director", "supervisor", "analista") else None
     # Usuarios con permiso explícito también restringidos a sus contratos asignados
     if ids_permitidos is None and rol not in ("admin", "neo") and current_user.tiene_permiso("horas_extras"):
         ids_permitidos = _ids_contratos_usuario()
@@ -584,13 +584,13 @@ def api_he_actualizar_lote():
     rol = current_user.rol.lower()
     # NEO no edita registros de coordinador
     puede_editar = rol != "neo" and (
-        rol in ("admin", "coordinador", "director", "supervisor")
+        rol in ("admin", "coordinador", "director", "supervisor", "analista")
         or current_user.tiene_permiso("horas_extras")
     )
     if not puede_editar:
         return jsonify({"ok": False, "msg": "Sin permiso para editar horas extras"}), 403
 
-    ids_permitidos = _ids_contratos_usuario() if rol in ("coordinador", "director", "supervisor") else None
+    ids_permitidos = _ids_contratos_usuario() if rol in ("coordinador", "director", "supervisor", "analista") else None
     if ids_permitidos is None and rol not in ("admin", "neo") and current_user.tiene_permiso("horas_extras"):
         ids_permitidos = _ids_contratos_usuario()
     actualizados = 0
@@ -672,7 +672,7 @@ def api_he_actualizar_lote():
 def api_he_get(id):
     try:
         he = HoraExtra.query.get_or_404(id)
-        if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+        if current_user.rol.lower() in ("coordinador", "director", "supervisor", "analista"):
             if he.contrato_id not in _ids_contratos_usuario():
                 return jsonify({"ok": False, "msg": "No autorizado"}), 403
         return jsonify({"ok": True, "registro": he.to_dict()})
@@ -689,7 +689,7 @@ def api_he_actualizar(id):
     try:
         he = HoraExtra.query.get_or_404(id)
         f = request.get_json(silent=True) or {}
-        if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+        if current_user.rol.lower() in ("coordinador", "director", "supervisor", "analista"):
             if he.contrato_id not in _ids_contratos_usuario():
                 return jsonify({"ok": False, "msg": "No autorizado"}), 403
             NEO_FIELDS = {"autorizacion_neo", "horas_autorizadas", "obs_neo", "estado"}
@@ -745,7 +745,7 @@ def api_he_actualizar(id):
 @login_required
 def api_he_eliminar(id):
     he = HoraExtra.query.get_or_404(id)
-    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor", "analista"):
         if he.estado != "PENDIENTE":
             return jsonify({"ok": False, "msg": "Solo se pueden eliminar registros pendientes"}), 403
         if he.contrato_id not in _ids_contratos_usuario():
@@ -792,13 +792,13 @@ def api_he_eliminar(id):
 @login_required
 def api_he_bulk_delete():
     rol = current_user.rol.lower()
-    if rol not in ("neo", "admin", "coordinador", "director", "supervisor"):
+    if rol not in ("neo", "admin", "coordinador", "director", "supervisor", "analista"):
         return jsonify({"ok": False, "msg": "No autorizado"}), 403
     ids = request.get_json(silent=True) or []
     if not ids:
         return jsonify({"ok": False, "msg": "Sin IDs"}), 400
     # Coordinadores/supervisores/directores solo pueden borrar sus propios PENDIENTES
-    if rol in ("coordinador", "director", "supervisor"):
+    if rol in ("coordinador", "director", "supervisor", "analista"):
         ids_contratos = _ids_contratos_usuario()
         registros = HoraExtra.query.filter(HoraExtra.id.in_(ids)).all()
         no_permiso = [r for r in registros if r.contrato_id not in ids_contratos]
@@ -1062,7 +1062,7 @@ def api_he_resumen():
     contrato_id = request.args.get("contrato_id", type=int)
     if not contrato_id:
         return jsonify({"ok": False, "msg": "contrato_id requerido"}), 400
-    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor", "analista"):
         if contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
 
@@ -1163,7 +1163,7 @@ def api_he_kpis():
     q = HoraExtra.query
 
     # Coordinadores/directores/supervisores solo ven sus contratos
-    if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+    if current_user.rol.lower() in ("coordinador", "director", "supervisor", "analista"):
         q = q.filter(HoraExtra.contrato_id.in_(_ids_contratos_usuario()))
 
     contrato_id = request.args.get("contrato_id", type=int)
@@ -1385,7 +1385,7 @@ def api_he_cortes_list():
     if contrato_id:
         # Incluir cortes del contrato específico Y cortes globales (contrato_id=null)
         q = q.filter((HeCorte.contrato_id == contrato_id) | (HeCorte.contrato_id == None))
-    elif current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+    elif current_user.rol.lower() in ("coordinador", "director", "supervisor", "analista"):
         ids = _ids_contratos_usuario()
         # Sus cortes específicos + cortes globales (que pueden contener sus registros)
         q = q.filter((HeCorte.contrato_id.in_(ids)) | (HeCorte.contrato_id == None))
@@ -1511,7 +1511,7 @@ def api_he_cortes_eliminar(corte_id):
     try:
         corte = HeCorte.query.get_or_404(corte_id)
         # Coordinadores solo pueden eliminar cortes de sus contratos o cortes globales vacíos
-        if current_user.rol.lower() in ("coordinador", "director", "supervisor"):
+        if current_user.rol.lower() in ("coordinador", "director", "supervisor", "analista"):
             ids = _ids_contratos_usuario()
             if corte.contrato_id is not None and corte.contrato_id not in ids:
                 return jsonify({"ok": False, "msg": "Sin permiso para eliminar este corte"}), 403
