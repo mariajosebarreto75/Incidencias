@@ -442,6 +442,7 @@ def api_he_guardar():
             "valor_extra":       _num(f.get("valor_extra")),
             "autorizacion_neo":  auth_neo,
             "horas_autorizadas": int(float(hrs_auth)) if hrs_auth not in (None, "") else None,
+            "obs_neo":           str(f.get("obs_neo") or "").strip(),
             "estado":            estado,
             "reportado_por_id":  uid,
             "fecha_reporte":     ahora,

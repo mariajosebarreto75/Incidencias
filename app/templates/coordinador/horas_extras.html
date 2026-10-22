@@ -1805,7 +1805,7 @@ function procesarImport(input) {
             return -1;
         }
         const iContrato  = colIdx(["contrato"]) !== -1          ? colIdx(["contrato"])          : 0;
-        const iFecha     = colIdx(["fecha labor","fecha lab"])   !== -1 ? colIdx(["fecha labor","fecha lab"]) : 1;
+        const iFecha     = colIdx(["fecha labor","fecha lab","fecha"])   !== -1 ? colIdx(["fecha labor","fecha lab","fecha"]) : 1;
         const iCedula    = colIdx(["ced"])       !== -1          ? colIdx(["ced"])               : 2;
         const iNombre    = colIdx(["nombre"])    !== -1          ? colIdx(["nombre"])            : 3;
         const iRecurso   = colIdx(["recurso"])   !== -1          ? colIdx(["recurso"])           : 4;
@@ -1831,6 +1831,8 @@ function procesarImport(input) {
         })();
         const iHrsAuth   = colIdx(["horas autor","hrs autor","autorizad"]) !== -1
                            ? colIdx(["horas autor","hrs autor","autorizad"]) : 16;
+        const iObsNeo    = colIdx(["obs neo","obsneo","obs_neo"]) !== -1
+                           ? colIdx(["obs neo","obsneo","obs_neo"]) : -1;
 
         const usaContratoFijo = !!document.getElementById("importContrato").value;
 
@@ -1898,6 +1900,7 @@ function procesarImport(input) {
                 valor_extra:       String(r[iVlrExtra]  || "").trim(),
                 autorizacion_neo:  String(r[iAuthNeo]   || "").trim(),
                 horas_autorizadas: r[iHrsAuth] !== "" && r[iHrsAuth] != null ? parseFloat(r[iHrsAuth]) : "",
+                obs_neo:           iObsNeo !== -1 ? String(r[iObsNeo] || "").trim() : "",
             });
         });
 
