@@ -641,18 +641,14 @@ def api_he_actualizar_lote():
         ]:
             if campo in f:
                 setattr(reg, attr, str(f[campo] or "").strip())
-        if "horas_compensadas" in f:
-            try:
-                new_comp = max(0, int(float(f["horas_compensadas"] or 0)))
-                original = float(reg.horas_reportadas or 0) + float(reg.horas_compensadas or 0)
-                reg.horas_compensadas = new_comp
-                reg.horas_reportadas  = max(0, round(original - new_comp))
-            except Exception:
-                pass
-        elif "horas_reportadas" in f:
-            try:
-                reg.horas_reportadas = int(float(f["horas_reportadas"] or 0))
-            except Exception:
+        for campo, attr in [
+            ("horas_reportadas",  "horas_reportadas"),
+            ("horas_compensadas", "horas_compensadas"),
+        ]:
+            if campo in f:
+                try:
+                    setattr(reg, attr, int(float(f[campo] or 0)))
+                except Exception:
                 pass
         concepto = getattr(reg, "id_concepto", "")
         if concepto:
@@ -721,13 +717,8 @@ def api_he_actualizar(id):
         he.placa              = f.get("placa", he.placa)
         he.id_concepto        = concepto
         he.tipo_he            = CONCEPTOS_HE.get(concepto, he.tipo_he)
-        if "horas_compensadas" in f:
-            new_comp = max(0, float(f.get("horas_compensadas") or 0))
-            original = float(he.horas_reportadas or 0) + float(he.horas_compensadas or 0)
-            he.horas_compensadas = new_comp
-            he.horas_reportadas  = max(0, round(original - new_comp, 2))
-        else:
-            he.horas_reportadas = float(f.get("horas_reportadas") or he.horas_reportadas)
+        he.horas_reportadas   = float(f.get("horas_reportadas") or he.horas_reportadas)
+        he.horas_compensadas  = float(f.get("horas_compensadas") or 0)
         he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
         he.justificacion      = f.get("justificacion", he.justificacion)
         he.observacion        = f.get("observacion", he.observacion)
@@ -985,17 +976,9 @@ def api_he_validar(id):
     autorizacion = (d.get("autorizacion_neo") or "PENDIENTE").strip().upper()
     horas_auth   = d.get("horas_autorizadas")
     obs          = d.get("obs_neo", "").strip()
-    horas_comp   = d.get("horas_compensadas")
 
     if autorizacion not in ("CONFORME", "NO CONFORME", "DESCONTADA", "PENDIENTE"):
         autorizacion = "PENDIENTE"
-
-    # Horas compensadas: ajusta horas_reportadas automáticamente
-    if horas_comp is not None:
-        new_comp = max(0, int(float(horas_comp)))
-        original = float(he.horas_reportadas or 0) + float(he.horas_compensadas or 0)
-        he.horas_compensadas = new_comp
-        he.horas_reportadas  = max(0, round(original - new_comp))
 
     he.autorizacion_neo  = None if autorizacion == "PENDIENTE" else autorizacion
     if horas_auth is not None:

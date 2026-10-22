@@ -932,7 +932,7 @@ function iniciarGrid() {
             { type:"text" },                  // 8  nombre
             { type:"text" },                  // 9  id_concepto
             { type:"text" },                  // 10 tipo_he
-            { type:"numeric" },               // 11 horas_compensadas
+            { type:"numeric", readOnly:true },  // 11 horas_compensadas
             { type:"text" },                  // 12 autorizacion_sup
             { type:"text" },                  // 13 justificacion
             { type:"text" },                  // 14 observacion
@@ -987,19 +987,7 @@ function iniciarGrid() {
                     method:"PUT", headers:{"Content-Type":"application/json"},
                     body: JSON.stringify({ [campo]: valor })
                 }).then(r=>r.json()).then(d => {
-                    if (!d.ok) {
-                        hot.setDataAtCell(row, col, oldVal, "revert");
-                    } else if (campo === "horas_compensadas") {
-                        // El servidor ajustó horas_reportadas automáticamente
-                        hot.setDataAtCell(row, C_HRS,  d.horas_reportadas  ?? "", "confirmed");
-                        hot.setDataAtCell(row, C_COMP, d.horas_compensadas ?? "", "confirmed");
-                        const _fi = _fullIds.indexOf(id);
-                        if (_fi !== -1) {
-                            _fullData[_fi][C_HRS]  = d.horas_reportadas  ?? "";
-                            _fullData[_fi][C_COMP] = d.horas_compensadas ?? "";
-                        }
-                        cargarKpis();
-                    }
+                    if (!d.ok) hot.setDataAtCell(row, col, oldVal, "revert");
                 }).catch(() => hot.setDataAtCell(row, col, oldVal, "revert"));
             });
             // autoGuardar para columnas NEO (horas_autorizadas, estado, obs_neo)
