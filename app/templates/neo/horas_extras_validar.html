@@ -2241,7 +2241,7 @@ function procesarImportNeo(input) {
         }
         // Índices detectados por encabezado; si no hay encabezado usa posición fija
         const iContrato  = headerRow ? colIdx(["contrato"])                                  : 0;
-        const iFecha     = headerRow ? colIdx(["fecha labor","fecha_labor","fecha lab"])      : 1;
+        const iFecha     = headerRow ? colIdx(["fecha labor","fecha_labor","fecha lab","fecha"]) : 1;
         const iCedula    = headerRow ? colIdx(["céd","ced","cedula","cédula","documento"])    : 2;
         const iNombre    = headerRow ? colIdx(["nombre"])                                     : 3;
         const iRecurso   = headerRow ? colIdx(["recurso"])                                    : 4;
@@ -2261,6 +2261,7 @@ function procesarImportNeo(input) {
         const iVlrExt    = headerRow ? colIdx(["$ valor","vlr ext","valor extra"])                           : 14;
         const iAuthNeo   = headerRow ? colIdx(["autorización neo","autorizacion neo","auth neo"])             : 15;
         const iHrsAuth   = headerRow ? colIdx(["# horas autori","horas autori","hrs autori","autorizadas"])  : 16;
+        const iObsNeo    = headerRow ? colIdx(["obs neo","obsneo","obs_neo"])                                 : -1;
 
         const get = (r, i, def="") => i >= 0 && i < r.length ? r[i] : def;
 
@@ -2301,6 +2302,7 @@ function procesarImportNeo(input) {
                 valor_extra:       String(get(r, iVlrExt)    || "").trim(),
                 autorizacion_neo:  String(get(r, iAuthNeo)   || "").trim(),
                 horas_autorizadas: get(r, iHrsAuth) !== "" && get(r, iHrsAuth) != null ? parseFloat(get(r, iHrsAuth)) : "",
+                obs_neo:           iObsNeo >= 0 ? String(get(r, iObsNeo) || "").trim() : "",
             });
         });
 
