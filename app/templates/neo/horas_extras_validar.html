@@ -2261,6 +2261,8 @@ function procesarImportNeo(input) {
         const iVlrExt    = headerRow ? colIdx(["$ valor","vlr ext","valor extra"])                           : 14;
         const iAuthNeo   = headerRow ? colIdx(["autorización neo","autorizacion neo","auth neo"])             : 15;
         const iHrsAuth   = headerRow ? colIdx(["# horas autori","horas autori","hrs autori","autorizadas"])  : 16;
+        const iHoraIni   = headerRow ? colIdx(["hra inicio","hora ini","hora_ini","inicio"])                  : -1;
+        const iHoraFin   = headerRow ? colIdx(["hra fin","hora fin","hora_fin","fin"])                        : -1;
         const iObsNeo    = headerRow ? colIdx(["obs neo","obsneo","obs_neo"])                                 : -1;
 
         const get = (r, i, def="") => i >= 0 && i < r.length ? r[i] : def;
@@ -2294,6 +2296,8 @@ function procesarImportNeo(input) {
                 id_concepto:       String(get(r, iConcepto)  || "").trim(),
                 horas_reportadas:  parseFloat(get(r, iHrsRep))  || 0,
                 horas_compensadas: parseFloat(get(r, iHrsComp)) || 0,
+                hora_inicio:       iHoraIni >= 0 ? String(get(r, iHoraIni) || "").trim() : "",
+                hora_fin:          iHoraFin >= 0 ? String(get(r, iHoraFin) || "").trim() : "",
                 autorizacion_sup:  String(get(r, iAuthSup)   || "").trim(),
                 justificacion:     String(get(r, iJust)      || "").trim(),
                 observacion:       String(get(r, iObs)       || "").trim(),
