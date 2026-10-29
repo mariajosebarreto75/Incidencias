@@ -185,37 +185,42 @@
             {% if contrato_activo != 'todos' %}
             <input type="hidden" name="contrato" value="{{ contrato_activo }}">
             {% endif %}
-            <div class="vr-filtros-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">
-                <!-- Fecha reporte -->
-                <div class="vr-fg">
+
+            <!-- Fila 1: fechas -->
+            <div style="display:grid;grid-template-columns:auto auto 8px auto auto 8px 1fr;align-items:end;gap:6px 4px;margin-bottom:8px;">
+                <div class="vr-fg" style="margin:0;">
                     <label class="vr-flbl"><i class="bi bi-calendar-event"></i> Fecha reporte desde</label>
                     <input type="date" name="fecha_ini" class="vr-finput" value="{{ filtros.fecha_ini }}">
                 </div>
-                <div class="vr-fg">
-                    <label class="vr-flbl"><i class="bi bi-calendar-event"></i> Fecha reporte hasta</label>
+                <div class="vr-fg" style="margin:0;">
+                    <label class="vr-flbl">hasta</label>
                     <input type="date" name="fecha_fin" class="vr-finput" value="{{ filtros.fecha_fin }}">
                 </div>
-                <!-- Fecha creación -->
-                <div class="vr-fg">
+                <div style="border-left:1px solid #e2e8f0;height:32px;align-self:end;"></div>
+                <div class="vr-fg" style="margin:0;">
                     <label class="vr-flbl"><i class="bi bi-calendar-plus"></i> Fecha creación desde</label>
                     <input type="date" name="fcrea_ini" class="vr-finput" value="{{ filtros.fcrea_ini }}">
                 </div>
-                <div class="vr-fg">
-                    <label class="vr-flbl"><i class="bi bi-calendar-plus"></i> Fecha creación hasta</label>
+                <div class="vr-fg" style="margin:0;">
+                    <label class="vr-flbl">hasta</label>
                     <input type="date" name="fcrea_fin" class="vr-finput" value="{{ filtros.fcrea_fin }}">
                 </div>
-                <!-- Recursos multi-select -->
-                <div class="vr-fg" style="min-width:200px;">
-                    <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso(s)</label>
+                <div style="border-left:1px solid #e2e8f0;height:32px;align-self:end;"></div>
+                <div></div>
+            </div>
+
+            <!-- Fila 2: recurso + acciones -->
+            <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;">
+                <div class="vr-fg" style="flex:1;min-width:220px;max-width:480px;margin:0;">
+                    <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso(s) <span style="font-weight:400;color:#94a3b8;">(Ctrl+clic para varios)</span></label>
                     <select name="recurso" class="vr-finput" multiple id="selRecursos"
-                            style="height:80px;padding:4px 6px;font-size:.82rem;">
+                            style="height:72px;padding:3px 6px;font-size:.82rem;">
                         {% for r in lista_recursos %}
                         <option value="{{ r }}" {% if r in filtros.recursos %}selected{% endif %}>{{ r }}</option>
                         {% endfor %}
                     </select>
-                    <div style="font-size:.7rem;color:#94a3b8;margin-top:2px;">Ctrl+clic para varios</div>
                 </div>
-                <div class="vr-filtros-acciones" style="align-self:end;display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;gap:6px;align-items:center;padding-bottom:2px;">
                     <button type="submit" class="vr-btn-filtrar"><i class="bi bi-search"></i> Filtrar</button>
                     <a href="{{ url_for('coordinador.panel_reportes', contrato=contrato_activo if contrato_activo != 'todos' else '') }}"
                        class="vr-btn-limpiar"><i class="bi bi-x-circle"></i> Limpiar</a>
