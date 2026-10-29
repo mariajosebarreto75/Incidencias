@@ -186,38 +186,40 @@
             <input type="hidden" name="contrato" value="{{ contrato_activo }}">
             {% endif %}
 
-            <!-- Fila 1: fechas -->
-            <div style="display:grid;grid-template-columns:auto auto 8px auto auto 8px 1fr;align-items:end;gap:6px 4px;margin-bottom:8px;">
-                <div class="vr-fg" style="margin:0;">
-                    <label class="vr-flbl"><i class="bi bi-calendar-event"></i> Fecha reporte desde</label>
-                    <input type="date" name="fecha_ini" class="vr-finput" value="{{ filtros.fecha_ini }}">
-                </div>
-                <div class="vr-fg" style="margin:0;">
-                    <label class="vr-flbl">hasta</label>
-                    <input type="date" name="fecha_fin" class="vr-finput" value="{{ filtros.fecha_fin }}">
-                </div>
-                <div style="border-left:1px solid #e2e8f0;height:32px;align-self:end;"></div>
-                <div class="vr-fg" style="margin:0;">
-                    <label class="vr-flbl"><i class="bi bi-calendar-plus"></i> Fecha creación desde</label>
-                    <input type="date" name="fcrea_ini" class="vr-finput" value="{{ filtros.fcrea_ini }}">
-                </div>
-                <div class="vr-fg" style="margin:0;">
-                    <label class="vr-flbl">hasta</label>
-                    <input type="date" name="fcrea_fin" class="vr-finput" value="{{ filtros.fcrea_fin }}">
-                </div>
-                <div style="border-left:1px solid #e2e8f0;height:32px;align-self:end;"></div>
-                <div></div>
-            </div>
+            <!-- Una sola fila: grupos de fechas + recurso + botones -->
+            <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;">
 
-            <!-- Fila 2: recurso + acciones -->
-            <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;">
-                <!-- Dropdown multi-select recursos -->
-                <div class="vr-fg" style="flex:1;min-width:220px;max-width:420px;margin:0;position:relative;" id="recDropWrap">
-                    <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso(s)</label>
+                <!-- Fecha reporte -->
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <label class="vr-flbl" style="margin:0;"><i class="bi bi-calendar-event"></i> Fecha reporte</label>
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <input type="date" name="fecha_ini" class="vr-finput" value="{{ filtros.fecha_ini }}" style="width:148px;">
+                        <span style="font-size:.75rem;color:#94a3b8;flex-shrink:0;">hasta</span>
+                        <input type="date" name="fecha_fin" class="vr-finput" value="{{ filtros.fecha_fin }}" style="width:148px;">
+                    </div>
+                </div>
+
+                <div style="width:1px;background:#e2e8f0;height:32px;align-self:flex-end;flex-shrink:0;"></div>
+
+                <!-- Fecha creación -->
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <label class="vr-flbl" style="margin:0;"><i class="bi bi-calendar-plus"></i> Fecha creación</label>
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <input type="date" name="fcrea_ini" class="vr-finput" value="{{ filtros.fcrea_ini }}" style="width:148px;">
+                        <span style="font-size:.75rem;color:#94a3b8;flex-shrink:0;">hasta</span>
+                        <input type="date" name="fcrea_fin" class="vr-finput" value="{{ filtros.fcrea_fin }}" style="width:148px;">
+                    </div>
+                </div>
+
+                <div style="width:1px;background:#e2e8f0;height:32px;align-self:flex-end;flex-shrink:0;"></div>
+
+                <!-- Recurso dropdown -->
+                <div style="display:flex;flex-direction:column;gap:4px;position:relative;min-width:200px;flex:1;max-width:300px;" id="recDropWrap">
+                    <label class="vr-flbl" style="margin:0;"><i class="bi bi-person-gear"></i> Recurso(s)</label>
                     <div id="recDropBtn" onclick="recToggle()"
                          style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;
                                 border:1px solid #cbd5e1;border-radius:7px;padding:6px 10px;background:#fff;
-                                font-size:.83rem;color:#334155;user-select:none;min-height:36px;">
+                                font-size:.83rem;color:#334155;user-select:none;height:36px;">
                         <span id="recDropLabel" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">— Todos —</span>
                         <i class="bi bi-chevron-down" id="recDropIco" style="font-size:.7rem;color:#94a3b8;margin-left:6px;flex-shrink:0;"></i>
                     </div>
@@ -225,7 +227,7 @@
                          style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:200;
                                 background:#fff;border:1px solid #cbd5e1;border-radius:8px;
                                 box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;">
-                        <div style="padding:6px 8px;border-bottom:1px solid #f1f5f9;">
+                        <div style="padding:6px 8px;border-bottom:1px solid #f1f5f9;position:sticky;top:0;background:#fff;">
                             <input type="text" id="recSearch" placeholder="Buscar recurso…" oninput="recFiltrar(this.value)"
                                    style="width:100%;border:1px solid #e2e8f0;border-radius:5px;padding:4px 8px;font-size:.8rem;outline:none;">
                         </div>
@@ -242,7 +244,9 @@
                         </div>
                     </div>
                 </div>
-                <div style="display:flex;gap:6px;align-items:center;padding-bottom:2px;">
+
+                <!-- Botones -->
+                <div style="display:flex;gap:6px;align-items:flex-end;padding-bottom:0;">
                     <button type="submit" class="vr-btn-filtrar"><i class="bi bi-search"></i> Filtrar</button>
                     <a href="{{ url_for('coordinador.panel_reportes', contrato=contrato_activo if contrato_activo != 'todos' else '') }}"
                        class="vr-btn-limpiar"><i class="bi bi-x-circle"></i> Limpiar</a>
