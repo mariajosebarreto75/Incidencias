@@ -211,14 +211,36 @@
 
             <!-- Fila 2: recurso + acciones -->
             <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;">
-                <div class="vr-fg" style="flex:1;min-width:220px;max-width:480px;margin:0;">
-                    <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso(s) <span style="font-weight:400;color:#94a3b8;">(Ctrl+clic para varios)</span></label>
-                    <select name="recurso" class="vr-finput" multiple id="selRecursos"
-                            style="height:72px;padding:3px 6px;font-size:.82rem;">
-                        {% for r in lista_recursos %}
-                        <option value="{{ r }}" {% if r in filtros.recursos %}selected{% endif %}>{{ r }}</option>
-                        {% endfor %}
-                    </select>
+                <!-- Dropdown multi-select recursos -->
+                <div class="vr-fg" style="flex:1;min-width:220px;max-width:420px;margin:0;position:relative;" id="recDropWrap">
+                    <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso(s)</label>
+                    <div id="recDropBtn" onclick="recToggle()"
+                         style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;
+                                border:1px solid #cbd5e1;border-radius:7px;padding:6px 10px;background:#fff;
+                                font-size:.83rem;color:#334155;user-select:none;min-height:36px;">
+                        <span id="recDropLabel" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">— Todos —</span>
+                        <i class="bi bi-chevron-down" id="recDropIco" style="font-size:.7rem;color:#94a3b8;margin-left:6px;flex-shrink:0;"></i>
+                    </div>
+                    <div id="recDropPanel"
+                         style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:200;
+                                background:#fff;border:1px solid #cbd5e1;border-radius:8px;
+                                box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;">
+                        <div style="padding:6px 8px;border-bottom:1px solid #f1f5f9;">
+                            <input type="text" id="recSearch" placeholder="Buscar recurso…" oninput="recFiltrar(this.value)"
+                                   style="width:100%;border:1px solid #e2e8f0;border-radius:5px;padding:4px 8px;font-size:.8rem;outline:none;">
+                        </div>
+                        <div id="recList" style="padding:4px 0;">
+                            {% for r in lista_recursos %}
+                            <label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:.83rem;color:#334155;transition:background .1s;"
+                                   onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+                                <input type="checkbox" name="recurso" value="{{ r }}"
+                                       {% if r in filtros.recursos %}checked{% endif %}
+                                       onchange="recActLabel()" style="width:14px;height:14px;cursor:pointer;accent-color:#0B6E75;">
+                                {{ r }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;padding-bottom:2px;">
                     <button type="submit" class="vr-btn-filtrar"><i class="bi bi-search"></i> Filtrar</button>
@@ -471,6 +493,49 @@
     }
 
     aplicarFiltros();
+})();
+
+/* ── Dropdown multi-select recursos ── */
+(function () {
+    function recActLabel() {
+        const checks = document.querySelectorAll('#recList input[type=checkbox]:checked');
+        const lbl    = document.getElementById('recDropLabel');
+        if (!lbl) return;
+        if (checks.length === 0) lbl.textContent = '— Todos —';
+        else if (checks.length === 1) lbl.textContent = checks[0].value;
+        else lbl.textContent = checks.length + ' seleccionados';
+    }
+    window.recActLabel = recActLabel;
+
+    window.recToggle = function () {
+        const panel = document.getElementById('recDropPanel');
+        const ico   = document.getElementById('recDropIco');
+        const open  = panel.style.display === 'block';
+        panel.style.display = open ? 'none' : 'block';
+        ico.className = open ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+        if (!open) document.getElementById('recSearch').focus();
+    };
+
+    window.recFiltrar = function (q) {
+        q = q.toLowerCase();
+        document.querySelectorAll('#recList label').forEach(lbl => {
+            lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    };
+
+    // Cerrar al clic fuera
+    document.addEventListener('click', function (e) {
+        const wrap = document.getElementById('recDropWrap');
+        if (wrap && !wrap.contains(e.target)) {
+            const panel = document.getElementById('recDropPanel');
+            const ico   = document.getElementById('recDropIco');
+            if (panel) panel.style.display = 'none';
+            if (ico)   ico.className = 'bi bi-chevron-down';
+        }
+    });
+
+    // Inicializar etiqueta con los ya seleccionados (al cargar con filtro activo)
+    recActLabel();
 })();
 
 /* ── Exportar Excel ── */
