@@ -181,32 +181,46 @@
 
     <!-- FILTROS -->
     <div class="vr-filtros-panel">
-        <form method="GET" action="{{ url_for('coordinador.panel_reportes') }}" class="vr-filtros-form">
+        <form method="GET" action="{{ url_for('coordinador.panel_reportes') }}" class="vr-filtros-form" id="frmFiltros">
             {% if contrato_activo != 'todos' %}
             <input type="hidden" name="contrato" value="{{ contrato_activo }}">
             {% endif %}
-            <div class="vr-filtros-grid">
+            <div class="vr-filtros-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">
+                <!-- Fecha reporte -->
                 <div class="vr-fg">
-                    <label class="vr-flbl"><i class="bi bi-calendar-range"></i> Desde</label>
+                    <label class="vr-flbl"><i class="bi bi-calendar-event"></i> Fecha reporte desde</label>
                     <input type="date" name="fecha_ini" class="vr-finput" value="{{ filtros.fecha_ini }}">
                 </div>
                 <div class="vr-fg">
-                    <label class="vr-flbl"><i class="bi bi-calendar-range"></i> Hasta</label>
+                    <label class="vr-flbl"><i class="bi bi-calendar-event"></i> Fecha reporte hasta</label>
                     <input type="date" name="fecha_fin" class="vr-finput" value="{{ filtros.fecha_fin }}">
                 </div>
-                <div class="vr-fg vr-fg-wide">
-                    <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso</label>
-                    <select name="recurso" class="vr-finput">
-                        <option value="">— Todos —</option>
+                <!-- Fecha creación -->
+                <div class="vr-fg">
+                    <label class="vr-flbl"><i class="bi bi-calendar-plus"></i> Fecha creación desde</label>
+                    <input type="date" name="fcrea_ini" class="vr-finput" value="{{ filtros.fcrea_ini }}">
+                </div>
+                <div class="vr-fg">
+                    <label class="vr-flbl"><i class="bi bi-calendar-plus"></i> Fecha creación hasta</label>
+                    <input type="date" name="fcrea_fin" class="vr-finput" value="{{ filtros.fcrea_fin }}">
+                </div>
+                <!-- Recursos multi-select -->
+                <div class="vr-fg" style="min-width:200px;">
+                    <label class="vr-flbl"><i class="bi bi-person-gear"></i> Recurso(s)</label>
+                    <select name="recurso" class="vr-finput" multiple id="selRecursos"
+                            style="height:80px;padding:4px 6px;font-size:.82rem;">
                         {% for r in lista_recursos %}
-                        <option value="{{ r }}" {% if filtros.recurso == r %}selected{% endif %}>{{ r }}</option>
+                        <option value="{{ r }}" {% if r in filtros.recursos %}selected{% endif %}>{{ r }}</option>
                         {% endfor %}
                     </select>
+                    <div style="font-size:.7rem;color:#94a3b8;margin-top:2px;">Ctrl+clic para varios</div>
                 </div>
-                <div class="vr-filtros-acciones">
+                <div class="vr-filtros-acciones" style="align-self:end;display:flex;flex-direction:column;gap:6px;">
                     <button type="submit" class="vr-btn-filtrar"><i class="bi bi-search"></i> Filtrar</button>
                     <a href="{{ url_for('coordinador.panel_reportes', contrato=contrato_activo if contrato_activo != 'todos' else '') }}"
                        class="vr-btn-limpiar"><i class="bi bi-x-circle"></i> Limpiar</a>
+                    <button type="button" class="vr-btn-filtrar" style="background:#166534;border-color:#166534;"
+                            onclick="exportarExcel()"><i class="bi bi-file-earmark-excel"></i> Excel</button>
                 </div>
             </div>
         </form>
@@ -245,6 +259,7 @@
                     <th class="vr-th-resize">Acción a tomar</th>
                     <th class="vr-th-center">Impacto</th>
                     <th class="vr-th-center">Estado</th>
+                    <th class="vr-th-center">Reunión</th>
                     <th class="vr-th-center"></th>
                 </tr>
             </thead>
@@ -293,6 +308,18 @@
                             <span class="vr-badge-est con-respuesta"><i class="bi bi-chat-left-text-fill"></i> Con respuesta</span>
                         {% else %}
                             <span class="vr-badge-est abierto"><i class="bi bi-hourglass-split"></i> Sin respuesta</span>
+                        {% endif %}
+                    </td>
+                    <td class="vr-th-center">
+                        {% if r.revisado_reunion %}
+                            <span title="Revisado en reunión por {{ r.revisado_reunion_por or '—' }} el {{ r.fecha_revision_reunion.strftime('%d/%m/%Y') if r.fecha_revision_reunion else '—' }}"
+                                  style="display:inline-flex;align-items:center;gap:4px;background:#dcfce7;color:#166534;border-radius:20px;padding:3px 10px;font-size:.73rem;font-weight:700;cursor:default;">
+                                <i class="bi bi-check2-circle"></i> Visto
+                            </span>
+                        {% else %}
+                            <span style="display:inline-flex;align-items:center;gap:4px;background:#f1f5f9;color:#94a3b8;border-radius:20px;padding:3px 10px;font-size:.73rem;font-weight:600;cursor:default;">
+                                <i class="bi bi-circle"></i> Pendiente
+                            </span>
                         {% endif %}
                     </td>
                     <td class="vr-th-center">
@@ -440,6 +467,13 @@
 
     aplicarFiltros();
 })();
+
+/* ── Exportar Excel ── */
+function exportarExcel() {
+    const url = new URL(window.location.href);
+    url.searchParams.set("exportar", "excel");
+    window.location.href = url.toString();
+}
 
 /* Limpiar claves obsoletas de persistencia anterior */
 sessionStorage.removeItem('coor_panel_filtros');

@@ -395,10 +395,13 @@ def panel_reportes():
             coordinador=current_user.nombre_completo, activo=True
         ).all()]
 
-    contrato_filtro = request.args.get("contrato",    "").strip()
-    fecha_ini_str   = request.args.get("fecha_ini",   "").strip()
-    fecha_fin_str   = request.args.get("fecha_fin",   "").strip()
-    recurso_filtro  = request.args.get("recurso",     "").strip()
+    contrato_filtro    = request.args.get("contrato",       "").strip()
+    fecha_ini_str      = request.args.get("fecha_ini",      "").strip()
+    fecha_fin_str      = request.args.get("fecha_fin",      "").strip()
+    fcrea_ini_str      = request.args.get("fcrea_ini",      "").strip()
+    fcrea_fin_str      = request.args.get("fcrea_fin",      "").strip()
+    recursos_filtro    = request.args.getlist("recurso")   # multi-select
+    recursos_filtro    = [r.strip() for r in recursos_filtro if r.strip()]
 
     query = ReporteOperacional.query
     if lista_contratos:
@@ -421,10 +424,23 @@ def panel_reportes():
         except ValueError:
             pass
 
-    if recurso_filtro:
-        query = query.filter(
-            ReporteOperacional.recurso.ilike(f"%{recurso_filtro}%")
-        )
+    if fcrea_ini_str:
+        try:
+            fci = datetime.strptime(fcrea_ini_str, "%Y-%m-%d")
+            query = query.filter(ReporteOperacional.fecha_creado >= fci)
+        except ValueError:
+            pass
+
+    if fcrea_fin_str:
+        try:
+            fcf = datetime.strptime(fcrea_fin_str, "%Y-%m-%d")
+            from datetime import timedelta
+            query = query.filter(ReporteOperacional.fecha_creado < fcf + timedelta(days=1))
+        except ValueError:
+            pass
+
+    if recursos_filtro:
+        query = query.filter(ReporteOperacional.recurso.in_(recursos_filtro))
 
     # Recursos distintos del coordinador (para el select del filtro)
     recursos_disponibles = (
@@ -437,6 +453,46 @@ def panel_reportes():
     lista_recursos = [r[0] for r in recursos_disponibles if r[0]]
 
     reportes = query.order_by(ReporteOperacional.fecha_creado.desc()).all()
+
+    # Exportar Excel
+    if request.args.get("exportar") == "excel":
+        import io, openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Reportes NEO"
+        headers = ["Fecha Reporte", "Fecha Creado", "Contrato", "Recurso",
+                   "Tipo Incidencia", "Acción a Tomar", "Impacto", "Estado",
+                   "Revisado en Reunión", "Revisado Por", "Fecha Revisión"]
+        ws.append(headers)
+        hdr_fill = PatternFill("solid", fgColor="0D3B3E")
+        hdr_font = Font(bold=True, color="FFFFFF")
+        for cell in ws[1]:
+            cell.fill = hdr_fill
+            cell.font = hdr_font
+            cell.alignment = Alignment(horizontal="center")
+        for r in reportes:
+            ws.append([
+                r.fecha_reporte.strftime("%d/%m/%Y") if r.fecha_reporte else "",
+                r.fecha_creado.strftime("%d/%m/%Y %H:%M") if r.fecha_creado else "",
+                r.contrato or "",
+                r.recurso or "",
+                r.tipo_incidencia or "",
+                r.accion_a_tomar or "",
+                r.impacto or "",
+                r.conformidad_neo or r.estado or "",
+                "Sí" if getattr(r, "revisado_reunion", False) else "No",
+                getattr(r, "revisado_reunion_por", "") or "",
+                getattr(r, "fecha_revision_reunion", None) and r.fecha_revision_reunion.strftime("%d/%m/%Y %H:%M") or "",
+            ])
+        for col in ws.columns:
+            ws.column_dimensions[col[0].column_letter].width = max(len(str(c.value or "")) for c in col) + 4
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        from flask import send_file
+        return send_file(buf, download_name="reportes_neo.xlsx",
+                         as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
     kpis = {
         "total":        len(reportes),
@@ -454,10 +510,12 @@ def panel_reportes():
         contrato_activo      = contrato_filtro or "todos",
         lista_recursos       = lista_recursos,
         filtros = {
-            "fecha_ini":  fecha_ini_str,
-            "fecha_fin":  fecha_fin_str,
-            "recurso":    recurso_filtro,
-            "contrato":   contrato_filtro,
+            "fecha_ini":   fecha_ini_str,
+            "fecha_fin":   fecha_fin_str,
+            "fcrea_ini":   fcrea_ini_str,
+            "fcrea_fin":   fcrea_fin_str,
+            "recursos":    recursos_filtro,
+            "contrato":    contrato_filtro,
         }
     )
 
