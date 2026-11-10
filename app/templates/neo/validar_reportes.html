@@ -332,6 +332,42 @@
     </div>
     {% endif %}
 
+    <!-- BARRA CIERRE MASIVO -->
+    <div id="barraCierreMasivo" style="display:none;position:sticky;bottom:16px;z-index:200;margin:8px 0;padding:10px 16px;background:#1e293b;border-radius:10px;color:#fff;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(0,0,0,.35);">
+        <strong id="cntSelMasivo"></strong> reportes seleccionados
+        <button onclick="abrirModalCierreMasivo()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-weight:700;cursor:pointer;">
+            <i class="bi bi-lock-fill"></i> Cerrar seleccionados
+        </button>
+        <button onclick="deseleccionarMasivo()" style="background:transparent;color:#94a3b8;border:1px solid #475569;border-radius:6px;padding:6px 12px;cursor:pointer;">Cancelar</button>
+    </div>
+
+</div>
+
+<!-- MODAL CIERRE MASIVO -->
+<div id="modalCierreMasivo" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:28px 32px;max-width:460px;width:95%;box-shadow:0 8px 32px rgba(0,0,0,.25);">
+        <h5 style="margin:0 0 16px;font-weight:700;color:#1e293b;"><i class="bi bi-lock-fill" style="color:#7c3aed;"></i> Cierre masivo de reportes</h5>
+        <p style="font-size:.88rem;color:#64748b;margin:0 0 16px;">Se cerrará <strong id="modalCntMasivo"></strong>. Esta acción no se puede deshacer.</p>
+        <div style="margin-bottom:14px;">
+            <label style="font-size:.85rem;font-weight:600;color:#374151;">Conformidad NEO *</label>
+            <select id="selectConformidadMasivo" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;margin-top:4px;font-size:.88rem;">
+                <option value="">— Seleccionar —</option>
+                <option value="Conforme">Conforme</option>
+                <option value="Consiliado">Conciliado (Consiliado)</option>
+            </select>
+        </div>
+        <div style="margin-bottom:20px;">
+            <label style="font-size:.85rem;font-weight:600;color:#374151;">Observación (opcional)</label>
+            <textarea id="textObsMasivo" rows="3" placeholder="Ej: Cerrado por directriz de gerencia hasta octubre"
+                style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;margin-top:4px;font-size:.85rem;resize:vertical;box-sizing:border-box;"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="cerrarModalCierreMasivo()" style="background:#f1f5f9;color:#374151;border:1px solid #d1d5db;border-radius:6px;padding:8px 18px;cursor:pointer;font-weight:600;">Cancelar</button>
+            <button onclick="ejecutarCierreMasivo()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:700;cursor:pointer;">
+                <i class="bi bi-lock-fill"></i> Confirmar cierre
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -692,6 +728,79 @@ _vrDrops.forEach(function(prefix) {
         chk.addEventListener('change', function() { _vrUpdateLabel(prefix); });
     });
 });
+
+// ── CIERRE MASIVO ───────────────────────────────────────────────
+(function(){
+    const barra  = document.getElementById('barraCierreMasivo');
+    const cntEl  = document.getElementById('cntSelMasivo');
+
+    function getSeleccionados(){
+        return Array.from(document.querySelectorAll('.chk-fila:checked'));
+    }
+
+    function actualizarBarra(){
+        const sel = getSeleccionados();
+        if (!barra) return;
+        if (sel.length > 0) {
+            barra.style.display = 'flex';
+            if (cntEl) cntEl.textContent = sel.length;
+        } else {
+            barra.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('change', function(e){
+        if (e.target.classList.contains('chk-fila') || e.target.id === 'chkTodos') {
+            actualizarBarra();
+        }
+    });
+
+    window.deseleccionarMasivo = function(){
+        document.querySelectorAll('.chk-fila').forEach(c => c.checked = false);
+        const chkTodos = document.getElementById('chkTodos');
+        if (chkTodos) chkTodos.checked = false;
+        actualizarBarra();
+    };
+
+    window.abrirModalCierreMasivo = function(){
+        const sel = getSeleccionados();
+        const lbl = document.getElementById('modalCntMasivo');
+        if (lbl) lbl.textContent = sel.length + ' reporte' + (sel.length !== 1 ? 's' : '');
+        const modal = document.getElementById('modalCierreMasivo');
+        if (modal) modal.style.display = 'flex';
+    };
+
+    window.cerrarModalCierreMasivo = function(){
+        const modal = document.getElementById('modalCierreMasivo');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.ejecutarCierreMasivo = function(){
+        const conformidad = document.getElementById('selectConformidadMasivo').value;
+        const observacion = document.getElementById('textObsMasivo').value.trim();
+        if (!conformidad) { alert('Debe seleccionar una conformidad.'); return; }
+        const ids = getSeleccionados().map(c => parseInt(c.dataset.id));
+        if (!ids.length) { alert('No hay reportes seleccionados.'); return; }
+
+        fetch('{{ url_for("neo.cerrar_masivo") }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ ids, conformidad, observacion })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                cerrarModalCierreMasivo();
+                deseleccionarMasivo();
+                alert('Se cerraron ' + data.cerrados + ' reporte(s) correctamente.');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'No se pudo cerrar.'));
+            }
+        })
+        .catch(() => alert('Error de red al intentar cerrar los reportes.'));
+    };
+})();
 </script>
 
 {% endblock %}

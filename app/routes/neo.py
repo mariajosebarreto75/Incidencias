@@ -581,6 +581,49 @@ def eliminar_reportes():
 
 
 # =====================================
+# CIERRE MASIVO (solo NEO)
+# =====================================
+
+@neo.route("/neo/cerrar-masivo", methods=["POST"])
+@login_required
+def cerrar_masivo():
+    if current_user.rol.lower() not in ("neo", "admin"):
+        return jsonify({"ok": False, "error": "Sin permiso"}), 403
+
+    d           = request.get_json(silent=True) or {}
+    ids         = d.get("ids") or []
+    conformidad = (d.get("conformidad") or "").strip()
+    observacion = (d.get("observacion") or "").strip()
+
+    if not ids:
+        return jsonify({"ok": False, "error": "No se enviaron IDs"}), 400
+    if conformidad not in ("Conforme", "Consiliado"):
+        return jsonify({"ok": False, "error": "Conformidad inválida"}), 400
+
+    try:
+        ids_int = [int(i) for i in ids]
+    except (ValueError, TypeError):
+        return jsonify({"ok": False, "error": "IDs inválidos"}), 400
+
+    reportes = ReporteOperacional.query.filter(ReporteOperacional.id.in_(ids_int)).all()
+    cerrados = 0
+    for r in reportes:
+        if r.estado == "Cerrado":
+            continue
+        r.conformidad_neo         = conformidad
+        r.observacion_conformidad = observacion or None
+        r.estado                  = "Cerrado"
+        cerrados += 1
+
+    try:
+        db.session.commit()
+        return jsonify({"ok": True, "cerrados": cerrados})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# =====================================
 # DETALLE REPORTE (lectura NEO)
 # =====================================
 
