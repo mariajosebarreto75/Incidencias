@@ -202,13 +202,18 @@
         </button>
     </div>
 
-    <!-- IMPORTAR TIPO CUADRILLA -->
-    <div class="mb-2 d-flex align-items-center gap-2">
+    <!-- IMPORTAR TIPO CUADRILLA + CIERRE MASIVO -->
+    <div class="mb-2 d-flex align-items-center gap-2 flex-wrap">
         <label class="btn btn-sm btn-outline-primary rounded-pill px-3 mb-0" style="cursor:pointer;">
             <i class="bi bi-upload"></i> Actualizar tipo cuadrilla
             <input type="file" id="inputCuadrilla" accept=".xlsx,.xls" style="display:none">
         </label>
+        <label class="btn btn-sm btn-outline-secondary rounded-pill px-3 mb-0" style="cursor:pointer;border-color:#7c3aed;color:#7c3aed;">
+            <i class="bi bi-lock-fill"></i> Cierre masivo
+            <input type="file" id="inputCierreMasivo" accept=".xlsx,.xls,.csv" style="display:none">
+        </label>
         <span id="cuadrillaStatus" style="font-size:.8rem;color:#555;"></span>
+        <span id="cierreMasivoStatus" style="font-size:.8rem;color:#555;"></span>
     </div>
 
     <!-- BUSCADOR RÁPIDO -->
@@ -332,22 +337,14 @@
     </div>
     {% endif %}
 
-    <!-- BARRA CIERRE MASIVO -->
-    <div id="barraCierreMasivo" style="display:none;position:sticky;bottom:16px;z-index:200;margin:8px 0;padding:10px 16px;background:#1e293b;border-radius:10px;color:#fff;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(0,0,0,.35);">
-        <strong id="cntSelMasivo"></strong> reportes seleccionados
-        <button onclick="abrirModalCierreMasivo()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-weight:700;cursor:pointer;">
-            <i class="bi bi-lock-fill"></i> Cerrar seleccionados
-        </button>
-        <button onclick="deseleccionarMasivo()" style="background:transparent;color:#94a3b8;border:1px solid #475569;border-radius:6px;padding:6px 12px;cursor:pointer;">Cancelar</button>
-    </div>
 
 </div>
 
-<!-- MODAL CIERRE MASIVO -->
+<!-- MODAL CIERRE MASIVO (desde archivo) -->
 <div id="modalCierreMasivo" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.5);align-items:center;justify-content:center;">
     <div style="background:#fff;border-radius:12px;padding:28px 32px;max-width:460px;width:95%;box-shadow:0 8px 32px rgba(0,0,0,.25);">
-        <h5 style="margin:0 0 16px;font-weight:700;color:#1e293b;"><i class="bi bi-lock-fill" style="color:#7c3aed;"></i> Cierre masivo de reportes</h5>
-        <p style="font-size:.88rem;color:#64748b;margin:0 0 16px;">Se cerrará <strong id="modalCntMasivo"></strong>. Esta acción no se puede deshacer.</p>
+        <h5 style="margin:0 0 6px;font-weight:700;color:#1e293b;"><i class="bi bi-lock-fill" style="color:#7c3aed;"></i> Cierre masivo de reportes</h5>
+        <p style="font-size:.82rem;color:#94a3b8;margin:0 0 16px;" id="modalCntMasivo"></p>
         <div style="margin-bottom:14px;">
             <label style="font-size:.85rem;font-weight:600;color:#374151;">Conformidad NEO *</label>
             <select id="selectConformidadMasivo" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;margin-top:4px;font-size:.88rem;">
@@ -362,8 +359,8 @@
                 style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;margin-top:4px;font-size:.85rem;resize:vertical;box-sizing:border-box;"></textarea>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button onclick="cerrarModalCierreMasivo()" style="background:#f1f5f9;color:#374151;border:1px solid #d1d5db;border-radius:6px;padding:8px 18px;cursor:pointer;font-weight:600;">Cancelar</button>
-            <button onclick="ejecutarCierreMasivo()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:700;cursor:pointer;">
+            <button onclick="cancelarCierreMasivo()" style="background:#f1f5f9;color:#374151;border:1px solid #d1d5db;border-radius:6px;padding:8px 18px;cursor:pointer;font-weight:600;">Cancelar</button>
+            <button onclick="confirmarCierreMasivo()" style="background:#7c3aed;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:700;cursor:pointer;">
                 <i class="bi bi-lock-fill"></i> Confirmar cierre
             </button>
         </div>
@@ -729,76 +726,80 @@ _vrDrops.forEach(function(prefix) {
     });
 });
 
-// ── CIERRE MASIVO ───────────────────────────────────────────────
+// ── CIERRE MASIVO DESDE ARCHIVO ─────────────────────────────────
 (function(){
-    const barra  = document.getElementById('barraCierreMasivo');
-    const cntEl  = document.getElementById('cntSelMasivo');
+    let _idsPendientes = [];
 
-    function getSeleccionados(){
-        return Array.from(document.querySelectorAll('.chk-fila:checked'));
-    }
+    document.getElementById('inputCierreMasivo').addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        const status = document.getElementById('cierreMasivoStatus');
+        status.textContent = 'Leyendo archivo…';
 
-    function actualizarBarra(){
-        const sel = getSeleccionados();
-        if (!barra) return;
-        if (sel.length > 0) {
-            barra.style.display = 'flex';
-            if (cntEl) cntEl.textContent = sel.length;
-        } else {
-            barra.style.display = 'none';
-        }
-    }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const wb   = window.XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                const ws   = wb.Sheets[wb.SheetNames[0]];
+                const rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                if (rows.length < 2) { status.textContent = 'Archivo vacío.'; return; }
 
-    document.addEventListener('change', function(e){
-        if (e.target.classList.contains('chk-fila') || e.target.id === 'chkTodos') {
-            actualizarBarra();
-        }
+                const header = rows[0].map(v => String(v).toLowerCase().trim());
+                const iId    = header.findIndex(h => h === '#' || h === 'id' || h === '# ');
+                if (iId === -1) { status.textContent = '❌ No se encontró columna # o id.'; return; }
+
+                _idsPendientes = rows.slice(1)
+                    .map(r => parseInt(r[iId]))
+                    .filter(n => !isNaN(n) && n > 0);
+
+                if (!_idsPendientes.length) { status.textContent = '❌ Sin IDs válidos.'; return; }
+
+                status.textContent = '';
+                const lbl = document.getElementById('modalCntMasivo');
+                if (lbl) lbl.textContent = _idsPendientes.length + ' reporte(s) leídos del archivo.';
+                document.getElementById('selectConformidadMasivo').value = '';
+                document.getElementById('textObsMasivo').value = '';
+                document.getElementById('modalCierreMasivo').style.display = 'flex';
+            } catch(err) {
+                status.textContent = '❌ Error al procesar el archivo.';
+                console.error(err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        this.value = '';
     });
 
-    window.deseleccionarMasivo = function(){
-        document.querySelectorAll('.chk-fila').forEach(c => c.checked = false);
-        const chkTodos = document.getElementById('chkTodos');
-        if (chkTodos) chkTodos.checked = false;
-        actualizarBarra();
+    window.cancelarCierreMasivo = function(){
+        document.getElementById('modalCierreMasivo').style.display = 'none';
+        _idsPendientes = [];
     };
 
-    window.abrirModalCierreMasivo = function(){
-        const sel = getSeleccionados();
-        const lbl = document.getElementById('modalCntMasivo');
-        if (lbl) lbl.textContent = sel.length + ' reporte' + (sel.length !== 1 ? 's' : '');
-        const modal = document.getElementById('modalCierreMasivo');
-        if (modal) modal.style.display = 'flex';
-    };
-
-    window.cerrarModalCierreMasivo = function(){
-        const modal = document.getElementById('modalCierreMasivo');
-        if (modal) modal.style.display = 'none';
-    };
-
-    window.ejecutarCierreMasivo = function(){
+    window.confirmarCierreMasivo = function(){
         const conformidad = document.getElementById('selectConformidadMasivo').value;
         const observacion = document.getElementById('textObsMasivo').value.trim();
+        const status      = document.getElementById('cierreMasivoStatus');
         if (!conformidad) { alert('Debe seleccionar una conformidad.'); return; }
-        const ids = getSeleccionados().map(c => parseInt(c.dataset.id));
-        if (!ids.length) { alert('No hay reportes seleccionados.'); return; }
+        if (!_idsPendientes.length) { alert('No hay IDs cargados.'); return; }
+
+        status.textContent = 'Cerrando reportes…';
+        document.getElementById('modalCierreMasivo').style.display = 'none';
 
         fetch('{{ url_for("neo.cerrar_masivo") }}', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ ids, conformidad, observacion })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: _idsPendientes, conformidad, observacion })
         })
         .then(r => r.json())
         .then(data => {
             if (data.ok) {
-                cerrarModalCierreMasivo();
-                deseleccionarMasivo();
-                alert('Se cerraron ' + data.cerrados + ' reporte(s) correctamente.');
-                location.reload();
+                status.textContent = '✅ ' + data.cerrados + ' reporte(s) cerrados.';
+                _idsPendientes = [];
+                setTimeout(() => window.location.reload(), 1500);
             } else {
-                alert('Error: ' + (data.error || 'No se pudo cerrar.'));
+                status.textContent = '❌ ' + (data.error || 'Error al cerrar.');
             }
         })
-        .catch(() => alert('Error de red al intentar cerrar los reportes.'));
+        .catch(() => { status.textContent = '❌ Error de red.'; });
     };
 })();
 </script>
