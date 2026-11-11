@@ -608,8 +608,6 @@ def cerrar_masivo():
     reportes = ReporteOperacional.query.filter(ReporteOperacional.id.in_(ids_int)).all()
     cerrados = 0
     for r in reportes:
-        if r.estado == "Cerrado":
-            continue
         r.conformidad_neo         = conformidad
         r.observacion_conformidad = observacion or None
         r.estado                  = "Cerrado"
