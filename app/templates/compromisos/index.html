@@ -276,6 +276,9 @@ mark.hl{background:rgba(15,118,110,.16);color:var(--teal);border-radius:2px;padd
         <i class="bi bi-upload"></i>Importar
         <input type="file" accept=".xlsx,.xls" style="display:none;" onchange="importarCompromisos(this)">
       </label>
+      <button id="btnEnviarCorreo" class="btn btn-ghost" style="color:#2563eb;border-color:#bfdbfe;" disabled onclick="enviarCorreoSel()">
+        <i class="bi bi-envelope-fill"></i><span id="btnEnviarLabel">Enviar correo</span>
+      </button>
       {% endif %}
     </div>
   </div>
@@ -961,6 +964,8 @@ function toggleTodo(chk){document.querySelectorAll('.chk-comp').forEach(c=>c.che
 function actualizarBtnElim(){
   const n=document.querySelectorAll('.chk-comp:checked').length;
   const b=document.getElementById('btnElim');if(b)b.disabled=n===0;
+  const bc=document.getElementById('btnEnviarCorreo');
+  if(bc){bc.disabled=n===0;document.getElementById('btnEnviarLabel').textContent=n>0?`Enviar correo (${n})`:'Enviar correo';}
   const ct=document.getElementById('chkTodo');
   if(ct){const t=document.querySelectorAll('.chk-comp').length;ct.indeterminate=n>0&&n<t;ct.checked=n===t&&t>0;}
 }
@@ -970,6 +975,28 @@ function eliminarSel(){
   if(!confirm(`¿Eliminar ${ids.length} compromiso(s)? No se puede deshacer.`))return;
   document.getElementById('inputIds').value=ids.join(',');
   document.getElementById('formElim').submit();
+}
+function enviarCorreoSel(){
+  const ids=[...document.querySelectorAll('.chk-comp:checked')].map(c=>parseInt(c.value));
+  if(!ids.length)return;
+  const bc=document.getElementById('btnEnviarCorreo');
+  bc.disabled=true;
+  bc.innerHTML='<i class="bi bi-hourglass-split"></i> Enviando…';
+  fetch('{{ url_for("compromisos.enviar_correo_compromisos") }}',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ids})
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.ok){
+      alert(`✅ Correos enviados: ${d.enviados} responsable(s).${d.sin_correo>0?' ⚠️ '+d.sin_correo+' sin correo registrado.':''}`);
+    } else {
+      alert('❌ Error: '+(d.error||'No se pudo enviar.'));
+    }
+    actualizarBtnElim();
+  })
+  .catch(()=>{alert('❌ Error de red.');actualizarBtnElim();});
 }
 
 // ── observación AJAX ──

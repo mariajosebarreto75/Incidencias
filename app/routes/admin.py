@@ -2536,19 +2536,6 @@ def preoperacionales_guardar_config():
 
 # ── COMPROMISOS: envío manual y carga de personal ────────────────────────────
 
-@admin_bp.route("/compromisos/notificar", methods=["POST"])
-@admin_required
-def notificar_compromisos_manual():
-    from app.services.notificar_compromisos import notificar_compromisos_pendientes
-    try:
-        r = notificar_compromisos_pendientes()
-        return jsonify({"ok": True,
-                        "enviados": r["enviados"],
-                        "errores": r["errores"],
-                        "total_responsables": r["total_responsables"]})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
-
 
 @admin_bp.route("/compromisos/cargar-personal", methods=["POST"])
 @admin_required

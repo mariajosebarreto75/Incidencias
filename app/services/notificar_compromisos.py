@@ -148,7 +148,7 @@ def _html_resumen(nombre: str, compromisos: list[Compromiso]) -> str:
   <tr>
     <td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:16px 32px;text-align:center;">
       <p style="color:#9ca3af;font-size:.75rem;margin:0;">
-        Hesego Ingeniería SAS · Sistema Incidencias NEO · Envío automático 4:00 pm
+        Hesego Ingeniería SAS · Sistema Incidencias NEO
       </p>
     </td>
   </tr>
@@ -185,33 +185,19 @@ def _enviar(destinatario: str, asunto: str, html: str) -> None:
 
 # ── función principal ─────────────────────────────────────────────────────────
 
-def notificar_compromisos_pendientes() -> dict:
+def notificar_lista(por_responsable: dict) -> tuple[int, list]:
     """
-    Agrupa los compromisos abiertos por responsable_email y envía un correo
-    a cada uno. Devuelve un dict con estadísticas del envío.
+    Recibe un dict {(nombre, correo): [Compromiso, ...]} y envía un correo
+    a cada responsable. Devuelve (enviados, lista_errores).
     """
-    abiertos = (
-        Compromiso.query
-        .filter(Compromiso.estado != "Cerrado")
-        .filter(Compromiso.responsable_email.isnot(None))
-        .filter(Compromiso.responsable_email != "")
-        .all()
-    )
-
-    por_responsable = defaultdict(list)
-    for c in abiertos:
-        por_responsable[(c.responsable, c.responsable_email)].append(c)
-
     enviados = 0
     errores  = []
-
     for (nombre, correo), comps in por_responsable.items():
         try:
             html   = _html_resumen(nombre, comps)
-            asunto = f"📋 Tus compromisos pendientes — {_fecha_es(date.today())}"
+            asunto = f"📋 Compromisos asignados — {_fecha_es(date.today())}"
             _enviar(correo, asunto, html)
             enviados += 1
         except Exception as e:
             errores.append(f"{correo}: {e}")
-
-    return {"enviados": enviados, "errores": errores, "total_responsables": len(por_responsable)}
+    return enviados, errores

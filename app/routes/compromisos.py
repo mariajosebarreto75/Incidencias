@@ -880,6 +880,48 @@ def eliminar_reunion(rid):
     return jsonify(ok=True)
 
 
+# ── ENVIAR COMPROMISOS POR CORREO ────────────────────────────────────────────
+
+@compromisos_bp.route("/enviar-correo", methods=["POST"])
+@login_required
+def enviar_correo_compromisos():
+    if not _es_neo():
+        return jsonify({"ok": False, "error": "Sin permiso"}), 403
+
+    data = request.get_json(silent=True) or {}
+    try:
+        ids = [int(i) for i in (data.get("ids") or [])]
+    except (ValueError, TypeError):
+        return jsonify({"ok": False, "error": "IDs inválidos"}), 400
+
+    if not ids:
+        return jsonify({"ok": False, "error": "No se seleccionaron compromisos"}), 400
+
+    compromisos = Compromiso.query.filter(Compromiso.id.in_(ids)).all()
+
+    from collections import defaultdict
+    por_responsable = defaultdict(list)
+    sin_correo = 0
+    for c in compromisos:
+        if c.responsable_email:
+            por_responsable[(c.responsable, c.responsable_email)].append(c)
+        else:
+            sin_correo += 1
+
+    if not por_responsable:
+        return jsonify({"ok": False, "error": "Ningún compromiso seleccionado tiene correo de responsable registrado."})
+
+    from app.services.notificar_compromisos import notificar_lista
+    enviados, errores = notificar_lista(por_responsable)
+
+    return jsonify({
+        "ok": True,
+        "enviados": enviados,
+        "sin_correo": sin_correo,
+        "errores": errores
+    })
+
+
 # ── CHECKLIST ─────────────────────────────────────────────────────────────────
 
 @compromisos_bp.route("/checklist/")

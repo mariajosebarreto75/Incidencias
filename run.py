@@ -307,17 +307,6 @@ def create_app():
                 sincronizar()
         _threading.Thread(target=_sync_inicial, daemon=True).start()
 
-        # Notificación diaria de compromisos a las 4:00 pm
-        @scheduler.task("cron", id="notificar_compromisos", hour=16, minute=0, misfire_grace_time=300)
-        def job_notificar_compromisos():
-            with app.app_context():
-                from app.services.notificar_compromisos import notificar_compromisos_pendientes
-                try:
-                    r = notificar_compromisos_pendientes()
-                    print(f"[Compromisos] Notificaciones enviadas: {r['enviados']}, errores: {len(r['errores'])}")
-                except Exception as e:
-                    print(f"[Compromisos] Error en notificación: {e}")
-
         # Evita doble arranque con el reloader de Flask en modo debug
         if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
             scheduler.start()
