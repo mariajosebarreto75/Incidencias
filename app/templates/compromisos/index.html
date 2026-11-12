@@ -652,7 +652,19 @@ mark.hl{background:rgba(15,118,110,.16);color:var(--teal);border-radius:2px;padd
         <form action="{{ url_for('compromisos.editar', comp_id=c.id) }}" method="post">
           <div class="mb">
             <div style="margin-bottom:.9rem"><label class="ag-lbl">Responsable *</label>
-              <input type="text" name="responsable" class="ag-inp" value="{{ c.responsable }}" required></div>
+              <input type="text" name="responsable" id="inputResponsableEdit{{ c.id }}" class="ag-inp"
+                     list="listPersonalEdit{{ c.id }}" autocomplete="off" value="{{ c.responsable }}" required>
+              <input type="hidden" name="responsable_email" id="inputResponsableEmailEdit{{ c.id }}"
+                     value="{{ c.responsable_email or '' }}">
+              <datalist id="listPersonalEdit{{ c.id }}">
+                {% for p in personal %}
+                <option value="{{ p.nombre }}">{{ p.correo }}</option>
+                {% endfor %}
+              </datalist>
+              <div id="emailPreviewEdit{{ c.id }}" style="font-size:.75rem;color:#059669;margin-top:2px;min-height:1rem;">
+                {% if c.responsable_email %}{{ c.responsable_email }}{% endif %}
+              </div>
+            </div>
             <div style="margin-bottom:.9rem"><label class="ag-lbl">Compromiso *</label>
               <textarea name="compromiso" class="ag-inp ag-ta" rows="4" required>{{ c.compromiso }}</textarea></div>
             <div><label class="ag-lbl">Observación general</label>
@@ -860,7 +872,16 @@ mark.hl{background:rgba(15,118,110,.16);color:var(--teal);border-radius:2px;padd
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.85rem;">
             <div><label class="ag-lbl">Responsable *</label>
-              <input type="text" name="responsable" class="ag-inp" placeholder="Nombre completo" required></div>
+              <input type="text" name="responsable" id="inputResponsableModal" class="ag-inp"
+                     list="listPersonalModal" autocomplete="off" placeholder="Nombre completo" required>
+              <input type="hidden" name="responsable_email" id="inputResponsableEmailModal">
+              <datalist id="listPersonalModal">
+                {% for p in personal %}
+                <option value="{{ p.nombre }}">{{ p.correo }}</option>
+                {% endfor %}
+              </datalist>
+              <div id="emailPreviewModal" style="font-size:.75rem;color:#059669;margin-top:2px;min-height:1rem;"></div>
+            </div>
             <div><label class="ag-lbl">Fecha entrega acordada *</label>
               <input type="date" name="fecha_entrega" class="ag-inp" required></div>
           </div>
@@ -1031,6 +1052,31 @@ function crearContratoRapido(){
       document.getElementById('inputNuevoContrato').value='';
     }).catch(()=>alert('Error de red.'));
 }
+
+// ── autocomplete responsable (modal nuevo) ──
+(function(){
+  const personalMap = {};
+  {% for p in personal %}
+  personalMap[{{ p.nombre | tojson }}] = {{ p.correo | tojson }};
+  {% endfor %}
+  function wireInput(inputId, emailId, previewId){
+    const inp = document.getElementById(inputId);
+    const hid = document.getElementById(emailId);
+    const prv = document.getElementById(previewId);
+    if(!inp) return;
+    function update(){
+      const correo = personalMap[inp.value.trim()] || '';
+      if(hid) hid.value = correo;
+      if(prv) prv.textContent = correo ? '✉ ' + correo : '';
+    }
+    inp.addEventListener('input', update);
+    inp.addEventListener('change', update);
+  }
+  wireInput('inputResponsableModal','inputResponsableEmailModal','emailPreviewModal');
+  {% for c in compromisos %}
+  wireInput('inputResponsableEdit{{ c.id }}','inputResponsableEmailEdit{{ c.id }}','emailPreviewEdit{{ c.id }}');
+  {% endfor %}
+})();
 
 // ── redimensionamiento de columnas ──
 (function(){

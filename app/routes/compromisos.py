@@ -212,10 +212,14 @@ def lista():
     cerrados     = sum(1 for c in compromisos if c.estado == "Cerrado")
     atrasados_n  = sum(1 for c in compromisos if c.atrasado)
 
+    from app.models.personal_hesego import PersonalHesego
+    personal = PersonalHesego.query.order_by(PersonalHesego.nombre).all()
+
     return render_template(
         "compromisos/index.html",
         compromisos=compromisos,
         contratos=contratos,
+        personal=personal,
         contrato_id_sel=contrato_id,
         atrasado_sel=atrasado_filtro,
         q_resp_sel=q_resp,
@@ -339,15 +343,17 @@ def editar(comp_id):
     if not _puede_ver_contrato(comp.contrato_id):
         abort(403)
 
-    responsable = request.form.get("responsable", "").strip()
-    compromiso  = request.form.get("compromiso", "").strip()
-    obs         = request.form.get("observacion_general", "").strip()
+    responsable       = request.form.get("responsable", "").strip()
+    responsable_email = request.form.get("responsable_email", "").strip()
+    compromiso        = request.form.get("compromiso", "").strip()
+    obs               = request.form.get("observacion_general", "").strip()
 
     if not responsable or not compromiso:
         flash("Responsable y compromiso son obligatorios.", "danger")
         return redirect(url_for("compromisos.lista"))
 
     comp.responsable         = responsable
+    comp.responsable_email   = responsable_email or None
     comp.compromiso          = compromiso
     comp.observacion_general = obs or None
     db.session.commit()
