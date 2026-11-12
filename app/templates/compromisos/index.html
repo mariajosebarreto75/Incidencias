@@ -657,7 +657,7 @@ mark.hl{background:rgba(15,118,110,.16);color:var(--teal);border-radius:2px;padd
               <input type="hidden" name="responsable_email" id="inputResponsableEmailEdit{{ c.id }}"
                      value="{{ c.responsable_email or '' }}">
               <datalist id="listPersonalEdit{{ c.id }}">
-                {% for p in personal %}
+                {% for p in personal|default([]) %}
                 <option value="{{ p.nombre }}">{{ p.correo }}</option>
                 {% endfor %}
               </datalist>
@@ -876,7 +876,7 @@ mark.hl{background:rgba(15,118,110,.16);color:var(--teal);border-radius:2px;padd
                      list="listPersonalModal" autocomplete="off" placeholder="Nombre completo" required>
               <input type="hidden" name="responsable_email" id="inputResponsableEmailModal">
               <datalist id="listPersonalModal">
-                {% for p in personal %}
+                {% for p in personal|default([]) %}
                 <option value="{{ p.nombre }}">{{ p.correo }}</option>
                 {% endfor %}
               </datalist>
@@ -1056,7 +1056,7 @@ function crearContratoRapido(){
 // ── autocomplete responsable (modal nuevo) ──
 (function(){
   const personalMap = {};
-  {% for p in personal %}
+  {% for p in personal|default([]) %}
   personalMap[{{ p.nombre | tojson }}] = {{ p.correo | tojson }};
   {% endfor %}
   function wireInput(inputId, emailId, previewId){
