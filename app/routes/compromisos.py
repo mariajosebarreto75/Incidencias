@@ -12,6 +12,7 @@ from app.models.compromiso import Compromiso, HistorialReprogramacion
 from app.models.contrato import Contrato
 from app.models.user_contrato import UserContrato
 from app.models.reunion import Reunion
+from app.models.personal_hesego import PersonalHesego
 
 compromisos_bp = Blueprint("compromisos", __name__, url_prefix="/compromisos")
 
@@ -238,12 +239,14 @@ def nuevo():
     if not _es_neo():
         abort(403)
     contratos = _contratos_usuario()
+    personal  = PersonalHesego.query.order_by(PersonalHesego.nombre).all()
     if request.method == "POST":
-        contrato_id = request.form.get("contrato_id", type=int)
-        responsable = request.form.get("responsable", "").strip()
-        texto = request.form.get("compromiso", "").strip()
+        contrato_id       = request.form.get("contrato_id", type=int)
+        responsable       = request.form.get("responsable", "").strip()
+        responsable_email = request.form.get("responsable_email", "").strip() or None
+        texto             = request.form.get("compromiso", "").strip()
         fecha_entrega_str = request.form.get("fecha_entrega", "")
-        obs = request.form.get("observacion_general", "").strip()
+        obs               = request.form.get("observacion_general", "").strip()
 
         errores = []
         if not contrato_id:
@@ -268,12 +271,13 @@ def nuevo():
             for e in errores:
                 flash(e, "danger")
             return render_template("compromisos/form.html", contratos=contratos,
-                                   form=request.form,
+                                   personal=personal, form=request.form,
                                    base_template="neo/navbNeo.html")
 
         comp = Compromiso(
             contrato_id=contrato_id,
             responsable=responsable,
+            responsable_email=responsable_email,
             compromiso=texto,
             fecha_entrega=fecha_entrega,
             observacion_general=obs or None,
@@ -283,7 +287,8 @@ def nuevo():
         flash("Compromiso creado.", "success")
         return redirect(url_for("compromisos.lista"))
 
-    return render_template("compromisos/form.html", contratos=contratos, form={},
+    return render_template("compromisos/form.html", contratos=contratos,
+                           personal=personal, form={},
                            base_template="neo/navbNeo.html")
 
 

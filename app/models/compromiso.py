@@ -7,7 +7,8 @@ class Compromiso(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     contrato_id = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=False, index=True)
-    responsable = db.Column(db.String(200), nullable=False)
+    responsable       = db.Column(db.String(200), nullable=False)
+    responsable_email = db.Column(db.String(200))
     compromiso = db.Column(db.Text, nullable=False)
     observacion_general = db.Column(db.Text)
 

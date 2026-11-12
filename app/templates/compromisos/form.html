@@ -23,9 +23,22 @@
         </div>
         <div class="mb-3">
           <label class="form-label fw-semibold">Responsable <span class="text-danger">*</span></label>
-          <input type="text" name="responsable" class="form-control"
+          <input type="text" name="responsable" id="inputResponsable" class="form-control"
                  value="{{ form.get('responsable', '') }}"
-                 placeholder="Nombre del responsable" required>
+                 placeholder="Buscar nombre..." autocomplete="off" required
+                 list="listPersonal">
+          <input type="hidden" name="responsable_email" id="inputResponsableEmail"
+                 value="{{ form.get('responsable_email', '') }}">
+          <datalist id="listPersonal">
+            {% for p in personal %}
+            <option value="{{ p.nombre }}" data-email="{{ p.correo }}">{{ p.correo }}</option>
+            {% endfor %}
+          </datalist>
+          <div id="emailPreview" style="font-size:.78rem;color:#6b7280;margin-top:4px;min-height:18px;">
+            {% if form.get('responsable_email') %}
+              <i class="bi bi-envelope-fill" style="color:#2563eb;"></i> {{ form.get('responsable_email') }}
+            {% endif %}
+          </div>
         </div>
         <div class="mb-3">
           <label class="form-label fw-semibold">Compromiso <span class="text-danger">*</span></label>
@@ -54,4 +67,28 @@
     </div>
   </div>
 </div>
+
+<script>
+(function(){
+  const mapa = {};
+  {% for p in personal %}
+  mapa[{{ p.nombre | tojson }}] = {{ p.correo | tojson }};
+  {% endfor %}
+
+  const inp     = document.getElementById('inputResponsable');
+  const emailIn = document.getElementById('inputResponsableEmail');
+  const preview = document.getElementById('emailPreview');
+
+  function actualizar(){
+    const correo = mapa[inp.value.trim()] || '';
+    emailIn.value = correo;
+    preview.innerHTML = correo
+      ? '<i class="bi bi-envelope-fill" style="color:#2563eb;"></i> ' + correo
+      : '';
+  }
+
+  inp.addEventListener('input', actualizar);
+  inp.addEventListener('change', actualizar);
+})();
+</script>
 {% endblock %}

@@ -2532,3 +2532,33 @@ def preoperacionales_guardar_config():
                    "PREOP_REFRESH_MINUTES": nuevos_min}, f)
 
     return jsonify({"ok": True, "mensaje": "Configuración guardada correctamente."})
+
+
+# ── COMPROMISOS: envío manual y carga de personal ────────────────────────────
+
+@admin_bp.route("/compromisos/notificar", methods=["POST"])
+@admin_required
+def notificar_compromisos_manual():
+    from app.services.notificar_compromisos import notificar_compromisos_pendientes
+    try:
+        r = notificar_compromisos_pendientes()
+        return jsonify({"ok": True,
+                        "enviados": r["enviados"],
+                        "errores": r["errores"],
+                        "total_responsables": r["total_responsables"]})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@admin_bp.route("/compromisos/cargar-personal", methods=["POST"])
+@admin_required
+def cargar_personal_hesego():
+    from app.models.personal_hesego import PersonalHesego
+    try:
+        script = os.path.join(current_app.root_path, "scripts", "cargar_personal_hesego.py")
+        with open(script, encoding="utf-8") as f:
+            exec(compile(f.read(), script, "exec"), {"__name__": "__main__"})
+        total = PersonalHesego.query.count()
+        return jsonify({"ok": True, "total": total})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
