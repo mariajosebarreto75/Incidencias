@@ -10,7 +10,7 @@ class Notificacion(db.Model):
     tipo             = db.Column(db.String(50),  nullable=False)
     # tipos: nuevo_reporte | reporte_respondido | no_conforme
     reporte_id       = db.Column(db.Integer, nullable=False)
-    mensaje          = db.Column(db.String(300), nullable=False)
+    mensaje          = db.Column(db.String(1000), nullable=False)
     # datos del reporte para mostrar en la tarjeta
     contrato         = db.Column(db.String(200))
     recurso          = db.Column(db.String(200))
