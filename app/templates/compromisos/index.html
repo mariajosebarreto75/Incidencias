@@ -986,7 +986,7 @@ function actualizarBtnElim(){
   const n=document.querySelectorAll('.chk-comp:checked').length;
   const b=document.getElementById('btnElim');if(b)b.disabled=n===0;
   const bc=document.getElementById('btnEnviarCorreo');
-  if(bc){bc.disabled=n===0;document.getElementById('btnEnviarLabel').textContent=n>0?`Enviar correo (${n})`:'Enviar correo';}
+  if(bc){bc.disabled=n===0;const bl=document.getElementById('btnEnviarLabel');if(bl)bl.textContent=n>0?`Enviar correo (${n})`:'Enviar correo';}
   const ct=document.getElementById('chkTodo');
   if(ct){const t=document.querySelectorAll('.chk-comp').length;ct.indeterminate=n>0&&n<t;ct.checked=n===t&&t>0;}
 }
