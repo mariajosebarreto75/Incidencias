@@ -43,7 +43,10 @@ def director():
     groups = []
 
     rep_items = []
-    if es_admin or u.tiene_permiso("neo_reportes"):
+    # Director de Administración General: no maneja reportes operacionales, solo horas extras
+    from app.routes.coordinador import _ids_solo_admin_general, _kpi_tiles_he
+    ids_admin_gral = None if es_admin else _ids_solo_admin_general(u)
+    if (es_admin or u.tiene_permiso("neo_reportes")) and ids_admin_gral is None:
         rep_items.append({"label": "Panel de Reportes NEO", "icon": "bi-clipboard-data-fill",
                            "url": url_for("coordinador.panel_reportes"),
                            "desc": "Valide y gestione reportes operacionales"})
@@ -123,19 +126,25 @@ def director():
     greeting = "Buenos días" if hora_real < 12 else ("Buenas tardes" if hora_real < 18 else "Buenas noches")
     today_str = hoy.strftime("%A, %d de %B de %Y").capitalize()
     mes_ini = hoy.replace(day=1)
-    he_mes_raw = db.session.query(func.sum(HoraExtra.horas_reportadas)).filter(
-        HoraExtra.fecha_labor >= mes_ini, HoraExtra.fecha_labor <= hoy
-    ).scalar()
-    kpi_tiles = [
-        {"icon": "bi-file-earmark-text-fill", "bg": "#E0F2FE", "color": "#0369a1",
-         "label": "Reportes totales", "value": ReporteOperacional.query.count(), "sub": "en el sistema"},
-        {"icon": "bi-clock-history", "bg": "#EDE9FE", "color": "#7C3AED",
-         "label": "HE del mes", "value": round(he_mes_raw or 0, 1), "sub": "horas extras registradas"},
-        {"icon": "bi-x-circle", "bg": "#FEF3C7", "color": "#D97706",
-         "label": "No conformes", "value": ReporteOperacional.query.filter_by(conformidad_neo="No conforme").count(), "sub": "reportes no conformes"},
-        {"icon": "bi-journal-check", "bg": "#DCFCE7", "color": "#16A34A",
-         "label": "Compromisos", "value": Compromiso.query.filter(Compromiso.estado.in_(["Pendiente", "Reprogramado"])).count(), "sub": "pendientes / vencidos"},
-    ]
+    if ids_admin_gral is not None:
+        kpi_tiles = [
+            {"icon": "bi-person-check-fill", "bg": "#FEF3C7", "color": "#D97706",
+             "label": "Por aprobar", "value": pend_director, "sub": "registros de tus coordinadores"},
+        ] + _kpi_tiles_he(ids_admin_gral, mes_ini, hoy)
+    else:
+        he_mes_raw = db.session.query(func.sum(HoraExtra.horas_reportadas)).filter(
+            HoraExtra.fecha_labor >= mes_ini, HoraExtra.fecha_labor <= hoy
+        ).scalar()
+        kpi_tiles = [
+            {"icon": "bi-file-earmark-text-fill", "bg": "#E0F2FE", "color": "#0369a1",
+             "label": "Reportes totales", "value": ReporteOperacional.query.count(), "sub": "en el sistema"},
+            {"icon": "bi-clock-history", "bg": "#EDE9FE", "color": "#7C3AED",
+             "label": "HE del mes", "value": round(he_mes_raw or 0, 1), "sub": "horas extras registradas"},
+            {"icon": "bi-x-circle", "bg": "#FEF3C7", "color": "#D97706",
+             "label": "No conformes", "value": ReporteOperacional.query.filter_by(conformidad_neo="No conforme").count(), "sub": "reportes no conformes"},
+            {"icon": "bi-journal-check", "bg": "#DCFCE7", "color": "#16A34A",
+             "label": "Compromisos", "value": Compromiso.query.filter(Compromiso.estado.in_(["Pendiente", "Reprogramado"])).count(), "sub": "pendientes / vencidos"},
+        ]
     return render_template(
         "shared/home_universal.html",
         page_title="Director",
