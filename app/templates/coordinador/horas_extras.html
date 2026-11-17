@@ -830,10 +830,11 @@ const ROL_USUARIO = {{ (current_user.rol or "") | lower | tojson }};
 let _selRegistro = [];   // última selección en la grilla de registro (para eliminar filas)
 const USUARIO_NOMBRE = {{ (current_user.nombre_completo or "") | tojson }};
 
-// Administración General: autoriza quien reporta y Observación es obligatoria
+// Contratos administrativos (todo nombre que contenga "Administración"):
+// autoriza quien reporta y Observación es obligatoria
 function _esAdminGeneralNombre(nombre) {
     return (nombre || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
-        .toLowerCase().replace(/\s+/g, " ").includes("administracion general");
+        .toLowerCase().includes("administracion");
 }
 function esAdminGeneral() {
     const sel = document.getElementById("gridContrato");

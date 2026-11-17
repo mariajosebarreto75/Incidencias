@@ -63,11 +63,13 @@ MODULOS = {
 
 
 def _es_admin_general(nombre_contrato):
-    """True si el contrato es Administración General (ignora tildes y mayúsculas).
-    En este contrato quien reporta es quien autoriza, y Justificación/Observación son obligatorias."""
+    """True si el contrato es del área administrativa: todo nombre que contenga "Administración"
+    (ignora tildes y mayúsculas), ej. "Administración General" o "Administración - Financiera".
+    En estos contratos quien reporta es quien autoriza, Justificación/Observación son obligatorias
+    y lo que reporta un coordinador pasa por su director antes de NEO."""
     import unicodedata
     s = unicodedata.normalize("NFKD", str(nombre_contrato or "")).encode("ascii", "ignore").decode().lower()
-    return "administracion general" in " ".join(s.split())
+    return "administracion" in s
 
 
 # Roles cuyos reportes en Administración General NO pasan por aprobación del director
