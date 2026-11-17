@@ -70,6 +70,10 @@ _MIGRACIONES = [
     # Admin nunca necesita cambio obligatorio
     "UPDATE users SET must_change_password = FALSE WHERE rol = 'admin'",
     "ALTER TABLE reuniones ADD COLUMN IF NOT EXISTS recurrente BOOLEAN NOT NULL DEFAULT FALSE",
+    # Aprobación del director (jerarquía Administración General)
+    "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS aprobado_director_id INTEGER REFERENCES users(id)",
+    "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS fecha_aprob_director TIMESTAMP",
+    "ALTER TABLE horas_extras ADD COLUMN IF NOT EXISTS obs_director TEXT",
 ]
 
 _SUPERVISORES_SEED = [
@@ -170,13 +174,14 @@ def _seed_supervisores():
 
 
 def _auto_migrar():
-    try:
-        for sql in _MIGRACIONES:
+    # Cada sentencia en su propia transacción: si una falla, las demás se aplican igual
+    for sql in _MIGRACIONES:
+        try:
             db.session.execute(text(sql))
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        print(f"[Migración] Error: {e}")
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"[Migración] Error en «{sql[:80]}»: {e}")
 
 
 _PWD_DEFAULT = "Hesego2026*"

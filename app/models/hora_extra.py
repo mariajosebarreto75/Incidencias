@@ -22,6 +22,13 @@ FACTOR_HE = {
 }
 
 
+# Jerarquía de aprobación (Administración General): coordinador reporta → director aprueba → NEO valida.
+# Mientras el registro esté en uno de estos estados, NEO no lo ve ni lo puede validar.
+ESTADO_PEND_DIRECTOR = "PENDIENTE DIRECTOR"
+ESTADO_RECH_DIRECTOR = "RECHAZADO DIRECTOR"
+ESTADOS_DIRECTOR     = (ESTADO_PEND_DIRECTOR, ESTADO_RECH_DIRECTOR)
+
+
 class HoraExtra(db.Model):
     __tablename__ = "horas_extras"
 
@@ -56,6 +63,11 @@ class HoraExtra(db.Model):
 
     corte_id            = db.Column(db.Integer, db.ForeignKey("he_cortes.id"), index=True)
 
+    # Aprobación del director (solo contratos con jerarquía, ej. Administración General)
+    aprobado_director_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    fecha_aprob_director = db.Column(db.DateTime)
+    obs_director         = db.Column(db.Text)
+
     __table_args__ = (
         db.Index("ix_he_contrato_fecha",  "contrato_id", "fecha_labor"),
         db.Index("ix_he_corte_estado",    "corte_id",    "estado"),
@@ -70,6 +82,7 @@ class HoraExtra(db.Model):
     contrato        = db.relationship("Contrato", backref="horas_extras")
     reportado_por   = db.relationship("User", foreign_keys=[reportado_por_id])
     validado_por    = db.relationship("User", foreign_keys=[validado_por_id])
+    aprobado_director = db.relationship("User", foreign_keys=[aprobado_director_id])
 
     def to_dict(self):
         return {
@@ -105,4 +118,7 @@ class HoraExtra(db.Model):
             "evidencia_neo":      self.evidencia_neo or "",
             "evidencia_consiliacion": self.evidencia_consiliacion or "",
             "corte_id":           self.corte_id,
+            "aprobado_director":  self.aprobado_director.nombre_completo if self.aprobado_director else "",
+            "fecha_aprob_director": self.fecha_aprob_director.strftime("%Y-%m-%d %H:%M") if self.fecha_aprob_director else "",
+            "obs_director":       self.obs_director or "",
         }

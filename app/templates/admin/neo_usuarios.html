@@ -602,6 +602,21 @@
                             </div>
                             <span class="uu-vista-none">Misma vista para todos</span>
                         </div>
+                        {% if rol_bajo not in ['director', 'neo', 'admin', 'gerente'] %}
+                        <div class="uu-mod-row" id="mr-{{ u.id }}-director">
+                            <i class="bi bi-diagram-2-fill" style="font-size:1.1rem;color:#5B3CC4;width:38px;text-align:center"></i>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Director que aprueba sus horas</div>
+                                <div class="uu-mod-desc">Administración General: lo que reporta pasa primero por este director y luego a NEO</div>
+                            </div>
+                            <select id="dir-sel-{{ u.id }}" class="uu-rol-select" style="min-width:200px">
+                                <option value="">— Sin director —</option>
+                                {% for d in directores %}
+                                <option value="{{ d.id }}" {% if director_de.get(u.id) == d.id %}selected{% endif %}>{{ d.nombre_completo }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -996,6 +1011,11 @@ async function guardarPermisos(uid) {
     var vistas = {};
     document.querySelectorAll('.vsel-' + uid + '.active').forEach(function(b){ vistas[b.dataset.modulo] = b.dataset.vista; });
     var r = await apiFetch('/admin/api/usuarios/' + uid, 'PUT', { permisos_lista: lista, modulo_vistas: vistas });
+    var dirSel = document.getElementById('dir-sel-' + uid);
+    if (r.success && dirSel) {
+        var rd = await apiFetch('/admin/api/usuarios/' + uid + '/director', 'PUT', { director_id: dirSel.value || null });
+        if (!rd.success) { mostrarAlerta('alerta', rd.mensaje || 'Error al guardar el director', 'danger'); return; }
+    }
     if (r.success) {
         togglePanel(uid, 'permisos');
         var el = document.getElementById('cnt-mod-' + uid);

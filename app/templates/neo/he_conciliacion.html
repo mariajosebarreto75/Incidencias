@@ -536,7 +536,7 @@ async function comparar() {
         const corte    = document.getElementById("concCorte").value;
         const contrato = document.getElementById("concContrato").value;
         let url = "/api/he/registros";
-        const params = [];
+        const params = ["vista=neo"];
         if (corte)    params.push(`corte_id=${corte}`);
         if (contrato) params.push(`contrato_id=${contrato}`);
         if (params.length) url += "?" + params.join("&");

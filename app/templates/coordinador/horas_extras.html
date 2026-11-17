@@ -804,6 +804,28 @@ let cedulaTimers = {};
 let salariosPorFila = {};
 let supervisoresActuales = [];
 const COLS_NEO_REG = [C_HAUTH_REG, C_NEOAUTH_REG, C_OBSNEO_REG, C_VALBY_REG];   // columnas que diligencia NEO
+// Jerarquía Administración General: coordinador → director → NEO
+const ESTADO_PEND_DIRECTOR = "PENDIENTE DIRECTOR", ESTADO_RECH_DIRECTOR = "RECHAZADO DIRECTOR";
+const ESTADOS_EDITABLES_COOR = ["PENDIENTE", ESTADO_PEND_DIRECTOR, ESTADO_RECH_DIRECTOR];
+// Columna "Estado NEO": mientras el director no aprueba, muestra en qué va
+function _estadoNeoReg(reg) {
+    if (reg.estado === ESTADO_PEND_DIRECTOR) return "⏳ Pendiente aprobación director";
+    if (reg.estado === ESTADO_RECH_DIRECTOR) return "✖ Rechazado por director";
+    return reg.autorizacion_neo || "";
+}
+function _obsNeoReg(reg) {
+    if (reg.estado === ESTADO_RECH_DIRECTOR && reg.obs_director) return `Director: ${reg.obs_director}`;
+    return reg.obs_neo || "";
+}
+// Registro (del API) por id, para reglas que no deben depender del texto mostrado en la grilla
+let _recRegMap = null, _recRegSrc = null;
+function _recReg(id) {
+    if (_recRegSrc !== _fullRegRecords) {
+        _recRegSrc = _fullRegRecords;
+        _recRegMap = new Map((_fullRegRecords || []).map(r => [r.id, r]));
+    }
+    return id ? _recRegMap.get(id) : null;
+}
 const ROL_USUARIO = {{ (current_user.rol or "") | lower | tojson }};
 let _selRegistro = [];   // última selección en la grilla de registro (para eliminar filas)
 const USUARIO_NOMBRE = {{ (current_user.nombre_completo or "") | tojson }};
@@ -927,8 +949,8 @@ function iniciarGrid() {
             if (COLS_NEO_REG.includes(col)) return { className: (base.className ? base.className + ' ' : '') + 'ht-neo-col' };
             if (col === C_SUP && esAdminGeneral()) return { ...base, readOnly: true };
             if (col === C_RETRO_REG) {
-                const neoAuth = hot ? (hot.getDataAtRowProp(row, C_NEOAUTH_REG) || "") : "";
-                if (!neoAuth) return { ...base, readOnly: true };
+                const rec = _recReg(_rowIds[row]);
+                if (!rec || !rec.autorizacion_neo) return { ...base, readOnly: true };
             }
             return base;
         },
@@ -1150,8 +1172,8 @@ async function cargarRegistrosCorteActual(corteId) {
         reg.justificacion || "",
         reg.observacion   || "",
         reg.horas_autorizadas != null ? reg.horas_autorizadas : "",
-        reg.autorizacion_neo  || "",
-        reg.obs_neo           || "",
+        _estadoNeoReg(reg),
+        _obsNeoReg(reg),
         reg.validado_por      || "",
         reg.retroalimentacion || "",
     ]);
@@ -1211,8 +1233,8 @@ async function cargarRegistrosPorPeriodo(desde, hasta) {
         reg.justificacion || "",
         reg.observacion   || "",
         reg.horas_autorizadas != null ? reg.horas_autorizadas : "",
-        reg.autorizacion_neo  || "",
-        reg.obs_neo           || "",
+        _estadoNeoReg(reg),
+        _obsNeoReg(reg),
         reg.validado_por      || "",
         reg.retroalimentacion || "",
     ]);
@@ -1411,7 +1433,9 @@ async function guardarGrid() {
     } else if (duplicados) {
         mostrarDuplicados(detalleDup.msg, detalleDup.detalle);
     } else {
-        mostrarToast(`✓ ${totalGuardados} registro(s) guardados/actualizados`,"success");
+        mostrarToast(esAdminGeneral() && !["neo","admin","director"].includes(ROL_USUARIO)
+            ? `✓ ${totalGuardados} registro(s) enviados a su director para aprobación`
+            : `✓ ${totalGuardados} registro(s) guardados/actualizados`, "success");
         salariosPorFila = {};
         const _pp = _periodoActual();
         await cargarRegistrosPorPeriodo(_pp.ini, _pp.fin);
@@ -1651,8 +1675,8 @@ function fmtFechaCoor(v) {
 function estadoRendererCoor(instance, td, row, col, prop, value) {
     Handsontable.renderers.TextRenderer.apply(this, arguments);
     const v = (value || "").trim();
-    const BG = { "PENDIENTE":"#fff3cd", "CONFORME":"#d1e7dd", "NO CONFORME":"#f8d7da", "DESCONTADA":"#ede9fe" };
-    const FG = { "PENDIENTE":"#856404", "CONFORME":"#0a3622", "NO CONFORME":"#842029", "DESCONTADA":"#5b21b6" };
+    const BG = { "PENDIENTE":"#fff3cd", "CONFORME":"#d1e7dd", "NO CONFORME":"#f8d7da", "DESCONTADA":"#ede9fe", "PENDIENTE DIRECTOR":"#e0e7ff", "RECHAZADO DIRECTOR":"#fee2e2" };
+    const FG = { "PENDIENTE":"#856404", "CONFORME":"#0a3622", "NO CONFORME":"#842029", "DESCONTADA":"#5b21b6", "PENDIENTE DIRECTOR":"#3730a3", "RECHAZADO DIRECTOR":"#991b1b" };
     if (BG[v]) td.innerHTML = `<span style="background:${BG[v]};color:${FG[v]};padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700;">${v}</span>`;
 }
 
@@ -1663,7 +1687,7 @@ function accionRendererCoor(instance, td, row, col, prop, value) {
     if (!id) return;
     // Corte cerrado → solo lectura, sin botones de edición ni eliminación
     if (_corteActualEstado === "CERRADO") return;
-    if (estado === "PENDIENTE") {
+    if (ESTADOS_EDITABLES_COOR.includes(estado)) {
         const btnE = document.createElement("button");
         btnE.innerHTML = '<i class="bi bi-pencil"></i>';
         btnE.title = "Editar";

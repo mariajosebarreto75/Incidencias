@@ -1156,7 +1156,7 @@ async function recargar() {
     const hasta   = document.getElementById("fHasta")?.value ?? "";
     const estado  = document.getElementById("fEstado")?.value ?? "";
     const concepto= document.getElementById("fConcepto")?.value ?? "";
-    let url = `/api/he/registros?contrato_id=${cid}&estado=${estado}`;
+    let url = `/api/he/registros?vista=neo&contrato_id=${cid}&estado=${estado}`;
     if (corte)       url += `&corte_id=${corte}`;
     else if (desde)  url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
     if (concepto)    url += `&id_concepto=${encodeURIComponent(concepto)}`;
@@ -1257,9 +1257,9 @@ async function cargarHistorial(corteId) {
     const corte = corteId || (document.getElementById("hCorte") ? document.getElementById("hCorte").value : "");
     const desde = document.getElementById("hDesde") ? document.getElementById("hDesde").value : "";
     const hasta  = document.getElementById("hHasta") ? document.getElementById("hHasta").value : "";
-    let url = '/api/he/registros';
-    if (corte)       url += `?corte_id=${corte}`;
-    else if (desde)  url += `?fecha_desde=${desde}&fecha_hasta=${hasta}`;
+    let url = '/api/he/registros?vista=neo';
+    if (corte)       url += `&corte_id=${corte}`;
+    else if (desde)  url += `&fecha_desde=${desde}&fecha_hasta=${hasta}`;
     const r = await fetch(url);
     const registros = await r.json();
 
@@ -2073,7 +2073,7 @@ async function cargarKpis() {
         // Desglose por concepto (solo si hay contrato_id)
         if (cid) {
             try {
-                const rr = await fetch(`/api/he/resumen?contrato_id=${cid}`);
+                const rr = await fetch(`/api/he/resumen?vista=neo&contrato_id=${cid}`);
                 const dd = await rr.json();
                 const sec  = document.getElementById("neoConceptoSection");
                 const grid = document.getElementById("neoConceptoGrid");

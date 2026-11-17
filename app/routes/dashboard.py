@@ -59,7 +59,12 @@ def director():
                         "tint": "#0891B2", "links": rep_items})
 
     # Directores siempre pueden ingresar HE — es parte de su rol
-    he_items = [{"label": "Registro / Validación", "icon": "bi-pencil-square",
+    from app.routes.horas_extras import contar_pend_director
+    pend_director = contar_pend_director(u)
+    he_items = [{"label": f"Aprobar horas extras ({pend_director})" if pend_director else "Aprobar horas extras",
+                 "icon": "bi-person-check-fill", "url": url_for("he_bp.he_aprobacion_director"),
+                 "desc": "Horas que reportaron tus coordinadores, antes de ir a NEO"},
+                {"label": "Registro / Validación", "icon": "bi-pencil-square",
                  "url": "/horas-extras", "desc": "Ingreso y validación de horas extras"}]
     if es_admin or u.tiene_permiso("dashboard_he"):
         he_items.append({"label": "Dashboard HE", "icon": "bi-bar-chart-line-fill",
@@ -141,6 +146,13 @@ def director():
         today_str=today_str,
         groups=groups,
         kpi_tiles=kpi_tiles,
+        alerta={
+            "icon": "bi-bell-fill",
+            "texto": f"Tienes {pend_director} registro(s) de horas extras pendientes por aprobar. "
+                     "NEO no los revisa hasta que los apruebes.",
+            "url": url_for("he_bp.he_aprobacion_director"),
+            "boton": "Revisar y aprobar",
+        } if pend_director else None,
     )
 
 

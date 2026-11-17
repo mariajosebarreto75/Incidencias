@@ -8,7 +8,12 @@ from flask_login import login_required, current_user
 import json
 
 from app.extensions import db
-from app.models.hora_extra import HoraExtra, CONCEPTOS_HE, FACTOR_HE
+from app.models.hora_extra import (
+    HoraExtra, CONCEPTOS_HE, FACTOR_HE,
+    ESTADO_PEND_DIRECTOR, ESTADO_RECH_DIRECTOR, ESTADOS_DIRECTOR,
+)
+from app.models.he_jerarquia import HeJerarquia
+from app.models.user import User
 from app.models.he_concepto import HeConcepto
 from app.models.contrato import Contrato
 from app.models.persona import Persona
@@ -63,6 +68,44 @@ def _es_admin_general(nombre_contrato):
     import unicodedata
     s = unicodedata.normalize("NFKD", str(nombre_contrato or "")).encode("ascii", "ignore").decode().lower()
     return "administracion general" in " ".join(s.split())
+
+
+# Roles cuyos reportes en Administración General NO pasan por aprobación del director
+_ROLES_SIN_APROB_DIRECTOR = ("neo", "admin", "director")
+
+
+def _requiere_aprob_director(nombre_contrato, usuario=None):
+    """True si lo que reporta `usuario` en este contrato debe aprobarlo su director antes de ir a NEO."""
+    usuario = usuario or current_user
+    return _es_admin_general(nombre_contrato) and usuario.rol.lower() not in _ROLES_SIN_APROB_DIRECTOR
+
+
+def _director_de(user_id):
+    j = HeJerarquia.query.filter_by(coordinador_id=user_id).first()
+    return j.director_id if j else None
+
+
+def _query_pend_director(director):
+    """Registros pendientes de aprobación que le corresponden a `director` (admin: todos)."""
+    q = HoraExtra.query.filter(HoraExtra.estado == ESTADO_PEND_DIRECTOR)
+    if director.rol.lower() != "admin":
+        coord_ids = [j.coordinador_id for j in HeJerarquia.query.filter_by(director_id=director.id).all()]
+        q = q.filter(HoraExtra.reportado_por_id.in_(coord_ids or [-1]))
+    return q
+
+
+def contar_pend_director(director):
+    return _query_pend_director(director).count()
+
+
+def _reenviar_a_director(reg):
+    """Si un coordinador edita un registro que aún no valida NEO, vuelve a requerir aprobación del director."""
+    if not _requiere_aprob_director(reg.contrato.contrato if reg.contrato else ""):
+        return
+    if reg.estado in ("PENDIENTE", None) + ESTADOS_DIRECTOR:
+        reg.estado               = ESTADO_PEND_DIRECTOR
+        reg.aprobado_director_id = None
+        reg.fecha_aprob_director = None
 
 
 def permiso_requerido(permiso):
@@ -191,6 +234,10 @@ def api_he_registros():
         ids = _ids_contratos_usuario()
         q = q.filter(HoraExtra.contrato_id.in_(ids))
 
+    # NEO no ve lo que aún no aprobó el director (o que el director rechazó)
+    if rol == "neo" or request.args.get("vista") == "neo":
+        q = q.filter(db.or_(HoraExtra.estado.is_(None), HoraExtra.estado.notin_(ESTADOS_DIRECTOR)))
+
     contrato_id  = request.args.get("contrato_id", type=int)
     mes          = request.args.get("mes", "")
     estado       = request.args.get("estado", "")
@@ -295,11 +342,14 @@ def he_hub():
     else:
         base_template = "coordinador/navbarcoor.html"
     contratos = _contratos_del_usuario() if puede_ingresar else []
+    puede_aprobar_director = rol in ("director", "admin")
     return render_template(
         "horas_extras/hub.html",
         base_template=base_template,
         puede_ingresar=puede_ingresar,
         puede_validar=puede_validar,
+        puede_aprobar_director=puede_aprobar_director,
+        pend_director=contar_pend_director(current_user) if puede_aprobar_director else 0,
         contratos=contratos,
         title="Horas Extras",
     )
@@ -419,6 +469,14 @@ def api_he_guardar():
         admin_general = _es_admin_general(contratos_nombre.get(cid))
         if admin_general:
             f["autorizacion_sup"] = current_user.nombre_completo
+        # ...y si reporta un coordinador, antes de NEO debe aprobar su director
+        aprob_director = _requiere_aprob_director(contratos_nombre.get(cid))
+        if aprob_director and not _director_de(uid):
+            return jsonify({
+                "ok": False,
+                "msg": "No tiene un director asignado para aprobar sus horas extras de Administración General. "
+                       "Solicite al administrador que se lo asigne en Usuarios → Permisos."
+            }), 422
 
         # Validar campos obligatorios
         fila_num = len(registros) + omitidos + 1
@@ -464,7 +522,9 @@ def api_he_guardar():
         auth_neo = str(f.get("autorizacion_neo") or "").strip().upper()
         hrs_auth = f.get("horas_autorizadas")
         estado   = auth_neo if auth_neo in ("CONFORME", "NO CONFORME", "DESCONTADA") else "PENDIENTE"
-        if estado == "PENDIENTE":
+        if aprob_director:
+            estado, auth_neo, hrs_auth = ESTADO_PEND_DIRECTOR, None, None
+        if estado in ("PENDIENTE", ESTADO_PEND_DIRECTOR):
             auth_neo = None
 
         registros.append({
@@ -702,6 +762,7 @@ def api_he_actualizar_lote():
             if not (reg.justificacion or "").strip() or not (reg.observacion or "").strip():
                 db.session.rollback()
                 return jsonify({"ok": False, "msg": "Administración General: Justificación y Observación son obligatorias."}), 422
+            _reenviar_a_director(reg)
         concepto = getattr(reg, "id_concepto", "")
         if concepto:
             reg.tipo_he = CONCEPTOS_HE.get(str(concepto).strip().zfill(2), reg.tipo_he or "")
@@ -784,6 +845,7 @@ def api_he_actualizar(id):
                     not (he.justificacion or "").strip() or not (he.observacion or "").strip()):
                 db.session.rollback()
                 return jsonify({"ok": False, "msg": "Administración General: Justificación y Observación son obligatorias."}), 422
+            _reenviar_a_director(he)
         if "retroalimentacion" in f:
             he.retroalimentacion = f["retroalimentacion"]
         if f.get("valor_hora")  is not None: he.valor_hora  = f["valor_hora"]
@@ -808,7 +870,7 @@ def api_he_actualizar(id):
 def api_he_eliminar(id):
     he = HoraExtra.query.get_or_404(id)
     if current_user.rol.lower() in ("coordinador", "director", "supervisor", "analista"):
-        if he.estado != "PENDIENTE":
+        if he.estado not in ("PENDIENTE",) + ESTADOS_DIRECTOR:
             return jsonify({"ok": False, "msg": "Solo se pueden eliminar registros pendientes"}), 403
         if he.contrato_id not in _ids_contratos_usuario():
             return jsonify({"ok": False, "msg": "No autorizado"}), 403
@@ -1035,6 +1097,69 @@ def api_he_conciliacion_agregar():
     return jsonify({"ok": True, "agregados": agregados, "errores": errores})
 
 
+# ── DIRECTOR: aprobación de horas extras de sus coordinadores ────────────────
+def _puede_aprobar_director():
+    return current_user.rol.lower() in ("director", "admin")
+
+
+@he_bp.route("/horas-extras/aprobacion")
+@login_required
+def he_aprobacion_director():
+    if not _puede_aprobar_director():
+        abort(403)
+    return render_template(
+        "horas_extras/aprobacion_director.html",
+        base_template="coordinador/navbarcoor.html",
+        title="Aprobar horas extras",
+    )
+
+
+@he_bp.route("/api/he/aprobacion-director")
+@login_required
+def api_he_aprobacion_director_list():
+    if not _puede_aprobar_director():
+        return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    registros = _query_pend_director(current_user).order_by(
+        HoraExtra.fecha_labor.desc(), HoraExtra.id.desc()).all()
+    return jsonify({"ok": True, "registros": [
+        {**r.to_dict(), "reportado_por": r.reportado_por.nombre_completo if r.reportado_por else ""}
+        for r in registros
+    ]})
+
+
+@he_bp.route("/api/he/aprobacion-director", methods=["POST"])
+@login_required
+def api_he_aprobacion_director():
+    if not _puede_aprobar_director():
+        return jsonify({"ok": False, "msg": "No autorizado"}), 403
+    d      = request.get_json(silent=True) or {}
+    ids    = [int(i) for i in (d.get("ids") or []) if str(i).isdigit()]
+    accion = (d.get("accion") or "").lower()
+    motivo = (d.get("motivo") or "").strip()
+    if not ids or accion not in ("aprobar", "rechazar"):
+        return jsonify({"ok": False, "msg": "Solicitud inválida"}), 400
+    if accion == "rechazar" and not motivo:
+        return jsonify({"ok": False, "msg": "Indique el motivo del rechazo"}), 400
+
+    # Solo los que de verdad le corresponden a este director y siguen pendientes
+    registros = _query_pend_director(current_user).filter(HoraExtra.id.in_(ids)).all()
+    if not registros:
+        return jsonify({"ok": False, "msg": "Ninguno de los registros está pendiente de su aprobación"}), 404
+
+    ahora = datetime.now()
+    for r in registros:
+        antes = r.to_dict()
+        r.estado               = "PENDIENTE" if accion == "aprobar" else ESTADO_RECH_DIRECTOR
+        r.aprobado_director_id = current_user.id
+        r.fecha_aprob_director = ahora
+        r.obs_director         = motivo or None
+        _audit("APROBACION_DIRECTOR" if accion == "aprobar" else "RECHAZO_DIRECTOR", r,
+               estado_antes=ESTADO_PEND_DIRECTOR, estado_desp=r.estado,
+               datos_antes=antes, datos_desp=r.to_dict())
+    db.session.commit()
+    return jsonify({"ok": True, "procesados": len(registros)})
+
+
 # ── API: validar registro (NEO/admin) ─────────────────────────────────────────
 @he_bp.route("/api/he/<int:id>/validar", methods=["POST"])
 @login_required
@@ -1042,6 +1167,8 @@ def api_he_conciliacion_agregar():
 def api_he_validar(id):
     he = HoraExtra.query.get_or_404(id)
     d = request.get_json(silent=True) or {}
+    if he.estado in ESTADOS_DIRECTOR:
+        return jsonify({"ok": False, "msg": "Este registro aún no lo aprueba el director; NEO no puede validarlo."}), 409
 
     autorizacion = (d.get("autorizacion_neo") or "PENDIENTE").strip().upper()
     horas_auth   = d.get("horas_autorizadas")
@@ -1141,6 +1268,9 @@ def api_he_resumen():
     fecha_hasta = request.args.get("fecha_hasta")
 
     q = HoraExtra.query.filter_by(contrato_id=contrato_id)
+    # NEO no cuenta lo que aún está en manos del director
+    if current_user.rol.lower() == "neo" or request.args.get("vista") == "neo":
+        q = q.filter(db.or_(HoraExtra.estado.is_(None), HoraExtra.estado.notin_(ESTADOS_DIRECTOR)))
     if corte_id:
         q = q.filter(HoraExtra.corte_id == corte_id)
     elif fecha_desde and fecha_hasta:

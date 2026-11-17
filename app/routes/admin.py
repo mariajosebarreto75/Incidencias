@@ -244,6 +244,11 @@ def neo_usuarios():
         for u in lista
     }
 
+    # Jerarquía de aprobación de HE: director de cada coordinador
+    from app.models.he_jerarquia import HeJerarquia
+    director_de = {j.coordinador_id: j.director_id for j in HeJerarquia.query.all()}
+    directores  = [u for u in lista if u.rol.lower() == "director" and u.activo]
+
     return render_template(
         "admin/neo_usuarios.html",
         usuarios=lista,
@@ -251,7 +256,36 @@ def neo_usuarios():
         contratos_agrupados=contratos_agrupados,
         asignados_por_usuario=asignados_por_usuario,
         roles_otros=_ROLES_OTROS,
+        director_de=director_de,
+        directores=directores,
     )
+
+
+@admin_bp.route("/api/usuarios/<int:id>/director", methods=["PUT"])
+@admin_required
+def api_set_director_usuario(id):
+    """Asigna (o quita) el director que aprueba las horas extras que reporta este usuario."""
+    from app.models.he_jerarquia import HeJerarquia
+    u = db.session.get(User, id)
+    if not u:
+        return jsonify({"success": False, "mensaje": "Usuario no encontrado"}), 404
+    director_id = (request.get_json() or {}).get("director_id")
+    j = HeJerarquia.query.filter_by(coordinador_id=id).first()
+    if not director_id:
+        if j:
+            db.session.delete(j)
+    else:
+        director = db.session.get(User, int(director_id))
+        if not director or director.rol.lower() != "director":
+            return jsonify({"success": False, "mensaje": "El usuario elegido no es director"}), 400
+        if director.id == id:
+            return jsonify({"success": False, "mensaje": "Un usuario no puede ser su propio director"}), 400
+        if j:
+            j.director_id = director.id
+        else:
+            db.session.add(HeJerarquia(coordinador_id=id, director_id=director.id))
+    db.session.commit()
+    return jsonify({"success": True})
 
 
 

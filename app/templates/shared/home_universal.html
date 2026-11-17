@@ -191,6 +191,13 @@ body.sidebar-collapsed .nh-main   { margin-left: 0; }
 /* KPI tiles */
 .nh-kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; padding: 24px 32px 0; }
 @media (min-width: 1101px) { .nh-kpi-row-3 { grid-template-columns: repeat(3,1fr); } }
+.nh-alerta { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:24px 32px 0; padding:14px 18px;
+  background:#FEF3C7; border:1px solid #F59E0B; border-radius:12px; color:#78350F; font-size:.88rem; font-weight:600;
+  text-decoration:none; }
+.nh-alerta:hover { background:#FDE68A; color:#78350F; }
+.nh-alerta > i { font-size:1.2rem; color:#D97706; }
+.nh-alerta-btn { margin-left:auto; background:#D97706; color:#fff; border-radius:8px; padding:6px 12px; font-size:.8rem; white-space:nowrap; }
+@media (max-width: 640px) { .nh-alerta { margin:16px 16px 0; } }
 .nh-kpi { background: var(--surface); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 4px; border: 1px solid var(--border); transition: transform var(--trans), box-shadow var(--trans); }
 .nh-kpi:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(11,110,117,.12); }
 .nh-kpi-label { font-size: .7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
@@ -382,6 +389,14 @@ body.sidebar-collapsed .nh-main   { margin-left: 0; }
         <span class="nh-chip nh-chip-role"><i class="bi bi-shield-fill-check"></i>{{ current_user.rol | upper }}</span>
       </div>
     </div>
+
+    {% if alerta %}
+    <a href="{{ alerta.url }}" class="nh-alerta">
+      <i class="bi {{ alerta.icon }}"></i>
+      <span>{{ alerta.texto }}</span>
+      <span class="nh-alerta-btn">{{ alerta.boton }} <i class="bi bi-arrow-right"></i></span>
+    </a>
+    {% endif %}
 
     <!-- KPI tiles -->
     {% if kpi_tiles %}

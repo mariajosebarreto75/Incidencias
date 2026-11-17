@@ -1,0 +1,199 @@
+{% extends base_template %}
+
+{% block title %}Aprobar horas extras{% endblock %}
+
+{% block head %}
+<style>
+.ad-wrap { max-width: 1400px; margin: 0 auto; padding: 24px 20px 60px; }
+.ad-head { background:#0D3B3E; color:#fff; border-radius:12px; padding:18px 22px; margin-bottom:16px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.ad-head h4 { margin:0; font-weight:800; font-size:1.15rem; }
+.ad-head p  { margin:2px 0 0; font-size:.8rem; opacity:.75; }
+.ad-count { margin-left:auto; background:rgba(255,255,255,.15); border-radius:20px; padding:6px 14px; font-weight:700; font-size:.85rem; }
+.ad-toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+.ad-card { background:#fff; border:1px solid #e3e8ef; border-radius:12px; overflow:hidden; }
+.ad-table-wrap { overflow:auto; max-height:65vh; }
+.ad-table { width:100%; border-collapse:collapse; font-size:.78rem; }
+.ad-table th { position:sticky; top:0; background:#4b5563; color:#fff; font-weight:700; font-size:.68rem;
+    text-transform:uppercase; letter-spacing:.3px; padding:8px 10px; white-space:nowrap; z-index:1; }
+.ad-table td { padding:7px 10px; border-bottom:1px solid #eef1f5; vertical-align:top; }
+.ad-table tr:hover td { background:#f8fafc; }
+.ad-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.ad-table td.txt { min-width:160px; max-width:260px; white-space:normal; }
+.ad-empty { padding:48px 20px; text-align:center; color:#6c757d; }
+.ad-empty i { font-size:2rem; color:#16A34A; display:block; margin-bottom:8px; }
+.ad-modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:1050; }
+.ad-modal.open { display:flex; }
+.ad-modal-box { background:#fff; border-radius:12px; padding:20px; width:min(460px, calc(100vw - 32px)); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ad-wrap">
+    <div class="ad-head">
+        <i class="bi bi-person-check-fill" style="font-size:1.6rem;opacity:.85"></i>
+        <div>
+            <h4>Aprobación de horas extras</h4>
+            <p>Horas que reportaron tus coordinadores. Al aprobarlas pasan a revisión de NEO; si las rechazas, vuelven al coordinador.</p>
+        </div>
+        <div class="ad-count"><span id="adTotal">—</span> pendiente(s)</div>
+    </div>
+
+    <div class="ad-toolbar">
+        <button class="btn btn-sm btn-outline-secondary" onclick="seleccionarTodo()" style="border-radius:7px;font-size:.78rem;">
+            <i class="bi bi-check2-all me-1"></i><span id="lblSelTodo">Seleccionar todo</span>
+        </button>
+        <span style="font-size:.78rem;color:#6c757d;"><span id="adSel">0</span> seleccionado(s) · <span id="adSelHrs">0</span> h</span>
+        <div class="ms-auto" style="display:flex;gap:8px;">
+            <button id="btnRechazar" class="btn btn-sm btn-outline-danger fw-semibold" onclick="abrirRechazo()" disabled style="border-radius:7px;">
+                <i class="bi bi-x-circle me-1"></i>Rechazar
+            </button>
+            <button id="btnAprobar" class="btn btn-sm btn-success fw-bold" onclick="aprobar()" disabled style="border-radius:7px;padding:5px 16px;">
+                <i class="bi bi-check-circle me-1"></i>Aprobar y enviar a NEO
+            </button>
+        </div>
+    </div>
+
+    <div class="ad-card">
+        <div class="ad-table-wrap">
+            <table class="ad-table">
+                <thead>
+                    <tr>
+                        <th style="width:34px;"><input type="checkbox" id="chkTodos" onchange="seleccionarTodo(this.checked)"></th>
+                        <th>Reportado por</th><th>Fecha labor</th><th>Cédula</th><th>Nombre</th><th>Recurso</th>
+                        <th>Concepto</th><th>Hrs rep.</th><th>Hrs comp.</th><th>Inicio</th><th>Fin</th>
+                        <th>Justificación</th><th>Observación</th><th>Reportado el</th>
+                    </tr>
+                </thead>
+                <tbody id="adBody"><tr><td colspan="14" class="ad-empty">Cargando…</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="ad-modal" id="modalRechazo">
+    <div class="ad-modal-box">
+        <h6 style="font-weight:800;margin-bottom:4px;">Rechazar <span id="rchCnt">0</span> registro(s)</h6>
+        <p style="font-size:.8rem;color:#6c757d;margin-bottom:10px;">El coordinador verá este motivo y podrá corregir y volver a enviar.</p>
+        <textarea id="rchMotivo" rows="3" class="form-control" placeholder="Motivo del rechazo (obligatorio)"></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+            <button class="btn btn-sm btn-outline-secondary" onclick="cerrarRechazo()">Cancelar</button>
+            <button class="btn btn-sm btn-danger fw-bold" onclick="rechazar()">Rechazar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let _registros = [];
+const _sel = new Set();
+
+function _esc(v) {
+    return String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function _fecha(iso) {
+    if (!iso) return "";
+    const [y, m, d] = iso.split("-");
+    return `${d}/${m}/${y}`;
+}
+function _toast(msg, tipo) {
+    if (typeof mostrarToast === "function") return mostrarToast(msg, tipo);
+    alert(msg);
+}
+
+async function cargar() {
+    const r = await fetch("/api/he/aprobacion-director");
+    const d = await r.json();
+    _registros = d.ok ? d.registros : [];
+    _sel.clear();
+    render();
+}
+
+function render() {
+    document.getElementById("adTotal").textContent = _registros.length;
+    const body = document.getElementById("adBody");
+    if (!_registros.length) {
+        body.innerHTML = `<tr><td colspan="14" class="ad-empty"><i class="bi bi-check-circle"></i>No tienes horas extras pendientes por aprobar.</td></tr>`;
+    } else {
+        body.innerHTML = _registros.map(r => `
+            <tr>
+                <td><input type="checkbox" data-id="${r.id}" ${_sel.has(r.id) ? "checked" : ""} onchange="toggleSel(${r.id}, this.checked)"></td>
+                <td>${_esc(r.reportado_por)}</td>
+                <td>${_fecha(r.fecha_labor)}</td>
+                <td>${_esc(r.cedula)}</td>
+                <td>${_esc(r.nombre)}</td>
+                <td>${_esc(r.recurso)}</td>
+                <td title="${_esc(r.tipo_he)}">${_esc(r.id_concepto)} · ${_esc(r.tipo_he)}</td>
+                <td class="num">${r.horas_reportadas}</td>
+                <td class="num">${r.horas_compensadas}</td>
+                <td>${_esc(r.hora_inicio)}</td>
+                <td>${_esc(r.hora_fin)}</td>
+                <td class="txt">${_esc(r.justificacion)}</td>
+                <td class="txt">${_esc(r.observacion)}</td>
+                <td>${_esc(r.fecha_reporte)}</td>
+            </tr>`).join("");
+    }
+    actualizarSel();
+}
+
+function toggleSel(id, on) {
+    if (on) _sel.add(id); else _sel.delete(id);
+    actualizarSel();
+}
+
+function seleccionarTodo(forzar) {
+    const todos = _registros.length > 0 && _registros.every(r => _sel.has(r.id));
+    const marcar = typeof forzar === "boolean" ? forzar : !todos;
+    _sel.clear();
+    if (marcar) _registros.forEach(r => _sel.add(r.id));
+    render();
+}
+
+function actualizarSel() {
+    const hrs = _registros.filter(r => _sel.has(r.id)).reduce((s, r) => s + (r.horas_reportadas || 0), 0);
+    document.getElementById("adSel").textContent = _sel.size;
+    document.getElementById("adSelHrs").textContent = hrs.toLocaleString("es-CO");
+    document.getElementById("btnAprobar").disabled  = _sel.size === 0;
+    document.getElementById("btnRechazar").disabled = _sel.size === 0;
+    const todos = _registros.length > 0 && _registros.every(r => _sel.has(r.id));
+    document.getElementById("chkTodos").checked = todos;
+    document.getElementById("lblSelTodo").textContent = todos ? "Deseleccionar todo" : "Seleccionar todo";
+}
+
+async function enviar(accion, motivo) {
+    const r = await fetch("/api/he/aprobacion-director", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ ids: [..._sel], accion, motivo: motivo || "" })
+    });
+    const d = await r.json();
+    if (!d.ok) { _toast(d.msg || "Error", "danger"); return false; }
+    _toast(`${d.procesados} registro(s) ${accion === "aprobar" ? "aprobados y enviados a NEO" : "rechazados"}`, "success");
+    await cargar();
+    return true;
+}
+
+async function aprobar() {
+    if (!_sel.size) return;
+    if (!confirm(`¿Aprobar ${_sel.size} registro(s) y enviarlos a NEO?`)) return;
+    await enviar("aprobar");
+}
+
+function abrirRechazo() {
+    if (!_sel.size) return;
+    document.getElementById("rchCnt").textContent = _sel.size;
+    document.getElementById("rchMotivo").value = "";
+    document.getElementById("modalRechazo").classList.add("open");
+    setTimeout(() => document.getElementById("rchMotivo").focus(), 50);
+}
+function cerrarRechazo() { document.getElementById("modalRechazo").classList.remove("open"); }
+
+async function rechazar() {
+    const motivo = document.getElementById("rchMotivo").value.trim();
+    if (!motivo) { _toast("Indique el motivo del rechazo", "warning"); return; }
+    if (await enviar("rechazar", motivo)) cerrarRechazo();
+}
+
+cargar();
+</script>
+{% endblock %}
