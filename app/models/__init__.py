@@ -11,3 +11,4 @@ from app.models.reporte_operacional import (
     ReporteOperacional
 )
 from app.models.he_audit_log import HeAuditLog
+from app.models.user_ui_pref import UserUiPref

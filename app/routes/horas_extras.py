@@ -125,6 +125,37 @@ def api_he_supervisores():
     return jsonify(resultado)
 
 
+# ── API: orden de columnas de las grillas (preferencia de cada usuario) ──────
+_GRILLAS_HE = {"registro": "he_registro_cols"}
+
+
+@he_bp.route("/api/he/columnas/<grilla>", methods=["GET", "PUT"])
+@login_required
+def api_he_columnas(grilla):
+    from app.models.user_ui_pref import UserUiPref
+    clave = _GRILLAS_HE.get(grilla)
+    if not clave:
+        abort(404)
+    pref = UserUiPref.query.filter_by(user_id=current_user.id, clave=clave).first()
+    if request.method == "GET":
+        return jsonify({"orden": json.loads(pref.valor) if pref else None})
+
+    orden = (request.get_json(silent=True) or {}).get("orden")
+    if orden is not None:
+        if not (isinstance(orden, list) and all(isinstance(i, int) for i in orden)
+                and sorted(orden) == list(range(len(orden)))):
+            return jsonify({"ok": False, "msg": "Orden de columnas inválido"}), 400
+    if orden is None:
+        if pref:
+            db.session.delete(pref)
+    elif pref:
+        pref.valor = json.dumps(orden)
+    else:
+        db.session.add(UserUiPref(user_id=current_user.id, clave=clave, valor=json.dumps(orden)))
+    db.session.commit()
+    return jsonify({"ok": True})
+
+
 # ── API: buscar persona por cédula ────────────────────────────────────────────
 @he_bp.route("/api/he/persona")
 @login_required
@@ -666,8 +697,8 @@ def api_he_actualizar_lote():
                 except Exception:
                     pass
         if _es_admin_general(reg.contrato.contrato if reg.contrato else ""):
-            if not (reg.autorizacion_sup or "").strip():
-                reg.autorizacion_sup = current_user.nombre_completo
+            # La autorización es quien reportó: no se edita a mano
+            reg.autorizacion_sup = (_datos_antes.get("autorizacion_sup") or "").strip() or current_user.nombre_completo
             if not (reg.justificacion or "").strip() or not (reg.observacion or "").strip():
                 db.session.rollback()
                 return jsonify({"ok": False, "msg": "Administración General: Justificación y Observación son obligatorias."}), 422
@@ -740,10 +771,13 @@ def api_he_actualizar(id):
         he.tipo_he            = CONCEPTOS_HE.get(concepto, he.tipo_he)
         he.horas_reportadas   = float(f.get("horas_reportadas") or he.horas_reportadas)
         he.horas_compensadas  = float(f.get("horas_compensadas") or 0)
+        _auth_sup_antes       = he.autorizacion_sup
         he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
         he.justificacion      = f.get("justificacion", he.justificacion)
         he.observacion        = f.get("observacion", he.observacion)
         if _es_admin_general(he.contrato.contrato if he.contrato else ""):
+            # La autorización es quien reportó: no se edita a mano
+            he.autorizacion_sup = _auth_sup_antes
             if not (he.autorizacion_sup or "").strip():
                 he.autorizacion_sup = current_user.nombre_completo
             if ("justificacion" in f or "observacion" in f) and (
@@ -836,6 +870,14 @@ def api_he_bulk_delete():
         if not ids:
             return jsonify({"ok": False, "msg": "No hay registros seleccionados"}), 400
     registros_a_eliminar = HoraExtra.query.filter(HoraExtra.id.in_(ids)).all()
+    # Nadie elimina registros de un corte CERRADO
+    cortes_cerrados = HeCorte.query.filter_by(estado="CERRADO").all()
+    for r in registros_a_eliminar:
+        for c in cortes_cerrados:
+            if (r.corte_id == c.id) or (
+                    c.fecha_inicio <= r.fecha_labor <= c.fecha_fin
+                    and (c.contrato_id == r.contrato_id or c.contrato_id is None)):
+                return jsonify({"ok": False, "msg": f"El corte '{c.nombre}' está CERRADO. No se pueden eliminar sus registros."}), 422
     _snapshots = [(r.estado, r.to_dict(), r.contrato_id, r.fecha_labor, r.cedula,
                    r.horas_reportadas, r.id_concepto, r.tipo_he, r.nombre)
                   for r in registros_a_eliminar]

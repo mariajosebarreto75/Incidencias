@@ -72,7 +72,9 @@ body { background:var(--c-bg); }
 .handsontable th { font-weight:700 !important; font-size:.69rem !important; text-transform:uppercase; letter-spacing:.3px; }
 .handsontable td { font-size:.78rem !important; white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; }
 .handsontable .htDimmed { color:#777 !important; }
-.ht-neo-col { background:#f0f7ff !important; }
+/* Columnas que diligencia NEO (el coordinador no las llena) */
+.handsontable td.ht-neo-col { background:#e0f2fe !important; color:#075985 !important; font-style:italic; }
+.lg-dot-neo { background:#e0f2fe; border:1px solid #0284c7; }
 
 /* ── Panel Validación ── */
 /* chips de estado */
@@ -385,10 +387,17 @@ body { background:var(--c-bg); }
                         <option value="7">7 cols</option>
                     </select>
                 </div>
+                <button onclick="restablecerColumnasReg()" class="btn btn-sm btn-outline-secondary" style="border-radius:6px;font-size:.75rem;" title="Volver al orden original de columnas">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Orden original
+                </button>
                 <span style="font-size:.71rem;color:#6c757d;margin-left:4px;">
                     <i class="bi bi-info-circle me-1"></i>Ctrl+C / Ctrl+V · Arrastra para llenar
                 </span>
                 <div class="ms-auto" style="display:flex;gap:8px;">
+                    <button id="btnEliminarReg" onclick="eliminarFilasRegistro()" class="btn btn-sm btn-outline-danger fw-semibold" style="border-radius:7px;"
+                            title="Seleccione una o varias filas (clic en el número de fila; Shift o Ctrl para varias)">
+                        <i class="bi bi-trash me-1"></i>Eliminar filas seleccionadas
+                    </button>
                     <button onclick="abrirImportar()" class="btn btn-sm btn-outline-success fw-semibold" style="border-radius:7px;">
                         <i class="bi bi-file-earmark-arrow-up me-1"></i>Importar Excel
                     </button>
@@ -401,7 +410,9 @@ body { background:var(--c-bg); }
             <div style="overflow:auto;"><div id="gridHE"></div></div>
             <div class="grid-legend">
                 <span><div class="lg-dot" style="background:#e8f0fe;border:1px solid #c5d3e8;"></div> Campos que tú ingresas</span>
-                <span><div class="lg-dot" style="background:#f0f7ff;border:1px solid #c0d9f0;"></div> Columnas calculadas / validación NEO (solo lectura)</span>
+                <span><div class="lg-dot" style="background:#f0f7ff;border:1px solid #c0d9f0;"></div> Columnas calculadas (solo lectura)</span>
+                <span><div class="lg-dot lg-dot-neo"></div> Columnas que diligencia NEO (no las llenas tú)</span>
+                <span><i class="bi bi-arrows-move"></i> Clic en el encabezado y arrastra para mover columnas (solo cambia tu vista)</span>
             </div>
         </div>
     </div>
@@ -792,6 +803,9 @@ let _corteActualEstado = "ABIERTO"; // estado del corte visible en validación
 let cedulaTimers = {};
 let salariosPorFila = {};
 let supervisoresActuales = [];
+const COLS_NEO_REG = [C_HAUTH_REG, C_NEOAUTH_REG, C_OBSNEO_REG, C_VALBY_REG];   // columnas que diligencia NEO
+const ROL_USUARIO = {{ (current_user.rol or "") | lower | tojson }};
+let _selRegistro = [];   // última selección en la grilla de registro (para eliminar filas)
 const USUARIO_NOMBRE = {{ (current_user.nombre_completo or "") | tojson }};
 
 // Administración General: autoriza quien reporta y Observación es obligatoria
@@ -810,6 +824,7 @@ let validacionCargada = false;
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function(){
     iniciarGrid();
+    cargarOrdenColumnasReg();
 
     // 1. Restaurar contrato ANTES de cualquier fetch para que actualizarCortesCoor use el correcto
     const _fpKey = 'fp_' + location.pathname;
@@ -899,28 +914,38 @@ function iniciarGrid() {
         renderAllRows: false,
         stretchH: "none",
         manualColumnResize: true,
+        // Columnas movibles: el orden se guarda por usuario. Los índices C_* son físicos,
+        // por eso la grilla se lee/escribe con getDataAtRowProp/setDataAtRowProp.
+        manualColumnMove: true,
         contextMenu: true,
         fillHandle: true,
         copyPaste: true,
         undo: true,
         licenseKey: "non-commercial-and-evaluation",
-        cells: function(row, col) {
+        cells: function(row, col) {   // row/col físicos
             const base = _rowIds[row] ? { className: 'row-guardada' } : {};
+            if (COLS_NEO_REG.includes(col)) return { className: (base.className ? base.className + ' ' : '') + 'ht-neo-col' };
             if (col === C_SUP && esAdminGeneral()) return { ...base, readOnly: true };
             if (col === C_RETRO_REG) {
-                const neoAuth = hot ? (hot.getDataAtCell(row, C_NEOAUTH_REG) || "") : "";
+                const neoAuth = hot ? (hot.getDataAtRowProp(row, C_NEOAUTH_REG) || "") : "";
                 if (!neoAuth) return { ...base, readOnly: true };
             }
             return base;
         },
         afterGetColHeader: function(col, TH) { _showFilterBtnC(hot, col, TH, false); _colorearHeaderCoor(hot, col, TH, false); },
+        afterSelectionEnd: function() {
+            // Clic en encabezado de columna (para moverla) selecciona toda la columna: no cuenta como filas a eliminar
+            const porEncabezado = hot.selection && hot.selection.isSelectedByColumnHeader && hot.selection.isSelectedByColumnHeader();
+            _selRegistro = porEncabezado ? [] : (hot.getSelected() || []);
+        },
+        afterColumnMove: function() { _guardarOrdenColumnasReg(); },
         afterChange: function(changes, source) {
             if (!changes || source === "loadData" || source === "auto") return;
-            changes.forEach(([row, col, oldVal, newVal]) => {
+            changes.forEach(([row, col, oldVal, newVal]) => {   // col = índice físico
                 if (_rowIds[row]) _modifiedRowSet.add(row);
                 if (esAdminGeneral() && col !== C_SUP && newVal !== "" && newVal != null
-                        && !hot.getDataAtCell(row, C_SUP)) {
-                    hot.setDataAtCell(row, C_SUP, USUARIO_NOMBRE, "auto");
+                        && !hot.getDataAtRowProp(row, C_SUP)) {
+                    hot.setDataAtRowProp(row, C_SUP, USUARIO_NOMBRE, "auto");
                 }
                 if (col === C_CED) onCedulaCambia(row, newVal);
                 if (col === C_COD) onConceptoCambia(row, newVal);
@@ -932,8 +957,8 @@ function iniciarGrid() {
         afterPaste: function(data, coords) {
             setTimeout(() => {
                 for (let r = coords[0].startRow; r <= coords[0].endRow; r++) {
-                    const ced = (hot.getDataAtCell(r, C_CED) || "").trim();
-                    const cod = (hot.getDataAtCell(r, C_COD) || "").trim();
+                    const ced = (hot.getDataAtRowProp(r, C_CED) || "").trim();
+                    const cod = (hot.getDataAtRowProp(r, C_COD) || "").trim();
                     if (ced.length >= 5) onCedulaCambia(r, ced);
                     if (cod) onConceptoCambia(r, cod);
                 }
@@ -948,7 +973,7 @@ function onCedulaCambia(row, val) {
     if (ced.length >= 5) {
         cedulaTimers[row] = setTimeout(() => autoFillNombre(row, ced), 500);
     } else {
-        hot.setDataAtCell(row, C_NOM, "", "auto");
+        hot.setDataAtRowProp(row, C_NOM, "", "auto");
         delete salariosPorFila[row];
         recalcular(row);
     }
@@ -956,14 +981,14 @@ function onCedulaCambia(row, val) {
 
 function onConceptoCambia(row, val) {
     const codigo = (val || "").trim();
-    hot.setDataAtCell(row, C_TIPO, CONCEPTOS[codigo] || "", "auto");
+    hot.setDataAtRowProp(row, C_TIPO, CONCEPTOS[codigo] || "", "auto");
 }
 
 async function autoFillNombre(row, cedula) {
     try {
         const r = await fetch(`/api/he/persona?cedula=${encodeURIComponent(cedula)}`);
         const d = await r.json();
-        hot.setDataAtCell(row, C_NOM, d.ok ? d.nombre : "", "auto");
+        hot.setDataAtRowProp(row, C_NOM, d.ok ? d.nombre : "", "auto");
     } catch(e) {}
 }
 
@@ -990,6 +1015,100 @@ function limpiarGrid() {
 
 function fijarColumnas(n) {
     hot.updateSettings({ fixedColumnsLeft: parseInt(n) || 0 });
+}
+
+// ── Orden de columnas por usuario (solo cambia la vista; exportar/guardar no se afectan) ──
+let _aplicandoOrdenReg = false;
+
+async function cargarOrdenColumnasReg() {
+    try {
+        const r = await fetch("/api/he/columnas/registro");
+        const d = await r.json();
+        const orden = d.orden;
+        if (!Array.isArray(orden) || orden.length !== N_COLS) return;
+        _aplicandoOrdenReg = true;
+        hot.getPlugin("manualColumnMove").moveColumns(orden, 0);
+        hot.render();
+    } catch(e) {
+    } finally {
+        _aplicandoOrdenReg = false;
+    }
+}
+
+function _guardarOrdenColumnasReg() {
+    if (_aplicandoOrdenReg) return;
+    const orden = Array.from({length: hot.countCols()}, (_, v) => hot.toPhysicalColumn(v));
+    fetch("/api/he/columnas/registro", {
+        method: "PUT", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ orden })
+    }).catch(() => {});
+}
+
+async function restablecerColumnasReg() {
+    await fetch("/api/he/columnas/registro", {
+        method: "PUT", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ orden: null })
+    }).catch(() => {});
+    location.reload();
+}
+
+// ── Eliminar filas seleccionadas en la grilla de registro ──
+async function eliminarFilasRegistro() {
+    const filas = new Set();
+    for (const [r1, , r2] of _selRegistro) {
+        for (let r = Math.min(r1, r2); r <= Math.max(r1, r2); r++) if (r >= 0) filas.add(r);
+    }
+    if (!filas.size) {
+        mostrarToast("Seleccione las filas a eliminar (clic en el número de fila; Shift o Ctrl para varias)", "warning");
+        return;
+    }
+    const src = hot.getSourceData();
+    const tieneDatos = row => row && row.some(v => v !== "" && v !== null && v !== undefined);
+    const ids = [...filas].map(r => _rowIds[r]).filter(Boolean);
+
+    // Solo filas nuevas sin guardar → basta con vaciarlas
+    if (!ids.length) {
+        const cambios = [];
+        filas.forEach(r => { for (let c = 0; c < N_COLS; c++) cambios.push([r, c, ""]); });
+        hot.setDataAtRowProp(cambios, "auto");
+        mostrarToast("Filas sin guardar limpiadas", "success");
+        return;
+    }
+
+    // Evitar perder cambios sin guardar de otras filas al recargar la grilla
+    const pendientes = src.some((row, r) => !filas.has(r) &&
+        ((_rowIds[r] && _modifiedRowSet.has(r)) || (!_rowIds[r] && tieneDatos(row))));
+    if (pendientes) {
+        mostrarToast("Tiene cambios sin guardar en otras filas. Guárdelos antes de eliminar.", "warning");
+        return;
+    }
+
+    if (!confirm(`¿Eliminar ${ids.length} registro(s) guardado(s)? Esta acción no se puede deshacer.`)) return;
+    const r = await fetch("/api/he/bulk-delete", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(ids)
+    });
+    const d = await r.json();
+    if (!d.ok) { mostrarToast(d.msg || "Error al eliminar", "danger"); return; }
+
+    const borrados = new Set(ids);
+    const quitar = (data, idsArr, recs) => {
+        const keep = idsArr.map((id, i) => !borrados.has(id));
+        return [data.filter((_, i) => keep[i]), idsArr.filter((_, i) => keep[i]), recs.filter((_, i) => keep[i])];
+    };
+    [_fullRegData, _fullRegIds, _fullRegRecords] = quitar(_fullRegData, _fullRegIds, _fullRegRecords);
+    [_fullValData, _fullValIds, _fullValRecords] = quitar(_fullValData, _fullValIds, _fullValRecords);
+    _modifiedRowSet.clear();
+    _selRegistro = [];
+    if (_fullRegData.length) {
+        _applyAllFiltersCoor();
+    } else {
+        _rowIds = Array(FILAS).fill(null);
+        hot.loadData(Array.from({length: FILAS}, () => Array(N_COLS).fill("")));
+        _actualizarKpisCoorReg([]);
+    }
+    cargarKpis(); cargarResumen();
+    mostrarToast(`${d.eliminados} registro(s) eliminado(s)`, "success");
 }
 
 // Convierte YYYY-MM-DD (backend) → DD-MM-YY (grid)
@@ -1183,7 +1302,7 @@ async function guardarGrid() {
     const adminGeneral = esAdminGeneral();
     if (adminGeneral) CAMPOS_OBL.push({ idx: C_OBS, nombre: "Observación" });
 
-    const rows  = hot.getData();
+    const rows  = hot.getSourceData();   // orden físico de columnas (independiente de cómo las movió el usuario)
     const filas = [];       // filas nuevas (INSERT)
     const actualizaciones = []; // filas existentes modificadas (UPDATE)
     const erroresGrid = [];
@@ -1204,7 +1323,7 @@ async function guardarGrid() {
 
         if (adminGeneral && !String(row[C_SUP] || "").trim()) {
             row[C_SUP] = USUARIO_NOMBRE;
-            hot.setDataAtCell(i, C_SUP, USUARIO_NOMBRE, "auto");
+            hot.setDataAtRowProp(i, C_SUP, USUARIO_NOMBRE, "auto");
         }
 
         // Validar campos obligatorios
@@ -2415,6 +2534,7 @@ function _colorearHeaderCoor(htInst, col, TH, isVal) {
     } else {
         if      (phys === C_HRS)  bg = '#dc2626';
         else if (phys === C_COMP) bg = '#d97706';
+        else if (COLS_NEO_REG.includes(phys)) bg = '#0284c7';
     }
     TH.style.background = bg;
     TH.style.color      = '#fff';
