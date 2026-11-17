@@ -57,6 +57,14 @@ MODULOS = {
 }
 
 
+def _es_admin_general(nombre_contrato):
+    """True si el contrato es Administración General (ignora tildes y mayúsculas).
+    En este contrato quien reporta es quien autoriza, y Justificación/Observación son obligatorias."""
+    import unicodedata
+    s = unicodedata.normalize("NFKD", str(nombre_contrato or "")).encode("ascii", "ignore").decode().lower()
+    return "administracion general" in " ".join(s.split())
+
+
 def permiso_requerido(permiso):
     def decorator(f):
         @wraps(f)
@@ -376,6 +384,11 @@ def api_he_guardar():
         if ids_permitidos is not None and cid not in ids_permitidos:
             return jsonify({"ok": False, "msg": "Contrato no asignado a su usuario"}), 403
 
+        # Administración General: autoriza quien reporta
+        admin_general = _es_admin_general(contratos_nombre.get(cid))
+        if admin_general:
+            f["autorizacion_sup"] = current_user.nombre_completo
+
         # Validar campos obligatorios
         fila_num = len(registros) + omitidos + 1
         faltantes_be = []
@@ -387,6 +400,8 @@ def api_he_guardar():
         if not str(f.get("id_concepto") or "").strip():       faltantes_be.append("Id Concepto")
         if not str(f.get("autorizacion_sup") or "").strip():  faltantes_be.append("Autorización Supervisor")
         if not str(f.get("justificacion") or "").strip():     faltantes_be.append("Motivo Hora Extra")
+        if admin_general and not str(f.get("observacion") or "").strip():
+            faltantes_be.append("Observación")
         hrs_rep_val = int(float(f.get("horas_reportadas") or 0))
         hrs_comp_val = int(float(f.get("horas_compensadas") or 0))
         # Permitir 0 reportadas solo si hay horas compensadas (registro que se compensó)
@@ -650,6 +665,12 @@ def api_he_actualizar_lote():
                     setattr(reg, attr, int(float(f[campo] or 0)))
                 except Exception:
                     pass
+        if _es_admin_general(reg.contrato.contrato if reg.contrato else ""):
+            if not (reg.autorizacion_sup or "").strip():
+                reg.autorizacion_sup = current_user.nombre_completo
+            if not (reg.justificacion or "").strip() or not (reg.observacion or "").strip():
+                db.session.rollback()
+                return jsonify({"ok": False, "msg": "Administración General: Justificación y Observación son obligatorias."}), 422
         concepto = getattr(reg, "id_concepto", "")
         if concepto:
             reg.tipo_he = CONCEPTOS_HE.get(str(concepto).strip().zfill(2), reg.tipo_he or "")
@@ -722,6 +743,13 @@ def api_he_actualizar(id):
         he.autorizacion_sup   = f.get("autorizacion_sup", he.autorizacion_sup)
         he.justificacion      = f.get("justificacion", he.justificacion)
         he.observacion        = f.get("observacion", he.observacion)
+        if _es_admin_general(he.contrato.contrato if he.contrato else ""):
+            if not (he.autorizacion_sup or "").strip():
+                he.autorizacion_sup = current_user.nombre_completo
+            if ("justificacion" in f or "observacion" in f) and (
+                    not (he.justificacion or "").strip() or not (he.observacion or "").strip()):
+                db.session.rollback()
+                return jsonify({"ok": False, "msg": "Administración General: Justificación y Observación son obligatorias."}), 422
         if "retroalimentacion" in f:
             he.retroalimentacion = f["retroalimentacion"]
         if f.get("valor_hora")  is not None: he.valor_hora  = f["valor_hora"]

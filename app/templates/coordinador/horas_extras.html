@@ -792,6 +792,17 @@ let _corteActualEstado = "ABIERTO"; // estado del corte visible en validación
 let cedulaTimers = {};
 let salariosPorFila = {};
 let supervisoresActuales = [];
+const USUARIO_NOMBRE = {{ (current_user.nombre_completo or "") | tojson }};
+
+// Administración General: autoriza quien reporta y Observación es obligatoria
+function _esAdminGeneralNombre(nombre) {
+    return (nombre || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+        .toLowerCase().replace(/\s+/g, " ").includes("administracion general");
+}
+function esAdminGeneral() {
+    const sel = document.getElementById("gridContrato");
+    return !!sel && sel.selectedIndex >= 0 && _esAdminGeneralNombre(sel.options[sel.selectedIndex].text);
+}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 let validacionCargada = false;
@@ -895,6 +906,7 @@ function iniciarGrid() {
         licenseKey: "non-commercial-and-evaluation",
         cells: function(row, col) {
             const base = _rowIds[row] ? { className: 'row-guardada' } : {};
+            if (col === C_SUP && esAdminGeneral()) return { ...base, readOnly: true };
             if (col === C_RETRO_REG) {
                 const neoAuth = hot ? (hot.getDataAtCell(row, C_NEOAUTH_REG) || "") : "";
                 if (!neoAuth) return { ...base, readOnly: true };
@@ -906,6 +918,10 @@ function iniciarGrid() {
             if (!changes || source === "loadData" || source === "auto") return;
             changes.forEach(([row, col, oldVal, newVal]) => {
                 if (_rowIds[row]) _modifiedRowSet.add(row);
+                if (esAdminGeneral() && col !== C_SUP && newVal !== "" && newVal != null
+                        && !hot.getDataAtCell(row, C_SUP)) {
+                    hot.setDataAtCell(row, C_SUP, USUARIO_NOMBRE, "auto");
+                }
                 if (col === C_CED) onCedulaCambia(row, newVal);
                 if (col === C_COD) onConceptoCambia(row, newVal);
                 if (col === C_RETRO_REG && _rowIds[row] && newVal !== oldVal) {
@@ -1114,6 +1130,7 @@ function fechaParaBackend(val) {
 
 async function onContratoChange() {
     validacionCargada = false;
+    hot.render();   // refresca columna Autorización (solo lectura en Administración General)
     cargarResumen();
     await actualizarCortesCoor();
     cargarKpis();
@@ -1163,6 +1180,8 @@ async function guardarGrid() {
         { idx: C_SUP,     nombre: "Autorización Supervisor" },
         { idx: C_JUST,    nombre: "Motivo Hora Extra (Justificación)" },
     ];
+    const adminGeneral = esAdminGeneral();
+    if (adminGeneral) CAMPOS_OBL.push({ idx: C_OBS, nombre: "Observación" });
 
     const rows  = hot.getData();
     const filas = [];       // filas nuevas (INSERT)
@@ -1182,6 +1201,11 @@ async function guardarGrid() {
         const hrs   = parseInt(row[C_HRS]) || 0;
         // Si ni fecha, ni cédula, ni horas → fila vacía sin datos relevantes
         if (!fecha && !ced && hrs <= 0) continue;
+
+        if (adminGeneral && !String(row[C_SUP] || "").trim()) {
+            row[C_SUP] = USUARIO_NOMBRE;
+            hot.setDataAtCell(i, C_SUP, USUARIO_NOMBRE, "auto");
+        }
 
         // Validar campos obligatorios
         const faltantes = [];
@@ -1707,7 +1731,11 @@ async function editarHe(id) {
     document.getElementById("editHFin").value       = row.hora_fin || "";
     document.getElementById("editHrs").value        = row.horas_reportadas || "";
     document.getElementById("editComp").value       = row.horas_compensadas || "";
-    document.getElementById("editSup").value        = row.autorizacion_sup || "";
+    const adminGeneral = _esAdminGeneralNombre(row.contrato);
+    const editSup = document.getElementById("editSup");
+    editSup.value    = row.autorizacion_sup || (adminGeneral ? USUARIO_NOMBRE : "");
+    editSup.readOnly = adminGeneral;
+    document.getElementById("modalEditar").dataset.adminGeneral = adminGeneral ? "1" : "";
     document.getElementById("editJust").value       = row.justificacion || "";
     document.getElementById("editObs").value        = row.observacion || "";
     document.getElementById("modalEditar").classList.add("open");
@@ -1731,6 +1759,11 @@ async function guardarEdicion() {
         justificacion:    document.getElementById("editJust").value,
         observacion:      document.getElementById("editObs").value,
     };
+    if (document.getElementById("modalEditar").dataset.adminGeneral
+            && (!payload.justificacion.trim() || !payload.observacion.trim())) {
+        mostrarToast("Administración General: Justificación y Observación son obligatorias","warning");
+        return;
+    }
     const r = await fetch(`/api/he/${id}`, {
         method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)
     });
