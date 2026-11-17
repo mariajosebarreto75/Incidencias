@@ -124,6 +124,35 @@ def formatear_coordenada(valor, posicion_coma):
     return ("-" + formateado) if negativo else formateado
 
 
+def _ids_solo_admin_general(u):
+    """Si TODOS los contratos asignados al usuario son Administración General,
+    devuelve sus ids; si no (o no tiene asignados), None."""
+    from app.routes.horas_extras import _es_admin_general
+    nombres = [uc.contrato for uc in UserContrato.query.filter_by(user_id=u.id).all()]
+    if not nombres or not all(_es_admin_general(n) for n in nombres):
+        return None
+    return [c.id for c in Contrato.query.filter(Contrato.contrato.in_(nombres)).all()]
+
+
+def _kpi_tiles_he(contrato_ids, mes_ini, hoy):
+    """Tarjetas de inicio solo de horas extras (usuarios de Administración General)."""
+    from sqlalchemy import case
+    from app.models.hora_extra import HoraExtra as _HE
+    reportadas, aprobadas, pendientes = db.session.query(
+        db.func.coalesce(db.func.sum(_HE.horas_reportadas), 0),
+        db.func.coalesce(db.func.sum(case((_HE.estado.in_(["CONFORME", "DESCONTADA"]), _HE.horas_autorizadas), else_=0)), 0),
+        db.func.coalesce(db.func.sum(case((_HE.estado == "PENDIENTE", _HE.horas_reportadas), else_=0)), 0),
+    ).filter(
+        _HE.contrato_id.in_(contrato_ids),
+        _HE.fecha_labor >= mes_ini, _HE.fecha_labor <= hoy,
+    ).one()
+    return [
+        {"icon":"bi-clock-history","bg":"#EDE9FE","color":"#7C3AED","label":"HE reportadas","value":round(float(reportadas),1),"sub":"horas reportadas en el mes"},
+        {"icon":"bi-check-circle-fill","bg":"#DCFCE7","color":"#16A34A","label":"HE aprobadas","value":round(float(aprobadas),1),"sub":"horas aprobadas por NEO en el mes"},
+        {"icon":"bi-hourglass-split","bg":"#FEF3C7","color":"#D97706","label":"HE pendientes","value":round(float(pendientes),1),"sub":"horas por validar NEO"},
+    ]
+
+
 # =====================================
 # DASHBOARD COORDINADOR
 # =====================================
@@ -144,9 +173,11 @@ def dashboard_coordinador():
     es_admin = rol == "admin"
     dash = es_admin or u.acceso_dashboard
     groups = []
+    # Administración General no maneja reportes operacionales: solo horas extras
+    ids_admin_gral = None if es_admin else _ids_solo_admin_general(u)
 
     rep_items = []
-    if es_admin or u.tiene_permiso("neo_reportes"):
+    if (es_admin or u.tiene_permiso("neo_reportes")) and ids_admin_gral is None:
         rep_items.append({"label": "Panel de Reportes NEO", "icon": "bi-clipboard-data-fill", "url": url_for("coordinador.panel_reportes"),
                            "desc": "Valide y gestione reportes operacionales"})
         rep_items.append({"label": "Distribución Operativa", "icon": "bi-diagram-3-fill", "url": url_for("coordinador.distribucion_operativa"),
@@ -221,13 +252,16 @@ def dashboard_coordinador():
     hora_real = _dt.now().hour
     greeting = "Buenos días" if hora_real < 12 else ("Buenas tardes" if hora_real < 18 else "Buenas noches")
     today_str = hoy.strftime("%A, %d de %B de %Y").capitalize()
-    he_mes_raw = db.session.query(db.func.sum(_HE.horas_reportadas)).filter(_HE.fecha_labor >= mes_ini, _HE.fecha_labor <= hoy).scalar()
-    kpi_tiles = [
-        {"icon":"bi-clipboard-data-fill","bg":"#E0F2FE","color":"#0369a1","label":"Reportes hoy","value":ReporteOperacional.query.filter(ReporteOperacional.fecha_reporte==hoy).count(),"sub":"registrados hoy"},
-        {"icon":"bi-hourglass-split","bg":"#FEF3C7","color":"#D97706","label":"Por validar","value":ReporteOperacional.query.filter(ReporteOperacional.estado=="Abierto").count(),"sub":"reportes pendientes"},
-        {"icon":"bi-clock-history","bg":"#EDE9FE","color":"#7C3AED","label":"HE del mes","value":round(he_mes_raw or 0,1),"sub":"horas extras registradas"},
-        {"icon":"bi-journal-check","bg":"#DCFCE7","color":"#16A34A","label":"Compromisos","value":_Comp.query.filter(_Comp.estado.in_(["Pendiente","Reprogramado"])).count(),"sub":"pendientes / vencidos"},
-    ]
+    if ids_admin_gral is not None:
+        kpi_tiles = _kpi_tiles_he(ids_admin_gral, mes_ini, hoy)
+    else:
+        he_mes_raw = db.session.query(db.func.sum(_HE.horas_reportadas)).filter(_HE.fecha_labor >= mes_ini, _HE.fecha_labor <= hoy).scalar()
+        kpi_tiles = [
+            {"icon":"bi-clipboard-data-fill","bg":"#E0F2FE","color":"#0369a1","label":"Reportes hoy","value":ReporteOperacional.query.filter(ReporteOperacional.fecha_reporte==hoy).count(),"sub":"registrados hoy"},
+            {"icon":"bi-hourglass-split","bg":"#FEF3C7","color":"#D97706","label":"Por validar","value":ReporteOperacional.query.filter(ReporteOperacional.estado=="Abierto").count(),"sub":"reportes pendientes"},
+            {"icon":"bi-clock-history","bg":"#EDE9FE","color":"#7C3AED","label":"HE del mes","value":round(he_mes_raw or 0,1),"sub":"horas extras registradas"},
+            {"icon":"bi-journal-check","bg":"#DCFCE7","color":"#16A34A","label":"Compromisos","value":_Comp.query.filter(_Comp.estado.in_(["Pendiente","Reprogramado"])).count(),"sub":"pendientes / vencidos"},
+        ]
     return render_template(
         "shared/home_universal.html",
         page_title="Panel de Gestión",
@@ -255,9 +289,11 @@ def dashboard_supervisor():
         }
         return redirect(url_for(destinos.get(rol, "neo.home_otros")))
     groups = []
+    # Administración General no maneja reportes operacionales: solo horas extras
+    ids_admin_gral = None if rol == "admin" else _ids_solo_admin_general(u)
 
     rep_items = []
-    if u.tiene_permiso("neo_reportes"):
+    if u.tiene_permiso("neo_reportes") and ids_admin_gral is None:
         rep_items.append({"label": "Validar Reportes NEO", "icon": "bi-patch-check-fill", "url": url_for("coordinador.panel_reportes"),
                            "desc": "Revisar y calificar reportes operacionales del equipo"})
     if rep_items:
@@ -329,13 +365,16 @@ def dashboard_supervisor():
     hora_real = _dt.now().hour
     greeting = "Buenos días" if hora_real < 12 else ("Buenas tardes" if hora_real < 18 else "Buenas noches")
     today_str = hoy.strftime("%A, %d de %B de %Y").capitalize()
-    he_mes_raw = db.session.query(db.func.sum(_HE.horas_reportadas)).filter(_HE.fecha_labor >= mes_ini, _HE.fecha_labor <= hoy).scalar()
-    kpi_tiles = [
-        {"icon":"bi-clipboard-data-fill","bg":"#E0F2FE","color":"#0369a1","label":"Reportes hoy","value":ReporteOperacional.query.filter(ReporteOperacional.fecha_reporte==hoy).count(),"sub":"registrados hoy"},
-        {"icon":"bi-hourglass-split","bg":"#FEF3C7","color":"#D97706","label":"Por validar","value":ReporteOperacional.query.filter(ReporteOperacional.estado=="Abierto").count(),"sub":"reportes pendientes"},
-        {"icon":"bi-clock-history","bg":"#EDE9FE","color":"#7C3AED","label":"HE del mes","value":round(he_mes_raw or 0,1),"sub":"horas extras registradas"},
-        {"icon":"bi-journal-check","bg":"#DCFCE7","color":"#16A34A","label":"Compromisos","value":_Comp.query.filter(_Comp.estado.in_(["Pendiente","Reprogramado"])).count(),"sub":"pendientes / vencidos"},
-    ]
+    if ids_admin_gral is not None:
+        kpi_tiles = _kpi_tiles_he(ids_admin_gral, mes_ini, hoy)
+    else:
+        he_mes_raw = db.session.query(db.func.sum(_HE.horas_reportadas)).filter(_HE.fecha_labor >= mes_ini, _HE.fecha_labor <= hoy).scalar()
+        kpi_tiles = [
+            {"icon":"bi-clipboard-data-fill","bg":"#E0F2FE","color":"#0369a1","label":"Reportes hoy","value":ReporteOperacional.query.filter(ReporteOperacional.fecha_reporte==hoy).count(),"sub":"registrados hoy"},
+            {"icon":"bi-hourglass-split","bg":"#FEF3C7","color":"#D97706","label":"Por validar","value":ReporteOperacional.query.filter(ReporteOperacional.estado=="Abierto").count(),"sub":"reportes pendientes"},
+            {"icon":"bi-clock-history","bg":"#EDE9FE","color":"#7C3AED","label":"HE del mes","value":round(he_mes_raw or 0,1),"sub":"horas extras registradas"},
+            {"icon":"bi-journal-check","bg":"#DCFCE7","color":"#16A34A","label":"Compromisos","value":_Comp.query.filter(_Comp.estado.in_(["Pendiente","Reprogramado"])).count(),"sub":"pendientes / vencidos"},
+        ]
     return render_template(
         "shared/home_universal.html",
         page_title="Panel Supervisor",
