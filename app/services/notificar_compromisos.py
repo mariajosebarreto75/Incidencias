@@ -183,7 +183,13 @@ def _enviar(destinatario: str, asunto: str, html: str) -> None:
         smtp.ehlo()
         smtp.login(user, password)
         smtp.sendmail(from_, [destinatario], msg.as_string())
-    finally:
+    except Exception:
+        try:
+            smtp.quit()
+        except Exception:
+            pass
+        raise
+    else:
         smtp.quit()
 
 
