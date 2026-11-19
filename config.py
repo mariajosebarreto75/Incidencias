@@ -44,3 +44,10 @@ class Config:
     PREOP_SHAREPOINT_URL    = os.getenv("PREOP_SHAREPOINT_URL", "")
     PREOP_REFRESH_MINUTES   = int(os.getenv("PREOP_REFRESH_MINUTES", "30"))
 
+    # SMTP — envío de correos
+    SMTP_HOST     = os.getenv("SMTP_HOST", "")
+    SMTP_PORT     = os.getenv("SMTP_PORT", "587")
+    SMTP_USER     = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM     = os.getenv("SMTP_FROM", "")
+
