@@ -177,9 +177,7 @@ def _enviar(destinatario: str, asunto: str, html: str) -> None:
 
     ctx = ssl.create_default_context()
     with smtplib.SMTP(host, port, timeout=15) as smtp:
-        smtp.ehlo()
         smtp.starttls(context=ctx)
-        smtp.ehlo()
         smtp.login(user, password)
         smtp.sendmail(from_, [destinatario], msg.as_string())
 
