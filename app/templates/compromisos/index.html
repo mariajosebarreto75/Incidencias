@@ -1003,6 +1003,10 @@ function enviarCorreoSel(){
   const bc=document.getElementById('btnEnviarCorreo');
   bc.disabled=true;
   bc.innerHTML='<i class="bi bi-hourglass-split"></i> Enviando…';
+  function resetBtn(){
+    bc.innerHTML='<i class="bi bi-envelope-fill"></i><span id="btnEnviarLabel">Enviar correo</span>';
+    actualizarBtnElim();
+  }
   fetch('{{ url_for("compromisos.enviar_correo_compromisos") }}',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -1015,9 +1019,9 @@ function enviarCorreoSel(){
     } else {
       alert('❌ Error: '+(d.error||'No se pudo enviar.'));
     }
-    actualizarBtnElim();
+    resetBtn();
   })
-  .catch(()=>{alert('❌ Error de red.');actualizarBtnElim();});
+  .catch(()=>{alert('❌ Error de red.');resetBtn();});
 }
 
 // ── observación AJAX ──
