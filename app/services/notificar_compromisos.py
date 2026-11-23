@@ -54,7 +54,7 @@ def _html_resumen(nombre: str, compromisos: list[Compromiso]) -> str:
             lbl, color = _estado_label(c)
             rows.append(f"""
             <tr style="border-bottom:1px solid #f1f5f9;">
-              <td style="padding:9px 12px;font-size:.82rem;color:#374151;">{c.contrato.nombre if c.contrato else '—'}</td>
+              <td style="padding:9px 12px;font-size:.82rem;color:#374151;">{(c.contrato.nombre or c.contrato.contrato) if c.contrato else '—'}</td>
               <td style="padding:9px 12px;font-size:.82rem;color:#374151;">{c.compromiso[:80]}{'…' if len(c.compromiso) > 80 else ''}</td>
               <td style="padding:9px 12px;font-size:.82rem;white-space:nowrap;">{_fecha_es(c.fecha_entrega)}</td>
               <td style="padding:9px 12px;">
