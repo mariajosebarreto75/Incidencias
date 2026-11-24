@@ -727,6 +727,99 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- PARQUEADERO -->
+                <div>
+                    <div class="uu-mod-group-label">
+                        <span class="uu-mod-dot" style="background:#0891b2"></span>Parqueadero
+                    </div>
+                    <div class="uu-mod-items">
+                        {%- set on = 'parqueadero.ver' in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-parqueadero.ver">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="parqueadero.ver"
+                                       {% if on %}checked{% endif %}
+                                       onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Ver parqueadero</div>
+                                <div class="uu-mod-desc">Acceso al módulo (dashboard, clientes, pagos, salidas, alertas)</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
+                        {%- set on = 'parqueadero.clientes' in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-parqueadero.clientes">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="parqueadero.clientes"
+                                       {% if on %}checked{% endif %}
+                                       onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Gestionar clientes</div>
+                                <div class="uu-mod-desc">Crear y editar clientes del parqueadero</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
+                        {%- set on = 'parqueadero.pagos' in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-parqueadero.pagos">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="parqueadero.pagos"
+                                       {% if on %}checked{% endif %}
+                                       onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Registrar pagos</div>
+                                <div class="uu-mod-desc">Registrar ingresos y pagos de mensualidades</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
+                        {%- set on = 'parqueadero.salidas' in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-parqueadero.salidas">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="parqueadero.salidas"
+                                       {% if on %}checked{% endif %}
+                                       onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Registrar salidas</div>
+                                <div class="uu-mod-desc">Registrar gastos y salidas de caja</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
+                        {%- set on = 'parqueadero.eliminar' in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-parqueadero.eliminar">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="parqueadero.eliminar"
+                                       {% if on %}checked{% endif %}
+                                       onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Eliminar registros</div>
+                                <div class="uu-mod-desc">Eliminar pagos y salidas (soft delete)</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
+                        {%- set on = 'parqueadero.reportes' in perms -%}
+                        <div class="uu-mod-row {% if not on %}off{% endif %}" id="mr-{{ u.id }}-parqueadero.reportes">
+                            <label class="uu-toggle">
+                                <input type="checkbox" class="ptog-{{ u.id }}" data-permiso="parqueadero.reportes"
+                                       {% if on %}checked{% endif %}
+                                       onchange="onToggle(this,{{ u.id }})">
+                                <span class="uu-toggle-slider"></span>
+                            </label>
+                            <div class="uu-mod-info">
+                                <div class="uu-mod-name">Reportes y exportar</div>
+                                <div class="uu-mod-desc">Ver reportes mensuales y exportar Excel</div>
+                            </div>
+                            <span class="uu-vista-none">Misma vista para todos</span>
+                        </div>
+                    </div>
+                </div>
             </div><!-- /mod-groups -->
 
             <div class="uu-panel-footer">
