@@ -1,0 +1,121 @@
+{% extends "parqueadero/base.html" %}
+{% block title %}Salidas{% endblock %}
+
+{% block content %}
+<div class="pq-page-header">
+  <div class="pq-page-title"><i class="bi bi-arrow-up-circle"></i> Salidas</div>
+  <div class="pq-page-sub">Total del período: <strong>{{ cop(total) }}</strong></div>
+  <div class="pq-page-actions">
+    <form method="get" style="display:flex;gap:8px;align-items:center;">
+      <input type="month" name="mes" value="{{ mes_param }}" class="form-control" style="width:160px;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);">
+      <select name="categoria" class="form-control form-select" style="width:180px;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);">
+        <option value="">Todas las categorías</option>
+        <option value="nomina" {% if cat_f=='nomina' %}selected{% endif %}>Nómina</option>
+        <option value="servicios_publicos" {% if cat_f=='servicios_publicos' %}selected{% endif %}>Servicios públicos</option>
+        <option value="arriendo" {% if cat_f=='arriendo' %}selected{% endif %}>Arriendo</option>
+        <option value="mantenimiento" {% if cat_f=='mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+        <option value="aseo" {% if cat_f=='aseo' %}selected{% endif %}>Aseo</option>
+        <option value="otros" {% if cat_f=='otros' %}selected{% endif %}>Otros</option>
+      </select>
+      <button type="submit" class="btn btn-secondary" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);">Ver</button>
+    </form>
+  </div>
+</div>
+
+<div class="pq-content">
+
+  <!-- Totales por categoría -->
+  {% if por_cat %}
+  <div class="pq-kpi-row" style="margin-bottom:20px;">
+    {% for cat, val in por_cat.items() %}
+    <div class="pq-kpi" style="border-color:#fecaca;">
+      <div class="pq-kpi-label">{{ cat.replace('_',' ').title() }}</div>
+      <div class="pq-kpi-value" style="color:#b91c1c;font-size:1.2rem;">{{ cop(val) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;">
+
+    <!-- Tabla -->
+    <div class="pq-card">
+      <div class="pq-table-wrap">
+        <table class="pq-table">
+          <thead><tr>
+            <th>Fecha</th><th>Categoría</th><th>Descripción</th>
+            <th>Valor</th><th>Medio</th><th>Registrado por</th>
+            {% if current_user.tiene_permiso('parqueadero.eliminar') %}<th></th>{% endif %}
+          </tr></thead>
+          <tbody>
+          {% for s in lista %}
+          <tr>
+            <td style="white-space:nowrap;">{{ s.fecha.strftime('%d/%m/%Y') }}</td>
+            <td><span class="badge badge-danger">{{ s.categoria.replace('_',' ').title() }}</span></td>
+            <td>{{ s.descripcion }}</td>
+            <td style="font-weight:700;color:#b91c1c;">{{ cop(s.valor) }}</td>
+            <td><span class="badge badge-info">{{ s.medio }}</span></td>
+            <td style="color:var(--text-muted);font-size:.78rem;">{{ s.registrado_por or '—' }}</td>
+            {% if current_user.tiene_permiso('parqueadero.eliminar') %}
+            <td>
+              <form method="post" action="{{ url_for('parqueadero.eliminar_salida', sid=s.id) }}"
+                    onsubmit="return confirm('¿Eliminar esta salida?')">
+                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash3"></i></button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px;">Sin salidas en este período</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Formulario registro salida -->
+    {% if current_user.tiene_permiso('parqueadero.salidas') %}
+    <div class="pq-card" style="position:sticky;top:72px;">
+      <div class="pq-card-header"><i class="bi bi-plus-circle" style="color:#ef4444;"></i><span class="pq-card-title">Registrar salida</span></div>
+      <div class="pq-card-body">
+        <form method="post" action="{{ url_for('parqueadero.registrar_salida') }}">
+          <div class="form-group">
+            <label class="form-label">Fecha *</label>
+            <input name="fecha" type="date" class="form-control" required value="{{ hoy.isoformat() }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Categoría *</label>
+            <select name="categoria" class="form-control form-select" required>
+              <option value="nomina">Nómina</option>
+              <option value="servicios_publicos">Servicios públicos</option>
+              <option value="arriendo">Arriendo</option>
+              <option value="mantenimiento">Mantenimiento</option>
+              <option value="aseo">Aseo</option>
+              <option value="otros">Otros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descripción *</label>
+            <input name="descripcion" class="form-control" required placeholder="Ej: Pago nómina enero">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor ($) *</label>
+            <input name="valor" type="number" min="0" step="1000" class="form-control" required placeholder="Ej: 50000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Medio *</label>
+            <select name="medio" class="form-control form-select" required>
+              <option value="efectivo">Efectivo</option>
+              <option value="transferencia">Transferencia</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-danger" style="width:100%;">
+            <i class="bi bi-check-circle"></i> Guardar salida
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

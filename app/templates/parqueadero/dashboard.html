@@ -1,0 +1,184 @@
+{% extends "parqueadero/base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="pq-page-header">
+  <div class="pq-page-title"><i class="bi bi-speedometer2"></i> Dashboard</div>
+  <div class="pq-page-sub">Resumen financiero del parqueadero</div>
+  <div class="pq-page-actions">
+    <form method="get" style="display:flex;align-items:center;gap:8px;">
+      <input type="month" name="mes" value="{{ mes_str }}" class="form-control" style="width:160px;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);">
+      <button type="submit" class="btn btn-secondary" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);">Ver</button>
+    </form>
+  </div>
+</div>
+
+<div class="pq-content">
+
+  <!-- KPIs financieros -->
+  <div class="pq-kpi-row">
+    <div class="pq-kpi">
+      <div class="pq-kpi-label">Ingresos</div>
+      <div class="pq-kpi-value" style="color:#15803d;">{{ cop(total_ingresos) }}</div>
+      <div class="pq-kpi-sub">Total del mes</div>
+    </div>
+    <div class="pq-kpi">
+      <div class="pq-kpi-label">Efectivo</div>
+      <div class="pq-kpi-value" style="color:#0369a1;">{{ cop(total_efectivo) }}</div>
+      <div class="pq-kpi-sub">Pagos en efectivo</div>
+    </div>
+    <div class="pq-kpi">
+      <div class="pq-kpi-label">Transferencias</div>
+      <div class="pq-kpi-value" style="color:#7c3aed;">{{ cop(total_transf) }}</div>
+      <div class="pq-kpi-sub">Pagos digitales</div>
+    </div>
+    <div class="pq-kpi">
+      <div class="pq-kpi-label">Salidas</div>
+      <div class="pq-kpi-value" style="color:#b91c1c;">{{ cop(total_salidas) }}</div>
+      <div class="pq-kpi-sub">Gastos del mes</div>
+    </div>
+    <div class="pq-kpi">
+      <div class="pq-kpi-label">Utilidad</div>
+      <div class="pq-kpi-value" style="color:{% if utilidad >= 0 %}#15803d{% else %}#b91c1c{% endif %};">{{ cop(utilidad) }}</div>
+      <div class="pq-kpi-sub">Ingresos − Salidas</div>
+    </div>
+  </div>
+
+  <!-- Estados de clientes -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px;">
+    <div class="pq-kpi">
+      <div class="pq-kpi-label">Total clientes</div>
+      <div class="pq-kpi-value">{{ total_clientes }}</div>
+      <div class="pq-kpi-sub">Activos</div>
+    </div>
+    <div class="pq-kpi" style="border-color:#bbf7d0;">
+      <div class="pq-kpi-label" style="color:#15803d;">🟢 Al día</div>
+      <div class="pq-kpi-value" style="color:#15803d;">{{ conteos.al_dia }}</div>
+      <div class="pq-kpi-sub">Han pagado el mes</div>
+    </div>
+    <div class="pq-kpi" style="border-color:#fde68a;">
+      <div class="pq-kpi-label" style="color:#a16207;">🟡 Por vencer</div>
+      <div class="pq-kpi-value" style="color:#a16207;">{{ conteos.por_vencer }}</div>
+      <div class="pq-kpi-sub">Faltan ≤ 5 días</div>
+    </div>
+    <div class="pq-kpi" style="border-color:#fecaca;">
+      <div class="pq-kpi-label" style="color:#b91c1c;">🔴 Vencidos</div>
+      <div class="pq-kpi-value" style="color:#b91c1c;">{{ conteos.vencido }}</div>
+      <div class="pq-kpi-sub">En mora</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+
+    <!-- Gráfica -->
+    <div class="pq-card">
+      <div class="pq-card-header">
+        <i class="bi bi-bar-chart-line" style="color:var(--cyan);"></i>
+        <span class="pq-card-title">Ingresos vs Salidas — últimos 6 meses</span>
+      </div>
+      <div class="pq-card-body" style="padding:16px;">
+        <canvas id="chartMeses" height="200"></canvas>
+      </div>
+    </div>
+
+    <!-- Cierre de caja -->
+    {% if current_user.tiene_permiso('parqueadero.pagos') %}
+    <div class="pq-card">
+      <div class="pq-card-header">
+        <i class="bi bi-safe2" style="color:var(--cyan);"></i>
+        <span class="pq-card-title">Cuadre de caja — hoy</span>
+      </div>
+      <div class="pq-card-body">
+        {% if cierre_hoy %}
+        <div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:{% if cierre_hoy.diferencia == 0 %}#dcfce7{% elif cierre_hoy.diferencia > 0 %}#e0f2fe{% else %}#fee2e2{% endif %};">
+          <div style="font-size:.78rem;color:var(--text-muted);">Diferencia registrada</div>
+          <div style="font-size:1.3rem;font-weight:800;color:{% if cierre_hoy.diferencia == 0 %}#15803d{% elif cierre_hoy.diferencia > 0 %}#0369a1{% else %}#b91c1c{% endif %};">
+            {{ cop(cierre_hoy.diferencia) }}
+          </div>
+          <div style="font-size:.72rem;color:var(--text-muted);">
+            Esperado {{ cop(cierre_hoy.efectivo_esperado) }} · Contado {{ cop(cierre_hoy.efectivo_contado) }}
+          </div>
+        </div>
+        {% endif %}
+        <form method="post" action="{{ url_for('parqueadero.guardar_cierre') }}">
+          <div class="form-group">
+            <label class="form-label">Efectivo contado ($)</label>
+            <input name="efectivo_contado" type="number" min="0" step="1000" class="form-control"
+                   value="{{ cierre_hoy.efectivo_contado | int if cierre_hoy else '' }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Observación (opcional)</label>
+            <input name="observacion" class="form-control" value="{{ cierre_hoy.observacion or '' }}">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">
+            <i class="bi bi-check-circle"></i> Guardar cierre
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Últimos movimientos -->
+  <div class="pq-card">
+    <div class="pq-card-header">
+      <i class="bi bi-clock-history" style="color:var(--cyan);"></i>
+      <span class="pq-card-title">Últimos movimientos</span>
+    </div>
+    <div class="pq-table-wrap">
+      <table class="pq-table">
+        <thead><tr>
+          <th>Tipo</th><th>Descripción</th><th>Fecha</th><th>Medio</th><th>Valor</th>
+        </tr></thead>
+        <tbody>
+        {% for m in movimientos %}
+        <tr>
+          <td>
+            {% if m.tipo == 'ingreso' %}
+            <span class="badge badge-success"><i class="bi bi-arrow-down-circle"></i> Ingreso</span>
+            {% else %}
+            <span class="badge badge-danger"><i class="bi bi-arrow-up-circle"></i> Salida</span>
+            {% endif %}
+          </td>
+          <td>{{ m.desc }}</td>
+          <td style="white-space:nowrap;">{{ m.fecha.strftime('%d/%m/%Y') }}</td>
+          <td><span class="badge badge-info">{{ m.medio }}</span></td>
+          <td style="font-weight:700;{% if m.tipo=='salida' %}color:#b91c1c;{% else %}color:#15803d;{% endif %}">
+            {{ cop(m.valor) }}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px;">Sin movimientos registrados</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const labels = {{ meses_graf | map(attribute='mes') | list | tojson }};
+const ingresos = {{ meses_graf | map(attribute='ingresos') | list | tojson }};
+const salidas  = {{ meses_graf | map(attribute='salidas')  | list | tojson }};
+
+new Chart(document.getElementById('chartMeses'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      { label: 'Ingresos', data: ingresos, backgroundColor: '#0891b2cc', borderRadius: 6 },
+      { label: 'Salidas',  data: salidas,  backgroundColor: '#ef4444cc', borderRadius: 6 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom' } },
+    scales: { y: { ticks: { callback: v => '$' + v.toLocaleString('es-CO') } } }
+  }
+});
+</script>
+{% endblock %}

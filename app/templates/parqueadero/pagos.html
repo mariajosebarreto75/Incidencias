@@ -1,0 +1,159 @@
+{% extends "parqueadero/base.html" %}
+{% block title %}Pagos{% endblock %}
+
+{% block content %}
+<div class="pq-page-header">
+  <div class="pq-page-title"><i class="bi bi-cash-coin"></i> Pagos</div>
+  <div class="pq-page-sub">Total del periodo: <strong>{{ cop(total) }}</strong></div>
+  <div class="pq-page-actions">
+    <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <input type="month" name="mes" value="{{ mes_param }}" class="form-control" style="width:160px;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);">
+      <select name="medio" class="form-control form-select" style="width:160px;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);">
+        <option value="">Todos los medios</option>
+        <option value="efectivo" {% if medio_f=='efectivo' %}selected{% endif %}>Efectivo</option>
+        <option value="transferencia" {% if medio_f=='transferencia' %}selected{% endif %}>Transferencia</option>
+      </select>
+      <select name="concepto" class="form-control form-select" style="width:160px;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);">
+        <option value="">Todos los conceptos</option>
+        <option value="mensualidad" {% if concepto_f=='mensualidad' %}selected{% endif %}>Mensualidad</option>
+        <option value="por_horas"   {% if concepto_f=='por_horas' %}selected{% endif %}>Por horas</option>
+        <option value="por_dia"     {% if concepto_f=='por_dia' %}selected{% endif %}>Por día</option>
+        <option value="otro"        {% if concepto_f=='otro' %}selected{% endif %}>Otro</option>
+      </select>
+      <button type="submit" class="btn btn-secondary" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);">Ver</button>
+    </form>
+  </div>
+</div>
+
+<div class="pq-content">
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+
+    <!-- Tabla de pagos -->
+    <div class="pq-card">
+      <div class="pq-table-wrap">
+        <table class="pq-table">
+          <thead><tr>
+            <th>Fecha</th><th>Cliente / Placa</th><th>Concepto</th><th>Mes</th>
+            <th>Valor</th><th>Medio</th><th>Registrado por</th>
+            {% if current_user.tiene_permiso('parqueadero.eliminar') %}<th></th>{% endif %}
+          </tr></thead>
+          <tbody>
+          {% for p in lista %}
+          <tr>
+            <td style="white-space:nowrap;">{{ p.fecha_pago.strftime('%d/%m/%Y') }}</td>
+            <td>
+              {% if p.cliente %}
+              <div style="font-weight:600;">{{ p.cliente.nombre }}</div>
+              <div style="font-size:.72rem;font-family:monospace;color:var(--text-muted);">{{ p.cliente.placa }}</div>
+              {% else %}
+              <span style="color:var(--text-muted);">Ingreso ocasional</span>
+              {% endif %}
+            </td>
+            <td>{{ p.concepto.replace('_',' ').title() }}</td>
+            <td>{{ p.mes_pagado or '—' }}</td>
+            <td style="font-weight:700;color:#15803d;">{{ cop(p.valor) }}</td>
+            <td>
+              <span class="badge badge-info">{{ p.medio }}</span>
+              {% if p.entidad %}<div style="font-size:.7rem;color:var(--text-muted);">{{ p.entidad }}</div>{% endif %}
+            </td>
+            <td style="color:var(--text-muted);font-size:.78rem;">{{ p.registrado_por or '—' }}</td>
+            {% if current_user.tiene_permiso('parqueadero.eliminar') %}
+            <td>
+              <form method="post" action="{{ url_for('parqueadero.eliminar_pago', pid=p.id) }}"
+                    onsubmit="return confirm('¿Eliminar este pago?')">
+                <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash3"></i></button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:32px;">Sin pagos en este período</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Formulario de registro -->
+    {% if current_user.tiene_permiso('parqueadero.pagos') %}
+    <div class="pq-card" style="position:sticky;top:72px;">
+      <div class="pq-card-header"><i class="bi bi-plus-circle" style="color:var(--cyan);"></i><span class="pq-card-title">Registrar pago</span></div>
+      <div class="pq-card-body">
+        <form method="post" action="{{ url_for('parqueadero.registrar_pago') }}" id="formPago">
+          <div class="form-group">
+            <label class="form-label">Cliente</label>
+            <select name="cliente_id" id="selCliente" class="form-control form-select" onchange="onClienteChange(this.value)">
+              <option value="">— Ingreso ocasional —</option>
+              {% for c in clientes_activos %}
+              <option value="{{ c.id }}" data-tarifa="{{ c.tarifa_mensual | int }}">{{ c.nombre }} ({{ c.placa }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Concepto *</label>
+            <select name="concepto" id="selConcepto" class="form-control form-select" onchange="onConceptoChange(this.value)">
+              <option value="mensualidad">Mensualidad</option>
+              <option value="por_horas">Por horas</option>
+              <option value="por_dia">Por día</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-group" id="grpMes">
+            <label class="form-label">Mes pagado *</label>
+            <input name="mes_pagado" type="month" class="form-control" value="{{ mes_param }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor ($) *</label>
+            <input name="valor" id="inputValor" type="number" min="0" step="1000" class="form-control" required placeholder="Ej: 150000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de pago *</label>
+            <input name="fecha_pago" type="date" class="form-control" required value="{{ hoy.isoformat() }}">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Medio *</label>
+            <select name="medio" id="selMedio" class="form-control form-select" onchange="onMedioChange(this.value)">
+              <option value="efectivo">Efectivo</option>
+              <option value="transferencia">Transferencia</option>
+            </select>
+          </div>
+          <div class="form-group" id="grpEntidad" style="display:none;">
+            <label class="form-label">Entidad *</label>
+            <select name="entidad" class="form-control form-select">
+              <option value="">Seleccionar…</option>
+              <option>Nequi</option><option>Daviplata</option>
+              <option>Bancolombia</option><option>otro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Referencia</label>
+            <input name="referencia" class="form-control" placeholder="N° transacción (opcional)">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">
+            <i class="bi bi-check-circle"></i> Guardar pago
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function onClienteChange(cid) {
+  const sel = document.getElementById('selCliente');
+  const opt = sel.options[sel.selectedIndex];
+  const tarifa = opt.dataset.tarifa;
+  if (tarifa) document.getElementById('inputValor').value = tarifa;
+}
+function onConceptoChange(val) {
+  document.getElementById('grpMes').style.display = val === 'mensualidad' ? '' : 'none';
+}
+function onMedioChange(val) {
+  document.getElementById('grpEntidad').style.display = val === 'transferencia' ? '' : 'none';
+  document.querySelector('[name=entidad]').required = val === 'transferencia';
+}
+</script>
+{% endblock %}

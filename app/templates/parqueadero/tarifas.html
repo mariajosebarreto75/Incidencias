@@ -1,0 +1,64 @@
+{% extends "parqueadero/base.html" %}
+{% block title %}Tarifas{% endblock %}
+
+{% block content %}
+<div class="pq-page-header">
+  <div class="pq-page-title"><i class="bi bi-tags-fill"></i> Tarifas</div>
+  <div class="pq-page-sub">Configuración de precios mensuales</div>
+</div>
+
+<div class="pq-content" style="max-width:600px;">
+
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in msgs %}
+  <div class="alert alert-{{ 'success' if cat=='success' else 'danger' }}" style="margin-bottom:16px;">
+    {{ msg }}
+  </div>
+  {% endfor %}
+  {% endwith %}
+
+  <div class="pq-card">
+    <div class="pq-card-header">
+      <i class="bi bi-pencil-square" style="color:var(--cyan);"></i>
+      <span class="pq-card-title">Precios actuales</span>
+    </div>
+    <div class="pq-card-body">
+      <form method="post" action="{{ url_for('parqueadero.tarifas') }}">
+        {% for t in tarifas %}
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="form-label" style="font-size:.9rem;font-weight:700;">
+            {% if t.tipo_vehiculo == 'carro' %}🚗 Carro{% elif t.tipo_vehiculo == 'moto' %}🏍️ Moto{% else %}{{ t.tipo_vehiculo.title() }}{% endif %}
+            <span style="font-size:.72rem;font-weight:400;color:var(--text-muted);margin-left:8px;">
+              Actualizado {{ t.actualizado_en.strftime('%d/%m/%Y') if t.actualizado_en else '—' }}
+              {% if t.actualizado_por %} por {{ t.actualizado_por }}{% endif %}
+            </span>
+          </label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="color:var(--text-muted);font-size:1rem;">$</span>
+            <input name="tarifa_{{ t.tipo_vehiculo }}" type="number" min="0" step="1000"
+                   class="form-control" value="{{ t.valor | int }}"
+                   style="max-width:200px;font-size:1.1rem;font-weight:700;">
+            <span style="color:var(--text-muted);font-size:.82rem;">/mes</span>
+          </div>
+        </div>
+        {% endfor %}
+
+        <hr style="border-color:var(--border);margin:20px 0;">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-circle"></i> Guardar tarifas
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Info -->
+  <div class="pq-card" style="margin-top:16px;">
+    <div class="pq-card-header"><i class="bi bi-info-circle" style="color:#a16207;"></i><span class="pq-card-title">Notas</span></div>
+    <div class="pq-card-body" style="font-size:.82rem;color:var(--text-muted);line-height:1.6;">
+      <p>Los cambios de tarifa aplican a nuevos pagos registrados. Los pagos ya registrados no se modifican.</p>
+      <p>Al crear o editar un cliente, la tarifa de este listado se autocompletará en el formulario; puede ajustarse individualmente por cliente.</p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

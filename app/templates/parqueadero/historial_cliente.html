@@ -1,0 +1,76 @@
+{% extends "parqueadero/base.html" %}
+{% block title %}Historial {{ cliente.nombre }}{% endblock %}
+
+{% block content %}
+<div class="pq-page-header">
+  <div class="pq-page-title"><i class="bi bi-clock-history"></i> Historial de pagos</div>
+  <div class="pq-page-sub">{{ cliente.nombre }} · Placa {{ cliente.placa }}</div>
+  <div class="pq-page-actions">
+    <a href="{{ url_for('parqueadero.clientes') }}" class="btn btn-secondary" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+  </div>
+</div>
+
+<div class="pq-content">
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start;">
+
+    <!-- Ficha del cliente -->
+    <div class="pq-card">
+      <div class="pq-card-header"><i class="bi bi-person-fill" style="color:var(--cyan);"></i><span class="pq-card-title">Datos</span></div>
+      <div class="pq-card-body" style="font-size:.82rem;">
+        <div style="margin-bottom:10px;"><div style="color:var(--text-muted);font-size:.7rem;">NOMBRE</div><div style="font-weight:600;">{{ cliente.nombre }}</div></div>
+        <div style="margin-bottom:10px;"><div style="color:var(--text-muted);font-size:.7rem;">PLACA</div><div style="font-family:monospace;font-weight:700;">{{ cliente.placa }}</div></div>
+        <div style="margin-bottom:10px;"><div style="color:var(--text-muted);font-size:.7rem;">TIPO</div><div>{{ '🚗 Carro' if cliente.tipo_vehiculo=='carro' else '🏍️ Moto' }}</div></div>
+        <div style="margin-bottom:10px;"><div style="color:var(--text-muted);font-size:.7rem;">TARIFA</div><div style="font-weight:700;">{{ cop(cliente.tarifa_mensual) }}/mes</div></div>
+        <div style="margin-bottom:10px;"><div style="color:var(--text-muted);font-size:.7rem;">DÍA CORTE</div><div>Día {{ cliente.dia_corte }}</div></div>
+        {% if cliente.telefono %}
+        <div style="margin-bottom:10px;"><div style="color:var(--text-muted);font-size:.7rem;">TELÉFONO</div><div>{{ cliente.telefono }}</div></div>
+        {% endif %}
+        <hr style="border-color:var(--border);margin:12px 0;">
+        <div>
+          Estado actual:
+          <span class="badge badge-{{ est.badge }}">{{ est.label }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial de pagos -->
+    <div class="pq-card">
+      <div class="pq-card-header"><i class="bi bi-receipt" style="color:var(--cyan);"></i><span class="pq-card-title">Pagos registrados ({{ pagos | length }})</span></div>
+      <div class="pq-table-wrap">
+        <table class="pq-table">
+          <thead><tr>
+            <th>Fecha</th><th>Concepto</th><th>Mes</th><th>Valor</th><th>Medio</th><th>Registrado por</th>
+            {% if current_user.tiene_permiso('parqueadero.eliminar') %}<th></th>{% endif %}
+          </tr></thead>
+          <tbody>
+          {% for p in pagos %}
+          <tr>
+            <td style="white-space:nowrap;">{{ p.fecha_pago.strftime('%d/%m/%Y') }}</td>
+            <td>{{ p.concepto.replace('_',' ').title() }}</td>
+            <td>{{ p.mes_pagado or '—' }}</td>
+            <td style="font-weight:700;color:#15803d;">{{ cop(p.valor) }}</td>
+            <td><span class="badge badge-info">{{ p.medio }}{% if p.entidad %} · {{ p.entidad }}{% endif %}</span></td>
+            <td style="color:var(--text-muted);">{{ p.registrado_por or '—' }}</td>
+            {% if current_user.tiene_permiso('parqueadero.eliminar') %}
+            <td>
+              <form method="post" action="{{ url_for('parqueadero.eliminar_pago', pid=p.id) }}"
+                    onsubmit="return confirm('¿Eliminar este pago?')">
+                <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% else %}
+          <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">Sin pagos registrados</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

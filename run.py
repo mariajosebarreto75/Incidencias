@@ -28,6 +28,11 @@ from app.models.compromiso import Compromiso, HistorialReprogramacion
 from app.models.reunion import Reunion
 from app.models.personal_hesego import PersonalHesego  # noqa: F401 — registra tabla
 from app.models.escalamiento import EscalamientoIncidencia
+from app.models.parq_cliente import ParqCliente        # noqa: F401
+from app.models.parq_tarifa  import ParqTarifa         # noqa: F401
+from app.models.parq_pago    import ParqPago           # noqa: F401
+from app.models.parq_salida  import ParqSalida         # noqa: F401
+from app.models.parq_cierre  import ParqCierre         # noqa: F401
 from app.routes.auth import auth
 from app.routes.dashboard import dashboard
 from app.routes.coordinador import coordinador
@@ -37,6 +42,7 @@ from app.routes.notificaciones import notif_bp
 from app.routes.horas_extras import he_bp
 from app.routes.compromisos import compromisos_bp
 from app.routes.escalamiento import esc_bp
+from app.routes.parqueadero  import parq_bp
 
 
 # Lock de Postgres para que, con gunicorn -w N, solo un worker arranque el
@@ -342,6 +348,12 @@ def create_app():
     app.register_blueprint(he_bp)
     app.register_blueprint(compromisos_bp)
     app.register_blueprint(esc_bp)
+    app.register_blueprint(parq_bp)
+
+    # Seed tarifas por defecto (solo si la tabla está vacía)
+    with app.app_context():
+        from app.routes.parqueadero import seed_tarifas
+        seed_tarifas()
 
     # Login manager
     login_manager.login_view = "auth.login"

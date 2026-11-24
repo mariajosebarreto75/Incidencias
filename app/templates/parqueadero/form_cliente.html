@@ -1,0 +1,88 @@
+{% extends "parqueadero/base.html" %}
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="pq-page-header">
+  <div class="pq-page-title"><i class="bi bi-person-plus"></i> {{ titulo }}</div>
+  <div class="pq-page-actions">
+    <a href="{{ url_for('parqueadero.clientes') }}" class="btn btn-secondary" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+  </div>
+</div>
+
+<div class="pq-content">
+  <div class="pq-card" style="max-width:640px;margin:0 auto;">
+    <div class="pq-card-body">
+      <form method="post" action="{{ accion }}">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Nombre completo *</label>
+            <input name="nombre" class="form-control" required value="{{ cliente.nombre if cliente else '' }}" placeholder="Ej: Juan Pérez García">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cédula</label>
+            <input name="cedula" class="form-control" value="{{ cliente.cedula if cliente else '' }}" placeholder="Número de cédula">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input name="telefono" class="form-control" value="{{ cliente.telefono if cliente else '' }}" placeholder="Ej: 3001234567">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Placa *</label>
+            <input name="placa" class="form-control" required value="{{ cliente.placa if cliente else '' }}"
+                   placeholder="Ej: ABC123" style="text-transform:uppercase;"
+                   oninput="this.value=this.value.toUpperCase()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipo de vehículo *</label>
+            <select name="tipo_vehiculo" class="form-control form-select" required onchange="actualizarTarifa(this.value)">
+              <option value="">Seleccionar…</option>
+              <option value="carro" {% if cliente and cliente.tipo_vehiculo=='carro' %}selected{% endif %}>🚗 Carro</option>
+              <option value="moto"  {% if cliente and cliente.tipo_vehiculo=='moto'  %}selected{% endif %}>🏍️ Moto</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tarifa mensual ($) *</label>
+            <input name="tarifa_mensual" id="inputTarifa" type="number" min="0" step="1000" class="form-control" required
+                   value="{{ cliente.tarifa_mensual | int if cliente else '' }}" placeholder="Ej: 150000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Día de corte (1–31) *</label>
+            <input name="dia_corte" type="number" min="1" max="31" class="form-control" required
+                   value="{{ cliente.dia_corte if cliente else '1' }}" placeholder="Ej: 15">
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">
+              Día del mes en que vence la mensualidad
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de inicio *</label>
+            <input name="fecha_inicio" type="date" class="form-control" required
+                   value="{{ cliente.fecha_inicio.isoformat() if cliente else '' }}">
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label class="form-label">Observaciones</label>
+            <textarea name="observaciones" class="form-control" rows="2" placeholder="Notas adicionales…">{{ cliente.observaciones or '' }}</textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+          <a href="{{ url_for('parqueadero.clientes') }}" class="btn btn-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const tarifas = {{ tarifas | tojson }};
+function actualizarTarifa(tipo) {
+  const inp = document.getElementById('inputTarifa');
+  if (tarifas[tipo] && !inp.value) inp.value = tarifas[tipo];
+}
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "parqueadero/base.html" %}
+{% block title %}Alertas{% endblock %}
+
+{% block content %}
+<div class="pq-page-header">
+  <div class="pq-page-title"><i class="bi bi-bell-fill"></i> Alertas de mora</div>
+  <div class="pq-page-sub">
+    {{ vencidos | length }} vencido(s) · {{ por_vencer | length }} por vencer
+  </div>
+</div>
+
+<div class="pq-content">
+
+  <!-- Vencidos -->
+  {% if vencidos %}
+  <h3 style="font-size:.85rem;font-weight:800;color:#b91c1c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">
+    🔴 Vencidos ({{ vencidos | length }})
+  </h3>
+  <div class="pq-card" style="margin-bottom:24px;">
+    <div class="pq-table-wrap">
+      <table class="pq-table">
+        <thead><tr><th>Cliente</th><th>Placa</th><th>Tipo</th><th>Tarifa</th><th>Días mora</th><th>Teléfono</th><th>WhatsApp</th></tr></thead>
+        <tbody>
+        {% for item in vencidos %}
+        {% set c = item.cliente %}
+        {% set est = item.estado %}
+        <tr>
+          <td style="font-weight:600;">{{ c.nombre }}</td>
+          <td style="font-family:monospace;font-weight:700;">{{ c.placa }}</td>
+          <td>{{ '🚗 Carro' if c.tipo_vehiculo=='carro' else '🏍️ Moto' }}</td>
+          <td>{{ cop(c.tarifa_mensual) }}</td>
+          <td><span class="badge badge-danger">{{ est.dias_mora }} días</span></td>
+          <td>{{ c.telefono or '—' }}</td>
+          <td>
+            {% if c.telefono %}
+            {% set tel = c.telefono | replace(' ','') | replace('+','') %}
+            {% set fecha_corte = hoy.replace(day=c.dia_corte) %}
+            {% set msg = "Hola " ~ c.nombre ~ ", le recordamos que su mensualidad del parqueadero (placa " ~ c.placa ~ ") por $" ~ (c.tarifa_mensual | int) ~ " está vencida desde el " ~ fecha_corte.strftime('%d/%m/%Y') ~ ". Por favor realice su pago. ¡Gracias!" %}
+            <a href="https://wa.me/57{{ tel }}?text={{ msg | urlencode }}" target="_blank" class="btn btn-sm btn-wa">
+              <i class="bi bi-whatsapp"></i> Recordar
+            </a>
+            {% else %}
+            <span style="color:var(--text-muted);font-size:.78rem;">Sin teléfono</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Por vencer -->
+  {% if por_vencer %}
+  <h3 style="font-size:.85rem;font-weight:800;color:#a16207;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">
+    🟡 Por vencer ({{ por_vencer | length }})
+  </h3>
+  <div class="pq-card">
+    <div class="pq-table-wrap">
+      <table class="pq-table">
+        <thead><tr><th>Cliente</th><th>Placa</th><th>Tipo</th><th>Tarifa</th><th>Estado</th><th>Teléfono</th><th>WhatsApp</th></tr></thead>
+        <tbody>
+        {% for item in por_vencer %}
+        {% set c = item.cliente %}
+        <tr>
+          <td style="font-weight:600;">{{ c.nombre }}</td>
+          <td style="font-family:monospace;font-weight:700;">{{ c.placa }}</td>
+          <td>{{ '🚗 Carro' if c.tipo_vehiculo=='carro' else '🏍️ Moto' }}</td>
+          <td>{{ cop(c.tarifa_mensual) }}</td>
+          <td><span class="badge badge-warning">Por vencer</span></td>
+          <td>{{ c.telefono or '—' }}</td>
+          <td>
+            {% if c.telefono %}
+            {% set tel = c.telefono | replace(' ','') | replace('+','') %}
+            {% set fecha_corte = hoy.replace(day=c.dia_corte) %}
+            {% set msg = "Hola " ~ c.nombre ~ ", le recordamos que su mensualidad del parqueadero (placa " ~ c.placa ~ ") por $" ~ (c.tarifa_mensual | int) ~ " vence el " ~ fecha_corte.strftime('%d/%m/%Y') ~ ". ¡Gracias!" %}
+            <a href="https://wa.me/57{{ tel }}?text={{ msg | urlencode }}" target="_blank" class="btn btn-sm btn-wa">
+              <i class="bi bi-whatsapp"></i> Recordar
+            </a>
+            {% else %}
+            <span style="color:var(--text-muted);font-size:.78rem;">Sin teléfono</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not vencidos and not por_vencer %}
+  <div style="text-align:center;padding:60px 20px;color:var(--text-muted);">
+    <i class="bi bi-check-circle-fill" style="font-size:3rem;color:#15803d;display:block;margin-bottom:12px;"></i>
+    <div style="font-size:1.1rem;font-weight:700;color:#15803d;">¡Todo al día!</div>
+    <div>No hay clientes vencidos ni por vencer.</div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends "parqueadero/base.html" %}
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<div class="pq-page-header">
+  <div class="pq-page-title"><i class="bi bi-file-earmark-bar-graph"></i> Reportes</div>
+  <div class="pq-page-sub">Resumen mensual · {{ mes_param }}</div>
+  <div class="pq-page-actions">
+    <form method="get" style="display:flex;gap:8px;align-items:center;">
+      <input type="month" name="mes" value="{{ mes_param }}" class="form-control" style="width:160px;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2);">
+      <button type="submit" class="btn btn-secondary" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);">Ver</button>
+    </form>
+    <a href="{{ url_for('parqueadero.exportar', tipo='todo') }}?mes={{ mes_param }}" class="btn btn-primary">
+      <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+    </a>
+    <button onclick="window.print()" class="btn btn-secondary" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1);">
+      <i class="bi bi-printer"></i> Imprimir
+    </button>
+  </div>
+</div>
+
+<div class="pq-content">
+
+  <!-- Resumen financiero -->
+  <div class="pq-kpi-row">
+    <div class="pq-kpi">
+      <div class="pq-kpi-label">Ingresos totales</div>
+      <div class="pq-kpi-value" style="color:#15803d;">{{ cop(total_ingresos) }}</div>
+    </div>
+    <div class="pq-kpi">
+      <div class="pq-kpi-label">Salidas totales</div>
+      <div class="pq-kpi-value" style="color:#b91c1c;">{{ cop(total_salidas) }}</div>
+    </div>
+    <div class="pq-kpi">
+      <div class="pq-kpi-label">Utilidad neta</div>
+      <div class="pq-kpi-value" style="color:{% if utilidad >= 0 %}#15803d{% else %}#b91c1c{% endif %};">{{ cop(utilidad) }}</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:24px;">
+
+    <!-- Ingresos por concepto -->
+    <div class="pq-card">
+      <div class="pq-card-header"><i class="bi bi-pie-chart" style="color:#15803d;"></i><span class="pq-card-title">Ingresos por concepto</span></div>
+      <div class="pq-card-body">
+        {% for concepto, val in por_concepto.items() %}
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.82rem;">
+          <span>{{ concepto.replace('_',' ').title() }}</span>
+          <span style="font-weight:700;color:#15803d;">{{ cop(val) }}</span>
+        </div>
+        {% else %}
+        <div style="color:var(--text-muted);text-align:center;padding:16px;">Sin datos</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Ingresos por medio -->
+    <div class="pq-card">
+      <div class="pq-card-header"><i class="bi bi-credit-card" style="color:#0369a1;"></i><span class="pq-card-title">Ingresos por medio</span></div>
+      <div class="pq-card-body">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.82rem;">
+          <span>💵 Efectivo</span>
+          <span style="font-weight:700;color:#0369a1;">{{ cop(por_medio.efectivo) }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:.82rem;">
+          <span>📱 Transferencia</span>
+          <span style="font-weight:700;color:#7c3aed;">{{ cop(por_medio.transferencia) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Salidas por categoría -->
+    <div class="pq-card">
+      <div class="pq-card-header"><i class="bi bi-graph-down" style="color:#b91c1c;"></i><span class="pq-card-title">Salidas por categoría</span></div>
+      <div class="pq-card-body">
+        {% for cat, val in por_cat.items() %}
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:.82rem;">
+          <span>{{ cat.replace('_',' ').title() }}</span>
+          <span style="font-weight:700;color:#b91c1c;">{{ cop(val) }}</span>
+        </div>
+        {% else %}
+        <div style="color:var(--text-muted);text-align:center;padding:16px;">Sin datos</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Clientes pendientes -->
+  {% if pendientes %}
+  <div class="pq-card" style="margin-bottom:20px;">
+    <div class="pq-card-header">
+      <i class="bi bi-exclamation-triangle-fill" style="color:#a16207;"></i>
+      <span class="pq-card-title">Pendientes de pago ({{ pendientes | length }})</span>
+    </div>
+    <div class="pq-table-wrap">
+      <table class="pq-table">
+        <thead><tr><th>Cliente</th><th>Placa</th><th>Tarifa</th><th>Estado</th></tr></thead>
+        <tbody>
+        {% for item in pendientes %}
+        <tr>
+          <td style="font-weight:600;">{{ item.cliente.nombre }}</td>
+          <td style="font-family:monospace;">{{ item.cliente.placa }}</td>
+          <td>{{ cop(item.cliente.tarifa_mensual) }}</td>
+          <td><span class="badge badge-{{ item.estado.badge }}">{{ item.estado.label }}</span></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Exportar individual -->
+  <div class="pq-card">
+    <div class="pq-card-header"><i class="bi bi-download" style="color:var(--cyan);"></i><span class="pq-card-title">Exportar por sección</span></div>
+    <div class="pq-card-body" style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="{{ url_for('parqueadero.exportar', tipo='pagos') }}?mes={{ mes_param }}" class="btn btn-secondary">
+        <i class="bi bi-file-earmark-excel"></i> Solo pagos
+      </a>
+      <a href="{{ url_for('parqueadero.exportar', tipo='salidas') }}?mes={{ mes_param }}" class="btn btn-secondary">
+        <i class="bi bi-file-earmark-excel"></i> Solo salidas
+      </a>
+      <a href="{{ url_for('parqueadero.exportar', tipo='clientes') }}?mes={{ mes_param }}" class="btn btn-secondary">
+        <i class="bi bi-file-earmark-excel"></i> Clientes
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+@media print {
+  .nh-header, .nh-sidebar, .pq-page-actions { display: none !important; }
+  .nh-main { margin-left: 0 !important; }
+  .pq-card { break-inside: avoid; }
+}
+</style>
+{% endblock %}
+{% endblock %}

@@ -375,6 +375,20 @@ def home_neo():
     if comp_items_n:
         groups.append({"name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706", "links": comp_items_n})
 
+    # ── Parqueadero ───────────────────────────────────────────
+    if u.tiene_permiso("parqueadero.ver"):
+        parq_items = [
+            {"label": "Dashboard",  "icon": "bi-speedometer2",   "url": url_for("parqueadero.dashboard"),        "desc": "Resumen del mes"},
+            {"label": "Clientes",   "icon": "bi-people-fill",    "url": url_for("parqueadero.clientes"),         "desc": "Gestión de mensualidades"},
+            {"label": "Pagos",      "icon": "bi-cash-coin",      "url": url_for("parqueadero.pagos"),            "desc": "Ingresos y pagos registrados"},
+            {"label": "Salidas",    "icon": "bi-arrow-up-circle","url": url_for("parqueadero.salidas"),          "desc": "Gastos y egresos"},
+            {"label": "Alertas",    "icon": "bi-bell-fill",      "url": url_for("parqueadero.alertas"),          "desc": "Vencidos y por vencer"},
+        ]
+        if u.tiene_permiso("parqueadero.reportes"):
+            parq_items.append({"label": "Reportes", "icon": "bi-file-earmark-bar-graph",
+                                "url": url_for("parqueadero.reportes"), "desc": "Resumen mensual y exportar"})
+        groups.append({"name": "Parqueadero", "icon": "bi-p-circle-fill", "tint": "#0891b2", "links": parq_items})
+
     # ── KPIs rápidos ──────────────────────────────────────────
     from datetime import date as _date
     hoy = _date.today()
@@ -1622,6 +1636,19 @@ def home_otros():
                               "desc": "Compromisos pendientes y atrasados"})
     if comp_items_o:
         groups.append({"name": "Compromisos", "icon": "bi-calendar-check", "tint": "#D97706", "links": comp_items_o})
+
+    if u.tiene_permiso("parqueadero.ver"):
+        parq_items_o = [
+            {"label": "Dashboard",  "icon": "bi-speedometer2",    "url": url_for("parqueadero.dashboard"),  "desc": "Resumen del mes"},
+            {"label": "Clientes",   "icon": "bi-people-fill",     "url": url_for("parqueadero.clientes"),   "desc": "Gestión de mensualidades"},
+            {"label": "Pagos",      "icon": "bi-cash-coin",       "url": url_for("parqueadero.pagos"),      "desc": "Ingresos y pagos registrados"},
+            {"label": "Salidas",    "icon": "bi-arrow-up-circle", "url": url_for("parqueadero.salidas"),    "desc": "Gastos y egresos"},
+            {"label": "Alertas",    "icon": "bi-bell-fill",       "url": url_for("parqueadero.alertas"),    "desc": "Vencidos y por vencer"},
+        ]
+        if u.tiene_permiso("parqueadero.reportes"):
+            parq_items_o.append({"label": "Reportes", "icon": "bi-file-earmark-bar-graph",
+                                  "url": url_for("parqueadero.reportes"), "desc": "Resumen mensual y exportar"})
+        groups.append({"name": "Parqueadero", "icon": "bi-p-circle-fill", "tint": "#0891b2", "links": parq_items_o})
 
     if not groups:
         groups.append({"name": "Sin módulos asignados", "icon": "bi-info-circle",

@@ -1,0 +1,99 @@
+{% extends "parqueadero/base.html" %}
+{% block title %}Clientes{% endblock %}
+
+{% block content %}
+<div class="pq-page-header">
+  <div class="pq-page-title"><i class="bi bi-people-fill"></i> Clientes</div>
+  <div class="pq-page-sub">{{ lista | length }} cliente(s) encontrados</div>
+  <div class="pq-page-actions">
+    {% if current_user.tiene_permiso('parqueadero.clientes') %}
+    <a href="{{ url_for('parqueadero.nuevo_cliente') }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> Nuevo cliente
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="pq-content">
+
+  <!-- Filtros -->
+  <form method="get" class="pq-filters">
+    <input name="q" class="form-control" placeholder="Buscar nombre o placa…" value="{{ q }}" style="min-width:200px;">
+    <select name="estado" class="form-control form-select">
+      <option value="">Todos los estados</option>
+      <option value="al_dia" {% if estado_filtro=='al_dia' %}selected{% endif %}>🟢 Al día</option>
+      <option value="por_vencer" {% if estado_filtro=='por_vencer' %}selected{% endif %}>🟡 Por vencer</option>
+      <option value="vencido" {% if estado_filtro=='vencido' %}selected{% endif %}>🔴 Vencido</option>
+    </select>
+    <select name="tipo" class="form-control form-select">
+      <option value="">Todos los tipos</option>
+      <option value="carro" {% if tipo_filtro=='carro' %}selected{% endif %}>🚗 Carro</option>
+      <option value="moto" {% if tipo_filtro=='moto' %}selected{% endif %}>🏍️ Moto</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text-sub);">
+      <input type="checkbox" name="inactivos" value="1" {% if mostrar_inactivos %}checked{% endif %}> Ver inactivos
+    </label>
+    <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i> Filtrar</button>
+    <a href="{{ url_for('parqueadero.clientes') }}" class="btn btn-secondary">Limpiar</a>
+  </form>
+
+  <div class="pq-card">
+    <div class="pq-table-wrap">
+      <table class="pq-table">
+        <thead><tr>
+          <th>Nombre</th><th>Placa</th><th>Tipo</th>
+          <th>Tarifa</th><th>Corte</th><th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody>
+        {% for item in lista %}
+        {% set c = item.cliente %}
+        {% set est = item.estado %}
+        <tr>
+          <td>
+            <div style="font-weight:600;">{{ c.nombre }}</div>
+            {% if c.telefono %}<div style="font-size:.72rem;color:var(--text-muted);">{{ c.telefono }}</div>{% endif %}
+          </td>
+          <td><span style="font-family:monospace;font-weight:700;font-size:.88rem;">{{ c.placa }}</span></td>
+          <td>
+            {% if c.tipo_vehiculo == 'carro' %}🚗 Carro
+            {% else %}🏍️ Moto{% endif %}
+          </td>
+          <td style="font-variant-numeric:tabular-nums;">{{ cop(c.tarifa_mensual) }}</td>
+          <td>Día {{ c.dia_corte }}</td>
+          <td>
+            <span class="badge badge-{{ est.badge }}">{{ est.label }}</span>
+            {% if not c.activo %}<span class="badge" style="background:#f3f4f6;color:#6b7280;">Inactivo</span>{% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              {% if current_user.tiene_permiso('parqueadero.pagos') %}
+              <a href="{{ url_for('parqueadero.pagos') }}?cliente={{ c.id }}" class="btn btn-sm btn-primary" title="Registrar pago">
+                <i class="bi bi-cash-coin"></i>
+              </a>
+              {% endif %}
+              <a href="{{ url_for('parqueadero.historial_cliente', cid=c.id) }}" class="btn btn-sm btn-secondary" title="Historial">
+                <i class="bi bi-clock-history"></i>
+              </a>
+              {% if current_user.tiene_permiso('parqueadero.clientes') %}
+              <a href="{{ url_for('parqueadero.editar_cliente', cid=c.id) }}" class="btn btn-sm btn-secondary" title="Editar">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="post" action="{{ url_for('parqueadero.desactivar_cliente', cid=c.id) }}" style="display:inline;"
+                    onsubmit="return confirm('¿{{ 'Reactivar' if not c.activo else 'Desactivar' }} al cliente {{ c.nombre }}?')">
+                <button type="submit" class="btn btn-sm {% if c.activo %}btn-danger{% else %}btn-secondary{% endif %}" title="{{ 'Desactivar' if c.activo else 'Reactivar' }}">
+                  <i class="bi {{ 'bi-person-slash' if c.activo else 'bi-person-check' }}"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px;">Sin clientes encontrados</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
