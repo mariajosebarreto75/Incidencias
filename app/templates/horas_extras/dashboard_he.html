@@ -272,8 +272,7 @@ body{ background:var(--dh-bg); color:var(--dh-text); font-family:"IBM Plex Sans"
 <script>
 let chartTipo = null, chartDia = null;
 let _diasTrabajado = [], _diasReporte = [], _diasPendiente = [];
-let _vistaPendientes = false;
-let _serieActiva = { trabajado: true, reporte: false };
+let _serieActiva = { trabajado: true, reporte: false, pendientes: false };
 
 // ── Drill-down state ──────────────────────────────────────────────────────
 let _drill = {};   // {cedula, supervisor, tipo, fecha_drill, label}
@@ -301,32 +300,16 @@ let _rankingCache    = [];
 
 function toggleSerie(which) {
     if (which === 'contratos') {
-        _vistaContratos  = !_vistaContratos;
-        if (_vistaContratos) _vistaPendientes = false;
+        _vistaContratos = !_vistaContratos;
         _actualizarBotonesDia();
-        if (_vistaContratos) {
-            _renderChartContratos();
-        } else {
-            _renderChartDiaActual();
-        }
+        if (_vistaContratos) { _renderChartContratos(); } else { _renderChartDiaActual(); }
         return;
     }
-    if (which === 'pendientes') {
-        _vistaPendientes = !_vistaPendientes;
-        if (_vistaPendientes) _vistaContratos = false;
-        _actualizarBotonesDia();
-        if (_vistaPendientes) {
-            _renderChartPendientes();
-        } else {
-            _renderChartDiaActual();
-        }
-        return;
-    }
-    // Si estaba en vista especial, volver a días
-    if (_vistaContratos)  { _vistaContratos  = false; }
-    if (_vistaPendientes) { _vistaPendientes = false; }
-    const otherKey = which === 'trabajado' ? 'reporte' : 'trabajado';
-    if (_serieActiva[which] && !_serieActiva[otherKey]) return;
+    // Si estaba en vista contratos, salir de ella
+    if (_vistaContratos) { _vistaContratos = false; }
+    // No apagar si es la única serie activa
+    const activas = Object.values(_serieActiva).filter(Boolean).length;
+    if (_serieActiva[which] && activas === 1) return;
     _serieActiva[which] = !_serieActiva[which];
     _actualizarBotonesDia();
     _renderChartDiaActual();
@@ -337,30 +320,34 @@ function _actualizarBotonesDia() {
     const btnR = document.getElementById('btnDiaReporte');
     const btnP = document.getElementById('btnPendientes');
     const btnC = document.getElementById('btnContratos');
-    // Botón contratos activo
-    btnC.style.background  = _vistaContratos  ? '#EDE9FE' : 'transparent';
-    btnC.style.color       = _vistaContratos  ? '#8B5CF6' : '#8393AC';
-    btnC.style.borderColor = _vistaContratos  ? '#8B5CF6' : '#DDE4EC';
-    // Botón pendientes activo
-    btnP.style.background  = _vistaPendientes ? '#FEF2F2' : 'transparent';
-    btnP.style.color       = _vistaPendientes ? '#DC2626' : '#8393AC';
-    btnP.style.borderColor = _vistaPendientes ? '#DC2626' : '#DDE4EC';
-    // Botones días — atenuados cuando estamos en vista especial
-    const dim = _vistaContratos || _vistaPendientes;
-    btnT.style.background  = (!dim && _serieActiva.trabajado) ? '#E0F2FE'  : 'transparent';
-    btnT.style.color       = (!dim && _serieActiva.trabajado) ? '#0B6E75'  : '#8393AC';
-    btnT.style.borderColor = (!dim && _serieActiva.trabajado) ? '#0B6E75'  : '#DDE4EC';
-    btnR.style.background  = (!dim && _serieActiva.reporte)   ? '#FEF3C7'  : 'transparent';
-    btnR.style.color       = (!dim && _serieActiva.reporte)   ? '#D97706'  : '#8393AC';
-    btnR.style.borderColor = (!dim && _serieActiva.reporte)   ? '#D97706'  : '#DDE4EC';
+    const dim  = _vistaContratos;
+    // Contratos
+    btnC.style.background  = _vistaContratos           ? '#EDE9FE'  : 'transparent';
+    btnC.style.color       = _vistaContratos           ? '#8B5CF6'  : '#8393AC';
+    btnC.style.borderColor = _vistaContratos           ? '#8B5CF6'  : '#DDE4EC';
+    // Día trabajado
+    btnT.style.background  = (!dim && _serieActiva.trabajado)   ? '#E0F2FE'  : 'transparent';
+    btnT.style.color       = (!dim && _serieActiva.trabajado)   ? '#0B6E75'  : '#8393AC';
+    btnT.style.borderColor = (!dim && _serieActiva.trabajado)   ? '#0B6E75'  : '#DDE4EC';
+    // Día de reporte
+    btnR.style.background  = (!dim && _serieActiva.reporte)     ? '#FEF3C7'  : 'transparent';
+    btnR.style.color       = (!dim && _serieActiva.reporte)     ? '#D97706'  : '#8393AC';
+    btnR.style.borderColor = (!dim && _serieActiva.reporte)     ? '#D97706'  : '#DDE4EC';
+    // Pendientes
+    btnP.style.background  = (!dim && _serieActiva.pendientes)  ? '#FEF2F2'  : 'transparent';
+    btnP.style.color       = (!dim && _serieActiva.pendientes)  ? '#DC2626'  : '#8393AC';
+    btnP.style.borderColor = (!dim && _serieActiva.pendientes)  ? '#DC2626'  : '#DDE4EC';
+    // Título
     if (_vistaContratos) {
         document.getElementById('chartDiaTitulo').textContent = 'Horas reportadas por contrato';
-    } else if (_vistaPendientes) {
-        document.getElementById('chartDiaTitulo').textContent = 'Horas pendientes por revisar — por día';
     } else {
-        const ambos = _serieActiva.trabajado && _serieActiva.reporte;
-        const solo  = _serieActiva.trabajado ? 'Horas por día trabajado' : 'Horas por día de reporte';
-        document.getElementById('chartDiaTitulo').textContent = ambos ? 'Día trabajado vs Día de reporte' : solo;
+        const activas = [
+            _serieActiva.trabajado  && 'Día trabajado',
+            _serieActiva.reporte    && 'Día de reporte',
+            _serieActiva.pendientes && 'Pendientes',
+        ].filter(Boolean);
+        document.getElementById('chartDiaTitulo').textContent =
+            activas.length > 1 ? activas.join(' vs ') : (activas[0] || 'Día trabajado');
     }
 }
 
@@ -371,22 +358,25 @@ function _renderChartDiaActual() {
     const ctx = document.getElementById('chartDia').getContext('2d');
     if (chartDia) chartDia.destroy();
 
-    // Construir labels unión de ambas series
+    // Construir labels unión de todas las series activas
     const todasFechas = [...new Set([
-        ...((_serieActiva.trabajado ? _diasTrabajado : []).map(d => d.fecha)),
-        ...((_serieActiva.reporte   ? _diasReporte   : []).map(d => d.fecha)),
+        ...((_serieActiva.trabajado  ? _diasTrabajado  : []).map(d => d.fecha)),
+        ...((_serieActiva.reporte    ? _diasReporte    : []).map(d => d.fecha)),
+        ...((_serieActiva.pendientes ? _diasPendiente  : []).map(d => d.fecha)),
     ])].sort();
 
     const mapT = Object.fromEntries(_diasTrabajado.map(d => [d.fecha, d.horas]));
     const mapR = Object.fromEntries(_diasReporte.map(d => [d.fecha, d.horas]));
+    const mapP = Object.fromEntries(_diasPendiente.map(d => [d.fecha, d.horas]));
 
+    const nActivas = [_serieActiva.trabajado, _serieActiva.reporte, _serieActiva.pendientes].filter(Boolean).length;
     const datasets = [];
     if (_serieActiva.trabajado) {
         datasets.push({
             label: 'Día trabajado',
             data: todasFechas.map(f => Math.round(mapT[f] || 0)),
             borderColor: '#0B6E75', backgroundColor: 'rgba(11,110,117,.15)',
-            fill: !_serieActiva.reporte, tension: 0.3,
+            fill: nActivas === 1, tension: 0.3,
             pointRadius: 4, pointBackgroundColor: '#0B6E75',
         });
     }
@@ -395,8 +385,18 @@ function _renderChartDiaActual() {
             label: 'Día de reporte',
             data: todasFechas.map(f => Math.round(mapR[f] || 0)),
             borderColor: '#D97706', backgroundColor: 'rgba(217,119,6,.15)',
-            fill: !_serieActiva.trabajado, tension: 0.3,
+            fill: nActivas === 1, tension: 0.3,
             pointRadius: 4, pointBackgroundColor: '#D97706',
+        });
+    }
+    if (_serieActiva.pendientes) {
+        datasets.push({
+            label: 'Pendientes',
+            data: todasFechas.map(f => Math.round(mapP[f] || 0)),
+            borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,.12)',
+            fill: nActivas === 1, tension: 0.3,
+            pointRadius: 4, pointBackgroundColor: '#DC2626',
+            borderDash: [5, 3],
         });
     }
 
@@ -416,7 +416,7 @@ function _renderChartDiaActual() {
                         label: c => ' ' + c.dataset.label + ': ' + fmtHrs(c.parsed.y) + 'h',
                         footer: items => {
                             if (items.length < 2) return '';
-                            const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                            const total = items.reduce((s, i) => s + (i.parsed.y || 0), 0);
                             return 'Total combinado: ' + fmtHrs(total) + 'h';
                         }
                     }
@@ -454,83 +454,6 @@ function _renderChartDiaActual() {
         }]
     });
 }
-function _renderChartPendientes() {
-    const wrap = document.getElementById('wrapChartDia');
-    wrap.style.height = '';
-    wrap.style.minHeight = '';
-    const ctx = document.getElementById('chartDia').getContext('2d');
-    if (chartDia) chartDia.destroy();
-
-    const labels = _diasPendiente.map(d => fmtFecha(d.fecha));
-    const valores = _diasPendiente.map(d => Math.round(d.horas));
-
-    if (!labels.length) {
-        // Sin datos: mensaje en canvas
-        chartDia = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: ['Sin pendientes'], datasets: [{ data: [0], backgroundColor: 'rgba(220,38,38,.15)', borderColor: '#DC2626', borderWidth: 1 }] },
-            options: { responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                scales: { y: { display: false }, x: { ticks: { color: '#15803d', font: { size: 12, weight: 'bold' } } } }
-            }
-        });
-        return;
-    }
-
-    chartDia = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Horas pendientes',
-                data: valores,
-                backgroundColor: 'rgba(220,38,38,.18)',
-                borderColor: '#DC2626',
-                borderWidth: 2,
-                borderRadius: 4,
-            }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        title: items => 'Fecha: ' + items[0].label,
-                        label: c => ' Pendientes: ' + fmtHrs(c.parsed.y) + 'h',
-                    }
-                }
-            },
-            scales: {
-                x: { grid: { color: '#FFFFFF' }, ticks: { color: '#5B6B84', font: { size: 10 }, maxRotation: 45 } },
-                y: { grid: { color: '#FFFFFF' }, ticks: { color: '#8393AC', font: { size: 10 }, callback: v => fmtHrs(v) + 'h' } }
-            },
-            onClick(_, elements) {
-                if (!elements.length) return;
-                const fecha = _diasPendiente[elements[0].index]?.fecha;
-                if (fecha) aplicarDrill({ fecha_drill: fecha }, 'Fecha: ' + fmtFecha(fecha));
-            }
-        },
-        plugins: [{
-            id: 'barValPend',
-            afterDatasetsDraw(chart) {
-                const { ctx: c, scales: { x, y } } = chart;
-                chart.data.datasets[0].data.forEach((val, i) => {
-                    if (!val) return;
-                    const bar = chart.getDatasetMeta(0).data[i];
-                    c.save();
-                    c.font = 'bold 10px sans-serif';
-                    c.fillStyle = '#DC2626';
-                    c.textAlign = 'center';
-                    c.textBaseline = 'bottom';
-                    c.fillText(fmtHrs(val) + 'h', bar.x, bar.y - 4);
-                    c.restore();
-                });
-            }
-        }]
-    });
-}
-
 const fmt    = n => (n||0).toLocaleString('es-CO');
 const fmtHrs = n => Math.round(n||0).toLocaleString('es-CO');
 
@@ -607,18 +530,11 @@ async function cargar() {
     _diasReporte    = data.por_dia_reporte   || [];
     _diasPendiente  = data.por_dia_pendiente || [];
     _actualizarBotonesDia();
-    if (_vistaPendientes) {
-        _renderChartPendientes();
-    } else if (_vistaContratos) {
-        _renderChartContratos();
-    } else {
-        _renderChartDiaActual();
-    }
+    if (_vistaContratos) { _renderChartContratos(); } else { _renderChartDiaActual(); }
     renderLimite(data.limite_legal);
     renderSupervisores(data.supervisores);
 
     _rankingCache = ranking || [];
-    // ya renderizado arriba; solo re-renderizar contratos si aplica
     if (_vistaContratos) _renderChartContratos();
     renderValorNomina(valorNomina);
     // Top tipo
