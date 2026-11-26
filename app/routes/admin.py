@@ -1854,23 +1854,29 @@ def api_he_dashboard_data():
         except Exception: pass
 
     # ── Horas por día trabajado y por día de reporte ─────────────────────────
-    por_dia_todos   = {}
-    por_dia_reporte = {}
+    ESTADOS_REVISADOS = {"CONFORME", "NO CONFORME", "DESCONTADA"}
+    por_dia_todos      = {}
+    por_dia_reporte    = {}
+    por_dia_pendiente  = {}
     for r in registros:
         hrs = r.horas_reportadas or 0
+        estado = (r.estado or "").strip().upper()
         if r.fecha_labor:
             fl = r.fecha_labor
             if not rango_ini or not rango_fin or (rango_ini <= fl <= rango_fin):
                 d = fl.isoformat()
                 por_dia_todos[d] = por_dia_todos.get(d, 0) + hrs
+                if estado not in ESTADOS_REVISADOS:
+                    por_dia_pendiente[d] = por_dia_pendiente.get(d, 0) + hrs
         if r.fecha_reporte:
             fd = r.fecha_reporte.date()
             if not rango_ini or not rango_fin or (rango_ini <= fd <= rango_fin):
                 d = fd.isoformat()
                 por_dia_reporte[d] = por_dia_reporte.get(d, 0) + hrs
 
-    dias         = sorted((d, h) for d, h in por_dia_todos.items()   if h > 0)
-    dias_reporte = sorted((d, h) for d, h in por_dia_reporte.items() if h > 0)
+    dias           = sorted((d, h) for d, h in por_dia_todos.items()     if h > 0)
+    dias_reporte   = sorted((d, h) for d, h in por_dia_reporte.items()   if h > 0)
+    dias_pendiente = sorted((d, h) for d, h in por_dia_pendiente.items() if h > 0)
 
     # ── Límite legal 48h (solo HE puras 03,04,05,06) ────────────────────────
     # Si hay corte activo, los registros ya están acotados al período del corte;
@@ -1956,8 +1962,9 @@ def api_he_dashboard_data():
         },
         "por_tipo":      tipos_lista,
         "top_tipo":      top_tipo,
-        "por_dia":         [{"fecha": d, "horas": h} for d, h in dias],
-        "por_dia_reporte": [{"fecha": d, "horas": h} for d, h in dias_reporte],
+        "por_dia":           [{"fecha": d, "horas": h} for d, h in dias],
+        "por_dia_reporte":   [{"fecha": d, "horas": h} for d, h in dias_reporte],
+        "por_dia_pendiente": [{"fecha": d, "horas": h} for d, h in dias_pendiente],
         "limite_legal":  limite_legal,
         "supervisores":  supervisores,
     })
