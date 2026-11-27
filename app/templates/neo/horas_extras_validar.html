@@ -1553,9 +1553,10 @@ function _openFilterPopup(htInst, col, anchorBtn) {
     popup.style.display = 'block';
     popup.style.left = Math.min(rect.left, window.innerWidth - 300) + 'px';
     popup.style.top  = (rect.bottom + 4) + 'px';
+    if (typeof _fpOpenTs !== 'undefined') _fpOpenTs = Date.now();
 
     document.getElementById('fpSearch').value = '';
-    document.getElementById('fpSearch').focus();
+    document.getElementById('fpSearch').focus({ preventScroll: true });
 
     // Guardar lista completa para búsqueda
     popup._allVals = allVals;
@@ -1716,10 +1717,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     // Cerrar si la tabla hace scroll (el popup es fixed y no sigue al botón)
+    let _fpOpenTs = 0;
     document.addEventListener('scroll', function(e) {
         const popup = document.getElementById('htFilterPopup');
+        if (popup.style.display === 'none') return;
         // Ignorar scroll dentro del propio popup
         if (popup.contains(e.target)) return;
+        // Ignorar scroll disparado en los primeros 150ms tras abrir (focus, HT interno)
+        if (Date.now() - _fpOpenTs < 150) return;
         popup.style.display = 'none';
     }, true);  // capture=true para capturar scroll en cualquier elemento hijo
 });
